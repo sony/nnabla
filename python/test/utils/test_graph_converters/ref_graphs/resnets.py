@@ -106,10 +106,11 @@ def small_bn_self_folding_resnet(image, name='bn-self-folding-graph-ref'):
 
 
 # BatchNormalization Small ResNet
-def bn_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1), test=False, name='convblock'):
+def bn_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1),
+                test=False, w_bias=False, name='convblock'):
     with nn.parameter_scope(name):
         h = PF.convolution(x, maps, kernel=kernel, pad=pad,
-                           stride=stride, with_bias=False)
+                           stride=stride, with_bias=w_bias)
         z = h
         h = PF.batch_normalization(h, batch_stat=not test)
     return F.relu(h + z)
@@ -122,16 +123,19 @@ def small_bn_resnet(image, test=False, w_bias=False, name='bn-graph-ref'):
                        with_bias=w_bias, name='first-conv')
     h = PF.batch_normalization(h, batch_stat=not test, name='first-bn')
     h = F.relu(h)
-    h = bn_resblock(h, maps=16, test=test, name='cb1')
-    h = bn_resblock(h, maps=16, test=test, name='cb2')
-    h = bn_resblock(h, maps=16, test=test, name='cb3')
-    h = bn_resblock(h, maps=16, test=test, name='cb4')
+    h = F.max_pooling(h, (2, 2))
+    h = bn_resblock(h, maps=16, test=test, w_bias=w_bias, name='cb1')
+    h = bn_resblock(h, maps=16, test=test, w_bias=w_bias, name='cb2')
+    h = bn_resblock(h, maps=16, test=test, w_bias=w_bias, name='cb3')
+    h = bn_resblock(h, maps=16, test=test, w_bias=w_bias, name='cb4')
+    h = F.average_pooling(h, (2, 2))
     pred = PF.affine(h, 10, name='fc')
     return pred
 
 
 # BatchNormalization folding Small ResNet
-def bn_folding_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1), test=False, name='convblock'):
+def bn_folding_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1),
+                        test=False, name='convblock'):
     with nn.parameter_scope(name):
         h = PF.convolution(x, maps, kernel=kernel, pad=pad,
                            stride=stride, with_bias=True)
@@ -145,10 +149,12 @@ def small_bn_folding_resnet(image, test=False, name='bn-graph-ref'):
     h = PF.convolution(h, 16, kernel=(3, 3), pad=(1, 1),
                        with_bias=True, name='first-conv')
     h = F.relu(h)
+    h = F.max_pooling(h, (2, 2))
     h = bn_folding_resblock(h, maps=16, test=test, name='cb1')
     h = bn_folding_resblock(h, maps=16, test=test, name='cb2')
     h = bn_folding_resblock(h, maps=16, test=test, name='cb3')
     h = bn_folding_resblock(h, maps=16, test=test, name='cb4')
+    h = F.average_pooling(h, (2, 2))
     pred = PF.affine(h, 10, name='fc')
     return pred
 
@@ -169,21 +175,24 @@ def small_fbn_resnet(image, test=False, name='fbn-graph-ref'):
                        with_bias=False, name='first-fbn-conv')
     h = PF.batch_normalization(h, batch_stat=not test, name='first-fbn')
     h = F.relu(h)
+    h = F.max_pooling(h, (2, 2))
     h = fbn_resblock(h, maps=16, test=test, name='fbn-cb1')
     h = fbn_resblock(h, maps=16, test=test, name='fbn-cb2')
     h = fbn_resblock(h, maps=16, test=test, name='fbn-cb3')
     h = fbn_resblock(h, maps=16, test=test, name='fbn-cb4')
+    h = F.average_pooling(h, (2, 2))
     pred = PF.affine(h, 10, name='fbn-fc')
     return pred
 
 
 # BatchNormalization Small ResNet removed functions
-def bn_rm_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1), test=False, name='convblock'):
+def bn_rm_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1),
+                   test=False, w_bias=False, name='convblock'):
+    h = x
     with nn.parameter_scope(name):
-        h = PF.convolution(x, maps, kernel=kernel, pad=pad,
-                           stride=stride, with_bias=False)
-        z = h
-    return F.relu(h + z)
+        h = PF.convolution(h, maps, kernel=kernel, pad=pad,
+                           stride=stride, with_bias=w_bias)
+    return F.relu(h + x)
 
 
 def small_bn_rm_resnet(image, test=False, w_bias=False, name='bn-rm-graph-ref'):
@@ -191,19 +200,22 @@ def small_bn_rm_resnet(image, test=False, w_bias=False, name='bn-rm-graph-ref'):
     h = PF.convolution(h, 16, kernel=(3, 3), pad=(1, 1),
                        with_bias=w_bias, name='first-conv')
     h = F.relu(h)
-    h = bn_rm_resblock(h, maps=16, test=test, name='cb1')
-    h = bn_rm_resblock(h, maps=16, test=test, name='cb2')
-    h = bn_rm_resblock(h, maps=16, test=test, name='cb3')
-    h = bn_rm_resblock(h, maps=16, test=test, name='cb4')
+    h = F.max_pooling(h, (2, 2))
+    h = bn_rm_resblock(h, maps=16, test=test, w_bias=w_bias, name='cb1')
+    h = bn_rm_resblock(h, maps=16, test=test, w_bias=w_bias, name='cb2')
+    h = bn_rm_resblock(h, maps=16, test=test, w_bias=w_bias, name='cb3')
+    h = bn_rm_resblock(h, maps=16, test=test, w_bias=w_bias, name='cb4')
+    h = F.average_pooling(h, (2, 2))
     pred = PF.affine(h, 10, name='bn-rm-fc')
     return pred
 
 
 # BatchNormalization Small ResNet with batch_stat False
-def bsf_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1), test=False, name='convblock'):
+def bsf_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1),
+                 test=False, w_bias=False, name='convblock'):
     with nn.parameter_scope(name):
         h = PF.convolution(x, maps, kernel=kernel, pad=pad,
-                           stride=stride, with_bias=False)
+                           stride=stride, with_bias=w_bias)
         z = h
         h = PF.batch_normalization(h, batch_stat=False)
     return F.relu(h + z)
@@ -216,9 +228,11 @@ def small_bsf_resnet(image, w_bias=False, name='bn-graph-ref'):
                        with_bias=w_bias, name='first-conv')
     h = PF.batch_normalization(h, batch_stat=False, name='first-bn-bsf')
     h = F.relu(h)
-    h = bsf_resblock(h, maps=16, test=False, name='cb1')
-    h = bsf_resblock(h, maps=16, test=False, name='cb2')
-    h = bsf_resblock(h, maps=16, test=False, name='cb3')
-    h = bsf_resblock(h, maps=16, test=False, name='cb4')
+    h = F.max_pooling(h, (2, 2))
+    h = bsf_resblock(h, maps=16, test=False, w_bias=w_bias, name='cb1')
+    h = bsf_resblock(h, maps=16, test=False, w_bias=w_bias, name='cb2')
+    h = bsf_resblock(h, maps=16, test=False, w_bias=w_bias, name='cb3')
+    h = bsf_resblock(h, maps=16, test=False, w_bias=w_bias, name='cb4')
+    h = F.average_pooling(h, (2, 2))
     pred = PF.affine(h, 10, name='fc')
     return pred

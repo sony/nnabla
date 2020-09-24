@@ -101,7 +101,7 @@ def bn_folding_lenet(image, test=False, name="bn-folding-graph-ref"):
 
 
 # LeNet with batch_stat False
-def bsf_lenet(image, w_bias=False):
+def bsf_lenet(image, test=False, w_bias=False):
     h = PF.convolution(image, 16, (5, 5), (1, 1),
                        with_bias=False, name='conv1')
     h = PF.batch_normalization(h, batch_stat=False, name='conv1-bn')

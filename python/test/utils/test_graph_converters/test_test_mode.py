@@ -20,8 +20,11 @@ import numpy as np
 import nnabla as nn
 import nnabla.experimental.graph_converters as GC
 
-from .ref_graphs.resnets import small_bn_resnet, small_bn_rm_resnet
 
+from .ref_graphs.lenets import lenet, bsf_lenet
+from .ref_graphs.resnets import (small_bn_resnet,
+                                 small_bsf_resnet,
+                                 small_bn_rm_resnet)
 
 batch_size = 1
 resnet_ref = small_bn_rm_resnet
@@ -30,8 +33,11 @@ resnet_ref = small_bn_rm_resnet
 @pytest.mark.parametrize('seed', [313])
 @pytest.mark.parametrize('test', [True])
 @pytest.mark.parametrize('w_bias', [True, False])
-@pytest.mark.parametrize('graph_ref, graph_act', [(resnet_ref, small_bn_resnet)])
-def test_remove_function(seed, test, w_bias, graph_ref, graph_act):
+@pytest.mark.parametrize('graph_ref, graph_act, rm_func', [
+    (small_bn_rm_resnet, small_bn_resnet, True),
+    (small_bsf_resnet, small_bn_resnet, False),
+    (bsf_lenet, lenet, False)])
+def test_test_mode(seed, test, w_bias, graph_ref, graph_act, rm_func):
     from .graph_converter_test_utils import structure_tester, value_tester
 
     # Random number
@@ -44,15 +50,19 @@ def test_remove_function(seed, test, w_bias, graph_ref, graph_act):
 
     y_tgt = graph_act(x, test=test, w_bias=w_bias)
 
+    # Remove function
+    rm_funcs = ['BatchNormalization', 'MulScalar'] if rm_func == True else []
+
     # FunctionModifier
     modifiers = []
-    modifiers.append(GC.RemoveFunctionModifier(
-        rm_funcs=['BatchNormalization', 'MulScalar']))
+    modifiers.append(GC.TestModeModifier(rm_funcs))
 
     y_act = GC.GraphConverter(modifiers).convert(y_tgt)
 
     # Ref Graph
-    y_ref = graph_ref(x, test=test, w_bias=w_bias, name='bn-graph-rm-ref')
+    y_ref = graph_ref(x, w_bias=w_bias)
 
     # Test
     structure_tester(y_ref, y_act)
+    if not rm_func:
+        value_tester(y_ref, y_act, rtol=6e-02, atol=5e-02)
