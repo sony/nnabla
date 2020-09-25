@@ -157,9 +157,8 @@ Limitation
 ++++++++++
 
 - Currently python3.8 is not supported.
-- Tensorflow version is required to be 1.14.
+- Tensorflow version is required to be 1.15.
 - ONNX version is 1.6.0.
-- onnx_tf, tf2onnx needs to be patched based on specified revision.
 
 Bridged by onnx, tensorflow import and export is supported with some limitations.
 
@@ -171,7 +170,7 @@ As for the importer, 3 formats tends to be supported:
 As for the exporter, some of Neural Network Console projects are supported. See :any:`Model_Support_Status`.
 The output of converter is tensorflow frozen graph format(e.g. *.pb)
 
-Before using this converter, please refer to `Dockerfile`_ to prepare the environment for converter.
+Before using this converter, please use command `pip install nnabla_tf_converter` to install nnabla_tf_converter.
 
 
 Process

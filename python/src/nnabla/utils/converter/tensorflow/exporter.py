@@ -130,6 +130,9 @@ class TensorflowLiteExporter:
 
             converter = tf.lite.TFLiteConverter.from_session(
                 session, inputs_tensor, outputs_tensor)
+            converter.optimizations = [tf.lite.Optimize.DEFAULT]
+            converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS,
+                                                   tf.lite.OpsSet.SELECT_TF_OPS]
             tflite_model = converter.convert()
             with open(output, 'wb') as f:
                 f.write(tflite_model)

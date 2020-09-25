@@ -356,9 +356,26 @@ if(BUILD_PYTHON_PACKAGE)
     ${CMAKE_CURRENT_SOURCE_DIR}/python/src/utils/dlpack/*.h)
   
   set(NBLA_PYTHON_SETUP ${CMAKE_CURRENT_SOURCE_DIR}/python/setup.py)
+  set(NNABLA_TF_CONVERTER_SETUP ${CMAKE_CURRENT_SOURCE_DIR}/python/src/nnabla/utils/converter/setup.py)
   set(NBLA_PYTHON_OUTPUT ${CMAKE_BINARY_DIR}/build)
   set(NBLA_PYTHON_OUTPUT_WHEEL ${NBLA_PYTHON_OUTPUT}/.timestamp.wheel)
   set(NBLA_WHEEL_DEPENDS ${NBLA_PYTHON_DEPS} ${NBLA_LIBRARY_NAME})
+  set(NNABLA_TF_CONVERTER_COMMAND ${CMAKE_COMMAND} -E echo "Currently, The NNabla-tf-converter does not support python3.8" )
+  if(UNIX)
+    if(NOT "${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}" STREQUAL "3.8")
+      set(NNABLA_TF_CONVERTER_COMMAND ${CMAKE_COMMAND} -E env
+          WHEEL_SUFFIX=${WHEEL_SUFFIX}
+          ${PYTHON_COMMAND} ${NNABLA_TF_CONVERTER_SETUP} -q bdist_wheel --python-tag py${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR})
+    endif()
+  else()
+    if(DEFINED ENV{PYVER})
+      if(NOT "$ENV{PYVER}" STREQUAL "3.8")
+        set(NNABLA_TF_CONVERTER_COMMAND ${PYTHON_COMMAND} ${NNABLA_TF_CONVERTER_SETUP} -q bdist_wheel --python-tag $ENV{PYVER})
+      endif()
+    else()
+      message(FATAL_ERROR "not defined environment variable: PYVER")
+    endif()
+  endif()
   # Wheel
   if(UNIX)
     if(MAKE_MANYLINUX_WHEEL)
@@ -368,6 +385,7 @@ if(BUILD_PYTHON_PACKAGE)
         COMMAND ${CMAKE_COMMAND} -E env
                 WHEEL_SUFFIX=${WHEEL_SUFFIX}
                 ${PYTHON_COMMAND} ${NBLA_PYTHON_SETUP} -q bdist_wheel
+        COMMAND ${NNABLA_TF_CONVERTER_COMMAND}
         COMMAND ${CMAKE_SOURCE_DIR}/build-tools/auditwheel-nnabla ${CMAKE_BINARY_DIR}/dist/*-linux_*.whl
         COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_BINARY_DIR}/dist/*-linux*.whl
         COMMAND ${CMAKE_COMMAND} -E touch ${NBLA_PYTHON_OUTPUT_WHEEL}
@@ -379,6 +397,7 @@ if(BUILD_PYTHON_PACKAGE)
         COMMAND ${CMAKE_COMMAND} -E env
                 WHEEL_SUFFIX=${WHEEL_SUFFIX}
                 ${PYTHON_COMMAND} ${NBLA_PYTHON_SETUP} -q bdist_wheel
+        COMMAND ${NNABLA_TF_CONVERTER_COMMAND}
         COMMAND ${CMAKE_COMMAND} -E touch ${NBLA_PYTHON_OUTPUT_WHEEL}
         DEPENDS ${NBLA_WHEEL_DEPENDS})
     endif()
@@ -387,6 +406,7 @@ if(BUILD_PYTHON_PACKAGE)
       COMMAND ${CMAKE_COMMAND} -E remove -f ${NBLA_PYTHON_OUTPUT_CYTHON}
       COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_BINARY_DIR}/dist/*.whl
       COMMAND ${PYTHON_COMMAND} ${NBLA_PYTHON_SETUP} -q bdist_wheel
+      COMMAND ${NNABLA_TF_CONVERTER_COMMAND}
       COMMAND ${CMAKE_COMMAND} -E touch ${NBLA_PYTHON_OUTPUT_WHEEL}
       DEPENDS ${NBLA_WHEEL_DEPENDS})
   endif()
