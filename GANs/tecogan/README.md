@@ -115,7 +115,7 @@ mpirun -n {no. of devices} python train.py \
 ### Training TecoGAN
 TecoGAN uses feature maps from a pre-trained VGG19 network to encourage generator to produce similar feature maps as ground truth.
 So, we require a pre-trained VGG19 model for this purpose. Download the VGG19 NNabla weights 
-from [here](https://nnabla.org/pretrained-models/nnabla-examples/tecogan/vgg19.h5). If you want to convert tensorflow VGG19 weights to NNabla h5
+from [here](https://nnabla.org/pretrained-models/nnabla-examples/GANs/tecogan/vgg19.h5). If you want to convert tensorflow VGG19 weights to NNabla h5
 format, download the VGG19 weights from [here](http://download.tensorflow.org/models/vgg_19_2016_08_28.tar.gz) and then convert these weights to .h5 format using the below command:
 ```
 python convert_vgg19_nnabla_tf --pre_trained_model {pre-trained tensorflow vgg19 weights} --save-path {path to save the converted model}
