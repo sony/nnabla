@@ -30,7 +30,7 @@ TENSOR_TYPE_TO_DTYPE = {
     TensorProto.BOOL: np.bool,
     TensorProto.UINT8: np.uint8,
     TensorProto.INT8: np.int8,
-    TensorProto.INT32: np.uint32,
+    TensorProto.UINT32: np.uint32,
     TensorProto.INT32: np.int32,
     TensorProto.INT64: np.int64,
 }
@@ -1079,7 +1079,7 @@ class OnnxExporter:
 
         if input_shape_reshape != input_shape:
             output_y_shape = np.array(
-                [d for d in self._var_dict[func.output[0]].dim])
+                [d for d in self._var_dict[func.input[0]].dim])
             n = generate_reshape(self._model_proto.graph, outputs[0], func.output[0],
                                  output_y_shape)
             nl.append(n)
@@ -1092,29 +1092,30 @@ class OnnxExporter:
         inputs = func.input[:]
         outputs = func.output[:]
 
-        if len(func.input) != 6:
-            raise ValueError(
-                "The number of FusedBatchNormalization input must be 6")
-
-        del func.input[5]
+        if len(func.input) > 5:
+            del func.input[5]
         bn_out = fork_name(func.input[0]) + "_bn"
         func.output[0] = bn_out
         nl.extend(self.BatchNormalization(
             opset, func, func_name="FusedBatchNormalization"))
 
-        # Add
-        add_out = fork_name(func.input[0]) + "_add"
-        n = onnx.helper.make_node(
-            'Div',
-            [bn_out, inputs[5]],
-            [add_out],
-        )
-        nl.append(n)
+        if len(inputs) > 5:
+            # Add
+            add_out = fork_name(func.input[0]) + "_add"
+            n = onnx.helper.make_node(
+                'Add',
+                [bn_out, inputs[5]],
+                [add_out],
+            )
+            nl.append(n)
+            inputs = [add_out]
+        else:
+            inputs = [bn_out]
 
         if nonlinearity == "relu":
             # Relu
             n = onnx.helper.make_node("Relu",
-                                      [add_out],
+                                      inputs,
                                       outputs)
             nl.append(n)
         else:
