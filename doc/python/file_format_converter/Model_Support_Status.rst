@@ -50,12 +50,12 @@ Export
 - ✓: Support to convert
 - X: Not support
 
-Total: 58/65
+Total: 57/65
 
 ONNX Export Sample Test(nnp --> onnx)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Count 34/37
+Count 32/37
  
 
     ================================  =======  =======================================================
@@ -71,7 +71,7 @@ Count 34/37
     LeNet_35_                            ✓                                                            
     mnist_vae_3_                         ✓                                                            
     binary_connect_mnist_MLP_8_          ✓                                                            
-    12_residual_learning_20_             ✓                                                            
+    12_residual_learning_20_             X                                                            
     elman_net_with_attention_34_         ✓                                                            
     11_deconvolution_11_                 ✓                                                            
     semi_supervised_learning_VAT_37_     X     NNP with only a single executor is currently supported.
@@ -90,7 +90,7 @@ Count 34/37
     LSTM_auto_encoder_24_                ✓                                                            
     02_binary_cnn_15_                    ✓                                                            
     01_logistic_regression_9_            ✓                                                            
-    12_residual_learning_19_             ✓                                                            
+    12_residual_learning_19_             X                                                            
     LeNet_36_                            ✓                                                            
     elman_net_21_                        ✓                                                            
     10_deep_mlp_14_                      ✓                                                            
@@ -134,7 +134,7 @@ Count 18/18
 ONNX Export Example Model Test(nnp --> onnx)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Count 6/10
+Count 7/10
  
 
     ==================  =======  ====================================================
@@ -144,7 +144,7 @@ Count 6/10
     word_embedding_        ✓                                                         
     classification_        ✓                                                         
     meta_learning_         X     Failed to compare inferring result.                 
-    deeplabv3plus_         X     The `Interpolate` is currently not supported.       
+    deeplabv3plus_         ✓     The `Interpolate` is currently not supported.       
     pix2pix_               ✓                                                         
     siamese_embedding_     ✓                                                         
     cycle_gan_             ✓                                                         
@@ -198,12 +198,12 @@ Export
 - ✓: Support to convert
 - X: Not support
 
-Total: 58/65
+Total: 97/130
 
-Tensorflow Export Sample Test(nnp --> pb)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Tensorflow Export Sample Test(Disable optimization)(nnp --> pb)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Count 34/37
+Count 32/37
  
 
     ================================  =======  =======================================================
@@ -219,7 +219,7 @@ Count 34/37
     LeNet_35_                            ✓                                                            
     mnist_vae_3_                         ✓                                                            
     binary_connect_mnist_MLP_8_          ✓                                                            
-    12_residual_learning_20_             ✓                                                            
+    12_residual_learning_20_             X                                                            
     elman_net_with_attention_34_         ✓                                                            
     11_deconvolution_11_                 ✓                                                            
     semi_supervised_learning_VAT_37_     X     NNP with only a single executor is currently supported.
@@ -238,7 +238,7 @@ Count 34/37
     LSTM_auto_encoder_24_                ✓                                                            
     02_binary_cnn_15_                    ✓                                                            
     01_logistic_regression_9_            ✓                                                            
-    12_residual_learning_19_             ✓                                                            
+    12_residual_learning_19_             X                                                            
     LeNet_36_                            ✓                                                            
     elman_net_21_                        ✓                                                            
     10_deep_mlp_14_                      ✓                                                            
@@ -249,8 +249,8 @@ Count 34/37
     ================================  =======  =======================================================
 
 
-Tensorflow Export Pretrained Models(nnp --> pb)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Tensorflow Export Pretrained Models(Disable optimization)(nnp --> pb)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Count 18/18
  
@@ -279,10 +279,10 @@ Count 18/18
     ======================  =======  ====
 
 
-Tensorflow Export Example Models(nnp --> pb)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Tensorflow Export Example Models(Disable optimization)(nnp --> pb)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Count 6/10
+Count 7/10
  
 
     ==================  =======  ====================================================
@@ -296,9 +296,327 @@ Count 6/10
     pix2pix_               ✓                                                         
     siamese_embedding_     ✓                                                         
     cycle_gan_             ✓                                                         
-    capsules_              X     NNabla converter error, will be fixed in the future.
+    capsules_              ✓     NNabla converter error, will be fixed in the future.
     wavenet_               X     The `onehot` dimension != 2 is not supported.       
     ==================  =======  ====================================================
+
+
+Tensorflow Export Sample Test(Enable optimization)(nnp --> pb)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Count 26/37
+ 
+
+    ================================  =======  ====
+                  Name                Support  Memo
+    ================================  =======  ====
+    02_binary_cnn_16_                    ✓         
+    long_short_term_memoryLSTM_29_       ✓         
+    long_short_term_memoryLSTM_30_       ✓         
+    10_deep_mlp_13_                      ✓         
+    01_logistic_regression_10_           ✓         
+    stacked_GRU_27_                      ✓         
+    gated_recurrent_unitGRU_31_          ✓         
+    LeNet_35_                            ✓         
+    mnist_vae_3_                         ✓         
+    binary_connect_mnist_MLP_8_          ✓         
+    12_residual_learning_20_             X         
+    elman_net_with_attention_34_         X         
+    11_deconvolution_11_                 X         
+    semi_supervised_learning_VAT_37_     X         
+    binary_connect_mnist_LeNet_5_        ✓         
+    bidirectional_elman_net_25_          ✓         
+    elman_net_22_                        ✓         
+    bidirectional_elman_net_26_          ✓         
+    binary_net_mnist_MLP_4_              ✓         
+    06_auto_encoder_17_                  ✓         
+    stacked_GRU_28_                      ✓         
+    binary_weight_mnist_MLP_6_           ✓         
+    gated_recurrent_unitGRU_32_          ✓         
+    mnist_dcgan_with_label_2_            X         
+    11_deconvolution_12_                 X         
+    mnist_dcgan_with_label_1_            X         
+    LSTM_auto_encoder_24_                X         
+    02_binary_cnn_15_                    ✓         
+    01_logistic_regression_9_            ✓         
+    12_residual_learning_19_             X         
+    LeNet_36_                            ✓         
+    elman_net_21_                        ✓         
+    10_deep_mlp_14_                      ✓         
+    LSTM_auto_encoder_23_                X         
+    elman_net_with_attention_33_         X         
+    binary_net_mnist_LeNet_7_            ✓         
+    06_auto_encoder_18_                  ✓         
+    ================================  =======  ====
+
+
+Tensorflow Export Pretrained Models(Enable optimization)(nnp --> pb)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Count 10/18
+ 
+
+    ======================  =======  ====
+             Name           Support  Memo
+    ======================  =======  ====
+    ShuffleNet-0.5x_2_202_     X         
+    GoogLeNet_4_142_           ✓         
+    AlexNet_                   X         
+    Resnet-34_4_128_           ✓         
+    Resnet-101_4_348_          ✓         
+    SqueezeNet-1.0_2_70_       X         
+    VGG-11_                    ✓         
+    Resnet-50_4_178_           ✓         
+    Xception_                  X         
+    VGG-13_                    ✓         
+    MobileNet_1_86_            X         
+    SqueezeNet-1.1_2_70_       X         
+    ShuffleNet_2_202_          X         
+    VGG-16_                    ✓         
+    Resnet-152_4_518_          ✓         
+    Resnet-18_3_71_            ✓         
+    NIN_                       X         
+    DenseNet-161_2_570_        ✓         
+    ======================  =======  ====
+
+
+Tensorflow Export Example Models(Enable optimization)(nnp --> pb)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Count 4/10
+ 
+
+    ==================  =======  ====
+           Name         Support  Memo
+    ==================  =======  ====
+    yolov2_                X         
+    word_embedding_        ✓         
+    classification_        ✓         
+    meta_learning_         X         
+    deeplabv3plus_         X         
+    pix2pix_               X         
+    siamese_embedding_     ✓         
+    cycle_gan_             X         
+    capsules_              ✓         
+    wavenet_               X         
+    ==================  =======  ====
+
+
+
+
+Tensorflow Lite Support Status
+==============================
+
+
+Export
+------
+
+- ✓: Support to convert
+- X: Not support
+
+Total: 68/130
+
+Tensorflow Lite Export Sample Test(Disable optimization)(nnp --> tflite)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Count 28/37
+ 
+
+    ================================  =======  ====
+                  Name                Support  Memo
+    ================================  =======  ====
+    02_binary_cnn_16_                    ✓         
+    long_short_term_memoryLSTM_29_       ✓         
+    long_short_term_memoryLSTM_30_       ✓         
+    10_deep_mlp_13_                      ✓         
+    01_logistic_regression_10_           ✓         
+    stacked_GRU_27_                      ✓         
+    gated_recurrent_unitGRU_31_          ✓         
+    LeNet_35_                            ✓         
+    mnist_vae_3_                         ✓         
+    binary_connect_mnist_MLP_8_          X         
+    12_residual_learning_20_             X         
+    elman_net_with_attention_34_         ✓         
+    11_deconvolution_11_                 ✓         
+    semi_supervised_learning_VAT_37_     X         
+    binary_connect_mnist_LeNet_5_        X         
+    bidirectional_elman_net_25_          ✓         
+    elman_net_22_                        ✓         
+    bidirectional_elman_net_26_          ✓         
+    binary_net_mnist_MLP_4_              X         
+    06_auto_encoder_17_                  ✓         
+    stacked_GRU_28_                      ✓         
+    binary_weight_mnist_MLP_6_           ✓         
+    gated_recurrent_unitGRU_32_          ✓         
+    mnist_dcgan_with_label_2_            X         
+    11_deconvolution_12_                 ✓         
+    mnist_dcgan_with_label_1_            X         
+    LSTM_auto_encoder_24_                ✓         
+    02_binary_cnn_15_                    ✓         
+    01_logistic_regression_9_            ✓         
+    12_residual_learning_19_             X         
+    LeNet_36_                            ✓         
+    elman_net_21_                        ✓         
+    10_deep_mlp_14_                      ✓         
+    LSTM_auto_encoder_23_                ✓         
+    elman_net_with_attention_33_         ✓         
+    binary_net_mnist_LeNet_7_            X         
+    06_auto_encoder_18_                  ✓         
+    ================================  =======  ====
+
+
+Tensorflow Lite Export Pretrained Models(Disable optimization)(nnp --> tflite)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Count 16/18
+ 
+
+    ======================  =======  ====
+             Name           Support  Memo
+    ======================  =======  ====
+    ShuffleNet-0.5x_2_202_     X         
+    GoogLeNet_4_142_           ✓         
+    AlexNet_                   ✓         
+    Resnet-34_4_128_           ✓         
+    Resnet-101_4_348_          ✓         
+    SqueezeNet-1.0_2_70_       ✓         
+    VGG-11_                    ✓         
+    Resnet-50_4_178_           ✓         
+    Xception_                  ✓         
+    VGG-13_                    ✓         
+    MobileNet_1_86_            ✓         
+    SqueezeNet-1.1_2_70_       ✓         
+    ShuffleNet_2_202_          X         
+    VGG-16_                    ✓         
+    Resnet-152_4_518_          ✓         
+    Resnet-18_3_71_            ✓         
+    NIN_                       ✓         
+    DenseNet-161_2_570_        ✓         
+    ======================  =======  ====
+
+
+Tensorflow Lite Export Example Models(Disable optimization)(nnp --> tflite)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Count 5/10
+ 
+
+    ==================  =======  ====
+           Name         Support  Memo
+    ==================  =======  ====
+    yolov2_                X         
+    word_embedding_        ✓         
+    classification_        ✓         
+    meta_learning_         X         
+    deeplabv3plus_         X         
+    pix2pix_               ✓         
+    siamese_embedding_     ✓         
+    cycle_gan_             ✓         
+    capsules_              X         
+    wavenet_               X         
+    ==================  =======  ====
+
+
+Tensorflow Lite Export Sample Test(Enable optimization)(nnp --> tflite)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Count 18/37
+ 
+
+    ================================  =======  ====
+                  Name                Support  Memo
+    ================================  =======  ====
+    02_binary_cnn_16_                    X         
+    long_short_term_memoryLSTM_29_       ✓         
+    long_short_term_memoryLSTM_30_       ✓         
+    10_deep_mlp_13_                      ✓         
+    01_logistic_regression_10_           ✓         
+    stacked_GRU_27_                      ✓         
+    gated_recurrent_unitGRU_31_          ✓         
+    LeNet_35_                            X         
+    mnist_vae_3_                         ✓         
+    binary_connect_mnist_MLP_8_          X         
+    12_residual_learning_20_             X         
+    elman_net_with_attention_34_         X         
+    11_deconvolution_11_                 X         
+    semi_supervised_learning_VAT_37_     X         
+    binary_connect_mnist_LeNet_5_        X         
+    bidirectional_elman_net_25_          ✓         
+    elman_net_22_                        ✓         
+    bidirectional_elman_net_26_          ✓         
+    binary_net_mnist_MLP_4_              X         
+    06_auto_encoder_17_                  ✓         
+    stacked_GRU_28_                      ✓         
+    binary_weight_mnist_MLP_6_           ✓         
+    gated_recurrent_unitGRU_32_          ✓         
+    mnist_dcgan_with_label_2_            X         
+    11_deconvolution_12_                 X         
+    mnist_dcgan_with_label_1_            X         
+    LSTM_auto_encoder_24_                X         
+    02_binary_cnn_15_                    X         
+    01_logistic_regression_9_            ✓         
+    12_residual_learning_19_             X         
+    LeNet_36_                            X         
+    elman_net_21_                        ✓         
+    10_deep_mlp_14_                      ✓         
+    LSTM_auto_encoder_23_                X         
+    elman_net_with_attention_33_         X         
+    binary_net_mnist_LeNet_7_            X         
+    06_auto_encoder_18_                  ✓         
+    ================================  =======  ====
+
+
+Tensorflow Lite Export Pretrained Models(Enable optimization)(nnp --> tflite)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Count 0/18
+ 
+
+    ======================  =======  ====
+             Name           Support  Memo
+    ======================  =======  ====
+    ShuffleNet-0.5x_2_202_     X         
+    GoogLeNet_4_142_           X         
+    AlexNet_                   X         
+    Resnet-34_4_128_           X         
+    Resnet-101_4_348_          X         
+    SqueezeNet-1.0_2_70_       X         
+    VGG-11_                    X         
+    Resnet-50_4_178_           X         
+    Xception_                  X         
+    VGG-13_                    X         
+    MobileNet_1_86_            X         
+    SqueezeNet-1.1_2_70_       X         
+    ShuffleNet_2_202_          X         
+    VGG-16_                    X         
+    Resnet-152_4_518_          X         
+    Resnet-18_3_71_            X         
+    NIN_                       X         
+    DenseNet-161_2_570_        X         
+    ======================  =======  ====
+
+
+Tensorflow Lite Export Example Models(Enable optimization)(nnp --> tflite)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Count 1/10
+ 
+
+    ==================  =======  ====
+           Name         Support  Memo
+    ==================  =======  ====
+    yolov2_                X         
+    word_embedding_        ✓         
+    classification_        X         
+    meta_learning_         X         
+    deeplabv3plus_         X         
+    pix2pix_               X         
+    siamese_embedding_     X         
+    cycle_gan_             X         
+    capsules_              X         
+    wavenet_               X         
+    ==================  =======  ====
+
 
 
 
@@ -311,12 +629,12 @@ Export
 - ✓: Support to convert
 - X: Not support
 
-Total: 34/37
+Total: 32/37
 
 NNC Export Sample Test(nnp --> nnb)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Count 34/37
+Count 32/37
  
 
     ================================  =======  ===================================
@@ -332,7 +650,7 @@ Count 34/37
     LeNet_35_                            ✓                                        
     mnist_vae_3_                         ✓                                        
     binary_connect_mnist_MLP_8_          ✓                                        
-    12_residual_learning_20_             ✓                                        
+    12_residual_learning_20_             X                                        
     elman_net_with_attention_34_         ✓                                        
     11_deconvolution_11_                 ✓                                        
     semi_supervised_learning_VAT_37_     X     Failed to compare inferring result.
@@ -351,7 +669,7 @@ Count 34/37
     LSTM_auto_encoder_24_                ✓                                        
     02_binary_cnn_15_                    ✓                                        
     01_logistic_regression_9_            ✓                                        
-    12_residual_learning_19_             ✓                                        
+    12_residual_learning_19_             X                                        
     LeNet_36_                            ✓                                        
     elman_net_21_                        ✓                                        
     10_deep_mlp_14_                      ✓                                        
