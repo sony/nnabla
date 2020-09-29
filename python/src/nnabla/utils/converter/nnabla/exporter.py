@@ -28,6 +28,54 @@ from nnabla.utils import nnabla_pb2
 from nnabla.logger import logger
 
 
+def rename_square_bracket(nnp):
+    def get_renamed(str):
+        ret_str = str.replace(']', '').replace('[', '_')
+        if ret_str != str:
+            logger.debug("{} --> {}".format(str, ret_str))
+        return ret_str
+
+    def get_renamed_list(func, field, field_name):
+        fields = [get_renamed(x) for x in field]
+        func.ClearField(field_name)
+        field.extend(fields)
+
+    def has_expanded():
+        expanded = True
+        for n in nnp.network:
+            if len(n.repeat_info) > 0:
+                expanded = False
+        return expanded
+
+    if not has_expanded():
+        return
+
+    # check the name of nnp.parameter
+    for param in nnp.parameter:
+        param.variable_name = get_renamed(param.variable_name)
+
+    # check the name of network
+    for n in nnp.network:
+        for v in n.variable:
+            v.name = get_renamed(v.name)
+        for f in n.function:
+            fields = [get_renamed(x) for x in f.input]
+            f.ClearField("input")
+            f.input.extend(fields)
+            fields = [get_renamed(x) for x in f.output]
+            f.ClearField("output")
+            f.output.extend(fields)
+
+    # check the name of optimizer
+    for o in nnp.optimizer:
+        for p in o.parameter_variable:
+            p.variable_name = get_renamed(p.variable_name)
+    # check the name of executor
+    for e in nnp.executor:
+        for e in e.parameter_variable:
+            e.variable_name = get_renamed(e.variable_name)
+
+
 class NnpExporter:
     def __init__(self, nnp, batch_size, parameter_type='protobuf', force=False):
         self._parameter_type = parameter_type
@@ -37,54 +85,7 @@ class NnpExporter:
 
         # This has to be done to workaround sDeepConsolePrototype
         # weird naming rule.
-        self._rename_square_bracket(self._nnp)
-
-    def _rename_square_bracket(self, nnp):
-        def get_renamed(str):
-            ret_str = str.replace(']', '').replace('[', '_')
-            if ret_str != str:
-                logger.debug("{} --> {}".format(str, ret_str))
-            return ret_str
-
-        def get_renamed_list(func, field, field_name):
-            fields = [get_renamed(x) for x in field]
-            func.ClearField(field_name)
-            field.extend(fields)
-
-        def has_expanded():
-            expanded = True
-            for n in nnp.network:
-                if len(n.repeat_info) > 0:
-                    expanded = False
-            return expanded
-
-        if not has_expanded():
-            return
-
-        # check the name of nnp.parameter
-        for param in nnp.parameter:
-            param.variable_name = get_renamed(param.variable_name)
-
-        # check the name of network
-        for n in nnp.network:
-            for v in n.variable:
-                v.name = get_renamed(v.name)
-            for f in n.function:
-                fields = [get_renamed(x) for x in f.input]
-                f.ClearField("input")
-                f.input.extend(fields)
-                fields = [get_renamed(x) for x in f.output]
-                f.ClearField("output")
-                f.output.extend(fields)
-
-        # check the name of optimizer
-        for o in nnp.optimizer:
-            for p in o.parameter_variable:
-                p.variable_name = get_renamed(p.variable_name)
-        # check the name of executor
-        for e in nnp.executor:
-            for e in e.parameter_variable:
-                e.variable_name = get_renamed(e.variable_name)
+        rename_square_bracket(self._nnp)
 
     def _write_nntxt(self, filename, nnp):
         with open(filename, 'w') as f:
