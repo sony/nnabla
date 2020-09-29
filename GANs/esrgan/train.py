@@ -147,8 +147,7 @@ def main():
         index = 0
         # Training loop for psnr rrdb model
         while index < train_size:
-            if comm.rank == 0:
-                current_iter += comm.n_procs
+            current_iter += comm.n_procs
             train_gt.d, train_lq.d = data_iterator_train.next()
 
             if not conf.model.esrgan:
