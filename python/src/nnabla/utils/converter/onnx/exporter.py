@@ -1248,8 +1248,9 @@ class OnnxExporter:
         dims = [1] * (len(input_shape) - len(dims)) + dims
 
         roi_out = fork_name(func.input[0]) + '_roi'
+        roi_value = [0] * len(input_shape) + [1] * len(input_shape)
         add_param(self._model_proto.graph, roi_out,
-                  TensorProto.FLOAT, [0], b'')
+                  TensorProto.FLOAT, [2 * len(input_shape)], np.array(roi_value, dtype=np.float32).tostring())
 
         scale_out = fork_name(func.input[0]) + '_scale'
         add_param(self._model_proto.graph, scale_out, TensorProto.FLOAT,
@@ -1260,6 +1261,8 @@ class OnnxExporter:
             [func.input[0], roi_out, scale_out],
             func.output,
             mode='nearest',
+            coordinate_transformation_mode='asymmetric',
+            nearest_mode='floor'
         )
 
         return [n]
