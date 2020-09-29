@@ -663,7 +663,8 @@ def _create_dataset(
                     else:
                         with data_iterator_csv_dataset(uri, batch_size, shuffle, rng=rng, normalize=False, cache_dir=cache_dir, with_memory_cache=False) as di:
                             pass
-
+                if comm:
+                    comm.barrier()
             rng = numpy.random.RandomState(dataset_index)
             dataset.data_iterator = (lambda: data_iterator_cache(
                 cache_dir, batch_size, shuffle, rng=rng, normalize=dataset.normalize, with_memory_cache=use_memory_cache))

@@ -19,7 +19,7 @@ import csv
 import pytest
 import tempfile
 from shutil import rmtree
-from contextlib import contextmanager
+from contextlib import contextmanager, closing
 
 # from nnabla
 from nnabla.config import nnabla_config
@@ -93,21 +93,21 @@ def test_create_cache(test_data_csv_csv_20,
         cc.create(tmpdir, normalize=normalize)
 
         # get cache data source and csv file data source
-        cache_source = CacheDataSource(tmpdir)
-        csv_source = CsvDataSource(csvfilename, normalize=normalize)
+        with closing(CacheDataSource(tmpdir)) as cache_source:
+            csv_source = CsvDataSource(csvfilename, normalize=normalize)
 
-        check_relative_csv_file_result(cache_file_fmt, csvfilename, tmpdir)
+            check_relative_csv_file_result(cache_file_fmt, csvfilename, tmpdir)
 
-        assert cache_source.size == csv_source.size
-        assert set(cache_source.variables) == set(csv_source.variables)
+            assert cache_source.size == csv_source.size
+            assert set(cache_source.variables) == set(csv_source.variables)
 
-        if shuffle:
-            with open(os.path.join(tmpdir, 'order.csv'), 'r') as f:
-                csv_source._order = [int(row[1]) for row in csv.reader(f)]
+            if shuffle:
+                with open(os.path.join(tmpdir, 'order.csv'), 'r') as f:
+                    csv_source._order = [int(row[1]) for row in csv.reader(f)]
 
-        for _ in range(cache_source.size):
-            cache_data = associate_variables_and_data(cache_source)
-            csv_data = associate_variables_and_data(csv_source)
+            for _ in range(cache_source.size):
+                cache_data = associate_variables_and_data(cache_source)
+                csv_data = associate_variables_and_data(csv_source)
 
-            for v in cache_source.variables:
-                assert_allclose(cache_data[v], csv_data[v])
+                for v in cache_source.variables:
+                    assert_allclose(cache_data[v], csv_data[v])

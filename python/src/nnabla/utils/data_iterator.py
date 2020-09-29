@@ -105,12 +105,14 @@ class DataIterator(object):
         return self
 
     def __exit__(self, type, value, traceback):
-        pass
+        self.close()
 
     def close(self):
         if not self._closed:
             if six.PY3:
                 atexit.unregister(self.close)
+            if self._use_thread:
+                self._next_thread.join()
             self._data_source.close()
             self._closed = True
 
