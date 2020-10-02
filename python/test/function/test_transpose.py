@@ -14,6 +14,7 @@
 
 import pytest
 import numpy as np
+import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context
 
@@ -36,14 +37,22 @@ def ref_transpose(x, axes):
     ((4, 2, 5, 2, 3), (3, 0, 1, 2, 4)),
     ((4, 2, 3, 2, 3, 3), (5, 3, 0, 1, 2, 4)),
     ((4, 4, 4, 4, 4), (4, 3, 2, 1, 0)),
+    ((7, 16, 2, 2, 224, 448), (0, 1, 4, 2, 5, 3)),
 ])
 def test_transpose_forward_backward(seed, inshape, axes, ctx, func_name):
     from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
-    # Input
-    inputs = [rng.randn(*inshape).astype(np.float32)]
-    function_tester(rng, F.transpose, ref_transpose, inputs, func_args=[
-                    axes], ctx=ctx, func_name=func_name, atol_f=1e-6, atol_b=1e-2)
+    if np.product(inshape) > 1000000:
+        with nn.context_scope(ctx):
+            x = nn.Variable(inshape)
+            y = F.transpose(x, axes)
+            y.forward()
+            assert y.d.shape == np.ndarray(inshape).transpose(axes).shape
+    else:
+        inputs = [rng.randn(*inshape).astype(np.float32)]
+        function_tester(rng, F.transpose, ref_transpose, inputs,
+                        func_args=[axes], ctx=ctx, func_name=func_name,
+                        atol_f=1e-6, atol_b=1e-2)
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
