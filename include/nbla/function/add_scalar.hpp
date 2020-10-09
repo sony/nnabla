@@ -39,6 +39,6 @@ Outputs:
 @param val Value of the scalar.
 \ingroup FunctionImplGrp
  */
-NBLA_DEFINE_TRANSFORM_UNARY_1(AddScalar, x + (T)a0, dy, false, double);
+NBLA_DEFINE_TRANSFORM_UNARY_1_INPLACE(AddScalar, x + (T)a0, dy, false, double);
 }
 #endif

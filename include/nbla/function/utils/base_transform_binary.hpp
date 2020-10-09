@@ -32,13 +32,23 @@ template <typename... Args>
 class BaseTransformBinary : public BaseFunction<Args...> {
 protected:
   shared_ptr<Function> f_bc0_, f_bc1_;
+  bool inplace_;
 
 public:
-  BaseTransformBinary(const Context &ctx, Args... args)
-      : BaseFunction<Args...>(ctx, args...) {}
+  BaseTransformBinary(const Context &ctx, bool inplace, Args... args)
+      : BaseFunction<Args...>(ctx, args...), inplace_(inplace) {}
   virtual ~BaseTransformBinary() {}
   virtual int min_inputs() { return 2; }
   virtual int min_outputs() { return 1; }
+  virtual int inplace_data(int i) const {
+    if (!inplace_ || i > 0)
+      return Function::NOT_INPLACE;
+    return Function::INPLACE;
+  }
+  virtual int inplace_data_with(int i) const {
+    // 0 is okay because never be called in the case of i != 0.
+    return 0;
+  }
 
 protected:
   virtual void setup_impl(const Variables &inputs, const Variables &outputs) {
@@ -67,6 +77,16 @@ protected:
       oshape[i] = std::max(s0[i], s1[i]);
     }
     outputs[0]->reshape(oshape, true);
+
+    // check in-place conditions
+    if (inplace_) {
+      NBLA_CHECK(s0 == oshape, error_code::value,
+                 "%s: Shapes of inputs[0] and output must match when "
+                 "`inplace == true`.",
+                 this->name().c_str());
+      outputs[0]->data()->set_array(inputs[0]->data()->array());
+    }
+
     if (bc0) {
       f_bc0_ = create_Broadcast(this->ctx_,
                                 vector<int>(oshape.cbegin(), oshape.cend()));
@@ -84,8 +104,9 @@ protected:
   BinaryOp binary_op_;
 
 public:
-  TransformBinary(const Context &ctx, Args... args)
-      : BaseTransformBinary<Args...>(ctx, args...), binary_op_(args...) {}
+  TransformBinary(const Context &ctx, bool inplace, Args... args)
+      : BaseTransformBinary<Args...>(ctx, inplace, args...),
+        binary_op_(args...) {}
   virtual ~TransformBinary() {}
   virtual vector<dtypes> in_types() {
     return vector<dtypes>{get_dtype<T>(), get_dtype<T>()};
@@ -110,12 +131,14 @@ public:
                "Forward operation is not implemented.");
   }
   template <typename T>
-  inline T g0(const T dy, const T x0, const T x1, const T y) {
+  inline T g0(const T dy, const T x0, const T x1, const T y,
+              const bool inplace) {
     NBLA_ERROR(error_code::not_implemented,
                "Backward operation for input 0 is not implemented.");
   }
   template <typename T>
-  inline T g1(const T dy, const T x0, const T x1, const T y) {
+  inline T g1(const T dy, const T x0, const T x1, const T y,
+              const bool inplace) {
     NBLA_ERROR(error_code::not_implemented,
                "Backward operation for input 1 is not implemented.");
   }
@@ -130,19 +153,19 @@ void transform_binary(int size, const T *x0, const T *x1, T *y, BinaryOp op) {
 
 template <typename T, typename BinaryOp, bool accum>
 void transform_binary_grad0(int size, const T *dy, const T *x0, const T *x1,
-                            const T *y, T *g0, BinaryOp op) {
+                            const T *y, T *g0, bool inplace, BinaryOp op) {
   for (int idx = 0; idx < size; ++idx) {
-    g0[idx] =
-        (accum ? g0[idx] : (T)0) + op.g0(dy[idx], x0[idx], x1[idx], y[idx]);
+    g0[idx] = (accum ? g0[idx] : (T)0) +
+              op.g0(dy[idx], x0[idx], x1[idx], y[idx], inplace);
   }
 }
 
 template <typename T, typename BinaryOp, bool accum>
 void transform_binary_grad1(int size, const T *dy, const T *x0, const T *x1,
-                            const T *y, T *g1, BinaryOp op) {
+                            const T *y, T *g1, bool inplace, BinaryOp op) {
   for (int idx = 0; idx < size; ++idx) {
-    g1[idx] =
-        (accum ? g1[idx] : (T)0) + op.g1(dy[idx], x0[idx], x1[idx], y[idx]);
+    g1[idx] = (accum ? g1[idx] : (T)0) +
+              op.g1(dy[idx], x0[idx], x1[idx], y[idx], inplace);
   }
 }
 
@@ -162,7 +185,7 @@ void TransformBinary<T, BinaryOp, Args...>::forward_impl(
   // Binary transform
   const T *x0 = _get((this->f_bc0_) ? (&o_bc0) : (inputs[0]));
   const T *x1 = _get((this->f_bc1_) ? (&o_bc1) : (inputs[1]));
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, !this->inplace_);
   transform_binary(outputs[0]->size(), x0, x1, y, binary_op_);
 }
 
@@ -197,10 +220,10 @@ void TransformBinary<T, BinaryOp, Args...>::backward_impl(
                             : _cast_grad(inputs[0], !accum[0]);
     if ((!this->f_bc0_) && accum[0])
       transform_binary_grad0<T, BinaryOp, true>(size, dy, x0, x1, y, dx0,
-                                                binary_op_);
+                                                this->inplace_, binary_op_);
     else
       transform_binary_grad0<T, BinaryOp, false>(size, dy, x0, x1, y, dx0,
-                                                 binary_op_);
+                                                 this->inplace_, binary_op_);
     // Broadcast backward
     if (this->f_bc0_)
       nbla::backward(this->f_bc0_, Variables{inputs[0]}, Variables{&o_bc0},
@@ -221,10 +244,10 @@ void TransformBinary<T, BinaryOp, Args...>::backward_impl(
                             : _cast_grad(inputs[1], !accum[1]);
     if ((!this->f_bc1_) && accum[1])
       transform_binary_grad1<T, BinaryOp, true>(size, dy, x0, x1, y, dx1,
-                                                binary_op_);
+                                                this->inplace_, binary_op_);
     else
       transform_binary_grad1<T, BinaryOp, false>(size, dy, x0, x1, y, dx1,
-                                                 binary_op_);
+                                                 this->inplace_, binary_op_);
     // Broadcast backward
     if (this->f_bc1_)
       nbla::backward(this->f_bc1_, Variables{inputs[1]}, Variables{&o_bc1},
@@ -241,7 +264,8 @@ void TransformBinary<T, BinaryOp, Args...>::backward_impl(
   }
 #define NBLA_DEFINE_BINARY_OP_BACKWARD(NUM, GOP)                               \
   template <typename T>                                                        \
-  inline T g##NUM(const T dy, const T x0, const T x1, const T y) {             \
+  inline T g##NUM(const T dy, const T x0, const T x1, const T y,               \
+                  const bool inplace) {                                        \
     return GOP;                                                                \
   }
 #define NBLA_DEFINE_TRANSFORM_BINARY_CLASS_COMMON(NAME, DEP_Y_0, DEP_Y_1)      \
@@ -275,9 +299,21 @@ public:                                                                        \
   template <typename T>                                                        \
   class NAME : public TransformBinary<T, NAME##BinaryOp> {                     \
     NBLA_DEFINE_TRANSFORM_BINARY_CLASS_COMMON(NAME, DEP_Y_0, DEP_Y_1)          \
-    NAME(const Context &ctx) : TransformBinary<T, NAME##BinaryOp>(ctx) {}      \
+    NAME(const Context &ctx)                                                   \
+        : TransformBinary<T, NAME##BinaryOp>(ctx, false) {}                    \
     virtual shared_ptr<Function> copy() const {                                \
       return create_##NAME(this->ctx_);                                        \
+    }                                                                          \
+  }
+
+#define NBLA_DEFINE_TRANSFORM_BINARY_CLASS_INPLACE(NAME, DEP_Y_0, DEP_Y_1)     \
+  template <typename T>                                                        \
+  class NAME : public TransformBinary<T, NAME##BinaryOp> {                     \
+    NBLA_DEFINE_TRANSFORM_BINARY_CLASS_COMMON(NAME, DEP_Y_0, DEP_Y_1)          \
+    NAME(const Context &ctx, bool inplace)                                     \
+        : TransformBinary<T, NAME##BinaryOp>(ctx, inplace) {}                  \
+    virtual shared_ptr<Function> copy() const {                                \
+      return create_##NAME(this->ctx_, this->inplace_);                        \
     }                                                                          \
   }
 
@@ -290,6 +326,12 @@ public:                                                                        \
   NBLA_REGISTER_FUNCTION_HEADER(NAME);                                         \
   NBLA_DEFINE_BINARY_OP(NAME, OP, GOP0, GOP1);                                 \
   NBLA_DEFINE_TRANSFORM_BINARY_CLASS(NAME, DEP_Y_0, DEP_Y_1)
+
+#define NBLA_DEFINE_TRANSFORM_BINARY_INPLACE(NAME, OP, GOP0, GOP1, DEP_Y_0,    \
+                                             DEP_Y_1)                          \
+  NBLA_REGISTER_FUNCTION_HEADER(NAME, bool);                                   \
+  NBLA_DEFINE_BINARY_OP(NAME, OP, GOP0, GOP1);                                 \
+  NBLA_DEFINE_TRANSFORM_BINARY_CLASS_INPLACE(NAME, DEP_Y_0, DEP_Y_1)
 
 // ----------------------------------------------------------------------------
 // One argument
@@ -309,7 +351,7 @@ public:                                                                        \
   class NAME : public TransformBinary<T, NAME##BinaryOp, A0> {                 \
     NBLA_DEFINE_TRANSFORM_BINARY_CLASS_COMMON(NAME, DEP_Y_0, DEP_Y_1)          \
     NAME(const Context &ctx, const A0 &a0)                                     \
-        : TransformBinary<T, NAME##BinaryOp, A0>(ctx, a0) {}                   \
+        : TransformBinary<T, NAME##BinaryOp, A0>(ctx, false, a0) {}            \
     virtual shared_ptr<Function> copy() const {                                \
       return create_##NAME(this->ctx_, std::get<0>(this->args_));              \
     }                                                                          \

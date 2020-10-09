@@ -39,8 +39,10 @@ Outputs:
 @param val Value of the scalar.
 \ingroup FunctionImplGrp
  */
-NBLA_DEFINE_TRANSFORM_UNARY_1(PowScalar, std::pow(x, (T)a0),
-                              dy *(T)a0 *std::pow(x, (T)a0 - (T)1), false,
-                              double);
+NBLA_DEFINE_TRANSFORM_UNARY_1_INPLACE(
+    PowScalar, std::pow(x, (T)a0),
+    dy *(T)a0 *std::pow((inplace ? std::pow(y, (T)1 / (T)a0) : x),
+                        (T)a0 - (T)1),
+    false, double);
 }
 #endif

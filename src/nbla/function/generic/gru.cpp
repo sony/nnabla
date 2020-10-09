@@ -216,7 +216,7 @@ GRU<T>::gru_cell(shared_ptr<CgVariable> x, shared_ptr<CgVariable> h,
       make_shared<CgFunction>(create_Transpose(this->ctx_, t_axes));
   auto affine4 = make_shared<CgFunction>(create_Affine(this->ctx_, 1));
   auto tanh = make_shared<CgFunction>(create_Tanh(this->ctx_));
-  auto mul2 = make_shared<CgFunction>(create_Mul2(this->ctx_));
+  auto mul2 = make_shared<CgFunction>(create_Mul2(this->ctx_, false));
   auto add2 = make_shared<CgFunction>(create_Add2(this->ctx_, true));
 
   vector<CgVariablePtr> param1;
@@ -245,8 +245,8 @@ GRU<T>::gru_cell(shared_ptr<CgVariable> x, shared_ptr<CgVariable> h,
   auto param3 = connect(mul2, {r_t[0], param2[0]}, 1);
   auto n_t = connect(tanh, {connect(add2, {param1[0], param3[0]}, 1)[0]}, 1);
 
-  auto mul2_1 = make_shared<CgFunction>(create_Mul2(this->ctx_));
-  auto mul2_2 = make_shared<CgFunction>(create_Mul2(this->ctx_));
+  auto mul2_1 = make_shared<CgFunction>(create_Mul2(this->ctx_, false));
+  auto mul2_2 = make_shared<CgFunction>(create_Mul2(this->ctx_, false));
   auto add2_1 = make_shared<CgFunction>(create_Add2(this->ctx_, true));
   auto r_sub_scalar = make_shared<CgFunction>(create_RSubScalar(this->ctx_, 1));
 

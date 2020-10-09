@@ -435,49 +435,49 @@ cdef class NdArray:
     def __iadd__(self, x):
         import nnabla.functions as F
         if isinstance(x, (NdArray, Variable)):
-            F.add2(self, x, outputs=[self])
+            F.add2(self, x, inplace=True)
         else:
-            F.add_scalar(self, x, outputs=[self])
+            F.add_scalar(self, x, inplace=True)
         return self
 
     def __isub__(self, x):
         import nnabla.functions as F
         if isinstance(x, (NdArray, Variable)):
-            F.sub2(self, x, outputs=[self])
+            F.sub2(self, x, inplace=True)
         else:
-            F.add_scalar(self, -x, outputs=[self])
+            F.add_scalar(self, -x, inplace=True)
         return self
 
     def __imul__(self, x):
         import nnabla.functions as F
         if isinstance(x, (NdArray, Variable)):
-            F.mul2(self, x, outputs=[self])
+            F.mul2(self, x, inplace=True)
         else:
-            F.mul_scalar(self, x, outputs=[self])
+            F.mul_scalar(self, x, inplace=True)
         return self
 
     def __idiv__(self, x):
         import nnabla.functions as F
         if isinstance(x, (NdArray, Variable)):
-            F.div2(self, x, outputs=[self])
+            F.div2(self, x, inplace=True)
         else:
-            F.mul_scalar(self, 1. / x, outputs=[self])
+            F.mul_scalar(self, 1. / x, inplace=True)
         return self
 
     def __itruediv__(self, x):
         import nnabla.functions as F
         if isinstance(x, (NdArray, Variable)):
-            F.div2(self, x, outputs=[self])
+            F.div2(self, x, inplace=True)
         else:
-            F.mul_scalar(self, 1. / x, outputs=[self])
+            F.mul_scalar(self, 1. / x, inplace=True)
         return self
 
     def __ipow__(self, x):
         import nnabla.functions as F
         if isinstance(x, (NdArray, Variable)):
-            F.pow2(self, x, outputs=[self])
+            F.pow2(self, x, inplace=True)
         else:
-            F.pow_scalar(self, x, outputs=[self])
+            F.pow_scalar(self, x, inplace=True)
         return self
 
     def copy_from(self, NdArray arr, use_current_context=True):

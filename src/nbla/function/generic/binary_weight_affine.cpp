@@ -65,9 +65,9 @@ void BinaryWeightAffine<T>::setup_impl(const Variables &inputs,
   transpose_ = create_Transpose(this->ctx_, vector<int>{1, 0});
   abs_ = create_Abs(this->ctx_);
   sum_ = create_Sum(this->ctx_, vector<int>{1}, false);
-  div_ = create_MulScalar(this->ctx_, (T)1 / w_row_);
+  div_ = create_MulScalar(this->ctx_, (T)1 / w_row_, false);
   bin_ = create_Sign(this->ctx_, quantize_zero_to_);
-  mul_ = create_Mul2(this->ctx_);
+  mul_ = create_Mul2(this->ctx_, false);
   scaled_weights_.reshape(shape_weights, true);
 }
 

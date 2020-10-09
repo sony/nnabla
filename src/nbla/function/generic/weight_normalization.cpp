@@ -48,11 +48,11 @@ void WeightNormalization<T>::setup_impl(const Variables &inputs,
              ndim);
 
   // functions
-  pow_scalar_0_ = create_PowScalar(ctx_, 2);
-  add_scalar_ = create_AddScalar(ctx_, eps_);
-  pow_scalar_1_ = create_PowScalar(ctx_, -0.5);
-  mul2_0_ = create_Mul2(ctx_);
-  mul2_1_ = create_Mul2(ctx_);
+  pow_scalar_0_ = create_PowScalar(ctx_, 2, false);
+  add_scalar_ = create_AddScalar(ctx_, eps_, false);
+  pow_scalar_1_ = create_PowScalar(ctx_, -0.5, false);
+  mul2_0_ = create_Mul2(ctx_, false);
+  mul2_1_ = create_Mul2(ctx_, false);
 
   vector<int> axes;
   for (auto i = 0; i < ndim; i++) {

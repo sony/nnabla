@@ -32,6 +32,24 @@ def test_variable_arithmetic_ops2(seed, op):
         ref_z = eval("vx.d {0} vy.d".format(op))
         assert_allclose(ref_z, vz.d)
 
+    # Inplace test
+    with nn.auto_forward():
+        # Make function reference count of `vx` to 1.
+        vx = nn.functions.identity(vx)
+        vx_bak = vx
+        if op == "+":
+            vx += vy
+        elif op == "-":
+            vx -= vy
+        elif op == "*":
+            vx *= vy
+        elif op == "/":
+            vx /= vy
+        elif op == "**":
+            vx **= vy
+        assert_allclose(vx.d, vz.d)
+        assert vx is not vx_bak
+
 
 @pytest.mark.parametrize("seed", [313, 314])
 @pytest.mark.parametrize("op", ["+", "-", "*", "/", "**"])
@@ -45,6 +63,24 @@ def test_variable_arithmetic_scalar_ops(seed, op):
         vz = eval("vx {0} a".format(op))
         ref_z = eval("vx.d {0} a".format(op))
         assert_allclose(ref_z, vz.d)
+
+    # Inplace test
+    with nn.auto_forward():
+        # Make function reference count of `vx` to 1.
+        vx = nn.functions.identity(vx)
+        vx_bak = vx
+        if op == "+":
+            vx += a
+        elif op == "-":
+            vx -= a
+        elif op == "*":
+            vx *= a
+        elif op == "/":
+            vx /= a
+        elif op == "**":
+            vx **= a
+        assert_allclose(vx.d, vz.d)
+        assert vx is not vx_bak
 
 
 @pytest.mark.parametrize("seed", [313, 314])
