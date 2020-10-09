@@ -127,7 +127,6 @@ void SwapInOutScheduler::end_scheduling() {
 //  Pre/post hook of function and update
 //----------------------------------------------------------------
 void SwapInOutScheduler::pre_function_callback(const CgFunctionPtr &ptr) {
-  // cout << "function_ptr: " << (uint64_t) &ptr << endl;
   pre_callback();
 }
 
@@ -986,9 +985,9 @@ void SwapInOutScheduler::swap_out_first_iter() {
         // If shared_ptr exists only in said_map (= use_count() == 1),
         // this shared_ptr owns intermideate buffer.
         r->temporary_buffer = true;
-      }
-
-      if (auto p = r->sawptr.lock()) {
+        auto p = r->sawptr.lock();
+        p->clear();
+      }else if (auto p = r->sawptr.lock()) {
         // The array is not cleared yet. Swap it out.
         if (is_not_cleared_yet(p))
           p->cast(p->dtype(), host_ctx, false);
