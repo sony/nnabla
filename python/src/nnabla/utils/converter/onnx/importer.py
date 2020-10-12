@@ -426,7 +426,20 @@ def add_tensor_as_parameter(pb, tensor):
             p.data.extend(np.fromstring(tensor.raw_data, dtype=np.bool))
         else:
             raise ValueError("bool data not found for {}".format(tensor.name))
-
+    elif tensor.data_type == TensorProto.INT8:
+        if tensor.raw_data:
+            p.data.extend(np.fromstring(tensor.raw_data, dtype=np.int8))
+        elif len(tensor.int32_data) > 0:
+            p.data.extend(tensor.int32_data)
+        else:
+            raise ValueError("int8 data not found for {}".format(tensor.name))
+    elif tensor.data_type == TensorProto.UINT8:
+        if tensor.raw_data:
+            p.data.extend(np.fromstring(tensor.raw_data, dtype=np.uint8))
+        elif len(tensor.int32_data) > 0:
+            p.data.extend(tensor.int32_data)
+        else:
+            raise ValueError("uint8 data not found for {}".format(tensor.name))
     else:
         raise ValueError("Unsupported tensor data type for {}: {}"
                          .format(tensor.name, tensor.data_type))
@@ -606,6 +619,8 @@ class OnnxImporter:
             "ThresholdedRelu": self.ThresholdedRelu,
             "IsInf": partial(self.GeneralOperator, 'IsInf'),
             "Slice": partial(self.Slice, '10'),
+            "QuantizeLinear": self.QuantizeLinear,
+            "DequantizeLinear": self.DequantizeLinear,
         }
         self.table_op_set_10 = dict(
             self.table_op_set_9, **self.table_op_set_10)
@@ -676,14 +691,14 @@ class OnnxImporter:
                                 data.extend(np.fromstring(
                                     attr.t.raw_data, dtype=np.int64))
                             elif attr.t.int64_data:
-                                data.dim.extend(attr.t.int64_data)
+                                data.extend(attr.t.int64_data)
                             break
                         elif attr.t.data_type == TensorProto.FLOAT:
                             if attr.t.raw_data:
                                 data.extend(np.fromstring(
                                     attr.t.raw_data, dtype=np.float32))
                             elif attr.t.float_data:
-                                data.dim.extend(attr.t.float_data)
+                                data.extend(attr.t.float_data)
                             break
                         elif attr.t.data_type == TensorProto.BOOL:
                             if attr.t.raw_data:
@@ -699,14 +714,14 @@ class OnnxImporter:
                         data.extend(np.fromstring(
                             init.raw_data, dtype=np.int64))
                     elif init.int64_data:
-                        data.dim.extend(init.int64_data)
+                        data.extend(init.int64_data)
                     break
                 elif data_type == TensorProto.FLOAT:
                     if init.raw_data:
                         data.extend(np.fromstring(
                             init.raw_data, dtype=np.float32))
                     elif init.float_data:
-                        data.dim.extend(init.float_data)
+                        data.extend(init.float_data)
                     break
                 elif data_type == TensorProto.BOOL:
                     if init.raw_data:
@@ -2845,6 +2860,67 @@ class OnnxImporter:
         concatenate_p.axis = axis
         self._shape_output[n.output[0]] = [
             len(indices) if index == axis else i for index, i in enumerate(input_shape)]
+        func_list.append(func)
+
+    def QuantizeLinear(self, func_list, n):
+        TENSOR_TYPE_TO_INT = {
+            TensorProto.INT8: 1,
+            TensorProto.UINT8: 2,
+        }
+        func = self.generate_default_function("QuantizeLinear", n)
+        qlp = func.quantize_linear_param
+        qlp.round_mode = "HALF_TO_EVEN"
+        qlp.narrow_range = False
+        input_shape = self.get_func_input_shape(n.input[0])
+        axis = 1
+        for attr in n.attribute:
+            if attr.name == "axis":
+                if attr.i < 0:
+                    axis = len(input_shape) + attr.i
+                else:
+                    axis = attr.i
+
+        if len(n.input) < 2:
+            zero_point = fork_name(n.input[0]) + "_zero_point"
+            zero_point_shape = [1] * len(input_shape)
+            zero_point_shape[axis] = input_shape[axis]
+            create_parameter_variable(self._pb, zero_point, zero_point_shape, [
+                                      0] * input_shape[axis])
+            self._param_vars[zero_point] = None
+            func.input.append(zero_point)
+            qlp.dtype = 2
+        else:
+            dtype = TensorProto.UINT8
+            for init in self._graph.initializer:
+                if init.name == n.input[2]:
+                    dtype = init.data_type
+                    break
+            qlp.dtype = TENSOR_TYPE_TO_INT[dtype]
+
+        self._shape_output[n.output[0]] = input_shape
+        func_list.append(func)
+
+    def DequantizeLinear(self, func_list, n):
+        func = self.generate_default_function("DequantizeLinear", n)
+        input_shape = self.get_func_input_shape(n.input[0])
+        axis = 1
+        for attr in n.attribute:
+            if attr.name == "axis":
+                if attr.i < 0:
+                    axis = len(input_shape) + attr.i
+                else:
+                    axis = attr.i
+
+        if len(n.input) < 2:
+            zero_point = fork_name(n.input[0]) + "_zero_point"
+            zero_point_shape = [1] * len(input_shape)
+            zero_point_shape[axis] = input_shape[axis]
+            create_parameter_variable(self._pb, zero_point, zero_point_shape, [
+                                      0] * input_shape[axis])
+            self._param_vars[zero_point] = None
+            func.input.append(zero_point)
+
+        self._shape_output[n.output[0]] = input_shape
         func_list.append(func)
 
     def convert_to_functions(self, n):
