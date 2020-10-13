@@ -19,7 +19,8 @@
 
 namespace nbla {
 
-NBLA_REGISTER_SOLVER_HEADER(RMSpropgraves, float /*lr*/, float /*decay*/, float /*momentum*/, float /*eps*/);
+NBLA_REGISTER_SOLVER_HEADER(RMSpropgraves, float /*lr*/, float /*decay*/,
+                            float /*momentum*/, float /*eps*/);
 
 /** RMSpropgraves. This is defined as
 
@@ -43,31 +44,31 @@ http://arxiv.org/pdf/1308.0850v5.pdf
 
 \ingroup SolverImplGrp
 */
-template <typename T>
-class NBLA_API RMSpropgraves : public Solver {
+template <typename T> class NBLA_API RMSpropgraves : public Solver {
 public:
-    RMSpropgraves(const Context& ctx, float lr, float decay, float momentum, float eps);
-    virtual ~RMSpropgraves();
-    virtual string name() { return "RMSpropgraves"; }
+  RMSpropgraves(const Context &ctx, float lr, float decay, float momentum,
+                float eps);
+  virtual ~RMSpropgraves();
+  virtual string name() { return "RMSpropgraves"; }
 
-    virtual float learning_rate() { return lr_; }
-    virtual void set_learning_rate(float lr) { lr_ = lr; }
+  virtual float learning_rate() { return lr_; }
+  virtual void set_learning_rate(float lr) { lr_ = lr; }
 
 protected:
-    float lr_; ///< learning rate
-    float decay_; ///< decay factor
-    float momentum_; ///< momentum factor
-    float eps_; ///< small value
+  float lr_;       ///< learning rate
+  float decay_;    ///< decay factor
+  float momentum_; ///< momentum factor
+  float eps_;      ///< small value
 
-    virtual void set_state_impl(const string& key, VariablePtr param);
-    virtual void remove_state_impl(const string& key);
-    virtual void update_impl(const string& key, VariablePtr param);
-    NBLA_DECL_WEIGHT_DECAY();
-    NBLA_DECL_CLIP_GRAD_BY_NORM();
-    NBLA_DECL_CHECK_INF_GRAD();
-    NBLA_DECL_CHECK_NAN_GRAD();
-    NBLA_DECL_CHECK_INF_OR_NAN_GRAD();
-    NBLA_DECL_SCALE_GRAD();
+  virtual void set_state_impl(const string &key, VariablePtr param);
+  virtual void remove_state_impl(const string &key);
+  virtual void update_impl(const string &key, VariablePtr param);
+  NBLA_DECL_WEIGHT_DECAY();
+  NBLA_DECL_CLIP_GRAD_BY_NORM();
+  NBLA_DECL_CHECK_INF_GRAD();
+  NBLA_DECL_CHECK_NAN_GRAD();
+  NBLA_DECL_CHECK_INF_OR_NAN_GRAD();
+  NBLA_DECL_SCALE_GRAD();
 };
 }
 #endif

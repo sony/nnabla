@@ -26,7 +26,8 @@ using std::make_shared;
 NBLA_REGISTER_SOLVER_SOURCE(RMSpropgraves, float, float, float, float);
 
 template <typename T>
-RMSpropgraves<T>::RMSpropgraves(const Context &ctx, float lr, float decay, float momentum, float eps)
+RMSpropgraves<T>::RMSpropgraves(const Context &ctx, float lr, float decay,
+                                float momentum, float eps)
     : Solver(ctx), lr_(lr), decay_(decay), momentum_(momentum), eps_(eps) {}
 
 template <typename T> RMSpropgraves<T>::~RMSpropgraves() {}
@@ -45,7 +46,8 @@ void RMSpropgraves<T>::set_state_impl(const string &key, VariablePtr param) {
   states_.insert({key, state});
 }
 
-template <typename T> void RMSpropgraves<T>::remove_state_impl(const string &key) {
+template <typename T>
+void RMSpropgraves<T>::remove_state_impl(const string &key) {
   states_.erase(key);
 }
 
@@ -64,7 +66,8 @@ void RMSpropgraves<T>::update_impl(const string &key, VariablePtr param) {
   for (int s = 0; s < size; ++s) {
     n[s] = decay_ * n[s] + (1 - decay_) * grad[s] * grad[s];
     g[s] = decay_ * g[s] + (1 - decay_) * grad[s];
-    d[s] = (momentum_) * d[s] - lr_ * grad[s] / (std::sqrt(n[s] - g[s] * g[s] + eps_));
+    d[s] = (momentum_)*d[s] -
+           lr_ * grad[s] / (std::sqrt(n[s] - g[s] * g[s] + eps_));
     data[s] += d[s];
   }
   auto &t = state.t;

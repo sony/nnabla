@@ -61,7 +61,8 @@ shared_ptr<nbla::Solver> OptimizerImpl::create_solver(const ::Solver &solver) {
   }
   if (solver.type() == "RMSpropgraves") {
     RMSpropgravesParameter param = solver.rmspropgraves_param();
-    return create_RMSpropgravesSolver(ctx_, param.lr(), param.decay(), param.momentum(), param.eps());
+    return create_RMSpropgravesSolver(ctx_, param.lr(), param.decay(),
+                                      param.momentum(), param.eps());
   }
   if (solver.type() == "Sgd") {
     SgdParameter param = solver.sgd_param();
