@@ -23,7 +23,7 @@ List of solvers
 .. autofunction:: Adadelta
 .. autofunction:: Adagrad
 .. autofunction:: RMSprop
-.. autofunction:: RMSpropgraves
+.. autofunction:: RMSpropGraves
 .. autofunction:: Adam
 .. autofunction:: AdaBound
 .. autofunction:: Adamax

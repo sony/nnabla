@@ -19,10 +19,10 @@
 
 namespace nbla {
 
-NBLA_REGISTER_SOLVER_HEADER(RMSpropgraves, float /*lr*/, float /*decay*/,
+NBLA_REGISTER_SOLVER_HEADER(RMSpropGraves, float /*lr*/, float /*decay*/,
                             float /*momentum*/, float /*eps*/);
 
-/** RMSpropgraves. This is defined as
+/** RMSpropGraves. This is defined as
 
 \f[
 n_t &\leftarrow \rho n_{t-1} + \left(1 - \rho \right) e^2
@@ -44,12 +44,12 @@ http://arxiv.org/pdf/1308.0850v5.pdf
 
 \ingroup SolverImplGrp
 */
-template <typename T> class NBLA_API RMSpropgraves : public Solver {
+template <typename T> class NBLA_API RMSpropGraves : public Solver {
 public:
-  RMSpropgraves(const Context &ctx, float lr, float decay, float momentum,
+  RMSpropGraves(const Context &ctx, float lr, float decay, float momentum,
                 float eps);
-  virtual ~RMSpropgraves();
-  virtual string name() { return "RMSpropgraves"; }
+  virtual ~RMSpropGraves();
+  virtual string name() { return "RMSpropGraves"; }
 
   virtual float learning_rate() { return lr_; }
   virtual void set_learning_rate(float lr) { lr_ = lr; }

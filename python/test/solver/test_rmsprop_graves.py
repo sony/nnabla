@@ -18,10 +18,10 @@ import numpy as np
 from solver_test_utils import solver_tester, RefSolver
 from nbla_test_utils import list_context
 
-ctxs = list_context('RMSpropgraves')
+ctxs = list_context('RMSpropGraves')
 
 
-class RefRMSpropgraves(RefSolver):
+class RefRMSpropGraves(RefSolver):
 
     def __init__(self, lr, decay, momentum, eps):
         self.lr = lr
@@ -38,11 +38,11 @@ class RefRMSpropgraves(RefSolver):
         self.d[key] = np.zeros_like(param)
 
     def _update_impl(self, key, p, grad):
-        _update_rmspropgraves(
+        _update_rmsprop_graves(
             p, grad, self.n[key], self.g[key], self.d[key], self.lr, self.decay, self.momentum, self.eps)
 
 
-def _update_rmspropgraves(p, grad, n, g, d, lr, decay, momentum, eps):
+def _update_rmsprop_graves(p, grad, n, g, d, lr, decay, momentum, eps):
     n[...] = n * decay + grad * grad * (1 - decay)
     g[...] = g * decay + grad * (1 - decay)
     d[...] = d * momentum - lr * grad / np.sqrt(n - g * g + eps)
@@ -55,7 +55,7 @@ def _update_rmspropgraves(p, grad, n, g, d, lr, decay, momentum, eps):
 @pytest.mark.parametrize("momentum", [0.9, 0.8])
 @pytest.mark.parametrize("eps", [1e-8])
 @pytest.mark.parametrize("seed", [313])
-def test_rmspropgraves(seed, lr, eps, momentum, decay, ctx, solver_name):
+def test_rmsprop_graves(seed, lr, eps, momentum, decay, ctx, solver_name):
     rng = np.random.RandomState(seed)
     solver_tester(
-        rng, S.RMSpropgraves, RefRMSpropgraves, [lr, decay, momentum, eps], atol=1e-6, ctx=ctx, solver_name=solver_name)
+        rng, S.RMSpropGraves, RefRMSpropGraves, [lr, decay, momentum, eps], atol=1e-6, ctx=ctx, solver_name=solver_name)

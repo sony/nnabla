@@ -21,7 +21,7 @@
 #include <nbla/solver/momentum.hpp>
 #include <nbla/solver/nesterov.hpp>
 #include <nbla/solver/rmsprop.hpp>
-#include <nbla/solver/rmspropgraves.hpp>
+#include <nbla/solver/rmsprop_graves.hpp>
 #include <nbla/solver/sgd.hpp>
 
 namespace nbla {
@@ -59,9 +59,9 @@ shared_ptr<nbla::Solver> OptimizerImpl::create_solver(const ::Solver &solver) {
     RMSpropParameter param = solver.rmsprop_param();
     return create_RMSpropSolver(ctx_, param.lr(), param.decay(), param.eps());
   }
-  if (solver.type() == "RMSpropgraves") {
-    RMSpropgravesParameter param = solver.rmspropgraves_param();
-    return create_RMSpropgravesSolver(ctx_, param.lr(), param.decay(),
+  if (solver.type() == "RMSpropGraves") {
+    RMSpropGravesParameter param = solver.rmsprop_graves_param();
+    return create_RMSpropGravesSolver(ctx_, param.lr(), param.decay(),
                                       param.momentum(), param.eps());
   }
   if (solver.type() == "Sgd") {

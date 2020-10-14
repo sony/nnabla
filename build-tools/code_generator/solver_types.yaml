@@ -22,7 +22,7 @@ Nesterov:
   float: [float]
 RMSprop:
   float: [float]
-RMSpropgraves:
+RMSpropGraves:
   float: [float]
 AMSGRAD:
   float: [float]

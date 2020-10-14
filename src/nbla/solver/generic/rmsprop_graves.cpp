@@ -16,24 +16,24 @@
 #include <cmath>
 #include <nbla/solver/clip_grad.hpp>
 #include <nbla/solver/mixed_precision_training.hpp>
-#include <nbla/solver/rmspropgraves.hpp>
+#include <nbla/solver/rmsprop_graves.hpp>
 #include <nbla/solver/weight_decay.hpp>
 
 namespace nbla {
-using std::shared_ptr;
 using std::make_shared;
+using std::shared_ptr;
 
-NBLA_REGISTER_SOLVER_SOURCE(RMSpropgraves, float, float, float, float);
+NBLA_REGISTER_SOLVER_SOURCE(RMSpropGraves, float, float, float, float);
 
 template <typename T>
-RMSpropgraves<T>::RMSpropgraves(const Context &ctx, float lr, float decay,
+RMSpropGraves<T>::RMSpropGraves(const Context &ctx, float lr, float decay,
                                 float momentum, float eps)
     : Solver(ctx), lr_(lr), decay_(decay), momentum_(momentum), eps_(eps) {}
 
-template <typename T> RMSpropgraves<T>::~RMSpropgraves() {}
+template <typename T> RMSpropGraves<T>::~RMSpropGraves() {}
 
 template <typename T>
-void RMSpropgraves<T>::set_state_impl(const string &key, VariablePtr param) {
+void RMSpropGraves<T>::set_state_impl(const string &key, VariablePtr param) {
   auto shape = param->shape();
   auto n = make_shared<Variable>(shape);
   auto g = make_shared<Variable>(shape);
@@ -47,12 +47,12 @@ void RMSpropgraves<T>::set_state_impl(const string &key, VariablePtr param) {
 }
 
 template <typename T>
-void RMSpropgraves<T>::remove_state_impl(const string &key) {
+void RMSpropGraves<T>::remove_state_impl(const string &key) {
   states_.erase(key);
 }
 
 template <typename T>
-void RMSpropgraves<T>::update_impl(const string &key, VariablePtr param) {
+void RMSpropGraves<T>::update_impl(const string &key, VariablePtr param) {
   Size_t size = param->size();
   auto &state = states_.at(key);
   VariablePtr s1 = state.pstate["n"];
@@ -74,10 +74,10 @@ void RMSpropgraves<T>::update_impl(const string &key, VariablePtr param) {
   t = std::min(t + 1, std::numeric_limits<uint32_t>::max() - 1);
 }
 
-NBLA_DEF_WEIGHT_DECAY(RMSpropgraves, weight_decay_cpu);
-NBLA_DEF_CLIP_GRAD_BY_NORM(RMSpropgraves, clip_grad_by_norm_cpu);
-NBLA_DEF_CHECK_INF_GRAD(RMSpropgraves, check_inf_grad_cpu);
-NBLA_DEF_CHECK_NAN_GRAD(RMSpropgraves, check_nan_grad_cpu);
-NBLA_DEF_CHECK_INF_OR_NAN_GRAD(RMSpropgraves, check_inf_or_nan_grad_cpu);
-NBLA_DEF_SCALE_GRAD(RMSpropgraves, scale_grad_impl_cpu);
+NBLA_DEF_WEIGHT_DECAY(RMSpropGraves, weight_decay_cpu);
+NBLA_DEF_CLIP_GRAD_BY_NORM(RMSpropGraves, clip_grad_by_norm_cpu);
+NBLA_DEF_CHECK_INF_GRAD(RMSpropGraves, check_inf_grad_cpu);
+NBLA_DEF_CHECK_NAN_GRAD(RMSpropGraves, check_nan_grad_cpu);
+NBLA_DEF_CHECK_INF_OR_NAN_GRAD(RMSpropGraves, check_inf_or_nan_grad_cpu);
+NBLA_DEF_SCALE_GRAD(RMSpropGraves, scale_grad_impl_cpu);
 }

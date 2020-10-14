@@ -213,10 +213,10 @@ RMSprop:
       default: 1e-8
       doc: Small value for avoiding zero division(:math:`\epsilon`).
 
-RMSpropgraves:
-  snake_name: rmspropgraves
+RMSpropGraves:
+  snake_name: rmsprop_graves
   doc: |
-    RMSpropgraves optimizer (Alex Graves).
+    RMSpropGraves optimizer (Alex Graves).
 
     .. math::
         n_t &\leftarrow \rho n_{t-1} + \left(1 - \rho \right) {e_t}^2\\
