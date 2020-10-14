@@ -21,44 +21,48 @@ ctxs = list_context('BatchMatmul')
 
 
 def ref_batch_matmul(a, b, ta, tb):
-    ra, ca = a.shape[-2:]
-    rb, cb = b.shape[-2:]
-    ry = ca if ta else ra
-    cy = rb if tb else cb
-    batch_dims = a.shape[:-2]
-    samples = int(np.prod(batch_dims))
-    a = a.reshape(samples, ra, ca)
-    b = b.reshape(samples, rb, cb)
-    yy = np.zeros((samples, ry, cy), dtype=np.float32)
-    for i, (sa, sb) in enumerate(zip(a, b)):
-        if ta:
-            sa = sa.T
-        if tb:
-            sb = sb.T
-        yy[i, ...] = np.dot(sa, sb)
-    y = yy.reshape(batch_dims + (ry, cy))
+    batch_dims_a = a.shape[:-2]
+    batch_dims_b = b.shape[:-2]
+    if batch_dims_a != batch_dims_b:
+        batch_dims = tuple([max(da, db)
+                            for da, db in zip(batch_dims_a, batch_dims_b)])
+        a = np.broadcast_to(a, batch_dims + a.shape[-2:])
+        b = np.broadcast_to(b, batch_dims + b.shape[-2:])
+    a = np.transpose(a, [i for i in range(a.ndim - 2)] +
+                     [a.ndim - 1, a.ndim - 2]) if ta else a
+    b = np.transpose(b, [i for i in range(b.ndim - 2)] +
+                     [b.ndim - 1, b.ndim - 2]) if tb else b
+    y = np.matmul(a, b)
     return y
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
-@pytest.mark.parametrize("reduc_dim", [1, 5])
+@pytest.mark.parametrize("reduce_dim", [1, 5])
 @pytest.mark.parametrize("row_a", [1, 5])
 @pytest.mark.parametrize("col_b", [1, 5])
 @pytest.mark.parametrize("transpose_a", [False, True])
 @pytest.mark.parametrize("transpose_b", [False, True])
-@pytest.mark.parametrize("batch_dims_a, batch_dims_b", ([((2, 2, 2), (2, 4)), ((1,), tuple())]))
-def test_batch_matmul_forward_backward(seed, reduc_dim, row_a, col_b, transpose_a, transpose_b, batch_dims_a, batch_dims_b, ctx, func_name):
+@pytest.mark.parametrize("batch_dims_a, batch_dims_b", ([
+   # ((2, 2, 4), (2, 4)),  # this pattern is no longer supported since the batch dimensions have a meaning.
+   # ((1,), tuple())      # this pattern is no longer supported since we expect > 3dims
+   ((2, 3), (2, 3)),
+   ((2, 3), (2, 1)),
+   ((1, 3), (2, 3)),
+   ((1, 3), (2, 1)),
+   ((1, 1), (1, 1)),
+]))
+def test_batch_matmul_forward_backward(seed, reduce_dim, row_a, col_b, transpose_a, transpose_b, batch_dims_a, batch_dims_b, ctx, func_name):
 
     from nbla_test_utils import function_tester
     if transpose_a:
-        shape_a = (reduc_dim, row_a)
+        shape_a = (reduce_dim, row_a)
     else:
-        shape_a = (row_a, reduc_dim)
+        shape_a = (row_a, reduce_dim)
     if transpose_b:
-        shape_b = (col_b, reduc_dim)
+        shape_b = (col_b, reduce_dim)
     else:
-        shape_b = (reduc_dim, col_b)
+        shape_b = (reduce_dim, col_b)
     shape_a = batch_dims_a + shape_a
     shape_b = batch_dims_b + shape_b
 
@@ -74,23 +78,31 @@ def test_batch_matmul_forward_backward(seed, reduc_dim, row_a, col_b, transpose_
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
-@pytest.mark.parametrize("reduc_dim", [1, 5])
+@pytest.mark.parametrize("reduce_dim", [1, 5])
 @pytest.mark.parametrize("row_a", [1, 5])
 @pytest.mark.parametrize("col_b", [1, 5])
 @pytest.mark.parametrize("transpose_a", [False, True])
 @pytest.mark.parametrize("transpose_b", [False, True])
-@pytest.mark.parametrize("batch_dims_a, batch_dims_b", ([((2, 2, 2), (2, 4)), ((1,), tuple())]))
-def test_batch_matmul_double_backward(seed, reduc_dim, row_a, col_b, transpose_a, transpose_b, batch_dims_a, batch_dims_b, ctx, func_name):
+@pytest.mark.parametrize("batch_dims_a, batch_dims_b", ([
+   # ((2, 2, 4), (2, 4)),  # this pattern is no longer supported since the batch dimensions have a meaning.
+   # ((1,), tuple())      # this pattern is no longer supported since we expect > 3dims
+   ((2, 3), (2, 3)),
+   ## ((2, 3), (2, 1)),
+   ## ((1, 3), (2, 3)),
+   ## ((1, 3), (2, 1)),
+   ## ((1, 1), (1, 1)),
+]))
+def test_batch_matmul_double_backward(seed, reduce_dim, row_a, col_b, transpose_a, transpose_b, batch_dims_a, batch_dims_b, ctx, func_name):
 
     from nbla_test_utils import backward_function_tester
     if transpose_a:
-        shape_a = (reduc_dim, row_a)
+        shape_a = (reduce_dim, row_a)
     else:
-        shape_a = (row_a, reduc_dim)
+        shape_a = (row_a, reduce_dim)
     if transpose_b:
-        shape_b = (col_b, reduc_dim)
+        shape_b = (col_b, reduce_dim)
     else:
-        shape_b = (reduc_dim, col_b)
+        shape_b = (reduce_dim, col_b)
     shape_a = batch_dims_a + shape_a
     shape_b = batch_dims_b + shape_b
 

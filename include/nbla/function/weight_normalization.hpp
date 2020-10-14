@@ -12,58 +12,55 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/** Sum
- */
-#ifndef __NBLA_FUNCTION_SUM_HPP__
-#define __NBLA_FUNCTION_SUM_HPP__
+#ifndef NBLA_FUNCTION_WEIGHT_NORMALIZATION_HPP
+#define NBLA_FUNCTION_WEIGHT_NORMALIZATION_HPP
 
 #include <nbla/cpu.hpp>
 #include <nbla/function.hpp>
 #include <nbla/function_registry.hpp>
 
-#include <algorithm>
-
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_HEADER(Sum, const vector<int> &, bool);
+NBLA_REGISTER_FUNCTION_HEADER(WeightNormalization, int, float);
 
-/** Reduction along axes with sum operation.
+/**
+    @todo Write doc.
 
-@tparam T Data type for computation.
-@param axes A list of axes to be reduced.
-@param keep_dims Flag whether the reduced axes are kept.
+Inputs:
+
+Outputs:
 
 \ingroup FunctionImplGrp
  */
 template <typename T>
-class Sum : public BaseFunction<const vector<int> &, bool> {
+class WeightNormalization : public BaseFunction<int, float> {
 protected:
-  vector<int> axes_;
-  bool keep_dims_;
-  int reduction_size_;
-  shared_ptr<Function> f_transpose_{nullptr};
+  int dim_;
+  float eps_;
+  shared_ptr<Function> pow_scalar_0_;
+  shared_ptr<Function> sum_;
+  shared_ptr<Function> add_scalar_;
+  shared_ptr<Function> pow_scalar_1_;
+  shared_ptr<Function> mul2_0_;
+  shared_ptr<Function> mul2_1_;
 
 public:
-  Sum(const Context &ctx, const vector<int> &axes, bool keep_dims)
-      : BaseFunction(ctx, axes, keep_dims), axes_(axes), keep_dims_(keep_dims) {
-    if (axes.size() <= 1) {
-      return;
-    }
-    // Sort axes vector;
-    std::sort(axes_.begin(), axes_.end());
-  }
-  virtual ~Sum() {}
+  WeightNormalization(const Context &ctx, int dim, float eps)
+      : BaseFunction(ctx, dim, eps), dim_(dim), eps_(eps) {}
+  virtual ~WeightNormalization() {}
   virtual shared_ptr<Function> copy() const {
-    return create_Sum(ctx_, axes_, keep_dims_);
+    return create_WeightNormalization(ctx_, dim_, eps_);
   }
-  virtual vector<dtypes> in_types() { return vector<dtypes>{get_dtype<T>()}; }
-  virtual vector<dtypes> out_types() { return vector<dtypes>{get_dtype<T>()}; }
-  virtual int min_inputs() { return 1; }
+  virtual int min_inputs() { return 2; }
   virtual int min_outputs() { return 1; }
-  virtual string name() { return "Sum"; }
+  virtual vector<dtypes> in_types() {
+    return vector<dtypes>{get_dtype<T>(), get_dtype<T>()};
+  }
+  virtual vector<dtypes> out_types() { return vector<dtypes>{get_dtype<T>()}; }
   virtual vector<string> allowed_array_classes() {
     return SingletonManager::get<Cpu>()->array_classes();
   }
+  virtual string name() { return "WeightNormalization"; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,
@@ -74,11 +71,6 @@ protected:
                                       const Variables &outputs,
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
-
-  NBLA_API virtual void forward_impl_reduce(const T *x, T *y, int outer_size,
-                                            int reduction_size);
-  NBLA_API virtual void backward_impl_reduce(const T *dy, T *dx, int outer_size,
-                                             int reduction_size, bool accum);
 };
 }
 #endif

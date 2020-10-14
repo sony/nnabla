@@ -40,7 +40,7 @@ NBLA_API void execute(FunctionPtr f, const Variables &inputs,
 NBLA_API void backward(FunctionPtr f, const Variables &inputs,
                        const Variables &outputs,
                        const vector<bool> &propagate_down,
-                       const vector<bool> &accum);
+                       const vector<bool> &accum, bool with_setup = false);
 }
 
 #endif

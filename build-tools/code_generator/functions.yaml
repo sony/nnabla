@@ -1615,6 +1615,42 @@ Normalization:
     c_runtime: not support
     function_ids:
       CiiIffB: 263
+  WeightNormalization:
+    snake_name: weight_normalization
+    doc: |2
+
+      Weight normalization.
+
+      .. math::
+        \mathbf{w}_{WN} = g \dfrac{\mathbf{w}}{\|\mathbf{w}\|}
+        
+      where :math:`\mathbf{w}` is the input weights to be normalized.
+      and :math:`g` is learnable multiplication factors each of which is applied to each data at `dim`.
+
+      References:
+          * `Tim Salimans, Diederik P. Kingma, Weight Normalization: A Simple Reparameterization to Accelerate Training of Deep Neural Networks. <https://arxiv.org/abs/1602.07868>`_
+          
+    inputs:
+      w:
+        doc: N-D array of learnable weights.
+      g:
+        doc: 1-D array of learnable scales.
+    arguments:
+      dim:
+        doc: Output dimension. For the other dimensions, the norms are computed.
+        type: int64
+        default: '0'
+      eps:
+        doc: Epsilon for the normalization. This `eps` is added before taking the
+          sqrt in the norm computation.
+        type: float
+        default: 1e-12
+    outputs:
+      w_wn:
+        doc: N-D array
+    c_runtime: not support
+    function_ids:
+      if: 304
   MeanSubtraction:
     snake_name: mean_subtraction
     doc: |2
@@ -3001,7 +3037,35 @@ Math:
 
       Batch matrix multiplication.
 
-      Two of batchs of matrices are multiplied for each sample in a batch. A batch of matrices is composed as [..., P, Q] where the last two dimensions compose matrix dimensions, and the first dimensions up to the third last dimension are considered as batch samples.
+      Two of batchs of matrices are multiplied for each sample in a batch. 
+      A batch of matrices is composed as [..., P, Q] where the last two dimensions compose matrix dimensions, 
+      and the first dimensions up to the third last dimension are considered as batch samples. 
+      These batch dimensions are internally broadcasted when the size of a dimension is 1.
+
+      Example:
+
+      .. code-block:: python
+
+        import nnabla as nn
+        import nnabla.functions as F
+        import numpy as np
+        
+        nn.set_auto_forward(True)
+
+        # Same batch size
+        a = nn.Variable.from_numpy_array(np.random.rand(2, 2, 3, 4))
+        b = nn.Variable.from_numpy_array(np.random.rand(2, 2, 4, 3))
+        c = F.batch_matmul(a, b)
+
+        # Different batch size with the broadcast
+        a = nn.Variable.from_numpy_array(np.random.rand(2, 1, 3, 4))
+        b = nn.Variable.from_numpy_array(np.random.rand(1, 3, 4, 3))
+        c = F.batch_matmul(a, b)
+
+      .. WARNING::
+        Since the version 1.13, the behavior of the batch dimensions changed, it supported the internal 
+        broadcast when the size of a dimension is 1. Accordingly, this function does not supports different
+        batch dimensions between two inputs even if the total sample size for each input is same.
     inputs:
       a:
         doc: N-D array with >= 2-dim. The last two dimensions will be treated as a
@@ -3853,6 +3917,51 @@ Array Manipulation:
     c_runtime: not support
     function_ids:
       Empty: 248
+  Gather:
+    snake_name: gather
+    doc: |
+      Gather from the input data according to the index.
+
+      Given the input data :math:`X` of :math:`(D_{0}, \ldots, D_{N-1})` shape and 
+      the indices :math:`IDX` of :math:`(I_{0}, \ldots, I_{M-1})` shape, in case of `batch_dims = 0`, 
+      the gather outputs
+
+      .. math::
+        && Y[d_{0}, \ldots, d_{axis - 1}, i_{0}, \ldots, i_{M-1}, d_{axis + 1}, \ldots, d_{N-1}] = \\
+        && X[d_{0}, \ldots, d_{axis - 1}, IDX[i_{0}, \ldots, i_{M-1}], d_{axis + 1}, \ldots, d_{N-1}].
+
+      Generally, the gather ouptuts
+
+      .. math::
+        && Y[d_{0}, \ldots, d_{axis - 1}, i_{B}, \ldots, i_{M-1}, d_{axis + 1}, \ldots, d_{N-1}] = \\
+        && X[d_{0}, \ldots, d_{axis - 1}, IDX[i_{0}, \ldots, i_{B - 1}, i_{B} \ldots, i_{M-1}], d_{axis + 1}, \ldots d_{N-1}].
+
+      where :math:`B` = `batch_dims`. 
+
+      `x.shape[:batch_dims]` must be equal to `indices.shape[:batch_dims]`.
+
+      Output shape is `x.shape[:axis] + indices.shape[batch_dims:] + x.shape[axis + 1]`.
+    inputs:
+      x:
+        doc: Data from which to gather.
+      Indices:
+        doc: Index with which to gather.
+    arguments:
+      axis:
+        doc: Axis in `x` to gather from. `axis` must be greater than or equal to `batch_dims`.
+        type: int64
+        default: 0
+      batch_dims:
+        doc: The number of batch dimensions.
+        type: int64
+        default: 0
+    outputs:
+      y:
+        doc: Gathered output.
+    c_runtime: not support
+    function_ids:
+      iiI: 302
+      ii: 303
   GatherNd:
     snake_name: gather_nd
     doc: |2
@@ -3970,6 +4079,92 @@ Array Manipulation:
     c_runtime: not support
     function_ids:
       iI: 271
+  PackPaddedSequence:
+    snake_name: pack_padded_sequence
+    doc: |
+      Pack a padded variable-length sequences.
+
+      This method packs a padded variable-length sequences.
+
+      :math:`T_i` is the length of the :math:`i`-th Variable in the sequences.
+      :math:`B` is the batch size equal to the length of the sequences. 
+      :math:`T` is the max of :math:`T_i` for all :math:`i`. 
+      :math:`*` is the remaining dimensions including none.
+
+      .. note::
+        This function assumes the length-sorted padded sequence in the decreasing order
+        and must be used by :func:`~nnabla.utils.rnn.pack_padded_sequence` in the dynamic computation mode.
+        See :
+        
+    inputs:
+      padded_sequence:
+        doc: |
+          Padded sequence of (:math:`T \times B \times *`) or (:math:`B \times T \times *`) shape.
+      lengths:
+        doc: Sequence length for each batch and always resides in CPU.
+    arguments:
+      batch_first:
+        doc: |
+          `padded_sequence` is of (:math:`T`, :math:`B`, :math:`*`) shape if False, 
+          otherwise (:math:`B`, :math:`T`, :math:`*`).
+        type: bool
+        default: 'False'
+    outputs:
+      pack_sequence:
+        doc: Packed sequence of (:math:`N`, :math:`*`) shape.
+      batch_sizes:
+        doc: Batch size for each time and always resides in CPU.
+    c_runtime: not support
+    function_ids:
+      B: 305
+  PadPackedSequence:
+    snake_name: pad_packed_sequence
+    doc: |
+      Pad packed sequence.
+
+      This method unpacks the packed sequqnce and pad it, the inverse operation of :func:`pack_padded_sequence`.
+       
+      :math:`T_i` is the length of the :math:`i`-th Variable in the sequences.
+      :math:`B` is the batch size equal to the length of the sequences. 
+      :math:`T` is the max of :math:`T_i` for all :math:`i`. 
+      :math:`*` is the remaining dimensions including none.
+
+      .. note::
+        This function assumes the output of the length-sorted padded sequence in the decreasing order 
+        and must be used by :func:`~nnabla.utils.rnn.pad_packed_sequence` in the dynamic computation mode.
+    inputs:
+      packed_sequence:
+        doc: |
+          Packed sequence of (:math:`N`, :math:`*`) shape.
+      batch_sizes:
+        doc: Batch size for each time and always resides in CPU.
+    arguments:
+      batch_first:
+        doc: |
+          `padded_sequence` is of (:math:`T`, :math:`B`, :math:`*`) shape if False, 
+          otherwise (:math:`B`, :math:`T`, :math:`*`).
+        type: bool
+        default: 'False'
+      padding_value:
+        doc: Padding value.
+        type: float
+        default: 0.0
+      total_length:
+        doc: |
+          If not None, the outputs are padded up to the `total_length`. 
+          If the `total_length` is less than the max length in the `sequences`, 
+          the error is thrown.
+        type: int64
+        default: -1
+    outputs:
+      padded_sequence:
+        doc: Padded sequence of (:math:`T \times B \times *`) or (:math:`B \times
+          T \times *`) shape.
+      lengths:
+        doc: Sequence length for each batch and always resides in CPU.
+    c_runtime: not support
+    function_ids:
+      Bfi: 306
 Signal Processing:
   Interpolate:
     snake_name: interpolate

@@ -102,6 +102,7 @@ Normalization
 .. autofunction:: instance_normalization
 .. autofunction:: group_normalization
 .. autofunction:: weight_standardization
+.. autofunction:: weight_normalization
 
 
 Reduction
@@ -204,6 +205,7 @@ Array Manipulation
 .. autofunction:: split
 .. autofunction:: stack
 .. autofunction:: slice
+.. autofunction:: gather
 .. autofunction:: gather_nd
 .. autofunction:: scatter_nd
 .. autofunction:: pad
@@ -221,6 +223,8 @@ Array Manipulation
 .. autofunction:: assign
 .. autofunction:: top_k_data
 .. autofunction:: top_k_grad
+.. autofunction:: pack_padded_sequence
+.. autofunction:: pad_packed_sequence
 
 
 Stochasticity

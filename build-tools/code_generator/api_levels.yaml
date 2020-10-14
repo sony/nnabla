@@ -227,3 +227,8 @@
 18:
   AffineGrid_iIB: 296
   WarpByGrid_iiBB: 297
+19:
+  WeightNormalization_if: 304
+20:
+  PackPaddedSequence_B: 305
+  PadPackedSequence_Bfi: 306

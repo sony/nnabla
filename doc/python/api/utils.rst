@@ -9,5 +9,7 @@ Utils
     utils/data_iterator.rst
     utils/debug_utils.rst
     utils/dlpack.rst
+    utils/rnn.rst
     utils/misc.rst
+
 

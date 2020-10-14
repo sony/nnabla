@@ -12,58 +12,58 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/** Sum
- */
-#ifndef __NBLA_FUNCTION_SUM_HPP__
-#define __NBLA_FUNCTION_SUM_HPP__
+#ifndef NBLA_FUNCTION_PACK_PADDED_SEQUENCE_HPP
+#define NBLA_FUNCTION_PACK_PADDED_SEQUENCE_HPP
 
 #include <nbla/cpu.hpp>
 #include <nbla/function.hpp>
 #include <nbla/function_registry.hpp>
 
-#include <algorithm>
-
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_HEADER(Sum, const vector<int> &, bool);
+NBLA_REGISTER_FUNCTION_HEADER(PackPaddedSequence, bool);
 
-/** Reduction along axes with sum operation.
+/**
+Pack a padded variable-length sequences.
+
+This method packs a padded variable-length sequences.
+
+Inputs:
+- Padded sequence of (\f$T \times B \times *\f$) or (\f$B \times T \times *\f$)
+shape.
+- Sequence length for each batch and always resides in CPU.
+
+Outputs:
+- Packed sequence of (\f$N\f$, \f$*\f$) shape.
+- Batch size for each time and always resides in CPU.
 
 @tparam T Data type for computation.
-@param axes A list of axes to be reduced.
-@param keep_dims Flag whether the reduced axes are kept.
+@param batch_first Packed sequence is of (\f$T\f$, \f$B\f$, \f$*\f$) shape if
+False, otherwise (\f$B\f$, \f$T\f$, \f$*\f$).
 
 \ingroup FunctionImplGrp
  */
-template <typename T>
-class Sum : public BaseFunction<const vector<int> &, bool> {
+template <typename T> class PackPaddedSequence : public BaseFunction<bool> {
 protected:
-  vector<int> axes_;
-  bool keep_dims_;
-  int reduction_size_;
-  shared_ptr<Function> f_transpose_{nullptr};
+  bool batch_first_;
 
 public:
-  Sum(const Context &ctx, const vector<int> &axes, bool keep_dims)
-      : BaseFunction(ctx, axes, keep_dims), axes_(axes), keep_dims_(keep_dims) {
-    if (axes.size() <= 1) {
-      return;
-    }
-    // Sort axes vector;
-    std::sort(axes_.begin(), axes_.end());
-  }
-  virtual ~Sum() {}
+  PackPaddedSequence(const Context &ctx, bool batch_first)
+      : BaseFunction(ctx, batch_first), batch_first_(batch_first) {}
+  virtual ~PackPaddedSequence() {}
   virtual shared_ptr<Function> copy() const {
-    return create_Sum(ctx_, axes_, keep_dims_);
+    return create_PackPaddedSequence(ctx_, batch_first_);
   }
+  virtual int min_inputs() { return 2; }
+  virtual int min_outputs() { return 2; }
   virtual vector<dtypes> in_types() { return vector<dtypes>{get_dtype<T>()}; }
-  virtual vector<dtypes> out_types() { return vector<dtypes>{get_dtype<T>()}; }
-  virtual int min_inputs() { return 1; }
-  virtual int min_outputs() { return 1; }
-  virtual string name() { return "Sum"; }
+  virtual vector<dtypes> out_types() {
+    return vector<dtypes>{get_dtype<T>(), get_dtype<T>()};
+  }
   virtual vector<string> allowed_array_classes() {
     return SingletonManager::get<Cpu>()->array_classes();
   }
+  virtual string name() { return "PackPaddedSequence"; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,
@@ -74,11 +74,6 @@ protected:
                                       const Variables &outputs,
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
-
-  NBLA_API virtual void forward_impl_reduce(const T *x, T *y, int outer_size,
-                                            int reduction_size);
-  NBLA_API virtual void backward_impl_reduce(const T *dy, T *dx, int outer_size,
-                                             int reduction_size, bool accum);
 };
 }
 #endif

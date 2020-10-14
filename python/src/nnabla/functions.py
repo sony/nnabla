@@ -929,7 +929,7 @@ def stft(x, window_size, stride, fft_size, window_type='hanning', center=True, p
         x = pad(x, (fft_size // 2, fft_size // 2), mode=pad_mode)
 
     # add channel dimension
-    x = reshape(x, (x.shape[0], 1, x.shape[1]), inplace=False)
+    x = reshape(x, (x.shape[0], 1, x.shape[1]))
 
     # compute STFT
     y_r = convolution(x, conv_r, stride=(stride,))

@@ -3519,7 +3519,7 @@ def _spectral_norm(w, dim=0, itr=1, eps=1e-12, test=False, u_init=None, fix_para
         w_shape = w.shape
     d0 = w.shape[0]            # Out
     d1 = np.prod(w.shape[1:])  # In
-    w = F.reshape(w, [d0, d1], inplace=False)
+    w = F.reshape(w, [d0, d1])
     if u_init is None:
         u_init = NormalInitializer()
     u0 = get_parameter_or_create("u", [d0], u_init, False, False)
@@ -3605,8 +3605,68 @@ def _spectral_norm_outer_most_dim(w, dim, itr=1, eps=1e-12, test=False,
 @parametric_function_api("wn", [
     ('g', 'Weight Normalization adaptive scale scalar.', 'w.shape[dim]', True),
 ])
-def weight_normalization(v, dim=0, eps=1e-12, fix_parameters=False):
+def weight_normalization(w, dim=0, eps=1e-12, fix_parameters=False):
     """Weight Normalization.
+
+    .. math::
+        \mathbf{w}_{WN} = g \dfrac{\mathbf{w}}{\|\mathbf{w}\|}
+
+    where :math:`\mathbf{w}` is the input weights to be normalized.
+    and :math:`g` is learnable multiplication factors each of which is applied to each data at `dim`.
+    This function is in general used as callback passed to apply_w for PF.convolution, PF.affine and so on.
+    According to the author`s original implementation (https://github.com/TimSalimans/weight_norm), :math:`v` should be initialized by :math:`N(0, 0.05)`.
+    To meet this condition, initializer should be passed to convolution which Weight Normalization is applied, like an example below.
+
+
+    References:
+        * `Tim Salimans, Diederik P. Kingma, Weight Normalization: A Simple Reparameterization to Accelerate Training of Deep Neural Networks.
+          <https://arxiv.org/abs/1602.07868>`_
+
+    Args:
+        W (~nnabla.Variable): Input N-D array with shape. This is normally network parameter.
+        dim (`int`):
+            Output dimension. Default is 0.
+            If the dimension is not 0, then the specified dimension becomes the most-left dimension by transposing.
+        eps (`float`): Epsilon for the normalization. Default is 1e-12.
+
+    Returns:
+        ~nnabla.Variable:  :math:`W` with the same shape as :math:`v`.
+
+    Example:
+
+        .. code-block:: python
+
+            import nnabla as nn
+            import nnabla.parametric_functions as PF
+            import nnabla.initializer as I
+
+            # h is nn.Variable.
+
+            # convolution
+            # according to the original implementation, w should be initialized by N(0, 0.05).
+            h = PF.convolution(h, ..., apply_w=PF.weight_normalization, w_init=I.NormalInitializer(0.05))
+
+            # affine
+            h = PF.affine(h, ..., apply_w=lambda w: PF.weight_normalization(w, dim=1), w_init=I.NormalInitializer(0.05))
+
+    .. warning::
+       Up to the version 1.10.0, this had been implemented as the composite functions.
+
+    """
+    outmaps = w.shape[dim]
+    g = get_parameter_or_create("g", (outmaps,),
+                                initializer=ConstantInitializer(1.), need_grad=True, as_need_grad=not fix_parameters)
+    return F.weight_normalization(w, g, dim, eps)
+
+
+@parametric_function_api("wn", [
+    ('g', 'Weight Normalization adaptive scale scalar.', 'w.shape[dim]', True),
+])
+def _weight_normalization_v1(v, dim=0, eps=1e-12, fix_parameters=False):
+    """Weight Normalization.
+
+    This functions is of the composite functions. It takes a lots of memories since the intermediate results
+    are stored as a part of the computation graph.
 
     .. math::
         \mathbf{w} = g \dfrac{\mathbf{v}}{\|\mathbf{v}\|}

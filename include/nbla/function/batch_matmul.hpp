@@ -19,7 +19,11 @@
 
 #include <nbla/cpu.hpp>
 #include <nbla/function.hpp>
+#include <nbla/function/broadcast.hpp>
 #include <nbla/function_registry.hpp>
+
+#include <functional>
+#include <numeric>
 
 namespace nbla {
 
@@ -64,6 +68,8 @@ protected:
   int offset_a_;
   int offset_b_;
   int offset_y_;
+  FunctionPtr f_broadcast_a_;
+  FunctionPtr f_broadcast_b_;
 
 public:
   BatchMatmul(const Context &ctx, bool transpose_a, bool transpose_b)
