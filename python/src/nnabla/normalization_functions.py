@@ -472,6 +472,31 @@ def weight_standardization(w, channel_axis=0, eps=1e-05, output_stat=False):
         y &=& \hat{W} \ast x
       \end{eqnarray}
 
+    Example:
+        .. code-block:: python
+
+            import numpy as np
+            import nnabla as nn
+            import nnabla.functions as F
+
+            rng = np.random.RandomState(313)
+            w = np.array(rng.randn(32, 16, 3, 3).astype(np.float32))
+            eps = 1e-5
+
+            # Weight standization with NNabla
+            w_var = nn.Variable.from_numpy_array(w)
+            output = F.weight_standardization(w_var, channel_axis=0, eps=eps, output_stat=False)
+            output.forward()
+
+            # Weight standardization with numpy
+            axes = (1, 2, 3) # axes of weight shape excluding channel axis
+            w_mean = w.mean(axis=axes, keepdims=True)
+            w_var = w.var(axis=axes, keepdims=True)
+            norm = (w - w_mean) / (w_var + eps) ** 0.5
+
+            # Compare
+            assert np.allclose(output.d, norm, atol=1e-2, rtol=1e-5)
+
     References:
 
       * `Siyuan Qiao, Huiyu Wang, Chenxi Liu, Wei Shen, Alan Yuille, Weight Standardization
