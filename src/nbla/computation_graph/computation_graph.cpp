@@ -164,6 +164,21 @@ void steal_variable_from_to(CgVariablePtr from, CgVariablePtr to) {
 void forward_all(const vector<CgVariablePtr> variables, bool clear_buffer,
                  bool clear_no_need_grad, function_hook_type function_pre_hook,
                  function_hook_type function_post_hook) {
+
+  // Set persistent for all variables to keep the data.
+  vector<bool> orig_persistent_flags;
+  for (auto &e : variables) {
+    orig_persistent_flags.push_back(e->persistent());
+    e->set_persistent(true);
+  }
+
+  // Revert persistent flags after the end of forward_all
+  DestructorCallback persistent_flag_restorer([&]() -> void {
+    for (int i = 0; i < variables.size(); ++i) {
+      variables[i]->set_persistent(orig_persistent_flags[i]);
+    }
+  });
+
   unordered_set<CgFunctionPtr> fclosed;
   for (int i = 0; i < variables.size(); ++i) {
     variables[i]->forward(clear_buffer, clear_no_need_grad, &fclosed,
