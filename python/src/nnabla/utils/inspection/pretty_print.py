@@ -50,7 +50,8 @@ class PrettyPrinter():
 
     def __call__(self, f):
         scope = self.get_scope_name(f.inputs[1]) if len(f.inputs) > 1 else None
-        name = "{}/{}".format(scope, f.name) if scope else f.name
+        name = "{}/{}({})".format(scope, f.name, f.info.type_name) if scope else \
+            "{}({})".format(f.name, f.info.type_name)
         print(name)
         print("\tDepth = {}".format(f.rank))
         print("\tArgs:", ["{}={}".format(k, v)
