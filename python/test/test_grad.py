@@ -25,18 +25,18 @@ from nnabla.testing import assert_allclose
 ctx_list = [ctx_fname[0] for ctx_fname in list_context('Convolution')]
 
 
-def SmallResNet(x, test=False, shared=False):
+def SmallResNet(x, test=False, inplace=False, shared=False):
     h = x
 
     def conv(x, maps=8, name="conv"):
         h = x
         with nn.parameter_scope(name):
-            h = PF.convolution(h, maps, (3, 3), (1, 1), with_bias=False)
+            h = PF.convolution(h, maps, (3, 3), (1, 1), with_bias=True)
             h = PF.batch_normalization(h, batch_stat=not test)
         with nn.parameter_scope("{}-shortcut".format(name)):
             s = PF.convolution(h, maps, (3, 3), (1, 1), with_bias=False)
             h = PF.batch_normalization(h, batch_stat=not test)
-        return F.relu(h + s)
+        return F.relu(h + s, inplace)
     h = conv(h, maps=4, name="conv1")
     h = F.max_pooling(h, (2, 2))
     h = conv(h, maps=4, name="conv2")
@@ -51,8 +51,9 @@ def SmallResNet(x, test=False, shared=False):
 @pytest.mark.parametrize("ctx", ctx_list)
 @pytest.mark.parametrize("auto_forward", [True, False])
 @pytest.mark.parametrize("flag_grad_outputs", [True, False])
+@pytest.mark.parametrize("inplace", [False, True])
 @pytest.mark.parametrize("shared", [False, True])
-def test_resnet_expansion(seed, ctx, auto_forward, flag_grad_outputs, shared):
+def test_grad_resnet(seed, ctx, auto_forward, flag_grad_outputs, inplace, shared):
     nn.clear_parameters()
 
     # Settings
@@ -65,7 +66,7 @@ def test_resnet_expansion(seed, ctx, auto_forward, flag_grad_outputs, shared):
     # Network
     x = nn.Variable.from_numpy_array(rng.randn(b, c, h, w))
     y = nn.Variable.from_numpy_array(rng.randint(0, n_cls, b).reshape(b, 1))
-    p = SmallResNet(x, shared=shared)
+    p = SmallResNet(x, inplace=inplace, shared=shared)
     loss = F.mean(F.softmax_cross_entropy(p, y))
 
     # Zerograd, Forward, Backward on the forward graph
@@ -90,6 +91,42 @@ def test_resnet_expansion(seed, ctx, auto_forward, flag_grad_outputs, shared):
     for inp, grad in zip(inputs, grads):
         assert_allclose(
             inp.g, grad.d, atol=1e-6)
+
+
+@pytest.mark.parametrize("seed", [311])
+@pytest.mark.parametrize("ctx", ctx_list)
+@pytest.mark.parametrize("auto_forward", [True, False])
+@pytest.mark.parametrize("inplace", [False, True])
+@pytest.mark.parametrize("shared", [False, True])
+def test_grad_grad_resnet(seed, ctx, auto_forward, inplace, shared):
+    nn.clear_parameters()
+
+    # Settings
+    nn.set_default_context(ctx)
+    nn.set_auto_forward(auto_forward)
+    b, c, h, w = 4, 3, 32, 32
+    n_cls = 10
+    rng = np.random.RandomState(seed)
+
+    # Network
+    x = nn.Variable.from_numpy_array(
+        rng.randn(b, c, h, w)).apply(need_grad=True)
+    y = SmallResNet(x, inplace=inplace, shared=shared)
+
+    # Grad of grad
+    dx = nn.grad([y], [x])
+    ddx = nn.grad([dx[0]], [x])
+    ddx[0].forward() if not auto_forward else None
+    # Backward of grad
+    x.grad.zero()
+    dx[0].forward() if not auto_forward else None
+    dx[0].backward()
+
+    # Check between results of var.backward and nn.grad
+    backend = ctx.backend[0].split(":")[0]
+    if backend == 'cuda':
+        pytest.skip('CUDA Convolution N-D is only supported in CUDNN extension')
+    assert_allclose(x.g, ddx[0].d, atol=1e-6)
 
 
 @pytest.mark.parametrize("seed", [311])
