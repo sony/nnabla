@@ -24,12 +24,23 @@ def forward_all(variables,
                 function_pre_hook=None, function_post_hook=None):
     '''Performs a forward propagation up to variables specified as the 1st
     argument.
+    See also :obj:`~nnnabla.Variable.forward`.
+
 
     Args:
             clear_buffer (bool): Clear the no longer referenced variables
                 during forward propagation to save memory.
                 This is usually set as True in an inference
                 or a validation phase. Default is False.
+                Note that starting variable and destination variable of the input graph will not be cleared, regardless of their `persistent` flag.
+                All intermediate variables will be cleared unless set explicitly as `persistent=True`.
+                For example, 
+
+                .. code-block:: python
+
+                   forward_all([h_i, y], clear_buffer=True)
+
+                will clear all intermediate variables between `h_i` and `y` unless set explicitly as `persistent=True`, but `h_i` and `y` will not be cleared regardless of their `persistent` flag.
             clear_no_need_grad (bool): Clear the unreferenced variables with
                 need_grad=False during forward propagation.
                 True is usually used when calling this during training.
