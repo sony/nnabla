@@ -4571,7 +4571,7 @@ Stochasticity:
     snake_name: rand_beta
     doc: |2
 
-      Samples numbers from a beta distribution :math:`x \sim \Beta(\alpha, \beta)`.
+      Samples numbers from a beta distribution :math:`x \sim \beta(\alpha, \beta)`.
     inputs: {}
     arguments:
       alpha:
@@ -4579,7 +4579,7 @@ Stochasticity:
         type: float
         default: '0.5'
       beta:
-        doc: :math:`\bata`, scale parameter.
+        doc: :math:`\beta`, scale parameter.
         type: float
         default: '0.5'
       shape:
