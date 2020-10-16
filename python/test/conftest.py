@@ -43,6 +43,9 @@ def scope_function():
     # keep context
     ctx = nn.get_current_context()
 
+    # use cached array
+    nn.prefer_cached_array(True)
+
     yield
 
     # restore context

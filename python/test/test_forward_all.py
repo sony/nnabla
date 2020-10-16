@@ -339,3 +339,33 @@ def test_graph_rewire(seed, clear_buffer):
     assert_allclose(xa.d, xc.d)
     for b, c in zip(gb, gc):
         assert_allclose(b, c)
+
+
+@pytest.mark.parametrize("clear_buffer, clear_no_need_grad", [
+    (False, False), (True, False), (False, True),
+])
+def test_intermediate_outputs(clear_buffer, clear_no_need_grad):
+    rng = np.random.RandomState(311)
+
+    # unuse cached array to clear buffers immediately
+    nn.prefer_cached_array(False)
+
+    x = nn.Variable.from_numpy_array(rng.randn(2, 10))
+
+    h1 = x + 1
+    y1 = h1 + 1
+
+    h2 = x + 1
+    h2.persistent = True
+    y2 = h2 + 1
+
+    nn.forward_all([h1, y1], clear_buffer=clear_buffer,
+                   clear_no_need_grad=clear_no_need_grad)
+    nn.forward_all([h2, y2], clear_buffer=clear_buffer,
+                   clear_no_need_grad=clear_no_need_grad)
+
+    assert_allclose(h1.d, h2.d)
+    assert_allclose(y1.d, y2.d)
+
+    # revert perference (this is also done in conftest.py, but just in case)
+    nn.prefer_cached_array(True)
