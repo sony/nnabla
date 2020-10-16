@@ -538,7 +538,7 @@ class PythonFunction:
 
             @property
             def name(self):
-                return "Mul2"
+                return self.__class__.__name__
 
             def min_outputs(self):
                 return 1
