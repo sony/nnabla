@@ -351,6 +351,11 @@ def _create_optimizer(datasets, name, solver, network, dataset_names, weight_dec
         o.solver.rmsprop_param.lr = solver.info['lr']
         o.solver.rmsprop_param.decay = solver.info['decay']
         o.solver.rmsprop_param.eps = solver.info['eps']
+    elif o.solver.type == 'RMSpropGraves':
+        o.solver.rmsprop_graves_param.lr = solver.info['lr']
+        o.solver.rmsprop_graves_param.decay = solver.info['decay']
+        o.solver.rmsprop_graves_param.momentum = solver.info['momentum']
+        o.solver.rmsprop_graves_param.eps = solver.info['eps']
     elif o.solver.type == 'Sgd':
         o.solver.sgd_param.lr = solver.info['lr']
     inputs, outputs, params = _get_net_variables(network)

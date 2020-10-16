@@ -28,7 +28,6 @@ SgdW:
       `Loshchilov and Hutter, Decoupled Weight Decay Regularization.
       <https://arxiv.org/abs/1711.05101>`_
 
-
   arguments:
     lr:
       type: float
@@ -126,7 +125,7 @@ Nesterov:
       type: float
       default: 0.9
       doc: Decay rate of momentum.
-              
+
 Adadelta:
   snake_name: adadelta
   doc: |
@@ -183,7 +182,7 @@ Adagrad:
       type: float
       default: 1e-8
       doc: Small value for avoiding zero division(:math:`\epsilon`).
-  
+
 RMSprop:
   snake_name: rmsprop
   doc: |
@@ -213,7 +212,44 @@ RMSprop:
       type: float
       default: 1e-8
       doc: Small value for avoiding zero division(:math:`\epsilon`).
-              
+
+RMSpropGraves:
+  snake_name: rmsprop_graves
+  doc: |
+    RMSpropGraves optimizer (Alex Graves).
+
+    .. math::
+        n_t &\leftarrow \rho n_{t-1} + \left(1 - \rho \right) {e_t}^2\\
+        g_t &\leftarrow \rho g_{t-1} + \left(1 - \rho \right) e_t\\
+        d_t &\leftarrow \beta d_{t-1} - \eta \frac{e_t}{\sqrt{n_t - {g_t}^2 + \epsilon}}\\
+        w_{t+1} &\leftarrow w_t + d_t
+
+    where :math:`e_t` denotes the gradient.
+
+  references:
+    - |
+      `Alex Graves.
+      Generating Sequences With Recurrent Neural Networks.
+      <http://arxiv.org/pdf/1308.0850v5.pdf>`_
+
+  arguments:
+    lr:
+      type: float
+      default: 1e-4
+      doc: Learning rate (:math:`\eta`).
+    decay:
+      type: float
+      default: 0.95
+      doc: Decay rate (:math:`\rho`).
+    momentum:
+      type: float
+      default: 0.9
+      doc: Momentum (:math:`\beta`)
+    eps:
+      type: float
+      default: 1e-4
+      doc: Small value for avoiding zero division(:math:`\epsilon`).
+
 Adam:
   snake_name: adam
   doc: |
@@ -293,7 +329,6 @@ AdamW:
       type: float
       default: 1e-4
       doc: Weight decay rate.
-
 
 AdaBound:
   snake_name: adabound
@@ -377,7 +412,7 @@ Adamax:
       type: float
       default: 1e-8
       doc: Small value for avoiding zero division(:math:`\epsilon`).
-  
+
 AMSGRAD:
   snake_name: amsgrad
   doc: |
