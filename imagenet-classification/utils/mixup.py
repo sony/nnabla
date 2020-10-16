@@ -21,7 +21,7 @@ import nnabla.functions as F
 def get_nnabla_version_integer():
     from nnabla import __version__
     import re
-    r = list(map(int, re.match('^(\d+)\.(\d)+\.(\d+)', __version__).groups()))
+    r = list(map(int, re.match('^(\d+)\.(\d+)\.(\d+)', __version__).groups()))
     return r[0] * 10000 + r[1] * 100 + r[2]
 
 
