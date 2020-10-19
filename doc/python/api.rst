@@ -10,6 +10,7 @@ Python API Reference
     api/common
     api/nd_array
     api/variable
+    api/computation_graph
     api/function
     api/parametric_function
     api/grad

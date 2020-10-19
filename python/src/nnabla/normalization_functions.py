@@ -472,6 +472,32 @@ def weight_standardization(w, channel_axis=0, eps=1e-05, output_stat=False):
         y &=& \hat{W} \ast x
       \end{eqnarray}
 
+    Example:
+        .. code-block:: python
+
+            import numpy as np
+            import nnabla as nn
+            import nnabla.functions as F
+            import nnabla.parametric_functions as PF
+
+            rng = np.random.RandomState(313)
+            x = nn.Variable.from_numpy_array(rng.randn(*(32, 16, 3, 3)))
+
+            # For convolution:
+
+            def ws_callback_conv(w):
+                return F.weight_standardization(w, channel_axis=0)
+
+            y = PF.convolution(x, 10, (2, 2), apply_w=ws_callback_conv)
+
+            # For affine:
+
+            def ws_callback_affine(w): 
+                return F.weight_standardization(w, channel_axis=1)
+
+            y = PF.affine(x, 10, apply_w=ws_callback_affine)
+
+
     References:
 
       * `Siyuan Qiao, Huiyu Wang, Chenxi Liu, Wei Shen, Alan Yuille, Weight Standardization

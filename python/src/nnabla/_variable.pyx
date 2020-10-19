@@ -511,12 +511,14 @@ cdef class Variable:
         The subset is recursively constructed by tracking variables that the 
         variables in the subset depend on, starting from this variable,
         until it reaches the root variable(s) in the function graph.
+        See also :obj:`~nnnabla.forward_all`, which performs forward computations for all variables within the input graph.
 
         Args:
             clear_buffer (bool): Clear the no longer referenced variables
                 during forward propagation to save memory.
                 This is usually set as True in an inference
                 or a validation phase. Default is False.
+                Note that all unnecessary intermediate variables will be cleared unless set explicitly as `persistent=True`.
             clear_no_need_grad (bool): Clear the unreferenced variables with
                 need_grad=False during forward propagation.
                 True is usually used when calling this during training.
@@ -542,6 +544,7 @@ cdef class Variable:
         with nogil:
             self.varp.forward(clear_buffer, clear_no_need_grad, NULL, function_pre_hook_c, function_post_hook_c)
 
+
     def backward(self, grad=1, cpp_bool clear_buffer=False, communicator_callbacks=None,
                  function_pre_hook=None, function_post_hook=None):
         """
@@ -563,7 +566,7 @@ cdef class Variable:
                 **You need to set grad=None**, otherwise, for that backward pass (propagated from the unlinked :class:`~nnabla.Variable`),
                 pre-computed gradient values are **ignored**.
             clear_buffer(bool): Clears the no longer referenced variables
-                during backpropagation to save memory.
+                during backpropagation to save memory. Note that all unnecessary intermediate variables will be cleared unless set explicitly as `persistent=True`.
             communicator_callbacks(:obj:`nnabla.CommunicatorBackwardCallback` or list of :obj:`nnabla.CommunicatorBackwardCallback`):
                 The callback functions invoked when 1) backward computation
                 of each function is finished and 2) all backward
