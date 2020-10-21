@@ -232,3 +232,9 @@
 20:
   PackPaddedSequence_B: 305
   PadPackedSequence_Bfi: 306
+21:
+  ScatterAdd_iI: 307
+22:
+  ScatterAdd_Empty: 308
+23:
+  ScatterAdd_i: 309

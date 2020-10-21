@@ -316,9 +316,7 @@ Neural Network Layer:
             
             L'_i = \frac{L_i + 2 p_i - d_i (k_i - 1) - 1}{s_i} + 1, 
             
-          where :math:`L_i` is the spatial size, :math:`p_i` is the padding, :math:`d_i` is the dilation, :math:`k_i` is the kernel size, and :math:`s_i` is the stride for :math:`i`-th spatial dimension. The same calculation can also be applied to the other spatial dimensions. 
-
-            
+          where :math:`L_i` is the spatial size, :math:`p_i` is the padding, :math:`d_i` is the dilation, :math:`k_i` is the kernel size, and :math:`s_i` is the stride for :math:`i`-th spatial dimension. The same calculation can also be applied to the other spatial dimensions.
     function_ids:
       iiIiIiIi: 1
       iiIiIiIiB: 265
@@ -520,7 +518,7 @@ Neural Network Layer:
             
             L'_i = \frac{L_i + 2 p_i - d_i (k_i - 1) - 1}{s_i} + 1, 
             
-          where :math:`L_i` is the spatial size, :math:`p_i` is the padding, :math:`d_i` is the dilation, :math:`k_i` is the kernel size, and :math:`s_i` is the stride for :math:`i`-th spatial dimension. The same calculation can also be applied to the other spatial dimensions. 
+          where :math:`L_i` is the spatial size, :math:`p_i` is the padding, :math:`d_i` is the dilation, :math:`k_i` is the kernel size, and :math:`s_i` is the stride for :math:`i`-th spatial dimension. The same calculation can also be applied to the other spatial dimensions.
     function_ids:
       iiIiIiIi: 2
     c_runtime: support
@@ -596,7 +594,7 @@ Neural Network Layer:
 
             L'_i =s_i (L_i - 1) - 2 p_i + d_i (k_i - 1) + 1,
             
-          where :math:`s_i` is the stride, :math:`L_i` is the spatial size, :math:`p_i` is the padding, :math:`d_i` is the dilation, and :math:`k_i` is the kernel size for :math:`i`-th spatial dimension. The same calculation can also be applied to the other spatial dimensions.  
+          where :math:`s_i` is the stride, :math:`L_i` is the spatial size, :math:`p_i` is the padding, :math:`d_i` is the dilation, and :math:`k_i` is the kernel size for :math:`i`-th spatial dimension. The same calculation can also be applied to the other spatial dimensions.
     function_ids:
       iiIiIiIi: 3
       iiIiIiIiB: 279
@@ -1629,7 +1627,6 @@ Normalization:
 
       References:
           * `Tim Salimans, Diederik P. Kingma, Weight Normalization: A Simple Reparameterization to Accelerate Training of Deep Neural Networks. <https://arxiv.org/abs/1602.07868>`_
-          
     inputs:
       w:
         doc: N-D array of learnable weights.
@@ -1718,7 +1715,6 @@ Normalization:
         max = F.broadcast(nn.Variable.from_numpy_array(np.asarray([1.0]).reshape((1, 1, 1, 1))), (16, 3, 32, 32))
         c = F.clip_grad_by_value(x, min=min, max=max)
         h = PF.convolution(c, 64, (3, 3), pad=(1, 1))
-                               
     inputs:
       x:
         doc: N-D array of input.
@@ -4079,6 +4075,53 @@ Array Manipulation:
     c_runtime: not support
     function_ids:
       iI: 271
+  ScatterAdd:
+    snake_name: scatter_add
+    doc: |2
+
+      Add all values from `x1` into the `x0` according to index specified by `indices`.
+      This function adds `x1` into the copy of `x0` and outputs the copy.
+      The original `x0` will not be changed.
+
+      The forward of :func:`~nnabla.functions.scatter_add` is equivalent to:
+
+      .. code-block:: python
+
+        def scatter_add(x0, indices, x1, axis):
+            # Assuming each input is 3 dimensional
+            import numpy as np
+            output = np.copy(x0)
+            for i in range(indices.shape[0]):
+                for j in range(indices.shape[1]):
+                    for k in range(indices.shape[2]):
+                        if axis == 0:
+                            output[indices[i][j][k]][j][k] += x1[i][j][k]
+                        elif axis == 1:
+                            output[i][indices[i][j][k]][k] += x1[i][j][k]
+                        elif axis == 2:
+                            output[i][j][indices[i][j][k]] += x1[i][j][k]
+            return output
+    inputs:
+      x0:
+        doc: N-D array which the data is added to its copy.
+      indices:
+        doc: N-D array scatter indices.
+      x1:
+        doc: N-D array which is scattered and added to x0.
+    arguments:
+      axis:
+        doc: Axis along which to index
+        type: int64
+        default: 0
+    outputs:
+      y:
+        doc: N-D array which contains the result of scatter addition. The shape is
+          same as x0.
+    c_runtime: not support
+    function_ids:
+      iI: 307
+      Empty: 308
+      i: 309
   PackPaddedSequence:
     snake_name: pack_padded_sequence
     doc: |
@@ -4095,7 +4138,6 @@ Array Manipulation:
         This function assumes the length-sorted padded sequence in the decreasing order
         and must be used by :func:`~nnabla.utils.rnn.pack_padded_sequence` in the dynamic computation mode.
         See :
-        
     inputs:
       padded_sequence:
         doc: |

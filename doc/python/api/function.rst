@@ -208,6 +208,7 @@ Array Manipulation
 .. autofunction:: gather
 .. autofunction:: gather_nd
 .. autofunction:: scatter_nd
+.. autofunction:: scatter_add
 .. autofunction:: pad
 .. autofunction:: transpose
 .. autofunction:: broadcast
