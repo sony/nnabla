@@ -467,8 +467,8 @@ def weight_standardization(w, channel_axis=0, eps=1e-05, output_stat=False):
     .. math::
       \begin{eqnarray}
         \mu_{W_i} &=& \frac{1}{I} \sum_{j=1}^{I} W_{ij} \\
-        \sigma_{W_i} &=& \sqrt{\frac{1}{I} \sum_{i=1}^{I} \left(W_{ij} - \mu_{W_{i}}\right)^2} \\
-        \hat{W_{ij}} &=& \frac{W_{ij} - \mu_{W_i}}{\sigma_{W_i} + \epsilon} \\
+        \sigma_{W_i} &=& \sqrt{\frac{1}{I} \sum_{i=1}^{I} \left(W_{ij} - \mu_{W_{i}}\right)^2 + \epsilon} \\
+        \hat{W_{ij}} &=& \frac{W_{ij} - \mu_{W_i}}{\sigma_{W_i}} \\
         y &=& \hat{W} \ast x
       \end{eqnarray}
 
@@ -528,8 +528,8 @@ def layer_normalization(x, beta, gamma, batch_axis=0, eps=1e-05, output_stat=Fal
     .. math::
       \begin{eqnarray}
         \mu^l &=& \frac{1}{H} \sum_{i=1}^{H} x_i^l \\
-        \sigma^l &=& \sqrt{\frac{1}{H} \sum_{i=1}^{H} \left(x_i^l - \mu^l\right)^2} \\
-        y &=& \frac{x - \mu^l}{\sigma^l + \epsilon} \gamma + \beta
+        \sigma^l &=& \sqrt{\frac{1}{H} \sum_{i=1}^{H} \left(x_i^l - \mu^l\right)^2 + \epsilon} \\
+        y &=& \frac{x - \mu^l}{\sigma^l} \gamma + \beta
       \end{eqnarray}
 
     where :math:`x` and :math:`y` are input and output variable,
@@ -579,8 +579,8 @@ def instance_normalization(x, beta, gamma, channel_axis=1, batch_axis=0, eps=1e-
     .. math::
       \begin{eqnarray}
         \mu^i &=& \frac{1}{H} \sum_{i=1}^{H} x_i^i \\
-        \sigma^i &=& \sqrt{\frac{1}{H} \sum_{i=1}^{H} \left(x_i^i - \mu^i\right)^2} \\
-        y &=& \frac{x - \mu^i}{\sigma^i + \epsilon} \gamma + \beta
+        \sigma^i &=& \sqrt{\frac{1}{H} \sum_{i=1}^{H} \left(x_i^i - \mu^i\right)^2 + \epsilon} \\
+        y &=& \frac{x - \mu^i}{\sigma^i} \gamma + \beta
       \end{eqnarray}
 
     where :math:`x` and :math:`y` are input and output variable,
@@ -647,8 +647,8 @@ def group_normalization(x, beta, gamma, num_groups, channel_axis=1, batch_axis=0
     .. math::
       \begin{eqnarray}
         \mu^g &=& \frac{1}{H} \sum_{i=1}^{H} x_i^g \\
-        \sigma^g &=& \sqrt{\frac{1}{H} \sum_{i=1}^{H} \left(x_i^g - \mu^g\right)^2} \\
-        y &=& \frac{x - \mu^g}{\sigma^g + \epsilon} \gamma + \beta
+        \sigma^g &=& \sqrt{\frac{1}{H} \sum_{i=1}^{H} \left(x_i^g - \mu^g\right)^2 + \epsilon} \\
+        y &=& \frac{x - \mu^g}{\sigma^g} \gamma + \beta
       \end{eqnarray}
 
     where :math:`x` and :math:`y` are input and output variable,
