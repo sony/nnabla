@@ -13,7 +13,7 @@
 # limitations under the License.
 
 all: main.cpp
-	$(CXX) -std=c++11 -O -o mnist_training main.cpp -lnnabla -lnbla_utils -lz
+	$(CXX) -std=c++11 -O -o mnist_training main.cpp -lnnabla -lnnabla_utils -lz
 
 clean:
 	rm -f mnist_training
