@@ -20,17 +20,21 @@ import numpy as np
 import nnabla as nn
 import nnabla.experimental.graph_converters as GC
 
-from .ref_graphs.resnets import small_bn_resnet, small_fbn_resnet
+from .ref_graphs.lenets import lenet, bsf_lenet
+from .ref_graphs.resnets import small_bn_resnet, small_bsf_resnet
 
 
 batch_size = 1
-resnet_ref = small_fbn_resnet
+lenet_ref = bsf_lenet
+resnet_ref = small_bsf_resnet
 
 
 @pytest.mark.parametrize('seed', [313])
-@pytest.mark.parametrize('test', [True])
-@pytest.mark.parametrize('graph_ref, graph_act', [(resnet_ref, small_bn_resnet)])
-def test_fused_batch_normalization(seed, test, graph_ref, graph_act):
+@pytest.mark.parametrize('test', [True, False])
+@pytest.mark.parametrize('w_bias', [True, False])
+@pytest.mark.parametrize('graph_ref, graph_act', [(lenet_ref, lenet),
+                                                  (resnet_ref, small_bn_resnet)])
+def test_batch_norma_batchstat(seed, test, w_bias, graph_ref, graph_act):
     from .graph_converter_test_utils import structure_tester, value_tester
 
     # Random number
@@ -41,17 +45,17 @@ def test_fused_batch_normalization(seed, test, graph_ref, graph_act):
     x_data = rng.randn(batch_size, 3, 32, 32)
     x = nn.Variable.from_numpy_array(x_data)
 
-    y_tgt = graph_act(x, test=test)
+    y_tgt = graph_act(x, test=test, w_bias=w_bias)
 
     # FunctionModifier
     modifiers = []
-    modifiers.append(GC.FusedBatchNormalizationModifier())
+    modifiers.append(GC.BatchNormBatchStatModifier())
 
     y_act = GC.GraphConverter(modifiers).convert(y_tgt)
 
     # Ref Graph
-    y_ref = graph_ref(x, test=test, name='fused-bn-graph-ref')
+    y_ref = graph_ref(x, w_bias)
 
     # Test
     structure_tester(y_ref, y_act)
-    value_tester(y_tgt, y_act, rtol=6e-02, atol=5e-02)
+    value_tester(y_ref, y_act, rtol=6e-02, atol=5e-02)

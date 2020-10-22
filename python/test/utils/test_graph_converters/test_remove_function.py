@@ -29,8 +29,9 @@ resnet_ref = small_bn_rm_resnet
 
 @pytest.mark.parametrize('seed', [313])
 @pytest.mark.parametrize('test', [True])
+@pytest.mark.parametrize('w_bias', [True, False])
 @pytest.mark.parametrize('graph_ref, graph_act', [(resnet_ref, small_bn_resnet)])
-def test_unfused_batch_normalization(seed, test, graph_ref, graph_act):
+def test_remove_function(seed, test, w_bias, graph_ref, graph_act):
     from .graph_converter_test_utils import structure_tester, value_tester
 
     # Random number
@@ -41,7 +42,7 @@ def test_unfused_batch_normalization(seed, test, graph_ref, graph_act):
     x_data = rng.randn(batch_size, 3, 32, 32)
     x = nn.Variable.from_numpy_array(x_data)
 
-    y_tgt = graph_act(x, test=test)
+    y_tgt = graph_act(x, test=test, w_bias=w_bias)
 
     # FunctionModifier
     modifiers = []
@@ -51,8 +52,7 @@ def test_unfused_batch_normalization(seed, test, graph_ref, graph_act):
     y_act = GC.GraphConverter(modifiers).convert(y_tgt)
 
     # Ref Graph
-    y_ref = graph_ref(x, test=test, name='bn-graph-rm-ref')
+    y_ref = graph_ref(x, test=test, w_bias=w_bias, name='bn-graph-rm-ref')
 
     # Test
     structure_tester(y_ref, y_act)
-#    value_tester(y_tgt, y_act, rtol=6e-02, atol=5e-02)
