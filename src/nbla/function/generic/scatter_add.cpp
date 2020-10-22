@@ -62,7 +62,7 @@ void ScatterAdd<T>::forward_impl(const Variables &inputs,
   const T *x1 = inputs[2]->get_data_pointer<T>(this->ctx_);
   T *dst = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
 
-  for (long int i = 0; i < inputs[0]->size(); ++i) {
+  for (auto i = 0; i < inputs[0]->size(); ++i) {
     dst[i] = x0[i];
   }
 
@@ -77,8 +77,8 @@ void ScatterAdd<T>::forward_impl(const Variables &inputs,
 
   auto axis = (axis_ < 0) ? inputs[0]->ndim() + axis_ : axis_;
 
-  for (long int i = 0; i < inputs[1]->size(); ++i) {
-    long int dst_axis_index = indices[i];
+  for (int64_t i = 0; i < inputs[1]->size(); ++i) {
+    auto dst_axis_index = indices[i];
     NBLA_CHECK((0 <= dst_axis_index && dst_axis_index < x0_shape[axis]),
                error_code::value, "Given index is out of range.");
     auto nd_index = ndi::flat2nd(i, index_strides);
@@ -101,7 +101,7 @@ void ScatterAdd<T>::backward_impl(const Variables &inputs,
   // Gradient of outputs
   if (propagate_down[0]) {
     T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
-    for (long int i = 0; i < inputs[0]->size(); ++i) {
+    for (auto i = 0; i < inputs[0]->size(); ++i) {
       if (accum[0]) {
         dx[i] += dy[i];
       } else {
@@ -126,13 +126,13 @@ void ScatterAdd<T>::backward_impl(const Variables &inputs,
     // Initialize dx with 0 if accum is false. Because the indices may not
     // correspond to dx 1-by-1.
     if (!accum[2]) {
-      for (long int i = 0; i < inputs[2]->size(); ++i) {
+      for (int64_t i = 0; i < inputs[2]->size(); ++i) {
         dx[i] = 0.0;
       }
     }
     const T *indices = inputs[1]->get_data_pointer<T>(this->ctx_);
-    for (long int i = 0; i < inputs[1]->size(); ++i) {
-      long int dst_axis_index = indices[i];
+    for (int64_t i = 0; i < inputs[1]->size(); ++i) {
+      int64_t dst_axis_index = indices[i];
       NBLA_CHECK((0 <= dst_axis_index && dst_axis_index < x0_shape[axis]),
                  error_code::value, "Given index is out of range.");
       auto nd_index = ndi::flat2nd(i, index_strides);
