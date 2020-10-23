@@ -183,6 +183,58 @@ Adagrad:
       default: 1e-8
       doc: Small value for avoiding zero division(:math:`\epsilon`).
 
+AdaBelief:
+  snake_name: adabelief
+  doc: |
+    AdaBelief optimizer.
+
+    .. math::
+        m_t &\leftarrow \beta_1 m_{t-1} + (1 - \beta_1) g_t\\
+        s_t &\leftarrow \beta_2 v_{t-1} + (1 - \beta_2) (g_t - m_t)^2\\
+        w_{t+1} &\leftarrow w_t - \alpha
+            \frac{\sqrt{1 - \beta_2^t}}{1 - \beta_1^t}
+            \frac{m_t}{\sqrt{s_t + \epsilon} + \epsilon}
+
+  references:
+    - |
+      `Juntang Zhuang, et al. (2020).
+      AdaBelief Optimizer: Adapting Stepsizes by the Belief in Observed Gradients.
+      <https://arxiv.org/pdf/2010.07468.pdf>`_
+
+  arguments:
+    alpha:
+      type: float
+      default: 1e-3
+      doc: Step size (:math:`\alpha`).
+    beta1:
+      type: float
+      default: 0.9
+      doc: Decay rate of first-order momentum (:math:`\beta_1`).
+    beta2:
+      type: float
+      default: 0.999
+      doc: Decay rate of second-order momentum (:math:`\beta_2`).
+    eps:
+      type: float
+      default: 1e-8
+      doc: Small value for avoiding zero division(:math:`\epsilon`).
+    amsgrad:
+      type: bool
+      default: False
+      doc: Perform AMSGrad variant of AdaBelief.
+    weight_decouple:
+      type: bool
+      default: False
+      doc: Perform decoupled weight decay as in AdamW.
+    fixed_decay:
+      type: bool
+      default: False
+      doc: If True, the weight decay ratio will be kept fixed. Note that this option only takes effect when weight_decople option is enabled.
+    rectify:
+      type: bool
+      default: False
+      doc: Perform RAdam variant of AdaBelief.
+
 RMSprop:
   snake_name: rmsprop
   doc: |

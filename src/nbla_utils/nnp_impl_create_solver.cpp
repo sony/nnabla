@@ -14,6 +14,7 @@
 
 #include "nnp_impl.hpp"
 #include <nbla/solver.hpp>
+#include <nbla/solver/adabelief.hpp>
 #include <nbla/solver/adadelta.hpp>
 #include <nbla/solver/adagrad.hpp>
 #include <nbla/solver/adam.hpp>
@@ -36,6 +37,13 @@ shared_ptr<nbla::Solver> OptimizerImpl::create_solver(const ::Solver &solver) {
   if (solver.type() == "Adagrad") {
     AdagradParameter param = solver.adagrad_param();
     return create_AdagradSolver(ctx_, param.lr(), param.eps());
+  }
+  if (solver.type() == "AdaBelief") {
+    AdaBeliefParameter param = solver.adabelief_param();
+    return create_AdaBeliefSolver(ctx_, param.alpha(), param.beta1(),
+                                  param.beta2(), param.eps(), param.amsgrad(),
+                                  param.weight_decouple(), param.fixed_decay(),
+                                  param.rectify());
   }
   if (solver.type() == "Adam") {
     AdamParameter param = solver.adam_param();

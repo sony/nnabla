@@ -431,6 +431,14 @@ def _create_optimizer(ctx, o, networks, datasets):
             optimizer.solver = S.Adadelta(
                 o.solver.adadelta_param.lr, o.solver.adadelta_param.decay, o.solver.adadelta_param.eps)
             init_lr = o.solver.adadelta_param.lr
+        elif o.solver.type == 'AdaBelief':
+            optimizer.solver = S.AdaBelief(o.solver.adabelief_param.alpha, o.solver.adabelief_param.beta1,
+                                           o.solver.adabelief_param.beta2, o.solver.adabelief_param.eps,
+                                           o.solver.adabelief_param.amsgrad,
+                                           o.solver.adabelief_param.weight_decouple,
+                                           o.solver.adabelief_param.fixed_decay,
+                                           o.solver.adabelief_param.rectify)
+            init_lr = o.solver.adabelief_param.lr
         elif o.solver.type == 'Adam':
             optimizer.solver = S.Adam(o.solver.adam_param.alpha, o.solver.adam_param.beta1,
                                       o.solver.adam_param.beta2, o.solver.adam_param.eps)
