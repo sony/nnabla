@@ -77,7 +77,8 @@ def _update_adabelief(p, grad, m, s, s_max, t,
             r_t_numerator = (rho_t - 4.0) * (rho_t - 2.0) * rho_inf
             r_t_denominator = (rho_inf - 4.0) * (rho_inf - 2.0) * rho_t
             r_t = np.sqrt(r_t_numerator / r_t_denominator)
-            p[...] = p - alpha * r_t * bias_correction * m / (np.sqrt(s_t + eps) + eps)
+            p[...] = p - alpha * r_t * bias_correction * \
+                m / (np.sqrt(s_t + eps) + eps)
         else:
             p[...] = p - alpha * m
     else:
