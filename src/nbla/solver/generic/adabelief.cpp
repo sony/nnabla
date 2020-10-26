@@ -42,12 +42,14 @@ void AdaBelief<T>::set_state_impl(const string &key, VariablePtr param) {
   auto shape = param->shape();
   auto m = make_shared<Variable>(shape);
   auto s = make_shared<Variable>(shape);
-  auto max_s = make_shared<Variable>(shape);
   m->data()->zero();
   s->data()->zero();
-  max_s->data()->zero();
-  unordered_map<string, VariablePtr> pstate{
-      {"mean", m}, {"sqr_var", s}, {"max_sqr_var", max_s}};
+  unordered_map<string, VariablePtr> pstate{{"mean", m}, {"var", s}};
+  if (amsgrad_) {
+    auto s_max = make_shared<Variable>(shape);
+    s_max->data()->zero();
+    pstate["s_max"] = s_max;
+  }
   SolverState state{pstate, 0};
   states_.insert({key, state});
 }
@@ -62,57 +64,54 @@ void AdaBelief<T>::update_impl(const string &key, VariablePtr param) {
   auto &t = state.t;
   const T *g = param->get_grad_pointer<T>(this->ctx_);
   VariablePtr s1 = state.pstate["mean"];
-  VariablePtr s2 = state.pstate["sqr_var"];
-  VariablePtr s3 = state.pstate["max_sqr_var"];
-  T *m = s1->cast_data_and_get_pointer<T>(this->ctx_);
-  T *s = s2->cast_data_and_get_pointer<T>(this->ctx_);
-  T *max_s = s3->cast_data_and_get_pointer<T>(this->ctx_);
-  T *theta = param->cast_data_and_get_pointer<T>(this->ctx_);
-  t = std::min(t + 1, std::numeric_limits<uint32_t>::max() - 1);
+  VariablePtr s2 = state.pstate["var"];
 
+  t = std::min(t + 1, std::numeric_limits<uint32_t>::max() - 1);
   const T beta1_t = std::pow(beta1_, t);
   const T beta2_t = std::pow(beta2_, t);
-  const T bias_correction = std::sqrt(1 - beta2_t) / (1 - beta1_t);
-  T alpha_t = alpha_ * bias_correction;
-  bool update_in_sgd_style = false;
+  const T bias_correction = std::sqrt(1.0 - beta2_t) / (1.0 - beta1_t);
+  float r_t = 1.0;
+  float rho_t = 0.0;
 
   if (rectify_) {
-    const T rho_inf = 2 / (1 - beta2_) - 1;
-    const T rho_t =
-        rho_inf - 2 * t * std::pow(beta2_, t) / (1 - std::pow(beta2_, t));
-
-    if (rho_t > 4.0) {
-      const T rt = std::sqrt((rho_t - 4) * (rho_t - 2) * rho_inf /
-                             (rho_inf - 4) / (rho_inf - 2) / rho_t);
-      alpha_t = rt * alpha_t;
-    } else {
-      alpha_t = alpha_;
-      update_in_sgd_style = true;
-    }
+    auto rho_inf = 2.0 / (1.0 - beta2_) - 1.0;
+    rho_t = rho_inf - 2.0 * t * beta2_t / (1.0 - beta2_t);
+    auto r_t_numerator = (rho_t - 4.0) * (rho_t - 2.0) * rho_inf;
+    auto r_t_denominator = (rho_inf - 4.0) * (rho_inf - 2.0) * rho_t;
+    r_t = std::sqrt(r_t_numerator / r_t_denominator);
   }
 
+  const bool sgd_update = (rectify_ && rho_t <= 4.0);
+  const float alpha_t = sgd_update ? alpha_ : alpha_ * r_t * bias_correction;
+  const float decay_ratio = fixed_decay_ ? wd_ : wd_ * alpha_;
+
+  T *m = s1->cast_data_and_get_pointer<T>(this->ctx_);
+  T *s = s2->cast_data_and_get_pointer<T>(this->ctx_);
+  T *s_max = nullptr;
+  if (amsgrad_) {
+    VariablePtr s3 = state.pstate["s_max"];
+    s_max = s3->cast_data_and_get_pointer<T>(this->ctx_);
+  }
+  T *theta = param->cast_data_and_get_pointer<T>(this->ctx_);
+
   for (int i = 0; i < size; ++i) {
+    // Updating running mean and var.
     m[i] = beta1_ * m[i] + (1 - beta1_) * g[i];
     s[i] = beta2_ * s[i] + (1 - beta2_) * std::pow(g[i] - m[i], 2);
 
-    T denom = std::sqrt(s[i] + eps_);
-    if (amsgrad_) {
-      max_s[i] = std::max(s[i], max_s[i]);
-      denom = std::sqrt(max_s[i] + eps_);
-    }
-
     if (weight_decouple_) {
-      if (fixed_decay_) {
-        theta[i] = theta[i] - theta[i] * wd_;
-      } else {
-        theta[i] = theta[i] - theta[i] * wd_ * alpha_;
-      }
+      theta[i] = theta[i] - theta[i] * decay_ratio;
     }
 
-    if (update_in_sgd_style) {
+    if (amsgrad_) {
+      s_max[i] = std::max(s_max[i], s[i]);
+    }
+    // Update parameters.
+    if (sgd_update) {
       theta[i] = theta[i] - alpha_t * m[i];
     } else {
-      theta[i] = theta[i] - alpha_t * m[i] / denom;
+      auto s_t = amsgrad_ ? s_max[i] : s[i];
+      theta[i] = theta[i] - alpha_t * m[i] / (std::sqrt(s_t + eps_) + eps_);
     }
   }
 }
