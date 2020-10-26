@@ -336,6 +336,7 @@ def _create_optimizer(datasets, name, solver, network, dataset_names, weight_dec
         o.solver.adabelief_param.beta1 = solver.info['beta1']
         o.solver.adabelief_param.beta2 = solver.info['beta2']
         o.solver.adabelief_param.eps = solver.info['eps']
+        o.solver.adabelief_param.wd = solver.info['wd']
         o.solver.adabelief_param.amsgrad = solver.info['amsgrad']
         o.solver.adabelief_param.weight_decouple = solver.info['weight_decouple']
         o.solver.adabelief_param.fixed_decay = solver.info['fixed_decay']

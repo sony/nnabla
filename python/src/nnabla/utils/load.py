@@ -434,6 +434,7 @@ def _create_optimizer(ctx, o, networks, datasets):
         elif o.solver.type == 'AdaBelief':
             optimizer.solver = S.AdaBelief(o.solver.adabelief_param.alpha, o.solver.adabelief_param.beta1,
                                            o.solver.adabelief_param.beta2, o.solver.adabelief_param.eps,
+                                           o.solver.adabelief_param.wd,
                                            o.solver.adabelief_param.amsgrad,
                                            o.solver.adabelief_param.weight_decouple,
                                            o.solver.adabelief_param.fixed_decay,

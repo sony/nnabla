@@ -27,57 +27,58 @@
 
 namespace nbla {
 namespace utils {
-namespace nnp {
-shared_ptr<nbla::Solver> OptimizerImpl::create_solver(const ::Solver &solver) {
-  // Solver creator
-  if (solver.type() == "Adadelta") {
-    AdadeltaParameter param = solver.adadelta_param();
-    return create_AdadeltaSolver(ctx_, param.lr(), param.decay(), param.eps());
-  }
-  if (solver.type() == "Adagrad") {
-    AdagradParameter param = solver.adagrad_param();
-    return create_AdagradSolver(ctx_, param.lr(), param.eps());
-  }
-  if (solver.type() == "AdaBelief") {
-    AdaBeliefParameter param = solver.adabelief_param();
-    return create_AdaBeliefSolver(ctx_, param.alpha(), param.beta1(),
-                                  param.beta2(), param.eps(), param.amsgrad(),
-                                  param.weight_decouple(), param.fixed_decay(),
-                                  param.rectify());
-  }
-  if (solver.type() == "Adam") {
-    AdamParameter param = solver.adam_param();
-    return create_AdamSolver(ctx_, param.alpha(), param.beta1(), param.beta2(),
-                             param.eps());
-  }
-  if (solver.type() == "Adamax") {
-    AdamaxParameter param = solver.adamax_param();
-    return create_AdamaxSolver(ctx_, param.alpha(), param.beta1(),
-                               param.beta2(), param.eps());
-  }
-  if (solver.type() == "Momentum") {
-    MomentumParameter param = solver.momentum_param();
-    return create_MomentumSolver(ctx_, param.lr(), param.momentum());
-  }
-  if (solver.type() == "Nesterov") {
-    NesterovParameter param = solver.nesterov_param();
-    return create_NesterovSolver(ctx_, param.lr(), param.momentum());
-  }
-  if (solver.type() == "RMSprop") {
-    RMSpropParameter param = solver.rmsprop_param();
-    return create_RMSpropSolver(ctx_, param.lr(), param.decay(), param.eps());
-  }
-  if (solver.type() == "RMSpropGraves") {
-    RMSpropGravesParameter param = solver.rmsprop_graves_param();
-    return create_RMSpropGravesSolver(ctx_, param.lr(), param.decay(),
-                                      param.momentum(), param.eps());
-  }
-  if (solver.type() == "Sgd") {
-    SgdParameter param = solver.sgd_param();
-    return create_SgdSolver(ctx_, param.lr());
-  }
-  return nullptr;
-}
-}
+    namespace nnp {
+        shared_ptr<nbla::Solver> OptimizerImpl::create_solver(const ::Solver& solver)
+        {
+            // Solver creator
+            if (solver.type() == "Adadelta") {
+                AdadeltaParameter param = solver.adadelta_param();
+                return create_AdadeltaSolver(ctx_, param.lr(), param.decay(), param.eps());
+            }
+            if (solver.type() == "Adagrad") {
+                AdagradParameter param = solver.adagrad_param();
+                return create_AdagradSolver(ctx_, param.lr(), param.eps());
+            }
+            if (solver.type() == "AdaBelief") {
+                AdaBeliefParameter param = solver.adabelief_param();
+                return create_AdaBeliefSolver(ctx_, param.alpha(), param.beta1(),
+                    param.beta2(), param.eps(), param.wd(), param.amsgrad(),
+                    param.weight_decouple(), param.fixed_decay(),
+                    param.rectify());
+            }
+            if (solver.type() == "Adam") {
+                AdamParameter param = solver.adam_param();
+                return create_AdamSolver(ctx_, param.alpha(), param.beta1(), param.beta2(),
+                    param.eps());
+            }
+            if (solver.type() == "Adamax") {
+                AdamaxParameter param = solver.adamax_param();
+                return create_AdamaxSolver(ctx_, param.alpha(), param.beta1(),
+                    param.beta2(), param.eps());
+            }
+            if (solver.type() == "Momentum") {
+                MomentumParameter param = solver.momentum_param();
+                return create_MomentumSolver(ctx_, param.lr(), param.momentum());
+            }
+            if (solver.type() == "Nesterov") {
+                NesterovParameter param = solver.nesterov_param();
+                return create_NesterovSolver(ctx_, param.lr(), param.momentum());
+            }
+            if (solver.type() == "RMSprop") {
+                RMSpropParameter param = solver.rmsprop_param();
+                return create_RMSpropSolver(ctx_, param.lr(), param.decay(), param.eps());
+            }
+            if (solver.type() == "RMSpropGraves") {
+                RMSpropGravesParameter param = solver.rmsprop_graves_param();
+                return create_RMSpropGravesSolver(ctx_, param.lr(), param.decay(),
+                    param.momentum(), param.eps());
+            }
+            if (solver.type() == "Sgd") {
+                SgdParameter param = solver.sgd_param();
+                return create_SgdSolver(ctx_, param.lr());
+            }
+            return nullptr;
+        }
+    }
 }
 }

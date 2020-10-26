@@ -218,6 +218,10 @@ AdaBelief:
       type: float
       default: 1e-8
       doc: Small value for avoiding zero division(:math:`\epsilon`).
+    wd:
+      type: float
+      default: 0.0
+      doc: Weight decay rate. This option only takes effect when weight_decouple option is enabled.
     amsgrad:
       type: bool
       default: False
@@ -229,7 +233,7 @@ AdaBelief:
     fixed_decay:
       type: bool
       default: False
-      doc: If True, the weight decay ratio will be kept fixed. Note that this option only takes effect when weight_decople option is enabled.
+      doc: If True, the weight decay ratio will be kept fixed. Note that this option only takes effect when weight_decouple option is enabled.
     rectify:
       type: bool
       default: False
