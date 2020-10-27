@@ -190,7 +190,7 @@ AdaBelief:
 
     .. math::
         m_t &\leftarrow \beta_1 m_{t-1} + (1 - \beta_1) g_t\\
-        s_t &\leftarrow \beta_2 v_{t-1} + (1 - \beta_2) (g_t - m_t)^2\\
+        s_t &\leftarrow \beta_2 s_{t-1} + (1 - \beta_2) (g_t - m_t)^2\\
         w_{t+1} &\leftarrow w_t - \alpha
             \frac{\sqrt{1 - \beta_2^t}}{1 - \beta_1^t}
             \frac{m_t}{\sqrt{s_t + \epsilon} + \epsilon}
