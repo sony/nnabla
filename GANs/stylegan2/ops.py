@@ -43,15 +43,15 @@ def lerp(a, b, t):
 def _simple_upfirdn_2d(x, k, up=1, down=1, pad0=0, pad1=0):
     assert x.ndim == 4
     y = x
-    y = F.reshape(y, [-1, y.shape[2], y.shape[3], 1], inplace=False)
+    y = F.reshape(y, [-1, y.shape[2], y.shape[3], 1], inplace=True)
     y = upfirdn_2d(y, k, upx=up, upy=up, downx=down, downy=down,
                    padx0=pad0, padx1=pad1, pady0=pad0, pady1=pad1)
-    y = F.reshape(y, [-1, x.shape[1], y.shape[1], y.shape[2]], inplace=False)
+    y = F.reshape(y, [-1, x.shape[1], y.shape[1], y.shape[2]], inplace=True)
     return y
 
 
 def upfirdn_2d(x, k, upx=1, upy=1, downx=1, downy=1, padx0=0, padx1=0, pady0=0, pady1=0):
-    assert isinstance(x, nn.Variable)
+    assert isinstance(x, nn.Variable) or isinstance(x, nn.NdArray)
     k = np.asarray(k, dtype=np.float32)
     assert x.ndim == 4
     inH = x.shape[1]
@@ -66,9 +66,9 @@ def upfirdn_2d(x, k, upx=1, upy=1, downx=1, downy=1, padx0=0, padx1=0, pady0=0, 
     assert isinstance(pady0, int) and isinstance(pady1, int)
 
     # Upsample (insert zeros).
-    x = F.reshape(x, [-1, inH, 1, inW, 1, minorDim], inplace=False)
+    x = F.reshape(x, [-1, inH, 1, inW, 1, minorDim], inplace=True)
     x = F.pad(x, [0, 0, 0, 0, 0, upy - 1, 0, 0, 0, upx - 1, 0, 0])
-    x = F.reshape(x, [-1, inH * upy, inW * upx, minorDim], inplace=False)
+    x = F.reshape(x, [-1, inH * upy, inW * upx, minorDim], inplace=True)
 
     # Pad (crop if negative).
     x = F.pad(x, [0, 0, max(pady0, 0), max(pady1, 0),
@@ -79,11 +79,11 @@ def upfirdn_2d(x, k, upx=1, upy=1, downx=1, downy=1, padx0=0, padx1=0, pady0=0, 
     # Convolve with filter.
     x = F.transpose(x, [0, 3, 1, 2])
     x = F.reshape(x, [-1, 1, inH * upy + pady0 + pady1,
-                      inW * upx + padx0 + padx1], inplace=False)
+                      inW * upx + padx0 + padx1], inplace=True)
     w = nn.Variable.from_numpy_array(k[np.newaxis, np.newaxis, ::-1, ::-1])
     x = F.convolution(x, w)
     x = F.reshape(x, [-1, minorDim, inH * upy + pady0 + pady1 - kernelH +
-                      1, inW * upx + padx0 + padx1 - kernelW + 1], inplace=False)
+                      1, inW * upx + padx0 + padx1 - kernelW + 1], inplace=True)
     x = F.transpose(x, [0, 2, 3, 1])
 
     # Downsample (throw away pixels).
@@ -99,7 +99,7 @@ def upsample_2d(x, k=None, factor=2, gain=1):
     return _simple_upfirdn_2d(x, k, up=factor, pad0=(p + 1) // 2 + factor - 1, pad1=p // 2)
 
 
-def upsample_conv_2d(x, w, k=None, factor=2, gain=1):
+def upsample_conv_2d(x, w, k=None, factor=2, gain=1, group=1):
     assert isinstance(factor, int) and factor >= 1
 
     # Check weight shape.
@@ -116,7 +116,8 @@ def upsample_conv_2d(x, w, k=None, factor=2, gain=1):
 
     # Execute.
     w = w[:, :, ::-1, ::-1]
-    x = F.deconvolution(x, w, stride=(factor, factor))
+    x = F.deconvolution(x, w, stride=(factor, factor), group=group)
+    x = F.reshape(x, (group, -1, x.shape[2], x.shape[3]), inplace=True)
     return _simple_upfirdn_2d(x, k, pad0=(p + 1)//2 + factor - 1, pad1=p//2 + 1)
 
 
@@ -126,9 +127,8 @@ def convert_images_to_uint8(images, drange=[-1, 1]):
     """
     if isinstance(images, nn.Variable):
         images = images.d
-
-    if images.ndim == 4:
-        images = images[0]
+    if isinstance(images, nn.NdArray):
+        images = images.data
 
     scale = 255 / (drange[1] - drange[0])
     images = images * scale + (0.5 - drange[0] * scale)

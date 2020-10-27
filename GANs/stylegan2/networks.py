@@ -75,6 +75,7 @@ def conv_block(input, w, noise=None, res=4, outmaps=512, inmaps=512,
         single convoluiton block used in each resolution.
     """
 
+    batch_size = input.shape[0]
     with nn.parameter_scope(f"G_synthesis/{res}x{res}/{namescope}"):
         runtime_coef = 1. / np.sqrt(512)
         s = PF.affine(w, n_outmaps=inmaps, with_bias=True,
@@ -90,27 +91,32 @@ def conv_block(input, w, noise=None, res=4, outmaps=512, inmaps=512,
     conv_weight = conv_weight * runtime_coef_for_conv
 
     if up:
-        scale = F.reshape(s, (s.shape[1], 1) + (1, 1), inplace=False)
+        scale = F.reshape(s, (s.shape[0], s.shape[1], 1, 1, 1), inplace=True)
     else:
-        scale = F.reshape(s, (1, s.shape[1]) + (1, 1), inplace=False)
-    mod_w = F.mul2(conv_weight, scale)
+        scale = F.reshape(s, (s.shape[0], 1, s.shape[1], 1, 1), inplace=True)
 
+    mod_w = F.mul2(F.reshape(conv_weight, (1,)+conv_weight.shape, inplace=True), scale)    
+    
     if demodulate:
         if up:
-            denom_w = F.pow_scalar(F.sum(F.pow_scalar(mod_w, 2.), axis=[
-                                   0, 2, 3], keepdims=True) + 1e-8, 0.5)
+            denom_w = F.pow_scalar(F.sum(F.pow_scalar(mod_w, 2.), axis=[1, 3, 4], keepdims=True) + 1e-8, 0.5)
         else:
-            denom_w = F.pow_scalar(F.sum(F.pow_scalar(mod_w, 2.), axis=[
-                                   1, 2, 3], keepdims=True) + 1e-8, 0.5)
+            denom_w = F.pow_scalar(F.sum(F.pow_scalar(mod_w, 2.), axis=[2, 3, 4], keepdims=True) + 1e-8, 0.5)
         demod_w = F.div2(mod_w, denom_w)
+        
     else:
         demod_w = mod_w
-
+    
+        
+    input = F.reshape(input, (1, -1, input.shape[2], input.shape[3]), inplace=True)
+    demod_w = F.reshape(demod_w, (-1, demod_w.shape[2], demod_w.shape[3], demod_w.shape[4]), inplace=True)  
+            
     if up:
         k = [1, 3, 3, 1]
-        conv_out = upsample_conv_2d(input, demod_w, k, factor=2, gain=1)
+        conv_out = upsample_conv_2d(input, demod_w, k, factor=2, gain=1, group=batch_size)
     else:
-        conv_out = F.convolution(input, demod_w, pad=(pad_size, pad_size))
+        conv_out = F.convolution(input, demod_w, pad=(pad_size, pad_size), group=batch_size)
+        conv_out = F.reshape(conv_out, (batch_size, -1, conv_out.shape[2], conv_out.shape[3]), inplace=True)
 
     if noise is not None:
         noise_coeff = nn.parameter.get_parameter_or_create(name=f"G_synthesis/{res}x{res}/{namescope}/noise_strength", shape=())

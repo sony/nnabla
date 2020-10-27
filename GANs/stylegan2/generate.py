@@ -25,7 +25,7 @@ from nnabla.ext_utils import get_extension_context
 from nnabla.utils.image_utils import imsave
 
 
-def synthesis(w, constant_bc, noise_seed):
+def synthesis(w, constant_bc, noise_seed, mix_after):
     """
         given latent vector w, constant input and noise seed,
         synthesis the image.
@@ -44,22 +44,27 @@ def synthesis(w, constant_bc, noise_seed):
 
     # resolution 8 x 8 - 1024 x 1024
     for i in range(1, 9):
+        
+        w_1 = w[0] if (2+i)*2-5 <= mix_after else w[1] 
+        w_2 = w[0] if (2+i)*2-4 <= mix_after else w[1] 
+        w_3 = w[0] if (2+i)*2-3 <= mix_after else w[1] 
+        
         if i > 4:
             outmaps = outmaps // 2
         curr_shape = (1, 1, 2 ** (i + 2), 2 ** (i + 2))
         noise = nn.Variable.from_numpy_array(rnd.randn(*curr_shape))
-        h = conv_block(h, w[(2+i)*2-5], noise, res=2 ** (i + 2), outmaps=outmaps, inmaps=inmaps,
+        h = conv_block(h, w_1, noise, res=2 ** (i + 2), outmaps=outmaps, inmaps=inmaps,
                        kernel_size=3, up=True, namescope="Conv0_up")
 
         if i > 4:
             inmaps = inmaps // 2
         noise = nn.Variable.from_numpy_array(rnd.randn(*curr_shape))
-        h = conv_block(h, w[(2+i)*2-4], noise, res=2 ** (i + 2), outmaps=outmaps, inmaps=inmaps,
+        h = conv_block(h, w_2, noise, res=2 ** (i + 2), outmaps=outmaps, inmaps=inmaps,
                        kernel_size=3, pad_size=1, namescope="Conv1")
 
         # toRGB blocks
         prev_torgb = upsample_2d(torgb, k=[1, 3, 3, 1])
-        curr_torgb = conv_block(h, w[(2+i)*2-3], noise=None, res=2 ** (i + 2), outmaps=3, inmaps=inmaps,
+        curr_torgb = conv_block(h, w_3, noise=None, res=2 ** (i + 2), outmaps=3, inmaps=inmaps,
                                 kernel_size=1, pad_size=0, demodulate=False, namescope="ToRGB", act=F.identity)
 
         torgb = curr_torgb + prev_torgb
@@ -67,7 +72,7 @@ def synthesis(w, constant_bc, noise_seed):
     return torgb
 
 
-def generate(batch_size, style_noises, noise_seed, truncation_psi=0.5):
+def generate(batch_size, style_noises, noise_seed, mix_after, truncation_psi=0.5):
     """
         given style noises, noise seed and truncation value, generate an image.
     """
@@ -91,7 +96,7 @@ def generate(batch_size, style_noises, noise_seed, truncation_psi=0.5):
                     name="G_synthesis/4x4/Const/const",
                     shape=(1, 512, 4, 4))
     constant_bc = F.broadcast(constant, (batch_size,) + constant.shape[1:])
-    rgb_output = synthesis(w, constant_bc, noise_seed)
+    rgb_output = synthesis(w, constant_bc, noise_seed, mix_after)
     return rgb_output
 
 
@@ -109,6 +114,9 @@ def main():
 
     parser.add_argument('--truncation-psi', default=0.5, type=float,
                         help="value for truncation trick.")
+    
+    parser.add_argument('--batch-size', type=int, default=1,
+                        help="Number of images to generate.")
 
     parser.add_argument('--mixing', action='store_true',
                         help="if specified, apply style mixing with additional seed.")
@@ -133,7 +141,7 @@ def main():
     ctx = get_extension_context(args.context)
     nn.set_default_context(ctx)
 
-    batch_size = 1
+    batch_size = args.batch_size
     num_layers = 18
 
     rnd = np.random.RandomState(args.seed)
@@ -142,6 +150,9 @@ def main():
     print("Generation started...")
     print(f"truncation value: {args.truncation_psi}")
     print(f"seed for additional noise: {args.stochastic_seed}")
+    
+    # Inference via nn.NdArray utilizes significantly less memory
+    
     if args.mixing:
         # apply style mixing
         assert args.seed_mix
@@ -149,35 +160,34 @@ def main():
         print(f"using style noise seed {args.seed_mix} for layers {args.mix_after}-{num_layers}.")
         rnd = np.random.RandomState(args.seed_mix)
         z2 = rnd.randn(batch_size, 512)
-        style_noises = [nn.Variable((batch_size, 512)).apply(d=z)
-                        for _ in range(args.mix_after)]
-        style_noises += [nn.Variable((batch_size, 512)).apply(d=z2)
-                         for _ in range(num_layers - args.mix_after)]
+        style_noises = [nn.NdArray.from_numpy_array(z)]
+        style_noises += [nn.NdArray.from_numpy_array(z2)]
     else:
         # no style mixing (single noise / style is used)
         print(f"using style noise seed {args.seed} for entire layers.")
-        style_noise = nn.Variable((batch_size, 512)).apply(d=z)
-        style_noises = [style_noise for _ in range(num_layers)]
+        style_noises = [nn.NdArray.from_numpy_array(z) for _ in range(2)]
 
+    nn.set_auto_forward(True)
     nn.load_parameters("styleGAN2_G_params.h5")
     rgb_output = generate(batch_size, style_noises,
-                          args.stochastic_seed, args.truncation_psi)
-    rgb_output.forward()
+                          args.stochastic_seed, args.mix_after, args.truncation_psi)
 
     # convert to uint8 to save an image file
     image = convert_images_to_uint8(rgb_output, drange=[-1, 1])
     if args.output_filename is None:
         if not args.mixing:
-            filename = f"seed{args.seed}.png"
+            filename = f"seed{args.seed}"
         else:
-            filename = f"seed{args.seed}_{args.seed_mix}.png"
+            filename = f"seed{args.seed}_{args.seed_mix}"
     else:
         filename = args.output_filename
 
     os.makedirs(args.output_dir, exist_ok=True)
-    filepath = os.path.join(args.output_dir, filename)
-    imsave(filepath, image, channel_first=True)
-    print(f"Genetation completed. Saved {filepath}.")
+    
+    for i in range(batch_size):
+        filepath = os.path.join(args.output_dir, f'{filename}_{i}.png')
+        imsave(filepath, image[i], channel_first=True)
+        print(f"Genetation completed. Saved {filepath}.")
 
 
 if __name__ == '__main__':
