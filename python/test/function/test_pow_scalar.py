@@ -72,7 +72,7 @@ def test_pow_scalar_inplace(val, seed, ctx, func_name):
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
-@pytest.mark.parametrize("val", [0.5, 1, 2])
+@pytest.mark.parametrize("val", [0.5, -0.5, 1, 2])
 def test_pow_scalar_double_backward(seed, val, ctx, func_name):
     from nbla_test_utils import backward_function_tester
     rng = np.random.RandomState(seed)
@@ -81,7 +81,7 @@ def test_pow_scalar_double_backward(seed, val, ctx, func_name):
                              inputs=inputs,
                              func_args=[val], func_kwargs={},
                              atol_b=1e-2,
-                             atol_accum=1e-2,
+                             atol_accum=2e-2,
                              dstep=1e-3,
                              ctx=ctx, func_name=None,
                              disable_half_test=False)
