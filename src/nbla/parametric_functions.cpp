@@ -54,8 +54,12 @@ ParameterDirectory::ParameterDirectory()
       ordered_keys_(make_shared<vector<string>>()) {}
 
 ParameterDirectory ParameterDirectory::operator[](string name) {
-  auto new_scope_path = name;
-  return ParameterDirectory(new_scope_path, param_dict_, ordered_keys_);
+  string param_path;
+  if (!scope_path_.empty())
+    param_path = scope_path_ + "/" + name;
+  else
+    param_path = name;
+  return ParameterDirectory(param_path, param_dict_, ordered_keys_);
 }
 
 vector<pair<string, VariablePtr>> ParameterDirectory::get_parameters() {
