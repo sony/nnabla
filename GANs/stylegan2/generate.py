@@ -44,11 +44,11 @@ def synthesis(w, constant_bc, noise_seed, mix_after):
 
     # resolution 8 x 8 - 1024 x 1024
     for i in range(1, 9):
-        
-        w_1 = w[0] if (2+i)*2-5 <= mix_after else w[1] 
-        w_2 = w[0] if (2+i)*2-4 <= mix_after else w[1] 
-        w_3 = w[0] if (2+i)*2-3 <= mix_after else w[1] 
-        
+
+        w_1 = w[0] if (2+i)*2-5 <= mix_after else w[1]
+        w_2 = w[0] if (2+i)*2-4 <= mix_after else w[1]
+        w_3 = w[0] if (2+i)*2-3 <= mix_after else w[1]
+
         if i > 4:
             outmaps = outmaps // 2
         curr_shape = (1, 1, 2 ** (i + 2), 2 ** (i + 2))
@@ -114,7 +114,7 @@ def main():
 
     parser.add_argument('--truncation-psi', default=0.5, type=float,
                         help="value for truncation trick.")
-    
+
     parser.add_argument('--batch-size', type=int, default=1,
                         help="Number of images to generate.")
 
@@ -150,9 +150,9 @@ def main():
     print("Generation started...")
     print(f"truncation value: {args.truncation_psi}")
     print(f"seed for additional noise: {args.stochastic_seed}")
-    
+
     # Inference via nn.NdArray utilizes significantly less memory
-    
+
     if args.mixing:
         # apply style mixing
         assert args.seed_mix
@@ -183,7 +183,7 @@ def main():
         filename = args.output_filename
 
     os.makedirs(args.output_dir, exist_ok=True)
-    
+
     for i in range(batch_size):
         filepath = os.path.join(args.output_dir, f'{filename}_{i}.png')
         imsave(filepath, image[i], channel_first=True)
