@@ -57,14 +57,17 @@ def _update_adabelief(p, grad, m, s, s_max, t,
                       amsgrad, weight_decouple, fixed_decay, rectify):
     beta1_t = beta1 ** t
     beta2_t = beta2 ** t
-    bias_correction = np.sqrt(1. - beta2_t) / (1. - beta1_t)
+    bias_correction1 = (1. - beta1_t)
+    bias_correction2 = np.sqrt(1. - beta2_t)
     m[...] = beta1 * m + (1 - beta1) * grad
     s[...] = beta2 * s + (1 - beta2) * (grad - m) * (grad - m)
     if amsgrad:
         s_max[...] = np.maximum(s_max, s)
-        s_t = s_max
+        s_max += eps
+        denominator = np.sqrt(s_max) / bias_correction2
     else:
-        s_t = s
+        s += eps
+        denominator = np.sqrt(s) / bias_correction2
     if weight_decouple:
         if fixed_decay:
             p[...] = p - p * wd
@@ -77,18 +80,19 @@ def _update_adabelief(p, grad, m, s, s_max, t,
             r_t_numerator = (rho_t - 4.0) * (rho_t - 2.0) * rho_inf
             r_t_denominator = (rho_inf - 4.0) * (rho_inf - 2.0) * rho_t
             r_t = np.sqrt(r_t_numerator / r_t_denominator)
-            p[...] = p - alpha * r_t * bias_correction * \
-                m / (np.sqrt(s_t + eps) + eps)
+            alpha_t = alpha * r_t / bias_correction1
+            p[...] = p - alpha_t * m / (denominator + eps)
         else:
             p[...] = p - alpha * m
     else:
-        p[...] = p - alpha * bias_correction * m / (np.sqrt(s_t + eps) + eps)
+        alpha_t = alpha / bias_correction1
+        p[...] = p - alpha_t * m / (denominator + eps)
 
 
 @pytest.mark.parametrize("ctx, solver_name", ctxs)
 @pytest.mark.parametrize("alpha", [1e-2, 1e-4])
 @pytest.mark.parametrize("beta1, beta2", [(0.9, 0.999), (0.999, 0.9)])
-@pytest.mark.parametrize("eps", [1e-8])
+@pytest.mark.parametrize("eps", [1e-8, 1e-1])
 @pytest.mark.parametrize("amsgrad", [True, False])
 @pytest.mark.parametrize("weight_decouple, fixed_decay, wd",
                          [(True, False, 1e-3), (True, True, 1e-4), (False, False, 1e-5)])
