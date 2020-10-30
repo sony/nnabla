@@ -39,7 +39,7 @@ class DataPipeline(Pipeline):
         super(DataPipeline, self).__init__(batch_size, num_threads, device_id, seed=seed)
         self.input = ops.FileReader(file_root=image_dir,
             random_shuffle=True, num_shards=num_gpus, shard_id=device_id)
-        self.decode = ops.nvJPEGDecoder(device='mixed',output_type=types.RGB)
+        self.decode = ops.ImageDecoder(device='mixed',output_type=types.RGB)
         self.rrc = ops.RandomResizedCrop(device='gpu', size=(128,128))
         self.cmn = ops.CropMirrorNormalize(device='gpu',
                                             crop=(128,128),
@@ -121,7 +121,7 @@ class DALIGenericIterator(object):
         # We need data about the batches (like shape information),
         # so we need to run a single batch as part of setup to get that info
         for p in self._pipes:
-            p._run()
+            p.schedule_run()
         self._first_batch = None
         self._first_batch = self.next()
 
@@ -186,7 +186,7 @@ class DALIGenericIterator(object):
 
         for p in self._pipes:
             p._release_outputs()
-            p._run()
+            p.schedule_run()
 
         copy_db_index = self._current_data_batch
         # Change index for double buffering
