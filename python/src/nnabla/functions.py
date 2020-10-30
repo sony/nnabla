@@ -1152,6 +1152,7 @@ def scatter_add(x0, indices, x1, axis=None):
     '''Add all values from `x1` into the `x0` according to index specified by `indices`.
     This function adds `x1` into the copy of `x0` and outputs the copy.
     The original `x0` will not be changed.
+    `x0`, `indices` and `x1` must have same number of dimensions.
 
     The forward of :func:`~nnabla.functions.scatter_add` is equivalent to:
 
@@ -1174,9 +1175,13 @@ def scatter_add(x0, indices, x1, axis=None):
 
     Args:
         x0(~nnabla.Variable): N-D array which the data is added to its copy.
-        indices(~nnabla.Variable): N-D array scatter indices.
+        indices(~nnabla.Variable): N-D array scatter indices. 
+          The size of each dimension must be equal or smaller than that of x0 except for the specified axis. 
+          The value of indices must be smaller than the size of specified axis' dimension of x0. 
+          The size of each dimension must be equal or smaller than that of x1. 
+          Indices must not be negative.
         x1(~nnabla.Variable): N-D array which is scattered and added to x0.
-        axis(int): Axis along which to index
+        axis(int): Axis along which to index. The axis must not exceed the inputs' dimension.
             [default= `0` ]
 
     Returns:
