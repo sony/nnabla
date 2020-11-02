@@ -137,7 +137,7 @@ class DALIGenericIterator(object):
         # Gather outputs
         outputs = []
         for p in self._pipes:
-            outputs.append(p._share_outputs())
+            outputs.append(p.share_outputs())
         for i in range(self._num_gpus):
             device_id = self._pipes[i].device_id
             # initialize dict for all output categories
@@ -185,7 +185,7 @@ class DALIGenericIterator(object):
                              ctx=self._category_device[category])
 
         for p in self._pipes:
-            p._release_outputs()
+            p.release_outputs()
             p.schedule_run()
 
         copy_db_index = self._current_data_batch
