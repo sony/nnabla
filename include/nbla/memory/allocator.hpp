@@ -20,6 +20,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <unordered_map>
 
@@ -125,6 +126,8 @@ protected:
   unique_ptr<AllocatorCallback>
       callback_; ///< Callback could be set in a derived class.
   unordered_map<string, size_t> device_memory_used_in_bytes_;
+
+  std::mutex mutex_;
 
 public:
   /** Constructor does nothing.

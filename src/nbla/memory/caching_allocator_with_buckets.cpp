@@ -14,13 +14,30 @@
 
 #include <nbla/memory/caching_allocator_with_buckets.hpp>
 
+#define DEBUG_DEVICE_CACHE 0
+
 #if DEBUG_DEVICE_CACHE
 #include <cstdio>
+#include <mutex>
+#include <thread>
+
+static std::mutex m;
+static std::map<std::thread::id, int> thread_ids;
+static int thread_id = 0;
+inline int get_thread_id() {
+  std::lock_guard<std::mutex> lock(m);
+  auto &tid = thread_ids[std::this_thread::get_id()];
+  if (tid == 0) {
+    tid = ++thread_id;
+  }
+  return tid;
+}
+
 #define DEBUG_LOG(...) printf(__VA_ARGS__)
-#define DEBUG_PRINT_CACHES(M, S) print_device_cache_map(M, S)
+#define DEBUG_PRINT_CACHES(P, T, M, S) print_device_cache_map(P, T, M, S)
 #else
 #define DEBUG_LOG(...)
-#define DEBUG_PRINT_CACHES(M, S)
+#define DEBUG_PRINT_CACHES(P, T, M, S)
 #endif
 
 namespace nbla {
@@ -100,14 +117,15 @@ size_t CachingAllocatorWithBucketsBase::round_size(size_t bytes) const {
 
 #if DEBUG_DEVICE_CACHE
 static void
-print_device_cache_map(const CachingAllocatorWithBucketsBase::DeviceCacheMap &m,
+print_device_cache_map(const char *prefix, void *self,
+                       const CachingAllocatorWithBucketsBase::DeviceCacheMap &m,
                        bool small) {
   std::vector<size_t> sizes;
   for (auto &i : m) {
     sizes.push_back(i.second->bytes());
   }
-  printf("device_cache_map(%d): [%s]\n", (int)small,
-         string_join(sizes, ", ").c_str());
+  printf("%d: [%s][%x], device_cache_map(%d): [%s]\n", get_thread_id(), prefix,
+         self, (int)small, string_join(sizes, ", ").c_str());
 }
 #endif
 
@@ -127,7 +145,6 @@ CachingAllocatorWithBucketsBase::alloc_impl(size_t orig_bytes,
     The found/created memory is split if the remaining size is >= round_small_
     and small_alloc_ + 1 for small and large respectively.
    */
-
   // Rounding memory block size
   size_t bytes = round_size(orig_bytes);
   bool small = bytes <= small_alloc_;
@@ -135,28 +152,29 @@ CachingAllocatorWithBucketsBase::alloc_impl(size_t orig_bytes,
   // Find a memory block from cache or create
   auto &cache_map = small ? small_cache_map_ : large_cache_map_;
   auto &device_cache_map = get_device_cache_map(cache_map, device_id);
-  DEBUG_PRINT_CACHES(device_cache_map, small);
+  DEBUG_PRINT_CACHES("alloc_begin", this, device_cache_map, small);
   Key key{bytes, nullptr};
   shared_ptr<Memory> mem;
   auto it = device_cache_map.lower_bound(key);
   if (it != device_cache_map.end()) {
     mem = it->second;
     device_cache_map.erase(it);
-    DEBUG_LOG("Found: %zu\n", mem->bytes());
+    DEBUG_LOG("%d: Found: %zu\n", get_thread_id(), mem->bytes());
   } else {
     size_t alloc_bytes = small ? small_alloc_ : bytes;
     mem = this->make_memory(alloc_bytes, device_id);
-    DEBUG_LOG("Alloc: %zu\n", alloc_bytes);
+    DEBUG_LOG("%d: Alloc: %zu\n", get_thread_id(), alloc_bytes);
     alloc_retry(mem);
   }
 
   // Split obtained memory if it is too large.
   if (mem->bytes() - bytes >= (small ? round_small_ : small_alloc_ + 1)) {
-    DEBUG_LOG("Split (%d): %zu at %zu\n", (int)small, mem->bytes(), bytes);
+    DEBUG_LOG("%d: Split (%d): %zu at %zu\n", get_thread_id(), (int)small,
+              mem->bytes(), bytes);
     shared_ptr<Memory> remaining = mem->divide(bytes);
     device_cache_map[create_key_by_memory(remaining.get())] = remaining;
   }
-  DEBUG_PRINT_CACHES(device_cache_map, small);
+  DEBUG_PRINT_CACHES("alloc_end", this, device_cache_map, small);
   return mem;
 }
 
@@ -178,6 +196,8 @@ void CachingAllocatorWithBucketsBase::free_impl(shared_ptr<Memory> memory) {
   auto &cache_map = small ? small_cache_map_ : large_cache_map_;
   auto &device_cache_map = get_device_cache_map(cache_map, memory->device_id());
 
+  DEBUG_PRINT_CACHES("free_begin", this, device_cache_map, small);
+
   // Try to merge prev and next
   Memory *n = memory->next();
   memory->try_merge(n);
@@ -188,8 +208,7 @@ void CachingAllocatorWithBucketsBase::free_impl(shared_ptr<Memory> memory) {
 
   // Cache
   device_cache_map[create_key_by_memory(memory.get())] = memory;
-  DEBUG_LOG("cache_impl\n");
-  DEBUG_PRINT_CACHES(device_cache_map, small);
+  DEBUG_PRINT_CACHES("free_end", this, device_cache_map, small);
 }
 
 size_t CachingAllocatorWithBucketsBase::free_unused_device_caches_impl(

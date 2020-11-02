@@ -23,7 +23,10 @@ GlobalContext::~GlobalContext() {}
 
 Context GlobalContext::get_current_context() const { return current_; }
 
-void GlobalContext::set_current_context(const Context ctx) { current_ = ctx; }
+void GlobalContext::set_current_context(const Context ctx) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  current_ = ctx;
+}
 
 NBLA_INSTANTIATE_SINGLETON(NBLA_API, GlobalContext);
 }

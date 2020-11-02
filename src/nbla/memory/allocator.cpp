@@ -22,6 +22,7 @@ Allocator::~Allocator() {}
 
 AllocatorMemory Allocator::alloc(size_t bytes, const string &device_id) {
   // Ensuring at least 1 byte. Workaround while knowing that it's in efficient.
+  std::lock_guard<std::mutex> lock(mutex_);
   bytes = std::max(bytes, (size_t)1);
   auto mem = this->alloc_impl(bytes, device_id);
   device_memory_used_in_bytes_.insert(
@@ -33,6 +34,8 @@ AllocatorMemory Allocator::alloc(size_t bytes, const string &device_id) {
   return AllocatorMemory(mem, this->shared_from_this());
 }
 void Allocator::free(shared_ptr<Memory> memory) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  memory->release();
   size_t bytes = memory->bytes();
   string device_id = memory->device_id();
   this->free_impl(memory);
@@ -102,7 +105,7 @@ void AllocatorMemory::release() {
   if (!memory_) {
     return;
   }
-  memory_->release();
+  // memory_->release(); Move it to lock protected scope
   allocator_->free(memory_);
   memory_ = nullptr;
 }
