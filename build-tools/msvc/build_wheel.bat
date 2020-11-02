@@ -1,32 +1,35 @@
-:: Copyright (c) 2017 Sony Corporation. All Rights Reserved.
-::
-:: Licensed under the Apache License, Version 2.0 (the "License");
-:: you may not use this file except in compliance with the License.
-:: You may obtain a copy of the License at
-::
-::     http://www.apache.org/licenses/LICENSE-2.0
-::
-:: Unless required by applicable law or agreed to in writing, software
-:: distributed under the License is distributed on an "AS IS" BASIS,
-:: WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-:: See the License for the specific language governing permissions and
-:: limitations under the License.
-
-:: To build with Debug mode, set environment variable `build_type` as `Debug` as following
-:: before running this script.
-:: set build_type=Debug
-
 @ECHO OFF
 
+REM Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+REM
+REM Licensed under the Apache License, Version 2.0 (the "License");
+REM you may not use this file except in compliance with the License.
+REM You may obtain a copy of the License at
+REM
+REM     http://www.apache.org/licenses/LICENSE-2.0
+REM
+REM Unless required by applicable law or agreed to in writing, software
+REM distributed under the License is distributed on an "AS IS" BASIS,
+REM WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+REM See the License for the specific language governing permissions and
+REM limitations under the License.
+REM
+REM To build with Debug mode, set environment variable `build_type` as `Debug` as following
+REM before running this script.
+REM set build_type=Debug
+
+REM 
+REM Usage:
+REM   build_wheel.bat PYTHON_VERSION [VISUAL_STUDIO_ EDITION]
+REM                PYTHON_VERSION: 3.6, 3.7 or 3.8
+REM     (optional) VISUAL_STUDIO_ EDITION: 2015 or 2019(experimental)
+REM
 SETLOCAL
 
-:: Settings
-CALL %~dp0tools\default_settings.bat || GOTO :error
+REM Environment
+CALL %~dp0tools\env.bat %1 || GOTO :error
 
-:: Folders
-CALL %~dp0tools\default_folders.bat || GOTO :error
-
-:: Build Wheel
+REM Build Wheel
 IF NOT EXIST %nnabla_build_wheel_folder%\ MD %nnabla_build_wheel_folder%
 CD %nnabla_build_wheel_folder%
 
@@ -42,11 +45,11 @@ cmake -G "%generate_target%" ^
 
 msbuild wheel.vcxproj /p:Configuration=%build_type% || GOTO :error
 
-ENDLOCAL
-exit /b
-
+GOTO :end
 :error
 ECHO failed with error code %errorlevel%.
 ENDLOCAL
 exit /b %errorlevel%
 
+:end
+ENDLOCAL
