@@ -67,10 +67,10 @@ class VQVAEtrainer(object):
 		return loss, recon_loss, perplexity, img_recon
 
 	def save_image(self, img, path):
-		# img = (img - np.min(img))/np.ptp(img)	
 		img = img*0.5 + 0.5
 		plt.imshow(nn.monitor.tile_images(img))
-		plt.savefig(path)
+		plt.axis('off')
+		plt.savefig(path, bbox_inches='tight')
 		plt.close()
 		print('Saving reconstrutions in', path)
 
@@ -81,16 +81,10 @@ class VQVAEtrainer(object):
 			self.monitor_val_loss.add(epoch, loss)
 
 	def log_image(self, epoch, img_recon, train=True):
-		if self.dataset_name == 'imagenet' or True:
-			if train:
-				self.save_image(img_recon.d, os.path.join(self.train_recon_path, 'epoch_{}.png'.format(epoch)))
-			else:
-				self.save_image(img_recon.d, os.path.join(self.val_recon_path, 'epoch_{}.png'.format(epoch)))
+		if train:
+			self.save_image(img_recon.d, os.path.join(self.train_recon_path, 'epoch_{}.png'.format(epoch)))
 		else:
-			if train:
-				self.monitor_train_recon.add(epoch, self.scale_back_var(img_recon))
-			else:
-				self.monitor_val_recon.add(epoch, self.scale_back_var(img_recon))
+			self.save_image(img_recon.d, os.path.join(self.val_recon_path, 'epoch_{}.png'.format(epoch)))
 
 	def train(self, epoch):
 		pbar = trange(self.iterations_per_epoch//10, desc='Train at epoch '+str(epoch), disable=self.comm.rank > 0)
@@ -139,7 +133,7 @@ class VQVAEtrainer(object):
 				img_var.data = data[0]
 			else:
 				img_var = self.convert_to_var(data[0])
-			loss, recon_loss, perplexity, img_recon = self.compute_loss(img_var)
+			loss, _, _, img_recon = self.compute_loss(img_var)
 
 			pbar.set_description('Batch Loss: {}'.format(loss.d))
 			epoch_loss += loss.d

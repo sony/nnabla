@@ -35,7 +35,7 @@ def feed_ndarray(dali_tensor, arr, dtype, ctx):
 
 class DataPipeline(Pipeline):
 
-    def __init__(self, image_dir, file_list, batch_size, num_threads, device_id, num_gpus=1, seed=1, train=True):
+    def __init__(self, image_dir, batch_size, num_threads, device_id, num_gpus=1, seed=1, train=True):
         super(DataPipeline, self).__init__(batch_size, num_threads, device_id, seed=seed)
         self.input = ops.FileReader(file_root=image_dir,
             random_shuffle=True, num_shards=num_gpus, shard_id=device_id)
@@ -302,11 +302,11 @@ class DALIClassificationIterator(DALIGenericIterator):
 def data_iterator_imagenet(config, comm, train=True):
     if config['dataset']['dali']:
         if train:
-            pipes = [DataPipeline(config['dataset']['path'], config['dataset']['file_list'],
+            pipes = [DataPipeline(config['dataset']['path'],
                 config['train']['batch_size'], config['dataset']['dali_threads'], comm.rank, 
                 num_gpus=comm.n_procs, seed=1, train=train)]
         else:
-            pipes = [DataPipeline(config['dataset']['val_path'], config['dataset']['file_list'],
+            pipes = [DataPipeline(config['dataset']['val_path'],
                 config['train']['batch_size'], config['dataset']['dali_threads'], comm.rank, 
                 num_gpus=comm.n_procs, seed=1, train=train)] 
 

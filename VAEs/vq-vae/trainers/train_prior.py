@@ -38,12 +38,9 @@ class TrainerPrior(object):
 	def forward_pass(self, img_var, labels):
 		latents = self.base_model.encoder(img_var, 0)
 		latents = latents.get_unlinked_variable(need_grad=False)
-		import pdb; pdb.set_trace()
 		labels = nn.Variable.from_numpy_array(labels)
 		labels = F.one_hot(labels, shape=(self.num_classes,))
-		# import pdb; pdb.set_trace()
 		latents_recon = self.prior(latents, labels)
-		import pdb; pdb.set_trace()
 
 		loss = F.softmax_cross_entropy(latents_recon, latents)
 
@@ -64,7 +61,6 @@ class TrainerPrior(object):
 		for i in pbar:
 			data = self.data_loader.next()
 			img_var = self.convert_to_var(data[0])
-			# import pdb; pdb.set_trace()
 			loss, latents_recon, latents = self.forward_pass(img_var, data[1]) 
 
 			epoch_loss += loss.d 
