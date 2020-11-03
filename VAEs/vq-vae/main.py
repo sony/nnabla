@@ -8,7 +8,9 @@ from nnabla.monitor import Monitor, MonitorSeries, MonitorImageTile
 from nnabla.ext_utils import get_extension_context
 
 from models.vq_vae import Model
+from models.gated_pixel_cnn import GatedPixelCNN
 from trainers.vq_vae_train import VQVAEtrainer
+from trainers.train_prior import TrainerPrior
 from utils.communication_wrapper import CommunicationWrapper
 from utils.read_yaml import read_yaml
 from data.cifar10_data import data_iterator_cifar10
@@ -17,25 +19,34 @@ from data.imagenet_data import data_iterator_imagenet
 
 
 def make_parser():
-    parser = ArgumentParser(description='VQVAE: Dataset Name for training.')
-    parser.add_argument('--data', '-d', type=str, default='cifar10',
+    parser = ArgumentParser(description='VQVAE Implementation in NNabla')
+    parser.add_argument('--data', '-d', type=str, default='cifar10', required=True,
                         choices=['mnist', 'cifar10', 'imagenet'])
+    parser.add_argument('--load-checkpoint', action='store_true', default=False,
+                        help='Pass this argument to load saved parameters. Path of the saved parameters needs to be defined in config file.')
+    parser.add_argument('--pixelcnn-prior', action='store_true', default=False,
+                        help='Pass this argument to train a PixelCNN on the trained discretized latent space')
+    
+    parser.add_argument('--sample-from-pixelcnn', type=int,
+                        help='To generate images by randomly sampling using a trained pixelcnn prior. Enter number of images to generate')
+    parser.add_argument('--sample-save-path', type=str, default='',
+                        help='Path to save samples generated via pixelcnn prior')
     return parser
 
 
-def train(data_iterator, monitor, config, comm):
+def train(data_iterator, monitor, config, comm, args):
     monitor_train_loss, monitor_train_recon = None, None
     monitor_val_loss, monitor_val_recon = None, None
     if comm.rank == 0:
         monitor_train_loss = MonitorSeries(
             config['monitor']['train_loss'], monitor, interval=config['train']['logger_step_interval'])
         monitor_train_recon = MonitorImageTile(config['monitor']['train_recon'], monitor, interval=config['train']['logger_step_interval'],
-                                         num_images=config['train']['batch_size'])
+                                               num_images=config['train']['batch_size'])
 
         monitor_val_loss = MonitorSeries(
             config['monitor']['val_loss'], monitor, interval=config['train']['logger_step_interval'])
         monitor_val_recon = MonitorImageTile(config['monitor']['val_recon'], monitor, interval=config['train']['logger_step_interval'],
-                                         num_images=config['train']['batch_size'])
+                                             num_images=config['train']['batch_size'])
 
     model = Model(config)
     if config['train']['solver'] == 'adam':
@@ -48,18 +59,34 @@ def train(data_iterator, monitor, config, comm):
     if config['dataset']['name'] != 'imagenet':
         val_loader = data_iterator(config, comm, train=False)
     else:
-        val_loader = None # DALI not able to read the val file path specified in config as that director is not in the required format
+        val_loader = None 
 
-    trainer = VQVAEtrainer(model, solver, train_loader, val_loader, monitor_train_loss, 
-        monitor_train_recon, monitor_val_loss, monitor_val_recon, config, comm)
+    if not args.pixelcnn_prior:
+        trainer = VQVAEtrainer(model, solver, train_loader, val_loader, monitor_train_loss, 
+                               monitor_train_recon, monitor_val_loss, monitor_val_recon, config, comm)
+        num_epochs = config['train']['num_epochs']
+    else:
+        pixelcnn_model = GatedPixelCNN(config['prior'])
+        trainer = TrainerPrior(model, pixelcnn_model, solver, train_loader, val_loader, monitor_train_loss, 
+                               monitor_train_recon, monitor_val_loss, monitor_val_recon, config, comm)
+        num_epochs = config['prior']['train']['num_epochs']
+        
 
-    if os.path.exists(config['model']['checkpoint']):
-        trainer.load_checkpoint(config['model']['checkpoint'])
+    if os.path.exists(config['model']['checkpoint']) and (args.load_checkpoint or args.sample_from_pixelcnn):
+        checkpoint_path = config['model']['checkpoint'] if not args.pixelcnn_prior else config['prior']['checkpoint']
+        trainer.load_checkpoint(checkpoint_path)
+        
+    if args.sample_from_pixelcnn:
+        trainer.random_generate(args.sample_from_pixelcnn, args.sample_save_path)
+        return
 
-    for epoch in range(config['train']['num_epochs']):
+    for epoch in range(num_epochs):
+        
         trainer.train(epoch)
+        
         if epoch%config['val']['interval'] == 0 and val_loader!=None:
-            trainer.validate(epoch)
+            trainer.validate(epoch)        
+            
         if comm.rank == 0:
             if epoch % config['train']['save_param_step_interval'] == 0 or epoch == config['train']['num_epochs']-1:
                 trainer.save_checkpoint(
@@ -92,7 +119,7 @@ if __name__ == '__main__':
         monitor = Monitor(config['monitor']['path'])
         start_time = time.time()
 
-    acc = train(data_iterator, monitor, config, comm)
+    acc = train(data_iterator, monitor, config, comm, args)
 
     if comm.rank == 0:
         end_time = time.time()

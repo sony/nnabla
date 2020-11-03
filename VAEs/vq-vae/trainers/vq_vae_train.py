@@ -94,7 +94,6 @@ class VQVAEtrainer(object):
 			self.solver.set_learning_rate(self.solver.learning_rate()*self.learning_rate_decay_factor)
 
 		for i in pbar:
-			# import pdb; pdb.set_trace()
 			data = self.data_loader.next()
 			if self.dataset_name == 'imagenet':
 				img_var = nn.Variable(data[0].shape)

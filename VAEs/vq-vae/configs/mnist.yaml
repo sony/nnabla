@@ -7,7 +7,7 @@ model:
   num_embeddings: 10
   commitment_cost: 0.25
   saved_models_dir: tmp.monitor_mnist/trained_models_mnist/
-  checkpoint: None
+  checkpoint: tmp.monitor_mnist/trained_models_mnist/epoch_29/
   rng: 313
   decay: 0.99
 
@@ -34,6 +34,8 @@ monitor:
   train_recon: Training-reconstructions-mnist
   val_loss: Validation-loss-mnist 
   val_recon: Validation-reconstructions-mnist
+  prior_loss: Training-loss-pixelcnn-mnist
+  prior_recon: Latent-reconstruction-pixelcnn-mnist
 
 dataset:
   name: mnist
@@ -43,6 +45,20 @@ dataset:
   with_file_cache: False
   shuffle: True
 
+prior:
+  num_latent_vectors: 10
+  in_channels: 32
+  out_channels: 10
+  num_layers: 12
+  num_features: 32
+  num_classes: 10
+  latent_shape: [7,7] # Height and Width of encoder output. Hard-coded for each dataset here.
+  conditional: True
+  checkpoint: tmp.monitor_mnist/trained_models_mnist/epoch_0
+
+  train:
+    num_epochs: 50
+    lr: 3.0e-4
 
 extension_module: cudnn
 device_id: '0'
