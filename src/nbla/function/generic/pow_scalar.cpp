@@ -18,5 +18,5 @@
 
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_SOURCE(PowScalar, double);
+NBLA_REGISTER_FUNCTION_SOURCE(PowScalar, double, bool);
 }

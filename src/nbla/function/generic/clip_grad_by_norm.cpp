@@ -33,7 +33,7 @@ void ClipGradByNorm<T>::setup_impl(const Variables &inputs,
                                    const Variables &outputs) {
   outputs[0]->reshape(inputs[0]->shape(), true);
   sum_ = create_Sum(this->ctx_, axes_, true);
-  pow_scalar_ = create_PowScalar(this->ctx_, 2.);
+  pow_scalar_ = create_PowScalar(this->ctx_, 2., false);
 
   vector<int> _shape;
   for (auto v : inputs[0]->shape()) {

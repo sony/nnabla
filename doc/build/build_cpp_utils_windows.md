@@ -1,12 +1,18 @@
 # Build C++ libraries on Windows
 
-## Dependencies
 
-* Required (See [Build Python Package on Windows](build_windows.md) for how to setup the build requirement.)
-  * 64-bit Windows.
-  * Python >=3.6
-  * Visual C++ 2015 or Build tools
-  * [CMake](https://cmake.org/) (>=3.1)
+## Prerequisites
+
+### Chocolatey
+
+```bat
+    choco install cmake git miniconda3 VisualCppBuildTools
+```
+
+
+```bat
+    choco install cmake git miniconda3 visualstudio2019-workload-vctools
+```
 
 ## Build
 
@@ -15,8 +21,21 @@ First, clone [nnabla](https://github.com/sony/nnabla) and go into the root folde
 Then, the following batch script does everything including setting up the rest of dependencies and compiling libraries.
 
 ```bat
-build-tools\msvc\build_cpplib.bat
+    cmd /c nnabla\build-tools\msvc\build_cpplib.bat
 ```
+```bat
+    cmd /c nnabla\build-tools\msvc\test_nbla.bat
+```
+
+```bat
+    cmd /c nnabla\build-tools\msvc\build_cpplib.bat 2019
+```
+```bat
+    cmd /c nnabla\build-tools\msvc\test_nbla.bat 2019
+```
+
+
+
 
 This will setup the following dependency libraries of the NNabla C++ utility
 

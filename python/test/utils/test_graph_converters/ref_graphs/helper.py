@@ -18,11 +18,15 @@ from __future__ import absolute_import
 from nnabla.parameter import get_parameter_or_create
 
 
-def create_scale_bias(idx, maps, ndim=4):
+def create_scale_bias(idx, maps, ndim=4, axes=[1]):
     shape = [1] * ndim
-    shape[1] = maps
+    shape[axes[0]] = maps[axes[0]]
     a = get_parameter_or_create("a{}".format(idx), list(shape),
                                 None, True, True)
     b = get_parameter_or_create("b{}".format(idx), list(shape),
                                 None, True, True)
     return a, b
+
+
+def get_channel_axes(channel_last=False):
+    return [3] if channel_last else [1]

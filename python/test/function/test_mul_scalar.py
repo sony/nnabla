@@ -15,6 +15,7 @@
 import pytest
 import numpy as np
 import nnabla.functions as F
+import nnabla as nn
 from nbla_test_utils import list_context
 
 ctxs = list_context('MulScalar')
@@ -30,6 +31,17 @@ def test_mul_scalar_forward_backward(seed, val, ctx, func_name):
     function_tester(rng, F.mul_scalar, lambda x, y: x * y, inputs,
                     func_args=[val],
                     ctx=ctx, func_name=func_name)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("val", [0.5, 1, 2])
+def test_mul_scalar_inplace(seed, val, ctx, func_name):
+    from nbla_test_utils import inplace_function_test_helper
+    rng = np.random.RandomState(seed)
+    x = nn.Variable([2, 3, 4], need_grad=True)
+    inplace_function_test_helper(
+        [x], F.mul_scalar, func_args=[val], ctx=ctx, rng=rng)
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)

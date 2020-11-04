@@ -97,10 +97,10 @@ void BatchNormalization<T>::setup_impl(const Variables &inputs,
   if (!batch_stat_) {
     identity_ = create_Identity(this->ctx_);
     add2_ = create_Add2(this->ctx_, false);
-    sub2_ = create_Sub2(this->ctx_);
-    mul2_ = create_Mul2(this->ctx_);
-    add_epsilon_ = create_AddScalar(this->ctx_, (T) this->eps_);
-    square_root_ = create_PowScalar(this->ctx_, (T)-0.5);
+    sub2_ = create_Sub2(this->ctx_, false);
+    mul2_ = create_Mul2(this->ctx_, false);
+    add_epsilon_ = create_AddScalar(this->ctx_, (T) this->eps_, false);
+    square_root_ = create_PowScalar(this->ctx_, (T)-0.5, false);
     std::vector<int> raxes;
     for (int i = 0; i < inputs[0]->ndim(); ++i) {
       if (i != axes_[0])
@@ -349,7 +349,7 @@ void BatchNormalization<T>::backward_impl_global(
     auto g_x_tmp_sptr = make_shared<Variable>(x->shape());
     auto g_y = g_y_sptr.get();
     auto g_x_tmp = g_x_tmp_sptr.get();
-    mul2_ = create_Mul2(this->ctx_);
+    mul2_ = create_Mul2(this->ctx_, false);
     execute(mul2_, Variables{g_y, iv}, Variables{g_x_tmp});
     // accum
     auto g_x_sptr = make_shared<Variable>(x->shape());
@@ -390,7 +390,7 @@ void BatchNormalization<T>::backward_impl_global(
     auto rstd_inv = rstd_inv_sptr.get();
     execute(mul2_, Variables{iv, rstd_inv}, Variables{iv});
     // g_y * (x - rmean) / rstd
-    mul2_ = create_Mul2(this->ctx_);
+    mul2_ = create_Mul2(this->ctx_, false);
     execute(mul2_, Variables{g_y, iv}, Variables{iv});
     // reduction
     auto g_gamma_tmp_sptr = make_shared<Variable>(gamma->shape());

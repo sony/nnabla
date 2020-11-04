@@ -45,8 +45,8 @@ void DequantizeLinear<T>::setup_impl(const Variables &inputs,
 
   outputs[0]->reshape(inputs[0]->shape(), true);
 
-  mul2_ = create_Mul2(this->ctx_);
-  sub2_ = create_Sub2(this->ctx_);
+  mul2_ = create_Mul2(this->ctx_, false);
+  sub2_ = create_Sub2(this->ctx_, false);
   add2_ = create_Add2(this->ctx_, false);
   // sum_ = create_Sum(this->ctx_);
 }

@@ -82,7 +82,7 @@ void BatchDet<T>::backward_impl(const Variables &inputs,
   f_batch_inv->forward(inputs, Variables{&inv_x});
 
   // mul1_out = gy * det_x = gy * output
-  auto f_mul1 = create_Mul2(this->ctx_);
+  auto f_mul1 = create_Mul2(this->ctx_, false);
   f_mul1->setup(Variables{&reshaped_gy, &reshaped_det_x}, Variables{&mul1_out});
   f_mul1->forward(Variables{&reshaped_gy, &reshaped_det_x},
                   Variables{&mul1_out});
@@ -93,7 +93,7 @@ void BatchDet<T>::backward_impl(const Variables &inputs,
   f_transpose->forward(Variables{&inv_x}, Variables{&transposed_inv_x});
 
   // mul2_out = mul1_out * inv_x^T
-  auto f_mul2 = create_Mul2(this->ctx_);
+  auto f_mul2 = create_Mul2(this->ctx_, false);
   f_mul2->setup(Variables{&mul1_out, &transposed_inv_x}, Variables{&mul2_out});
   f_mul2->forward(Variables{&mul1_out, &transposed_inv_x},
                   Variables{&mul2_out});

@@ -20,42 +20,59 @@ import numpy as np
 import nnabla as nn
 import nnabla.experimental.graph_converters as GC
 
-from .ref_graphs.lenets import bn_lenet, bn_folding_lenet
-from .ref_graphs.resnets import small_bn_resnet, small_bn_folding_resnet
+from nnabla.ext_utils import get_extension_context
+from nbla_test_utils import list_context
+from .ref_graphs.lenets import bn_lenet, bn_folding_lenet, bn_opp_lenet
+from .ref_graphs.resnets import (small_bn_resnet,
+                                 small_bn_folding_resnet,
+                                 small_bn_opp_resnet)
 
 
+ctxs = list_context('Convolution')  # proxy to switch the context
 batch_size = 1
 lenet_ref = bn_folding_lenet
 resnet_ref = small_bn_folding_resnet
 
 
+@pytest.mark.parametrize('ctx, func_name', ctxs)
 @pytest.mark.parametrize('seed', [313])
 @pytest.mark.parametrize('test', [True])
-@pytest.mark.parametrize('w_bias', [True, False])
-@pytest.mark.parametrize('graph_ref, graph_act', [(lenet_ref, bn_lenet),
-                                                  (resnet_ref, small_bn_resnet)])
-def test_batch_normalization_folding(seed, test, w_bias, graph_ref, graph_act):
+@pytest.mark.parametrize('w_bias', [True])
+@pytest.mark.parametrize('channel_last', [True])
+@pytest.mark.parametrize('graph_ref, graph_act, opposite',
+                         [(resnet_ref, small_bn_resnet, False),
+                          (resnet_ref, small_bn_opp_resnet, True)])
+def test_batch_normalization_folding(ctx, func_name, seed, test, w_bias,
+                                     channel_last, graph_ref, graph_act, opposite):
     from .graph_converter_test_utils import structure_tester, value_tester
 
-    # Random number
-    np.random.seed(seed)
-    rng = np.random.RandomState(seed)
+    if channel_last == True and not func_name.endswith('Cudnn'):
+        pytest.skip(
+            'ChannelLast conversion is only supported in cuDNN context.')
 
-    # Graph
-    x_data = rng.randn(batch_size, 3, 32, 32)
-    x = nn.Variable.from_numpy_array(x_data)
+    with nn.context_scope(ctx):
+        # Random number
+        np.random.seed(seed)
+        rng = np.random.RandomState(seed)
 
-    y_tgt = graph_act(x, test=test, w_bias=w_bias)
+        # Graph
+        x_data = rng.randn(batch_size, 32, 32, 3) if channel_last == True else rng.randn(
+            batch_size, 3, 32, 32)
+        x = nn.Variable.from_numpy_array(x_data)
 
-    # FunctionModifier
-    modifiers = []
-    modifiers.append(GC.BatchNormalizationFoldingModifier())
+        y_tgt = graph_act(x, test=test, w_bias=w_bias,
+                          channel_last=channel_last)
 
-    y_act = GC.GraphConverter(modifiers).convert(y_tgt)
+        # FunctionModifier
+        modifiers = []
+        modifiers.append(GC.BatchNormalizationFoldingModifier(
+            opposite, channel_last))
 
-    # Ref Graph
-    y_ref = graph_ref(x, test=test, name='bnfolding-graph-ref')
+        y_act = GC.GraphConverter(modifiers).convert(y_tgt)
 
-    # Test
-    structure_tester(y_ref, y_act)
-    value_tester(y_tgt, y_act, rtol=6e-02, atol=5e-02)
+        # Ref Graph
+        y_ref = graph_ref(x, test=test, channel_last=channel_last)
+
+        # Test
+        structure_tester(y_ref, y_act)
+        value_tester(y_tgt, y_act, rtol=6e-02, atol=5e-02)

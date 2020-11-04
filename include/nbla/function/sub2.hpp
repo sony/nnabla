@@ -37,6 +37,6 @@ Outputs:
 @tparam T Data type for computation.
 \ingroup FunctionImplGrp
  */
-NBLA_DEFINE_TRANSFORM_BINARY(Sub2, x0 - x1, dy, -dy, false, false);
+NBLA_DEFINE_TRANSFORM_BINARY_INPLACE(Sub2, x0 - x1, dy, -dy, false, false);
 }
 #endif

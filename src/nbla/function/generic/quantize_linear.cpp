@@ -47,7 +47,7 @@ void QuantizeLinear<T>::setup_impl(const Variables &inputs,
 
   outputs[0]->reshape(inputs[0]->shape(), true);
 
-  div2_ = create_Div2(this->ctx_);
+  div2_ = create_Div2(this->ctx_, false);
   add2_ = create_Add2(this->ctx_, false);
   // sum_ = create_Sum(this->ctx_);  // used for scale and zero point gradients
 

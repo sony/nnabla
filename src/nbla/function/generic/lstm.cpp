@@ -201,12 +201,12 @@ LSTM<T>::lstm_cell(shared_ptr<CgVariable> x, shared_ptr<CgVariable> h,
   }
 
   auto sigmoid1 = make_shared<CgFunction>(create_Sigmoid(this->ctx_));
-  auto mul1 = make_shared<CgFunction>(create_Mul2(this->ctx_));
+  auto mul1 = make_shared<CgFunction>(create_Mul2(this->ctx_, false));
   auto tmp1 =
       connect(mul1, {connect(sigmoid1, f_t, 1)[0], c}, 1); // F.sigmoid(f_t) * c
 
   auto sigmoid2 = make_shared<CgFunction>(create_Sigmoid(this->ctx_));
-  auto mul2 = make_shared<CgFunction>(create_Mul2(this->ctx_));
+  auto mul2 = make_shared<CgFunction>(create_Mul2(this->ctx_, false));
   auto tanh2 = make_shared<CgFunction>(create_Tanh(this->ctx_));
   auto add2 = make_shared<CgFunction>(create_Add2(this->ctx_, true));
   auto tmp2 =
@@ -216,7 +216,7 @@ LSTM<T>::lstm_cell(shared_ptr<CgVariable> x, shared_ptr<CgVariable> h,
   auto c_t = connect(add2, {tmp1[0], tmp2[0]}, 1);
 
   auto sigmoid3 = make_shared<CgFunction>(create_Sigmoid(this->ctx_));
-  auto mul3 = make_shared<CgFunction>(create_Mul2(this->ctx_));
+  auto mul3 = make_shared<CgFunction>(create_Mul2(this->ctx_, false));
   auto tanh3 = make_shared<CgFunction>(create_Tanh(this->ctx_));
   auto h_t =
       connect(mul3, {connect(sigmoid3, o_t, 1)[0], connect(tanh3, c_t, 1)[0]},
