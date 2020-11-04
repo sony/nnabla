@@ -15,22 +15,6 @@ This is implementation of [VQ-VAE](https://arxiv.org/abs/1711.00937) in Nnabla.
 - Cifar10
 - ImageNet
 
-## Instructions
-
-To start training, execute:  
-
-`python main.py --data imagenet`     
-
- This will start training on Imagenet dataset on 1 gpu (**path to the dataset must be specified in configs/imagenet.yaml**). For multi-gpu execution:
- `mpirun -n 4 python main.py --data imagenet`    
- will start training on 4 gpus.
-
-To train on cifar10 or mnist, just replace `imagenet` with `cifar10` and `mnist` respectively. For cifar10 and mnist, the dataset will automatically be downloaded if 
-it did not exist previously.
-
-The model and solver parameters along with the average epoch loss and reconstructions of training and validation dataset will be 
-stored in tmp.monitor folder by default. 
-
 ## Configuration file
 
 The config folder has a yaml file for each of the datasets (imagenet.yaml, cifar10.yaml, mnist.yaml) which allows for editing of the following: 
@@ -41,6 +25,34 @@ logger interval)
 - monitor path for training and validation loss and reconstruction
 - dataset related parameters (path, dali threads)
 - extension module and device id
+
+## Instructions to train VQVAE
+
+To start training, execute:  
+
+`python main.py --data [imagenet/cifar10/mnist]`     
+
+ This will start training  on 1 gpu. For multi-gpu execution (n=4 GPUs), run as follows:        
+ `mpirun -n 4 python main.py --data [imagenet/cifar10/mnist]`    
+
+**Note: For MNIST and CIFAR10, the dataset will be automatically downloaded if not found in specified path. For Imagenet, the dataset path must be specified in configs/imagenet.yaml**)
+
+The model and solver parameters along with the average epoch loss and reconstructions of training and validation dataset will be 
+stored in `tmp.monitor_[imagenet/cifar10/mnist]` folder by default. 
+
+## Instructions for pixelcnn prior
+
+After training the VQVAE, PixelCNN prior can be fit over the learnt VQVAE latent space. After specifying training configuration and learnt model parameters of the VQ-VAE model, one can start to train pixelcnn as follows: 
+
+`$ python main.py --data [imagenet/cifar10/mnist] --pixelcnn-prior` 
+
+The latent space descretized image during training and validation will be saved in `tmp.monitor_[imagenet/cifar10/mnist]/Latent-reconstruction-pixelcnn-mnist` folder
+
+## Image Generation
+
+After training VQVAE and PixelCNN, we can compare the randomized image generation of the uniform prior (imposed on the latent space during VQVAE training) and PixelCNN prior. For that result, run:
+
+`$ python main.py --data [imagenet/cifar10/mnist] --pixelcnn-prior --sample-from-pixelcnn [number of images to be generated] --sample-save-path [path to save results]` 
 
 ## Results
 
