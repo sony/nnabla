@@ -1,4 +1,9 @@
 import os
+import sys
+common_utils_path = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '..', '..', 'utils'))
+sys.path.append(common_utils_path)
+
 from argparse import ArgumentParser
 import time
 import numpy as np
@@ -11,11 +16,13 @@ from models.vq_vae import Model
 from models.gated_pixel_cnn import GatedPixelCNN
 from trainers.vq_vae_train import VQVAEtrainer
 from trainers.train_prior import TrainerPrior
-from utils.communication_wrapper import CommunicationWrapper
-from utils.read_yaml import read_yaml
-from data.cifar10_data import data_iterator_cifar10
-from data.mnist_data import data_iterator_mnist
+from data.cifar10 import data_iterator_cifar10
+from data.mnist import data_iterator_mnist
 from data.imagenet_data import data_iterator_imagenet
+
+
+from neu.yaml_wrapper import read_yaml
+from neu.comm import CommunicatorWrapper
 
 
 def make_parser():
@@ -97,7 +104,7 @@ if __name__ == '__main__':
 
     parser = make_parser()
     args = parser.parse_args()
-    config = read_yaml(args.data + '.yaml')
+    config = read_yaml(os.path.join('configs', f'{args.data}.yaml'))
     ctx = get_extension_context(config['extension_module'], device_id=config['device_id'])
     nn.set_auto_forward(True)
 
@@ -111,7 +118,7 @@ if __name__ == '__main__':
         print('Dataset not recognized')
         exit(1)
 
-    comm = CommunicationWrapper(ctx)
+    comm = CommunicatorWrapper(ctx)
     nn.set_default_context(ctx)
 
     monitor = None
