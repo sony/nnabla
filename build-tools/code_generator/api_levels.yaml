@@ -241,3 +241,5 @@
   Pow2_B: 311
   PowScalar_fB: 314
   Sub2_B: 308
+22:
+  ScatterAdd_i: 315

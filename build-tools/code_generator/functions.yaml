@@ -4168,6 +4168,8 @@ Array Manipulation:
         doc: N-D array which contains the result of scatter addition. The shape is
           same as x0.
     c_runtime: not support
+    function_ids:
+      i: 315
   PackPaddedSequence:
     snake_name: pack_padded_sequence
     doc: |
