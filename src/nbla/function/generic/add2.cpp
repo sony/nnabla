@@ -33,7 +33,7 @@ void Add2<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
     return;
   }
   // Trying to fallback to broadcastable Add2.
-  this->fall_back_func_ = create_BcAdd2(this->ctx_);
+  this->fall_back_func_ = create_BcAdd2(this->ctx_, inplace_);
   this->fall_back_func_->setup(inputs, outputs);
 }
 

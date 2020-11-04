@@ -2005,11 +2005,17 @@ Arithmetic:
         doc: N-D array
       x1:
         doc: N-D array
+    arguments:
+      inplace:
+        doc: The output array is shared with the 1st input array if True.
+        type: bool
+        default: 'False'
     outputs:
       y:
         doc: N-D array
     function_ids:
       Empty: 32
+      B: 307
     c_runtime: not support
   Sub2:
     snake_name: sub2
@@ -2024,11 +2030,17 @@ Arithmetic:
         doc: N-D array
       x1:
         doc: N-D array
+    arguments:
+      inplace:
+        doc: The output array is shared with the 1st input array if True.
+        type: bool
+        default: 'False'
     outputs:
       y:
         doc: N-D array
     function_ids:
       Empty: 33
+      B: 308
     c_runtime: support
   Mul2:
     snake_name: mul2
@@ -2043,11 +2055,17 @@ Arithmetic:
         doc: N-D array
       x1:
         doc: N-D array
+    arguments:
+      inplace:
+        doc: The output array is shared with the 1st input array if True.
+        type: bool
+        default: 'False'
     outputs:
       y:
         doc: N-D array
     function_ids:
       Empty: 34
+      B: 309
     c_runtime: support
   MulN:
     snake_name: mul_n
@@ -2080,11 +2098,17 @@ Arithmetic:
         doc: N-D array
       x1:
         doc: N-D array
+    arguments:
+      inplace:
+        doc: The output array is shared with the 1st input array if True.
+        type: bool
+        default: 'False'
     outputs:
       y:
         doc: N-D array
     function_ids:
       Empty: 35
+      B: 310
     c_runtime: support
   Pow2:
     snake_name: pow2
@@ -2099,11 +2123,17 @@ Arithmetic:
         doc: N-D array
       x1:
         doc: N-D array
+    arguments:
+      inplace:
+        doc: The output array is shared with the 1st input array if True.
+        type: bool
+        default: 'False'
     outputs:
       y:
         doc: N-D array
     function_ids:
       Empty: 36
+      B: 311
     c_runtime: support
   AddScalar:
     snake_name: add_scalar
@@ -2122,11 +2152,16 @@ Arithmetic:
         doc: Value of the scalar
         type: double
         default: '1'
+      inplace:
+        doc: The output array is shared with the input array if True.
+        type: bool
+        default: 'False'
     outputs:
       y:
         doc: N-D array with the same shape as x
     function_ids:
       f: 37
+      fB: 312
     c_runtime: support
   MulScalar:
     snake_name: mul_scalar
@@ -2144,11 +2179,16 @@ Arithmetic:
         doc: Value of the scalar
         type: double
         default: '1'
+      inplace:
+        doc: The output array is shared with the input array if True.
+        type: bool
+        default: 'False'
     outputs:
       y:
         doc: N-D array with the same shape as x
     function_ids:
       f: 38
+      fB: 313
     c_runtime: support
   PowScalar:
     snake_name: pow_scalar
@@ -2166,11 +2206,16 @@ Arithmetic:
         doc: Value of the scalar
         type: double
         default: '1'
+      inplace:
+        doc: The output array is shared with the input array if True.
+        type: bool
+        default: 'False'
     outputs:
       y:
         doc: N-D array with the same shape as x
     function_ids:
       f: 39
+      fB: 314
     c_runtime: support
   RSubScalar:
     snake_name: r_sub_scalar

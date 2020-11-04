@@ -18,5 +18,5 @@
 
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_SOURCE(BcAdd2);
+NBLA_REGISTER_FUNCTION_SOURCE(BcAdd2, bool);
 }

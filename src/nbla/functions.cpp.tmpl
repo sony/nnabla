@@ -269,16 +269,16 @@ CgVariablePtr batch_normalization(CgVariablePtr x, CgVariablePtr beta, CgVariabl
 }
 
 nbla::CgVariablePtr operator+(const nbla::CgVariablePtr &a, const nbla::CgVariablePtr &b) { return nbla::functions::add2(a, b, false);}
-nbla::CgVariablePtr operator-(const nbla::CgVariablePtr &a, const nbla::CgVariablePtr &b) { return nbla::functions::sub2(a, b);}
-nbla::CgVariablePtr operator*(const nbla::CgVariablePtr &a, const nbla::CgVariablePtr &b) { return nbla::functions::mul2(a, b);}
-nbla::CgVariablePtr operator/(const nbla::CgVariablePtr &a, const nbla::CgVariablePtr &b) { return nbla::functions::div2(a, b);}
+nbla::CgVariablePtr operator-(const nbla::CgVariablePtr &a, const nbla::CgVariablePtr &b) { return nbla::functions::sub2(a, b, false);}
+nbla::CgVariablePtr operator*(const nbla::CgVariablePtr &a, const nbla::CgVariablePtr &b) { return nbla::functions::mul2(a, b, false);}
+nbla::CgVariablePtr operator/(const nbla::CgVariablePtr &a, const nbla::CgVariablePtr &b) { return nbla::functions::div2(a, b, false);}
 
-nbla::CgVariablePtr operator+(const nbla::CgVariablePtr &a, const float &b) { return nbla::functions::add_scalar(a, b);}
-nbla::CgVariablePtr operator*(const nbla::CgVariablePtr &a, const float &b) { return nbla::functions::mul_scalar(a, b);}
-nbla::CgVariablePtr operator-(const nbla::CgVariablePtr &a, const float &b) { return nbla::functions::add_scalar(a, -b);}
-nbla::CgVariablePtr operator/(const nbla::CgVariablePtr &a, const float &b) { return nbla::functions::mul_scalar(a, 1.0/b);}
+nbla::CgVariablePtr operator+(const nbla::CgVariablePtr &a, const float &b) { return nbla::functions::add_scalar(a, b, false);}
+nbla::CgVariablePtr operator*(const nbla::CgVariablePtr &a, const float &b) { return nbla::functions::mul_scalar(a, b, false);}
+nbla::CgVariablePtr operator-(const nbla::CgVariablePtr &a, const float &b) { return nbla::functions::add_scalar(a, -b, false);}
+nbla::CgVariablePtr operator/(const nbla::CgVariablePtr &a, const float &b) { return nbla::functions::mul_scalar(a, 1.0/b, false);}
 
-nbla::CgVariablePtr operator+(const float &a, const nbla::CgVariablePtr &b) { return nbla::functions::add_scalar(b, a);}
-nbla::CgVariablePtr operator*(const float &a, const nbla::CgVariablePtr &b) { return nbla::functions::mul_scalar(b, a);}
+nbla::CgVariablePtr operator+(const float &a, const nbla::CgVariablePtr &b) { return nbla::functions::add_scalar(b, a, false);}
+nbla::CgVariablePtr operator*(const float &a, const nbla::CgVariablePtr &b) { return nbla::functions::mul_scalar(b, a, false);}
 nbla::CgVariablePtr operator-(const float &a, const nbla::CgVariablePtr &b) { return nbla::functions::r_sub_scalar(b, a);}
 nbla::CgVariablePtr operator/(const float &a, const nbla::CgVariablePtr &b) { return nbla::functions::r_div_scalar(b, a);}
