@@ -11,11 +11,13 @@ Neural Network Layer:
       where :math:`{\mathbf x}` is the input and :math:`{\mathbf y}` is the output.
     inputs:
       x:
-        doc: Input N-D array with shape (:math:`M_0 \times ... \times M_{B-1} \times
+        doc:
+          Input N-D array with shape (:math:`M_0 \times ... \times M_{B-1} \times
           D_B \times ... \times D_N`). Dimensions before and after base_axis are flattened
           as if it is a matrix.
       weight:
-        doc: Weight matrix with shape (:math:`(D_B \times ... \times D_N) \times L_{0}
+        doc:
+          Weight matrix with shape (:math:`(D_B \times ... \times D_N) \times L_{0}
           \times \ldots \times L_{I}`)
         parameter: true
       bias:
@@ -24,13 +26,15 @@ Neural Network Layer:
         parameter: true
     arguments:
       base_axis:
-        doc: Base axis of Affine operation. Dimensions up to base_axis is treated
+        doc:
+          Base axis of Affine operation. Dimensions up to base_axis is treated
           as sample dimension.
         type: int64
-        default: '1'
+        default: "1"
     outputs:
       y:
-        doc: :math:`(B + 1)`-D array. (:math:`M_0 \times ... \times M_{B-1} \times
+        doc:
+          :math:`(B + 1)`-D array. (:math:`M_0 \times ... \times M_{B-1} \times
           L_{0} \times \ldots \times L_{I}`)
     function_ids:
       i: 0
@@ -68,31 +72,34 @@ Neural Network Layer:
         parameter: true
     arguments:
       num_layers:
-        doc: Number of layers in the network. If set to 1, only the weights for the
+        doc:
+          Number of layers in the network. If set to 1, only the weights for the
           first layer will be invoked. Default is 1.
         type: int64
-        default: '1'
+        default: "1"
       nonlinearity:
-        doc: Type of nonlinearity applied to input sequcne. Must be either tanh or
+        doc:
+          Type of nonlinearity applied to input sequcne. Must be either tanh or
           relu. Default is tanh.
         type: string
         available_values:
-        - tanh
-        - relu
-        default: '''tanh'''
+          - tanh
+          - relu
+        default: "'tanh'"
       dropout:
         doc: Dropout ratio applied to parameters. Default is 0.0.
         type: float
         default: 0.0
       bidirectional:
-        doc: If True, bidirectional computation will be performed in each layer. Default
+        doc:
+          If True, bidirectional computation will be performed in each layer. Default
           is False.
         type: bool
-        default: 'False'
+        default: "False"
       training:
         doc: Backpropagation will be performed only when it is true. Default is True.
         type: bool
-        default: 'True'
+        default: "True"
     outputs:
       y:
         doc: Output :math:`y` with shape :math:`(T, B, D * H)`
@@ -127,11 +134,13 @@ Neural Network Layer:
       c:
         doc: Input N-D array with shape :math:`(L, D, B, H)`.
       weight_l0:
-        doc: weight parameters for the first layer. Shape is :math:`(D, 4, H, I +
+        doc:
+          weight parameters for the first layer. Shape is :math:`(D, 4, H, I +
           H)`.
         parameter: true
       weight:
-        doc: weight parameters for the second layer and above. Shape is :math:`(L-1,
+        doc:
+          weight parameters for the second layer and above. Shape is :math:`(L-1,
           D, 4, H, D * H + H)`.
         optional: true
         parameter: true
@@ -141,26 +150,29 @@ Neural Network Layer:
         parameter: true
     arguments:
       num_layers:
-        doc: Number of layers in the network. If set to 1, only the weights for the
+        doc:
+          Number of layers in the network. If set to 1, only the weights for the
           first layer will be invoked. Default is 1.
         type: int64
-        default: '1'
+        default: "1"
       dropout:
         doc: Dropout ratio applied to parameters. Default is 0.0.
         type: float
         default: 0.0
       bidirectional:
-        doc: If True, bidirecitonal computation will be performed in each layer. Default
+        doc:
+          If True, bidirecitonal computation will be performed in each layer. Default
           is False.
         type: bool
-        default: 'False'
+        default: "False"
       training:
         doc: Backpropagation will be performed only when it is True. Default is True.
         type: bool
-        default: 'True'
+        default: "True"
     outputs:
       y:
-        doc: Output :math:`y` with shape :math:`(T, B, D * H)`. Its memory layout
+        doc:
+          Output :math:`y` with shape :math:`(T, B, D * H)`. Its memory layout
           can be reshaped as :math:`(T, B, D, H)`.
       h_n:
         doc: Output :math:`h_n` with shape :math:`(L, D, B, H)`
@@ -193,11 +205,13 @@ Neural Network Layer:
       h:
         doc: Input N-D array with shape :math:`(L, D, B, H)`.
       weight_l0:
-        doc: weight parameters for the first layer. Shape is :math:`(D, 3, H, I +
+        doc:
+          weight parameters for the first layer. Shape is :math:`(D, 3, H, I +
           H)`.
         parameter: true
       weight:
-        doc: weight parameters for the second layer and above. Shape is :math:`(L-1,
+        doc:
+          weight parameters for the second layer and above. Shape is :math:`(L-1,
           D, 3, H, D * H + H)`.
         optional: true
         parameter: true
@@ -207,26 +221,29 @@ Neural Network Layer:
         parameter: true
     arguments:
       num_layers:
-        doc: Number of layers in the network. If set to 1, only the weights for the
+        doc:
+          Number of layers in the network. If set to 1, only the weights for the
           first layer will be invoked. Default is 1.
         type: int64
-        default: '1'
+        default: "1"
       dropout:
         doc: Dropout ratio applied to parameters. Default is 0.0.
         type: float
         default: 0.0
       bidirectional:
-        doc: If True, bidirecitonal computation will be performed in each layer. Default
+        doc:
+          If True, bidirecitonal computation will be performed in each layer. Default
           is False.
         type: bool
-        default: 'False'
+        default: "False"
       training:
         doc: Backpropagation will be performed only when it is True. Default is True.
         type: bool
-        default: 'True'
+        default: "True"
     outputs:
       y:
-        doc: Output :math:`y` with shape :math:`(T, B, D * H)`. Its memory layout
+        doc:
+          Output :math:`y` with shape :math:`(T, B, D * H)`. Its memory layout
           can be reshaped as :math:`(T, B, D, H)`.
       h_n:
         doc: Output :math:`h_n` with shape :math:`(L, D, B, H)`
@@ -267,10 +284,12 @@ Neural Network Layer:
         variable `NNABLA_CUDNN_DETERMINISTIC` to a non-zero value.
     inputs:
       x:
-        doc: :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times
+        doc:
+          :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times
           C \times L_1 \times ... \times L_N`).
       weight:
-        doc: :math:`(2 + N)`-D array (:math:`C' \times C \times K_1 \times ... \times
+        doc:
+          :math:`(2 + N)`-D array (:math:`C' \times C \times K_1 \times ... \times
           K_N`).
         parameter: true
       bias:
@@ -281,7 +300,7 @@ Neural Network Layer:
       base_axis:
         doc: base axis :math:`B`.
         type: int64
-        default: '1'
+        default: "1"
       pad:
         doc: Padding sizes for dimensions.
         type: Shape
@@ -295,15 +314,17 @@ Neural Network Layer:
         type: Shape
         default: (1,) * (len(x.shape) - (base_axis+1))
       group:
-        doc: Number of groups of channels. This makes the connection across channels
+        doc:
+          Number of groups of channels. This makes the connection across channels
           sparser, by grouping connections along the mapping direction.
         type: int64
-        default: '1'
+        default: "1"
       channel_last:
-        doc: If True, the last dimension is considered as channel dimension, a.k.a
+        doc:
+          If True, the last dimension is considered as channel dimension, a.k.a
           NHWC order.
         type: bool
-        default: 'False'
+        default: "False"
     outputs:
       y:
         doc: |2
@@ -370,14 +391,15 @@ Neural Network Layer:
           `variance` in :meth:`~nnabla.functions.batch_normalization`.
       z:
         optional: true
-        doc: N-D array of a residual input. By specifying None, the activation function
+        doc:
+          N-D array of a residual input. By specifying None, the activation function
           will follow immediately after BN operation.
     arguments:
       base_axis:
         doc: |
           `base_axis` in :meth:`~nnabla.functions.convolution`. Note that the batch normalization `axes` is determined by this and `channel_last` option.
         type: int64
-        default: '1'
+        default: "1"
       pad:
         doc: |
           `pad` in :meth:`~nnabla.functions.convolution`.
@@ -397,17 +419,17 @@ Neural Network Layer:
         doc: |
           `group` in :meth:`~nnabla.functions.convolution`.
         type: int64
-        default: '1'
+        default: "1"
       channel_last:
         doc: |
           `channel_last` in :meth:`~nnabla.functions.convolution`.group
         type: bool
-        default: 'False'
+        default: "False"
       decay_rate:
         doc: |
           `decay_rate` in :meth:`~nnabla.functions.batch_normalization`.
         type: float
-        default: '0.9'
+        default: "0.9"
       eps:
         doc: |
           `eps` in :meth:`~nnabla.functions.batch_normalization`.
@@ -417,7 +439,7 @@ Neural Network Layer:
         doc: |
           `batch_stat` in :meth:`~nnabla.functions.batch_normalization`.
         type: bool
-        default: 'True'
+        default: "True"
       nonlinearity:
         doc: |
           Activation type as string. The following is a list of available activation types
@@ -436,14 +458,14 @@ Neural Network Layer:
           =============== ===============================
         type: string
         available_values:
-        - identity
-        - relu
-        - sigmoid
-        - tanh
-        - leaky_relu
-        - elu
-        - relu6
-        default: '''relu'''
+          - identity
+          - relu
+          - sigmoid
+          - tanh
+          - leaky_relu
+          - elu
+          - relu6
+        default: "'relu'"
       nonlinearity_args:
         doc: |
           Optional arguments of nonlinearity as a vector of float.
@@ -468,7 +490,8 @@ Neural Network Layer:
             <https://arxiv.org/abs/1610.02357>`_
     inputs:
       x:
-        doc: :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times
+        doc:
+          :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times
           C \times L_1 \times ... \times L_N`).
       weight:
         doc: :math:`(1 + N)`-D array (:math:`C \times K_1 \times ... \times K_N`).
@@ -481,7 +504,7 @@ Neural Network Layer:
       base_axis:
         doc: base axis :math:`B`.
         type: int64
-        default: '1'
+        default: "1"
       pad:
         doc: Padding sizes for dimensions.
         type: Shape
@@ -497,7 +520,7 @@ Neural Network Layer:
       multiplier:
         doc: Number of output feature maps per input feature map.
         type: int64
-        default: '1'
+        default: "1"
     outputs:
       y:
         doc: |2
@@ -541,10 +564,12 @@ Neural Network Layer:
       but not to add zero-padding to the output.
     inputs:
       x:
-        doc: :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times
+        doc:
+          :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times
           C \times L_1 \times ... \times L_N`).
       weight:
-        doc: :math:`(2 + N)`-D array (:math:`C' \times C \times K_1 \times ... \times
+        doc:
+          :math:`(2 + N)`-D array (:math:`C' \times C \times K_1 \times ... \times
           K_N`).
         parameter: true
       bias:
@@ -555,7 +580,7 @@ Neural Network Layer:
       base_axis:
         doc: base axis :math:`B`.
         type: int64
-        default: '1'
+        default: "1"
       pad:
         doc: Padding sizes for dimensions.
         type: Shape
@@ -569,15 +594,17 @@ Neural Network Layer:
         type: Shape
         default: (1,) * (len(x.shape) - (base_axis+1))
       group:
-        doc: Number of groups of channels. This makes the connection across channels
+        doc:
+          Number of groups of channels. This makes the connection across channels
           sparser, by grouping connections along the mapping direction.
         type: int64
-        default: '1'
+        default: "1"
       channel_last:
-        doc: If True, the last dimension is considered as channel dimension, a.k.a
+        doc:
+          If True, the last dimension is considered as channel dimension, a.k.a
           NHWC order.
         type: bool
-        default: 'False'
+        default: "False"
       output_padding:
         doc: Additional size added to the output shape.
         type: Shape
@@ -607,7 +634,8 @@ Neural Network Layer:
       Depthwise deconvolution computes the transposed depthwise convolution with bias for one-dimensional and two-dimensional input data.
     inputs:
       x:
-        doc: :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times
+        doc:
+          :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times
           C \times L_1 \times ... \times L_N`).
       weight:
         doc: :math:`(1 + N)`-D array (:math:`C \times K_1 \times ... \times K_N`).
@@ -620,7 +648,7 @@ Neural Network Layer:
       base_axis:
         doc: base axis :math:`B`.
         type: int64
-        default: '1'
+        default: "1"
       pad:
         doc: Padding sizes for dimensions.
         type: Shape
@@ -636,7 +664,7 @@ Neural Network Layer:
       divisor:
         doc: Number of input feature maps per output feature map.
         type: int64
-        default: '1'
+        default: "1"
     outputs:
       y:
         doc: |2
@@ -700,7 +728,8 @@ Neural Network Layer:
         doc: :math:`4-D` array (:math:`B \times K_h \times H \times W`)
     outputs:
       y:
-        doc: :math:`4-D` array (:math:`B \times C \times H - K_v + 1 \times W - K_h
+        doc:
+          :math:`4-D` array (:math:`B \times C \times H - K_v + 1 \times W - K_h
           + 1`)
     c_runtime: not support
     function_ids:
@@ -729,17 +758,19 @@ Neural Network Layer:
       ignore_border:
         doc: If false, kernels covering borders are also considered for the output.
         type: bool
-        default: 'True'
+        default: "True"
       pad:
-        doc: Border padding values for each spatial axis. Padding will be added both
+        doc:
+          Border padding values for each spatial axis. Padding will be added both
           sides of the dimension.
         type: Shape
         default: (0,) * len(kernel)
       channel_last:
-        doc: If True, the last dimension is considered as channel dimension, a.k.a
+        doc:
+          If True, the last dimension is considered as channel dimension, a.k.a
           NHWC order.
         type: bool
-        default: 'False'
+        default: "False"
     outputs:
       y:
         doc: Maximum values variable
@@ -771,21 +802,23 @@ Neural Network Layer:
       ignore_border:
         doc: If false, kernels covering borders are also considered for the output.
         type: bool
-        default: 'True'
+        default: "True"
       pad:
-        doc: Border padding values for each spatial axis. Padding will be added both
+        doc:
+          Border padding values for each spatial axis. Padding will be added both
           sides of the dimension.
         type: Shape
         default: (0,) * len(kernel)
       channel_last:
-        doc: If True, the last dimension is considered as channel dimension, a.k.a
+        doc:
+          If True, the last dimension is considered as channel dimension, a.k.a
           NHWC order.
         type: bool
-        default: 'False'
+        default: "False"
       including_pad:
         doc: If true, border padding values are considered for the output.
         type: bool
-        default: 'True'
+        default: "True"
     outputs:
       y:
         doc: Average values variable
@@ -833,17 +866,19 @@ Neural Network Layer:
       ignore_border:
         doc: If false, kernels covering borders are also considered for the output.
         type: bool
-        default: 'True'
+        default: "True"
       pad:
-        doc: Border padding values for each spatial axis. Padding will be added both
+        doc:
+          Border padding values for each spatial axis. Padding will be added both
           sides of the dimension.
         type: Shape
         default: (0,) * len(kernel)
       channel_last:
-        doc: If True, the last dimension is considered as channel dimension, a.k.a
+        doc:
+          If True, the last dimension is considered as channel dimension, a.k.a
           NHWC order.
         type: bool
-        default: 'False'
+        default: "False"
     outputs:
       y:
         doc: Summed values variable
@@ -869,10 +904,11 @@ Neural Network Layer:
         doc: Kernel sizes for each spatial axis.
         type: Shape
       channel_last:
-        doc: If True, the last dimension is considered as channel dimension, a.k.a
+        doc:
+          If True, the last dimension is considered as channel dimension, a.k.a
           NHWC order.
         type: bool
-        default: 'False'
+        default: "False"
     outputs:
       y:
         doc: Spread values variable
@@ -971,7 +1007,7 @@ Neural Network Activation Functions:
       inplace:
         doc: The output array is shared with the input array if True.
         type: bool
-        default: 'False'
+        default: "False"
     outputs:
       y:
         doc: N-D array with the same shape as x
@@ -994,14 +1030,15 @@ Neural Network Activation Functions:
         doc: N-D array
     arguments:
       alpha:
-        doc: The slope value multiplied to negative numbers. :math:`\alpha` in the
+        doc:
+          The slope value multiplied to negative numbers. :math:`\alpha` in the
           definition.
         type: float
-        default: '0.1'
+        default: "0.1"
       inplace:
         doc: The output array is shared with the input array if True.
         type: bool
-        default: 'False'
+        default: "False"
     outputs:
       y:
         doc: N-D array with the same shape as x
@@ -1096,7 +1133,7 @@ Neural Network Activation Functions:
       alpha:
         doc: Coefficient for negative outputs. :math:`\alpha` in definition
         type: double
-        default: '1.0'
+        default: "1.0"
     outputs:
       y:
         doc: N-D array with the same shape as x
@@ -1149,11 +1186,11 @@ Neural Network Activation Functions:
       scale:
         doc: The coefficient :math:`\lambda` in the definition.
         type: double
-        default: '1.05070098735548'
+        default: "1.05070098735548"
       alpha:
         doc: The coefficient :math:`\alpha` in the definition.
         type: double
-        default: '1.673263242354377'
+        default: "1.673263242354377"
     outputs:
       y:
         doc: N-D array with the same shape as x
@@ -1179,10 +1216,11 @@ Neural Network Activation Functions:
         doc: N-D array.
     arguments:
       axis:
-        doc: The ReLU activations of positive inputs and negative inputs are concatenated
+        doc:
+          The ReLU activations of positive inputs and negative inputs are concatenated
           at axis.
         type: int64
-        default: '1'
+        default: "1"
     outputs:
       y:
         doc: N-D array where axis dimension is doubled by concatenating.
@@ -1202,12 +1240,13 @@ Neural Network Activation Functions:
       alpha:
         doc: Coefficient for negative outputs. :math:`\alpha` in definition.
         type: double
-        default: '1.0'
+        default: "1.0"
       axis:
-        doc: The ELU activations of positive inputs and negative inputs are concatenated
+        doc:
+          The ELU activations of positive inputs and negative inputs are concatenated
           at axis.
         type: int64
-        default: '1'
+        default: "1"
     outputs:
       y:
         doc: N-D array where axis dimension is doubled by concatenating.
@@ -1234,7 +1273,7 @@ Neural Network Activation Functions:
       base_axis:
         doc: Dimensions up to base_axis is treated as sample dimension.
         type: int64
-        default: '1'
+        default: "1"
     outputs:
       y:
         doc: N-D array.
@@ -1463,7 +1502,8 @@ Normalization:
       variance:
         doc: N-D array of running variance (modified during forward execution).
       z:
-        doc: N-D array of a residual input. By specifying None, the activation function
+        doc:
+          N-D array of a residual input. By specifying None, the activation function
           will follow immediately after BN operation.
         optional: true
     arguments:
@@ -1474,7 +1514,7 @@ Normalization:
       decay_rate:
         doc: Decay rate of running mean and variance.
         type: float
-        default: '0.9'
+        default: "0.9"
       eps:
         doc: Tiny value to avoid zero division by std.
         type: float
@@ -1482,13 +1522,13 @@ Normalization:
       batch_stat:
         doc: Use mini-batch statistics rather than running ones.
         type: bool
-        default: 'True'
+        default: "True"
       nonlinearity:
         doc: Activation chosen from ('relu').
         type: string
         available_values:
-        - relu
-        default: '''relu'''
+          - relu
+        default: "'relu'"
     outputs:
       y:
         doc: N-D array
@@ -1535,7 +1575,7 @@ Normalization:
       decay_rate:
         doc: Decay rate of running mean and variance.
         type: float
-        default: '0.9'
+        default: "0.9"
       eps:
         doc: Tiny value to avoid zero division by std.
         type: float
@@ -1543,7 +1583,7 @@ Normalization:
       batch_stat:
         doc: Use mini-batch statistics rather than running ones.
         type: bool
-        default: 'True'
+        default: "True"
     outputs:
       y:
         doc: N-D array
@@ -1589,7 +1629,7 @@ Normalization:
         doc: The name of the communicator group
         type: string
         available_values:
-        - world
+          - world
         default: world
       axes:
         doc: Axes mean and variance are taken.
@@ -1598,7 +1638,7 @@ Normalization:
       decay_rate:
         doc: Decay rate of running mean and variance.
         type: float
-        default: '0.9'
+        default: "0.9"
       eps:
         doc: Tiny value to avoid zero division by std.
         type: float
@@ -1606,7 +1646,7 @@ Normalization:
       batch_stat:
         doc: Use mini-batch statistics rather than running ones.
         type: bool
-        default: 'True'
+        default: "True"
     outputs:
       y:
         doc: N-D array
@@ -1636,9 +1676,10 @@ Normalization:
       dim:
         doc: Output dimension. For the other dimensions, the norms are computed.
         type: int64
-        default: '0'
+        default: "0"
       eps:
-        doc: Epsilon for the normalization. This `eps` is added before taking the
+        doc:
+          Epsilon for the normalization. This `eps` is added before taking the
           sqrt in the norm computation.
         type: float
         default: 1e-12
@@ -1677,14 +1718,15 @@ Normalization:
         doc: Scalar of num of iteration of running mean (modified during forward execution).
     arguments:
       base_axis:
-        doc: Base axis of Mean Subtraction operation. Dimensions up to base_axis is
+        doc:
+          Base axis of Mean Subtraction operation. Dimensions up to base_axis is
           treated as sample dimension.
         type: int64
-        default: '1'
+        default: "1"
       update_running_mean:
         doc: Update running mean during forward execution.
         type: bool
-        default: 'True'
+        default: "True"
     outputs:
       y:
         doc: N-D array.
@@ -1719,11 +1761,13 @@ Normalization:
       x:
         doc: N-D array of input.
       min:
-        doc: N-D array of minimum input value by which the gradients of the `y` are
+        doc:
+          N-D array of minimum input value by which the gradients of the `y` are
           clipped. Note that the shape of `min` must be the same as `x`'s and the
           backward to `min` is not performed.
       max:
-        doc: N-D array of maximum input value by which the gradients of the `y` are
+        doc:
+          N-D array of maximum input value by which the gradients of the `y` are
           clipped. Note that the shape of `max` must be the same as `x`'s and the
           backward to `max` is not performed.
     outputs:
@@ -1765,7 +1809,8 @@ Normalization:
         type: float
         default: 1.0
       axes:
-        doc: Axes to be reduced. If empty list is given, all dimensions are reduced
+        doc:
+          Axes to be reduced. If empty list is given, all dimensions are reduced
           to scalar. This is used in the forward pass.
         type: repeated int64
         default: range(x.ndim)
@@ -1786,14 +1831,15 @@ Reduction:
         doc: N-D array.
     arguments:
       axes:
-        doc: Axes to be reduced. If empty list is given, all dimensions are reduced
+        doc:
+          Axes to be reduced. If empty list is given, all dimensions are reduced
           to scalar.
         type: repeated int64
         default: range(x.ndim)
       keep_dims:
         doc: Flag whether the reduced axis is kept.
         type: bool
-        default: 'False'
+        default: "False"
     outputs:
       y:
         doc: N-D array
@@ -1816,7 +1862,7 @@ Reduction:
       keep_dims:
         doc: Flag whether the reduced axis is kept.
         type: bool
-        default: 'False'
+        default: "False"
     outputs:
       y:
         doc: N-D array
@@ -1839,15 +1885,15 @@ Reduction:
       keep_dims:
         doc: Flag whether the reduced axis is kept.
         type: bool
-        default: 'False'
+        default: "False"
       with_index:
         doc: Return values and indices.
         type: bool
-        default: 'False'
+        default: "False"
       only_index:
         doc: Return only indices.
         type: bool
-        default: 'False'
+        default: "False"
     outputs:
       y:
         doc: N-D array
@@ -1871,15 +1917,15 @@ Reduction:
       keep_dims:
         doc: Flag whether the reduced axis is kept.
         type: bool
-        default: 'False'
+        default: "False"
       with_index:
         doc: Return values and indices.
         type: bool
-        default: 'False'
+        default: "False"
       only_index:
         doc: Return only indices.
         type: bool
-        default: 'False'
+        default: "False"
     outputs:
       y:
         doc: N-D array
@@ -1906,7 +1952,7 @@ Reduction:
       keep_dims:
         doc: Flag whether the reduced axis is kept.
         type: bool
-        default: 'False'
+        default: "False"
     outputs:
       y:
         doc: N-D array
@@ -1965,7 +2011,7 @@ Arithmetic:
       inplace:
         doc: The output array is shared with the 1st input array if True.
         type: bool
-        default: 'False'
+        default: "False"
     outputs:
       y:
         doc: N-D array
@@ -2117,7 +2163,7 @@ Arithmetic:
       val:
         doc: Value of the scalar
         type: double
-        default: '1'
+        default: "1"
     outputs:
       y:
         doc: N-D array with the same shape as x
@@ -2139,7 +2185,7 @@ Arithmetic:
       val:
         doc: Value of the scalar
         type: double
-        default: '1'
+        default: "1"
     outputs:
       y:
         doc: N-D array with the same shape as x
@@ -2161,7 +2207,7 @@ Arithmetic:
       val:
         doc: Value of the scalar
         type: double
-        default: '1'
+        default: "1"
     outputs:
       y:
         doc: N-D array with the same shape as x
@@ -2183,7 +2229,7 @@ Arithmetic:
       val:
         doc: Value of the scalar
         type: double
-        default: '1'
+        default: "1"
     outputs:
       y:
         doc: N-D array with the same shape as x
@@ -2205,7 +2251,7 @@ Arithmetic:
       val:
         doc: Value of the scalar
         type: double
-        default: '1'
+        default: "1"
     outputs:
       y:
         doc: N-D array with the same shape as x
@@ -2227,7 +2273,7 @@ Arithmetic:
       val:
         doc: Value of the scalar
         type: double
-        default: '1'
+        default: "1"
     outputs:
       y:
         doc: N-D array with the same shape as x
@@ -2264,7 +2310,7 @@ Logical:
       alpha:
         doc: Value in case of :math:`x = 0`.
         type: float
-        default: '1.0'
+        default: "1.0"
     outputs:
       y:
         doc: N-D array with the same shape as x
@@ -2324,7 +2370,7 @@ Logical:
       val:
         doc: Value of the scalar
         type: double
-        default: '1.0'
+        default: "1.0"
     outputs:
       y:
         doc: N-D array with the same shape as x
@@ -2346,7 +2392,7 @@ Logical:
       val:
         doc: Value of the scalar
         type: double
-        default: '1.0'
+        default: "1.0"
     outputs:
       y:
         doc: N-D array with the same shape as x
@@ -2650,7 +2696,7 @@ Logical:
       val:
         doc: Value of the scalar
         type: double
-        default: '1'
+        default: "1"
     outputs:
       y:
         doc: N-D array with the same shape as x
@@ -2675,7 +2721,7 @@ Logical:
       val:
         doc: Value of the scalar
         type: double
-        default: '1'
+        default: "1"
     outputs:
       y:
         doc: N-D array with the same shape as x
@@ -2701,7 +2747,7 @@ Logical:
       val:
         doc: Value of the scalar
         type: double
-        default: '1'
+        default: "1"
     outputs:
       y:
         doc: N-D array with the same shape as x
@@ -2727,7 +2773,7 @@ Logical:
       val:
         doc: Value of the scalar
         type: double
-        default: '1'
+        default: "1"
     outputs:
       y:
         doc: N-D array with the same shape as x
@@ -2754,7 +2800,7 @@ Logical:
       val:
         doc: Value of the scalar
         type: double
-        default: '1'
+        default: "1"
     outputs:
       y:
         doc: N-D array with the same shape as x
@@ -2780,7 +2826,7 @@ Logical:
       val:
         doc: Value of the scalar
         type: double
-        default: '1'
+        default: "1"
     outputs:
       y:
         doc: N-D array with the same shape as x
@@ -2847,7 +2893,7 @@ Logical:
       val:
         doc: Value of the scalar
         type: double
-        default: '0'
+        default: "0"
     outputs:
       y:
         doc: N-D array with the same shape as x
@@ -2866,7 +2912,7 @@ Logical:
       val:
         doc: Value of the scalar
         type: double
-        default: '0'
+        default: "0"
     outputs:
       y:
         doc: N-D array with the same shape as x
@@ -2900,7 +2946,8 @@ Logical:
         assert np.allclose(z_numpy, z.d)
     inputs:
       condition:
-        doc: N-d array. For all i, when ``condition[i] == true``, yield ``x_true[i]``,
+        doc:
+          N-d array. For all i, when ``condition[i] == true``, yield ``x_true[i]``,
           otherwise ``x_false[i]``.
       x_true:
         doc: N-d array with higher or equal rank to ``condition``.
@@ -2923,11 +2970,11 @@ Math:
       val:
         doc: Constant value.
         type: float
-        default: '0'
+        default: "0"
       shape:
         doc: Shape of the output array.
         type: Shape
-        default: '[]'
+        default: "[]"
     outputs:
       y:
         doc: N-D array where all values are the specified constant.
@@ -2952,7 +2999,7 @@ Math:
       step:
         doc: Step value.
         type: float
-        default: '1'
+        default: "1"
     outputs:
       y:
         doc: 1-D array with the generated values.
@@ -3064,24 +3111,27 @@ Math:
         batch dimensions between two inputs even if the total sample size for each input is same.
     inputs:
       a:
-        doc: N-D array with >= 2-dim. The last two dimensions will be treated as a
+        doc:
+          N-D array with >= 2-dim. The last two dimensions will be treated as a
           matrix.
       b:
-        doc: N-D array with >= 2-dim. The last two dimensions will be treated as a
+        doc:
+          N-D array with >= 2-dim. The last two dimensions will be treated as a
           matrix. The product of the size of 0-th dimension through the size of the
           third last dimension must be same as that of the input ``a``.
     arguments:
       transpose_a:
         doc: Transpose the last two axes of ``a`` in matrix multiplication.
         type: bool
-        default: 'False'
+        default: "False"
       transpose_b:
         doc: Transpose the last two axes of ``b`` in matrix multiplication.
         type: bool
-        default: 'False'
+        default: "False"
     outputs:
       y:
-        doc: Output of sample-wise matrix multiplication in a batch. When ``a`` is
+        doc:
+          Output of sample-wise matrix multiplication in a batch. When ``a`` is
           of a shape of [N, P, Q], ``b`` is of a shape of [N, Q, R], and transpose
           options are all False, the output will be a shape of [N, P, R].
     function_ids:
@@ -3409,7 +3459,7 @@ Array Manipulation:
       axis:
         doc: Axis
         type: int64
-        default: '0'
+        default: "0"
     outputs:
       y:
         doc: list of N-D arrays
@@ -3433,11 +3483,12 @@ Array Manipulation:
         variadic: true
     arguments:
       axis:
-        doc: The axis on which to concatenate arrays. Axis indices take on values
+        doc:
+          The axis on which to concatenate arrays. Axis indices take on values
           0, 1, 2, and so on from the left. For example, to stack four (3,28,28) inputs
           on the second axis, specify 1. In this case, the output size will be (3,4,28,28).
         type: int64
-        default: '0'
+        default: "0"
     outputs:
       y:
         doc: Output
@@ -3521,13 +3572,13 @@ Array Manipulation:
         doc: Padding mode string.
         type: string
         available_values:
-        - constant
-        - reflect
-        default: '''constant'''
+          - constant
+          - reflect
+        default: "'constant'"
       constant_value:
         doc: Fill value if mode is `constant`.
         type: float
-        default: '0'
+        default: "0"
     outputs:
       y:
         doc: |2
@@ -3574,7 +3625,8 @@ Array Manipulation:
         doc: N-D array
     arguments:
       shape:
-        doc: Shape broadcasted to. The size must be the same in axis where ``x``'s
+        doc:
+          Shape broadcasted to. The size must be the same in axis where ``x``'s
           shape is not 1.
         type: Shape
     outputs:
@@ -3597,7 +3649,8 @@ Array Manipulation:
         doc: N-D array
     arguments:
       axis:
-        doc: Target axis to start broadcasting. If this is not set, broadcast will
+        doc:
+          Target axis to start broadcasting. If this is not set, broadcast will
           try to fit y to x starting from the last dimension
         type: int64
         default: -1
@@ -3688,7 +3741,8 @@ Array Manipulation:
         template: TI
     arguments:
       shape:
-        doc: Number of classes. Note that it must be exactly the same as the number
+        doc:
+          Number of classes. Note that it must be exactly the same as the number
           of classes included in label data. Passing incorrect numbers might cause
           an unexpected error and currently this function doesn't check if the input
           is valid or not. Also, when nd-labels are given, dimensions must match.
@@ -3710,12 +3764,13 @@ Array Manipulation:
         doc: N-D array
     arguments:
       axes:
-        doc: The index of the dimension to reverse the order of the elements. Axis
+        doc:
+          The index of the dimension to reverse the order of the elements. Axis
           indices take on values 0, 1, 2, and so on from the left. For example, to
           flip a 32 (W) by 24 (H) 100 RGB image (100,3,24,32) vertically and horizontally,
           specify (2,3).
         type: repeated int64
-        default: '[len(x.shape) - 1]'
+        default: "[len(x.shape) - 1]"
     outputs:
       y:
         doc: N-D array
@@ -3732,20 +3787,22 @@ Array Manipulation:
         doc: N-D array.
     arguments:
       shifts:
-        doc: The amount to shift elements. For example, to shift image data to the
+        doc:
+          The amount to shift elements. For example, to shift image data to the
           right by 2 pixels and up 3 pixels, specify (-3,2).
         type: repeated int64
         default: (0,) * len(x.shape)
       border_mode:
-        doc: 'Specify how to process the ends of arrays whose values will be undetermined
+        doc:
+          "Specify how to process the ends of arrays whose values will be undetermined
           as a result of shifting. nearest: The data at the ends of the original      array
           is copied and used. reflect: Original data reflected      at the ends of
-          the original array is used.'
+          the original array is used."
         type: string
         available_values:
-        - nearest
-        - reflect
-        default: '''nearest'''
+          - nearest
+          - reflect
+        default: "'nearest'"
     outputs:
       y:
         doc: N-D array.
@@ -3772,19 +3829,19 @@ Array Manipulation:
       axis:
         doc: Axis along which to sort.
         type: int64
-        default: '-1'
+        default: "-1"
       reverse:
         doc: Sort in descending order.
         type: bool
-        default: 'False'
+        default: "False"
       with_index:
         doc: Return sorted values and index.
         type: bool
-        default: 'False'
+        default: "False"
       only_index:
         doc: Return only the sort index.
         type: bool
-        default: 'False'
+        default: "False"
     outputs:
       y:
         doc: list of N-D arrays
@@ -3809,13 +3866,14 @@ Array Manipulation:
         doc: N-D array.
     arguments:
       shape:
-        doc: Dimensions for each axis. ``-1`` can be specified only in one shape dimension.
+        doc:
+          Dimensions for each axis. ``-1`` can be specified only in one shape dimension.
           The value is calculated from the size of the array and remaining dimensions.
         type: Shape
       inplace:
         doc: The output array is shared with the input array if True.
         type: bool
-        default: 'True'
+        default: "True"
     outputs:
       y:
         doc: Reshaped N-D array
@@ -4106,7 +4164,8 @@ Array Manipulation:
       x0:
         doc: N-D array which the data is added to its copy.
       indices:
-        doc: N-D array scatter indices. The size of each dimension must be equal or
+        doc:
+          N-D array scatter indices. The size of each dimension must be equal or
           smaller than that of x0 except for the specified axis. The value of indices
           must be smaller than the size of specified axis' dimension of x0. The size
           of each dimension must be equal or smaller than that of x1. Indices must
@@ -4120,13 +4179,10 @@ Array Manipulation:
         default: 0
     outputs:
       y:
-        doc: N-D array which contains the result of scatter addition. The shape is
+        doc:
+          N-D array which contains the result of scatter addition. The shape is
           same as x0.
     c_runtime: not support
-    function_ids:
-      iI: 307
-      Empty: 308
-      i: 309
   PackPaddedSequence:
     snake_name: pack_padded_sequence
     doc: |
@@ -4155,7 +4211,7 @@ Array Manipulation:
           `padded_sequence` is of (:math:`T`, :math:`B`, :math:`*`) shape if False, 
           otherwise (:math:`B`, :math:`T`, :math:`*`).
         type: bool
-        default: 'False'
+        default: "False"
     outputs:
       pack_sequence:
         doc: Packed sequence of (:math:`N`, :math:`*`) shape.
@@ -4191,7 +4247,7 @@ Array Manipulation:
           `padded_sequence` is of (:math:`T`, :math:`B`, :math:`*`) shape if False, 
           otherwise (:math:`B`, :math:`T`, :math:`*`).
         type: bool
-        default: 'False'
+        default: "False"
       padding_value:
         doc: Padding value.
         type: float
@@ -4205,7 +4261,8 @@ Array Manipulation:
         default: -1
     outputs:
       padded_sequence:
-        doc: Padded sequence of (:math:`T \times B \times *`) or (:math:`B \times
+        doc:
+          Padded sequence of (:math:`T \times B \times *`) or (:math:`B \times
           T \times *`) shape.
       lengths:
         doc: Sequence length for each batch and always resides in CPU.
@@ -4231,31 +4288,35 @@ Signal Processing:
         doc: Interpolation mode chosen from ('nearest'|'linear').
         type: string
         available_values:
-        - nearest
-        - linear
+          - nearest
+          - linear
       align_corners:
-        doc: If true, the corner pixels of input and output arrays are aligned, such
+        doc:
+          If true, the corner pixels of input and output arrays are aligned, such
           that the output corner pixels have the same values with the input corner
           pixels. The default is ``None``, and it becomes `True` if mode is 'linear',
           otherwise `False`.
         type: bool
-        default: 'True'
+        default: "True"
       half_pixel:
-        doc: If true, in the coordinate transformation, 0.5 is added to the output
+        doc:
+          If true, in the coordinate transformation, 0.5 is added to the output
           coordinate and 0.5 is subtracted from the input coordinate after scaling.
         type: bool
-        default: 'False'
+        default: "False"
       half_pixel_for_nn:
-        doc: This is a special argument to support the backward-compatibility of the
+        doc:
+          This is a special argument to support the backward-compatibility of the
           nearest neighbor interpolation. Default is `False`. When in ``True``, the
           implementation of nearest neighbor interpolation is the old one.
         type: bool
-        default: 'False'
+        default: "False"
       channel_last:
-        doc: If True, the last dimension is considered as channel dimension, a.k.a
+        doc:
+          If True, the last dimension is considered as channel dimension, a.k.a
           NHWC order.
         type: bool
-        default: 'False'
+        default: "False"
     outputs:
       y:
         doc: N-D array.
@@ -4314,10 +4375,11 @@ Signal Processing:
         doc: The number of dimensions for each signal. It must be 1, 2, or 3.
         type: int64
       normalized:
-        doc: Use unitary normalization. If `True`, the normalization constant :math:`\sqrt{\frac{1}{\prod_{i=1}^{d}
+        doc:
+          Use unitary normalization. If `True`, the normalization constant :math:`\sqrt{\frac{1}{\prod_{i=1}^{d}
           N_i}}` is multiplied.
         type: bool
-        default: 'False'
+        default: "False"
     outputs:
       y:
         doc: FFT transformed signal.
@@ -4353,10 +4415,11 @@ Signal Processing:
         doc: The number of dimensions for each signal. It must be 1, 2, or 3.
         type: int64
       normalized:
-        doc: Use unitary normalization. If `True`, the normalization constant :math:`\frac{1}{\prod_{i=1}^{d}
+        doc:
+          Use unitary normalization. If `True`, the normalization constant :math:`\frac{1}{\prod_{i=1}^{d}
           N_i}` becomes :math:`\sqrt{\frac{1}{\prod_{i=1}^{d} N_i}}`.
         type: bool
-        default: 'False'
+        default: "False"
     outputs:
       y:
         doc: IFFT transformed signal.
@@ -4397,11 +4460,11 @@ Stochasticity:
       p:
         doc: :math:`p` in definition.
         type: double
-        default: '0.5'
+        default: "0.5"
       seed:
         doc: Random seed. When -1, seed is sampled from global random number generator.
         type: int64
-        default: '-1'
+        default: "-1"
     outputs:
       y:
         doc: N-D array with the same shape as x
@@ -4441,15 +4504,15 @@ Stochasticity:
       abs:
         doc: Determine largest data values by magnitude.
         type: bool
-        default: 'False'
+        default: "False"
       reduce:
         doc: Reduce feature size to one dimension of size `k`.
         type: bool
-        default: 'True'
+        default: "True"
       base_axis:
         doc: First dimension of the sample shape.
         type: int64
-        default: '1'
+        default: "1"
     outputs:
       y:
         doc: N-D array.
@@ -4477,11 +4540,11 @@ Stochasticity:
       abs:
         doc: Determine largest gradients by magnitude.
         type: bool
-        default: 'False'
+        default: "False"
       base_axis:
         doc: First dimension of the sample shape.
         type: int64
-        default: '1'
+        default: "1"
     outputs:
       y:
         doc: N-D array with same shape and data as `x`.
@@ -4500,19 +4563,19 @@ Stochasticity:
       low:
         doc: :math:`low` in definition.
         type: float
-        default: '0'
+        default: "0"
       high:
         doc: :math:`high` in definition.
         type: float
-        default: '1'
+        default: "1"
       shape:
         doc: Shape of returned variable.
         type: Shape
-        default: '[]'
+        default: "[]"
       seed:
         doc: Random seed. When -1, seed is sampled from global random number generator.
         type: int64
-        default: '-1'
+        default: "-1"
     outputs:
       y:
         doc: Variable with the shape specified in the argument.
@@ -4531,19 +4594,19 @@ Stochasticity:
       low:
         doc: :math:`low` in definition.
         type: int64
-        default: '0'
+        default: "0"
       high:
         doc: :math:`high` in definition.
         type: int64
-        default: '1'
+        default: "1"
       shape:
         doc: Shape of returned variable.
         type: Shape
-        default: '[]'
+        default: "[]"
       seed:
         doc: Random seed. When -1, seed is sampled from global random number generator.
         type: int64
-        default: '-1'
+        default: "-1"
     outputs:
       y:
         doc: Variable with the shape specified in the argument. The dtype is int32.
@@ -4563,19 +4626,19 @@ Stochasticity:
       mu:
         doc: :math:`\mu` in definition.
         type: float
-        default: '0'
+        default: "0"
       sigma:
         doc: :math:`\sigma` in definition.
         type: float
-        default: '1'
+        default: "1"
       shape:
         doc: Shape of returned variable.
         type: Shape
-        default: '[]'
+        default: "[]"
       seed:
         doc: Random seed. When -1, seed is sampled from global random number generator.
         type: int64
-        default: '-1'
+        default: "-1"
     outputs:
       y:
         doc: Variable with the shape specified in the argument.
@@ -4595,19 +4658,19 @@ Stochasticity:
       n:
         doc: :math:`n` in definition, the number of trials.
         type: int64
-        default: '1'
+        default: "1"
       p:
         doc: :math:`p` in definition, probability of success.
         type: float
-        default: '0.5'
+        default: "0.5"
       shape:
         doc: Shape of returned variable.
         type: Shape
-        default: '[]'
+        default: "[]"
       seed:
         doc: Random seed. When -1, seed is sampled from global random number generator.
         type: int64
-        default: '-1'
+        default: "-1"
     outputs:
       y:
         doc: Variable with the shape specified in the argument.
@@ -4624,19 +4687,19 @@ Stochasticity:
       alpha:
         doc: :math:`\alpha`, scale parameter.
         type: float
-        default: '0.5'
+        default: "0.5"
       beta:
         doc: :math:`\beta`, scale parameter.
         type: float
-        default: '0.5'
+        default: "0.5"
       shape:
         doc: Shape of returned variable.
         type: Shape
-        default: '[]'
+        default: "[]"
       seed:
         doc: Random seed. When -1, seed is sampled from global random number generator.
         type: int64
-        default: '-1'
+        default: "-1"
     outputs:
       y:
         doc: Variable with the shape specified in the argument.
@@ -4653,19 +4716,19 @@ Stochasticity:
       k:
         doc: k, scale parameter.
         type: float
-        default: '0.5'
+        default: "0.5"
       theta:
         doc: :math:`\theta`, scale parameter.
         type: float
-        default: '1'
+        default: "1"
       shape:
         doc: Shape of returned variable.
         type: Shape
-        default: '[]'
+        default: "[]"
       seed:
         doc: Random seed. When -1, seed is sampled from global random number generator.
         type: int64
-        default: '-1'
+        default: "-1"
     outputs:
       y:
         doc: Variable with the shape specified in the argument.
@@ -4730,15 +4793,15 @@ Stochasticity:
       shape:
         doc: Number and shape of generated samples.
         type: Shape
-        default: '[]'
+        default: "[]"
       replace:
         doc: Whether sampling is with or without replacement.
         type: bool
-        default: 'True'
+        default: "True"
       seed:
         doc: Random seed.
         type: int64
-        default: '-1'
+        default: "-1"
     outputs:
       y:
         doc: N-D array
@@ -4755,18 +4818,19 @@ Stochasticity:
         doc: N-D array
     arguments:
       shape:
-        doc: The data size to extract. For example, to randomly extract a portion
+        doc:
+          The data size to extract. For example, to randomly extract a portion
           of the image (3,48,48) from a 3,64,64 image, specify (3,48,48).
         type: Shape
         default: x.shape
       base_axis:
         doc: No Description
         type: int64
-        default: '1'
+        default: "1"
       seed:
         doc: Random seed. When -1, seed is sampled from global random number generator.
         type: int64
-        default: '-1'
+        default: "-1"
     outputs:
       y:
         doc: N-D array
@@ -4783,20 +4847,21 @@ Stochasticity:
         doc: N-D array
     arguments:
       axes:
-        doc: The index of the axis to reverse the order of the elements. Axis indices
+        doc:
+          The index of the axis to reverse the order of the elements. Axis indices
           take on values 0, 1, 2, and so on from the left. For example, to flip a
           32 (W) by 24 (H) 100 RGB images (100, 3,24,32) vertically and horizontally
           at random, specify (2,3).
         type: repeated int64
-        default: '[len(x.shape) - 1]'
+        default: "[len(x.shape) - 1]"
       base_axis:
         doc: No Description
         type: int64
-        default: '1'
+        default: "1"
       seed:
         doc: Random seed. When -1, seed is sampled from global random number generator.
         type: int64
-        default: '-1'
+        default: "-1"
     outputs:
       y:
         doc: N-D array
@@ -4813,29 +4878,31 @@ Stochasticity:
         doc: N-D array.
     arguments:
       shifts:
-        doc: Max absolute amount to shift elements. For example, to shift image data
+        doc:
+          Max absolute amount to shift elements. For example, to shift image data
           horizontally by :math:`\pm 2` pixels and vertically by :math:`\pm 3` pixels,
           specify (3,2).
         type: repeated int64
         default: (0,) * len(x.shape)
       border_mode:
-        doc: 'Specify how to process the ends of arrays whose values will be undetermined
+        doc:
+          "Specify how to process the ends of arrays whose values will be undetermined
           as a result of shifting. nearest: The data at the ends of the   original
           array is copied and used. reflect: Original data reflected at   the ends
-          of the original array is used.'
+          of the original array is used."
         type: string
         available_values:
-        - nearest
-        - reflect
-        default: '''nearest'''
+          - nearest
+          - reflect
+        default: "'nearest'"
       base_axis:
         doc: No Description
         type: int64
-        default: '1'
+        default: "1"
       seed:
         doc: Random seed. When -1, seed is sampled from global random number generator.
         type: int64
-        default: '-1'
+        default: "-1"
     outputs:
       y:
         doc: N-D array.
@@ -4884,7 +4951,7 @@ Stochasticity:
       prob:
         doc: Probability to erase.
         type: float
-        default: '0.5'
+        default: "0.5"
       area_ratios:
         doc: Low and high of the area ratio range.
         type: repeated float
@@ -4902,31 +4969,33 @@ Stochasticity:
         type: int64
         default: 1
       share:
-        doc: Use a same bounding box randomly picked over the feature dimension when
+        doc:
+          Use a same bounding box randomly picked over the feature dimension when
           being True. Default is False.
         type: bool
-        default: 'True'
+        default: "True"
       inplace:
         doc: The output array is shared with the input array if True.
         type: bool
-        default: 'False'
+        default: "False"
       base_axis:
         doc: Dimensions up to base_axis is treated as sample dimension.
         type: int64
-        default: '1'
+        default: "1"
       seed:
         doc: Random seed. When -1, seed is sampled from global random number generator.
         type: int64
-        default: '-1'
+        default: "-1"
       channel_last:
-        doc: If True, the last dimension is considered as channel dimension, a.k.a
+        doc:
+          If True, the last dimension is considered as channel dimension, a.k.a
           NHWC order.
         type: bool
-        default: 'False'
+        default: "False"
       ste_fine_grained:
         doc: Straight Through Estimator is fine-grained or not. Default is True.
         type: bool
-        default: 'True'
+        default: "True"
     outputs:
       y:
         doc: N-D array.
@@ -4949,88 +5018,98 @@ Stochasticity:
         type: Shape
         default: x.shape
       pad:
-        doc: Border padding values for each spatial axis. Padding will be added both
+        doc:
+          Border padding values for each spatial axis. Padding will be added both
           sides of the dimension.
         type: Shape
         default: (0, 0)
       min_scale:
-        doc: The minimum scale ratio when randomly scaling the image. For example,
+        doc:
+          The minimum scale ratio when randomly scaling the image. For example,
           to scale down to 0.8 times the size of the original image, specify "0.8".
           To not apply random scaling, set both min_scale and max_scale to "1.0".
         type: float
-        default: '1.0'
+        default: "1.0"
       max_scale:
-        doc: The maximum scale ratio when randomly scaling the image. For example,
+        doc:
+          The maximum scale ratio when randomly scaling the image. For example,
           to scale down to 2 times the size of the original image, specify "2.0".
         type: float
-        default: '1.0'
+        default: "1.0"
       angle:
-        doc: The rotation angle range in radians when randomly rotating the image.
+        doc:
+          The rotation angle range in radians when randomly rotating the image.
           The image is randomly rotated in the -Angle to +Angle range. For example,
           to rotate in a +-15 degree range, specify "0.26" (15 degrees/360 degrees
           * 2PI). To not apply random rotation, specify "0.0".
         type: float
-        default: '0.0'
+        default: "0.0"
       aspect_ratio:
-        doc: The aspect ratio range when randomly deforming the image. For example,
+        doc:
+          The aspect ratio range when randomly deforming the image. For example,
           to deform aspect ratio of image from 1:1.3 to 1.3:1, specify "1.3". To not
           apply random deforming, specify "1.0".
         type: float
-        default: '1.0'
+        default: "1.0"
       distortion:
-        doc: The distortion range when randomly distorting the image. To not apply
+        doc:
+          The distortion range when randomly distorting the image. To not apply
           distortion, specify "0.0".
         type: float
-        default: '0.0'
+        default: "0.0"
       flip_lr:
         doc: Whether to randomly flip the image horizontally at 50% probability.
         type: bool
-        default: 'False'
+        default: "False"
       flip_ud:
         doc: Whether to randomly flip the image vertically at 50% probability.
         type: bool
-        default: 'False'
+        default: "False"
       brightness:
-        doc: The absolute range of values to randomly add to the brightness. A random
+        doc:
+          The absolute range of values to randomly add to the brightness. A random
           value in the -Brightness to +Brightness range is added to the brightness.
           For example, to vary the brightness in the -0.05 to +0.05 range, specify
           "0.05". To not apply random addition to brightness, specify "0.0".
         type: float
-        default: '0.0'
+        default: "0.0"
       brightness_each:
-        doc: 'Whether to apply the random addition to brightness (as specified by
+        doc:
+          "Whether to apply the random addition to brightness (as specified by
           brightness) to each color channel. True: brightness is added based on a
           different random number for each channel. False: brightness is added based
-          on a random number common to all channels.'
+          on a random number common to all channels."
         type: bool
-        default: 'False'
+        default: "False"
       contrast:
-        doc: The range in which to randomly vary the image contrast. The contrast
+        doc:
+          The range in which to randomly vary the image contrast. The contrast
           is varied in the 1/Contrast times to Contrast times range. The output brightness
           is equal to (input - contrast_center) * contrast + contrast_center. For
           example, to vary the contrast in the 0.91 times to 1.1 times range, specify
           "1.1". To not apply random contrast variation, specify "1.0".
         type: float
-        default: '1.0'
+        default: "1.0"
       contrast_center:
         doc: Intensity center used for applying contrast.
         type: float
-        default: '0.0'
+        default: "0.0"
       contrast_each:
-        doc: 'Whether to apply the random contrast variation (as specified by contrast)
+        doc:
+          "Whether to apply the random contrast variation (as specified by contrast)
           to each color channel. True: contrast is varied based on a different random
           number for each channel. False: contrast is varied based on a random number
-          common to all channels.'
+          common to all channels."
         type: bool
-        default: 'False'
+        default: "False"
       noise:
         doc: Sigma of normal random number to be added.
         type: float
-        default: '0.0'
+        default: "0.0"
       seed:
         doc: Random seed. When -1, seed is sampled from global random number generator.
         type: int64
-        default: '-1'
+        default: "-1"
     outputs:
       y:
         doc: N-D array.
@@ -5055,7 +5134,8 @@ Loss Functions:
           SigmoidCrossEntropy is equivalent to Sigmoid+BinaryCrossEntropy, but computing them at once has the effect of reducing computational error.
     inputs:
       x:
-        doc: N-D array. Typically indicates a score. The value lies in :math:`[-\infty,
+        doc:
+          N-D array. Typically indicates a score. The value lies in :math:`[-\infty,
           \infty]`
         parameter: true
       target:
@@ -5081,7 +5161,8 @@ Loss Functions:
       x:
         doc: Probabilities N-D array. :math:`-\infty` to :math:`\infty`.
       target:
-        doc: N-D array of labels. Usually set as 0 or 1, but, unlike SigmoidCrossEntropy,
+        doc:
+          N-D array of labels. Usually set as 0 or 1, but, unlike SigmoidCrossEntropy,
           it allows probability (0 to 1) as inputs and backpropagation can be done.
     outputs:
       y:
@@ -5104,11 +5185,13 @@ Loss Functions:
           SoftmaxCrossEntropy is equivalent to Softmax+CategoricalCrossEntropy, but computing them at once has the effect of reducing computational error.
     inputs:
       x:
-        doc: N-D array. Typically indicates a score. :math:`(D_1 \times ... \times
+        doc:
+          N-D array. Typically indicates a score. :math:`(D_1 \times ... \times
           D_i \times ... \times D_N)`
         parameter: true
       target:
-        doc: N-D array of labels. :math:`(D_1 \times ... \times 1 \times ... \times
+        doc:
+          N-D array of labels. :math:`(D_1 \times ... \times 1 \times ... \times
           D_N)`
         template: TI
         parameter: true
@@ -5119,7 +5202,8 @@ Loss Functions:
         default: len(x.shape) - 1
     outputs:
       y:
-        doc: N-D array of element-wise losses. :math:`(D_1 \times ... \times 1 \times
+        doc:
+          N-D array of element-wise losses. :math:`(D_1 \times ... \times 1 \times
           ... \times D_N)`
     function_ids:
       i: 98
@@ -5136,11 +5220,13 @@ Loss Functions:
       along dimension specified by axis (:math:`i` is the axis where normalization is performed on).
     inputs:
       x:
-        doc: N-D array. Typically indicates a score. :math:`(D_1 \times ... \times
+        doc:
+          N-D array. Typically indicates a score. :math:`(D_1 \times ... \times
           D_i \times ... \times D_N)`
         parameter: true
       target:
-        doc: N-D array of labels. :math:`(D_1 \times ... \times 1 \times ... \times
+        doc:
+          N-D array of labels. :math:`(D_1 \times ... \times 1 \times ... \times
           D_N)`
         template: TI
         parameter: true
@@ -5151,7 +5237,8 @@ Loss Functions:
         default: len(x.shape) - 1
     outputs:
       y:
-        doc: N-D array of element-wise losses. :math:`(D_1 \times ... \times 1 \times
+        doc:
+          N-D array of element-wise losses. :math:`(D_1 \times ... \times 1 \times
           ... \times D_N)`
     function_ids:
       i: 99
@@ -5217,7 +5304,7 @@ Loss Functions:
       delta:
         doc: Delta
         type: float
-        default: '1.0'
+        default: "1.0"
     outputs:
       y:
         doc: N-D array of element-wise losses.
@@ -5268,7 +5355,7 @@ Loss Functions:
       base_axis:
         doc: Dimensions up to base_axis is treated as sample dimension.
         type: int64
-        default: '1'
+        default: "1"
     outputs:
       D:
         doc: Kullback Leibler divergence :math:`KL(p \parallel q)`.
@@ -5288,11 +5375,13 @@ Geometric Neural Network Layers:
       constructing the spatial transformer.
     inputs:
       theta:
-        doc: N-D array with the shape (:math:`B \times 2 \times 3`), the sample-wise
+        doc:
+          N-D array with the shape (:math:`B \times 2 \times 3`), the sample-wise
           affine transformation matrix.
     arguments:
       size:
-        doc: The grid size of (:math:`H \times W`) for 2D and (:math:`D \times H \times
+        doc:
+          The grid size of (:math:`H \times W`) for 2D and (:math:`D \times H \times
           W`) for 3D.
         type: repeated int64
       align_corners:
@@ -5300,10 +5389,11 @@ Geometric Neural Network Layers:
           If `True`, the top-left and bottom-right pixels correspond to (-1, -1) and (1, 1) respectively since a pixel is located on the corner of a grid, and the target grid is normalized in [-1, 1].
           If `False`, the normalized target grid in [-1, 1] is scaled by `size - 1 / size` according to the respective spatial size (e.g., :math:`H` and :math:`W`) before the transformation since a pixel is located on a center of a cell in a grid.
         type: bool
-        default: 'False'
+        default: "False"
     outputs:
       grid:
-        doc: N-D array with the shape (:math:`B \times H \times W \times 2`) for 2D
+        doc:
+          N-D array with the shape (:math:`B \times H \times W \times 2`) for 2D
           and (:math:`B \times D \times H \times W \times 3`) for 3D. The last dimension
           of 2 is for (x, y) and of 3 for (x, y, z). The `gird` is used as the source
           grid for the warping.
@@ -5318,11 +5408,13 @@ Geometric Neural Network Layers:
       the `affine_grid` function for constructing the spatial transformer.
     inputs:
       x:
-        doc: Input data to be warped with the shape (:math:`B \times C \times H_{in}
+        doc:
+          Input data to be warped with the shape (:math:`B \times C \times H_{in}
           \times W_{in}`) for 2D and (:math:`B \times C \times D_{in} \times H_{in}
           \times W_{in}`) for 3D.
       grid:
-        doc: Grid warping the input data with the shape (:math:`B \times H_{out} \times
+        doc:
+          Grid warping the input data with the shape (:math:`B \times H_{out} \times
           W_{out} \times 2`) for 2D and (:math:`B \times D_{out} \times H_{out} \times
           W_{out} \times 3`) for 3D. The last dimension of 2 is for (x, y) or 3 for
           (x, y, z).
@@ -5331,32 +5423,35 @@ Geometric Neural Network Layers:
         doc: Interpolation mode, linear or nearest.
         type: string
         available_values:
-        - linear
-        - nearest
-        default: '''linear'''
+          - linear
+          - nearest
+        default: "'linear'"
       padding_mode:
-        doc: Padding mode when the grid value is outside [-1, 1]. If this is "zero",
+        doc:
+          Padding mode when the grid value is outside [-1, 1]. If this is "zero",
           0 is used for padding. "reflect" uses the values reflected at the ends of
           the original input data like the mirror. "repeat" used the values at the
           ends of the original input data.
         type: string
         available_values:
-        - zero
-        - repeat
-        - reflect
-        default: '''zero'''
+          - zero
+          - repeat
+          - reflect
+        default: "'zero'"
       align_corners:
-        doc: The target grid normalized in [-1, 1] is scaled by `size - 1 / size`
+        doc:
+          The target grid normalized in [-1, 1] is scaled by `size - 1 / size`
           according to the respective spatial size (e.g., :math:`H` and :math:`W`)
           before the transformation if this is `False`. If this is `True`, the top-left
           and bottom-right pixels correspond to (-1, -1) and (1, 1) respectively.
         type: bool
-        default: 'False'
+        default: "False"
       channel_last:
-        doc: If True, the last dimension is considered as channel dimension, a.k.a
+        doc:
+          If True, the last dimension is considered as channel dimension, a.k.a
           NHWC order.
         type: bool
-        default: 'False'
+        default: "False"
     outputs:
       y:
         doc: Output data warped by the grid.
@@ -5527,11 +5622,11 @@ Quantization Neural Network Layers:
       base_axis:
         doc: Dimensions up to base_axis is treated as sample dimension.
         type: int64
-        default: '1'
+        default: "1"
       quantize_zero_to:
         doc: Input value at zero is quantized to this value.
         type: float
-        default: '1.0'
+        default: "1.0"
     outputs:
       y:
         doc: Output.
@@ -5596,7 +5691,7 @@ Quantization Neural Network Layers:
       base_axis:
         doc: Dimensions up to base_axis is treated as sample dimension.
         type: int64
-        default: '1'
+        default: "1"
       pad:
         doc: Padding sizes for dimensions.
         type: Shape
@@ -5610,14 +5705,15 @@ Quantization Neural Network Layers:
         type: Shape
         default: (1,) * (len(x.shape) - (base_axis+1))
       group:
-        doc: Number of groups of channels. This makes the connection across channels
+        doc:
+          Number of groups of channels. This makes the connection across channels
           sparser, by grouping connections along the mapping direction.
         type: int64
-        default: '1'
+        default: "1"
       quantize_zero_to:
         doc: Input value at zero is quantized to this value.
         type: float
-        default: '1.0'
+        default: "1.0"
     outputs:
       y:
         doc: Output
@@ -5682,11 +5778,11 @@ Quantization Neural Network Layers:
       base_axis:
         doc: Dimensions up to base_axis is treated as sample dimension.
         type: int64
-        default: '1'
+        default: "1"
       quantize_zero_to:
         doc: Input value at zero is quantized to this value.
         type: float
-        default: '1.0'
+        default: "1.0"
     outputs:
       y:
         doc: Output.
@@ -5752,7 +5848,7 @@ Quantization Neural Network Layers:
       base_axis:
         doc: Dimensions up to base_axis is treated as sample dimension.
         type: int64
-        default: '1'
+        default: "1"
       pad:
         doc: Padding sizes for dimensions.
         type: Shape
@@ -5766,14 +5862,15 @@ Quantization Neural Network Layers:
         type: Shape
         default: (1,) * (len(x.shape) - (base_axis+1))
       group:
-        doc: Number of groups of channels. This makes the connection across channels
+        doc:
+          Number of groups of channels. This makes the connection across channels
           sparser, by grouping connections along the mapping direction.
         type: int64
-        default: '1'
+        default: "1"
       quantize_zero_to:
         doc: Input value at zero is quantized to this value.
         type: float
-        default: '1.0'
+        default: "1.0"
     outputs:
       y:
         doc: Output
@@ -5808,7 +5905,8 @@ Quantization Neural Network Layers:
         doc: Weight .
         parameter: true
       indicator_fixedweights:
-        doc: Indicates which weights are already fixed (0 = not fixed, 1 = fixed)
+        doc:
+          Indicates which weights are already fixed (0 = not fixed, 1 = fixed)
           .
         template: TI
         parameter: true
@@ -5820,30 +5918,33 @@ Quantization Neural Network Layers:
       base_axis:
         doc: Dimensions up to base_axis is treated as sample dimension.
         type: int64
-        default: '1'
+        default: "1"
       num_bits:
-        doc: Number of bits per weight. Needs to be >= 2 as two bits are used to code
+        doc:
+          Number of bits per weight. Needs to be >= 2 as two bits are used to code
           `zero` and sign of weight.
         type: int64
-        default: '4'
+        default: "4"
       inq_iterations:
-        doc: List which specifies after how many forward passes we fix 50% of the
+        doc:
+          List which specifies after how many forward passes we fix 50% of the
           learnable weights. If we have done as many iterations as specified in the
           last element of `inq_iterations`, then all weights are fixed.
         type: repeated int64
         default: ()
       selection_algorithm:
-        doc: Chooses algorithm that we use for selecting the weights to fix ("largest_abs"
+        doc:
+          Chooses algorithm that we use for selecting the weights to fix ("largest_abs"
           ... fix weights with largest absolute value, "random" ... fix weights randomly)
         type: string
         available_values:
-        - largest_abs
-        - random
-        default: '''largest_abs'''
+          - largest_abs
+          - random
+        default: "'largest_abs'"
       seed:
         doc: Random seed. When -1, seed is sampled from global random number generator.
         type: int64
-        default: '-1'
+        default: "-1"
     outputs:
       y:
         doc: Output.
@@ -5877,7 +5978,8 @@ Quantization Neural Network Layers:
         doc: Weight.
         parameter: true
       indicator_fixedweights:
-        doc: Indicates which weights are already fixed (0 = not fixed, 1 = fixed)
+        doc:
+          Indicates which weights are already fixed (0 = not fixed, 1 = fixed)
           .
         template: TI
         parameter: true
@@ -5889,7 +5991,7 @@ Quantization Neural Network Layers:
       base_axis:
         doc: Dimensions up to base_axis is treated as sample dimension.
         type: int64
-        default: '1'
+        default: "1"
       pad:
         doc: Padding sizes for dimensions.
         type: Shape
@@ -5903,33 +6005,37 @@ Quantization Neural Network Layers:
         type: Shape
         default: (1,) * (len(x.shape) - (base_axis+1))
       group:
-        doc: Number of groups of channels. This makes the connection across channels
+        doc:
+          Number of groups of channels. This makes the connection across channels
           sparser, by grouping connections along the mapping direction.
         type: int64
-        default: '1'
+        default: "1"
       num_bits:
-        doc: Number of bits per weight. Needs to be >= 2 as two bits are used to code
+        doc:
+          Number of bits per weight. Needs to be >= 2 as two bits are used to code
           `zero` and sign of weight.
         type: int64
-        default: '4'
+        default: "4"
       inq_iterations:
-        doc: List which specifies after how many forward passes we fix 50% of the
+        doc:
+          List which specifies after how many forward passes we fix 50% of the
           learnable weights. If we have done as many iterations as specified in the
           last element of `inq_iterations`, then all weights are fixed.
         type: repeated int64
         default: ()
       selection_algorithm:
-        doc: Chooses algorithm that we use for selecting the weights to fix ("largest_abs"
+        doc:
+          Chooses algorithm that we use for selecting the weights to fix ("largest_abs"
           ... fix weights with largest absolute value, "random" ... fix weights randomly)
         type: string
         available_values:
-        - largest_abs
-        - random
-        default: '''largest_abs'''
+          - largest_abs
+          - random
+        default: "'largest_abs'"
       seed:
         doc: Random seed. When -1, seed is sampled from global random number generator.
         type: int64
-        default: '-1'
+        default: "-1"
     outputs:
       y:
         doc: Output
@@ -5986,20 +6092,21 @@ Quantization Neural Network Layers:
       sign:
         doc: Indicate the signed number or the unsigned number. Default is true.
         type: bool
-        default: 'True'
+        default: "True"
       n:
-        doc: Bit width used. Note that `sign` consumes one bit. :math:`n-1` is used
+        doc:
+          Bit width used. Note that `sign` consumes one bit. :math:`n-1` is used
           for number representation in `signed` case.
         type: int64
-        default: '8'
+        default: "8"
       delta:
         doc: Step size.
         type: float
-        default: '0.0625'
+        default: "0.0625"
       ste_fine_grained:
         doc: Straight Through Estimator is fine-grained or not.
         type: bool
-        default: 'True'
+        default: "True"
     outputs:
       y:
         doc: N-D array.
@@ -6097,10 +6204,12 @@ Quantization Neural Network Layers:
       x:
         doc: N-D array innput.
       qr_min:
-        doc: Minimum value for the quantization range, modified during forward execution
+        doc:
+          Minimum value for the quantization range, modified during forward execution
           when x_min_max is True.
       qr_max:
-        doc: Maximum value for the quantization range, modified during forward execution
+        doc:
+          Maximum value for the quantization range, modified during forward execution
           when x_min_max is True.
       ql_min:
         doc: Minimum value for the quantization level, typically 0.
@@ -6110,24 +6219,25 @@ Quantization Neural Network Layers:
       decay:
         doc: Decay rate for the exponential moving average.
         type: float
-        default: '0.999'
+        default: "0.999"
       x_min_max:
         doc: Use the min and max of x to compute quantization ranges.
         type: bool
-        default: 'False'
+        default: "False"
       ema:
         doc: Use the exponential moving average for the min and max quantization ranges.
         type: bool
-        default: 'False'
+        default: "False"
       ste_fine_grained:
         doc: Straight Through Estimator is fine-grained or not.
         type: bool
-        default: 'True'
+        default: "True"
       eps:
-        doc: Epsilon, or small value to ensure :math:`qr_{max} - qr_{min}` must be
+        doc:
+          Epsilon, or small value to ensure :math:`qr_{max} - qr_{min}` must be
           greater than the epsilon.
         type: float
-        default: '0.01'
+        default: "0.01"
     outputs:
       y:
         doc: N-D array.
@@ -6237,26 +6347,29 @@ Quantization Neural Network Layers:
       sign:
         doc: Indicate the signed number or the unsigned number. Default is true.
         type: bool
-        default: 'True'
+        default: "True"
       with_zero:
-        doc: Indicate using zero as a quantized value. Default is true. Note that
+        doc:
+          Indicate using zero as a quantized value. Default is true. Note that
           `zero` consumes one bit.
         type: bool
-        default: 'True'
+        default: "True"
       n:
-        doc: Bit width used, Note that `sign` consumes one bit. :math:`n-1` is used
+        doc:
+          Bit width used, Note that `sign` consumes one bit. :math:`n-1` is used
           for number representation in `signed` case. Default is 8.
         type: int64
-        default: '8'
+        default: "8"
       m:
-        doc: :math:`2^m` is the upper bound of the dynamic range and :math:`-2^m`
+        doc:
+          :math:`2^m` is the upper bound of the dynamic range and :math:`-2^m`
           is the lower bound, :math:`m \in \mathcal{Z}`. Default is 1.
         type: int64
-        default: '1'
+        default: "1"
       ste_fine_grained:
         doc: Straight Through Estimator is fine-grained or not.
         type: bool
-        default: 'True'
+        default: "True"
     outputs:
       y:
         doc: N-D array.
@@ -6286,7 +6399,7 @@ Quantization Neural Network Layers:
       rate:
         doc: Sparse rate, or pruning rate.
         type: float
-        default: '0.9'
+        default: "0.9"
     outputs:
       y:
         doc: N-D array with the same shape as x
@@ -6319,20 +6432,22 @@ Quantization Neural Network Layers:
         doc: Rounding mode. HALF_AWAY_FROM_ZERO or HALF_TO_EVEN.
         type: string
         available_values:
-        - HALF_AWAY_FROM_ZERO
-        - HALF_TO_EVEN
-        default: '''HALF_AWAY_FROM_ZERO'''
+          - HALF_AWAY_FROM_ZERO
+          - HALF_TO_EVEN
+        default: "'HALF_AWAY_FROM_ZERO'"
       narrow_range:
-        doc: If true, this function does not use the minimum quantized value. For
+        doc:
+          If true, this function does not use the minimum quantized value. For
           example, if `dtype` is int8 (the range is in [-128, 127]), the output range
           is corrected in [-127, 127].
         type: bool
-        default: 'False'
+        default: "False"
       dtype:
-        doc: Data type for the output. The int value is compatible to the enumtype
+        doc:
+          Data type for the output. The int value is compatible to the enumtype
           for the data type defined in `the numpy <https://github.com/numpy/numpy/blob/master/numpy/core/include/numpy/ndarraytypes.h>`_.
         type: int64
-        default: '1'
+        default: "1"
     outputs:
       y:
         doc: Input N-D array.
@@ -6355,7 +6470,8 @@ Quantization Neural Network Layers:
       x:
         doc: Input N-D array.
       scale:
-        doc: Scale N-D array. The values must be positive number. This should be same
+        doc:
+          Scale N-D array. The values must be positive number. This should be same
           as one used in QuantizeLinear.
       zero_point:
         doc: Zero point N-D array. This should be same as one used in QuantizeLinear.
@@ -6382,10 +6498,12 @@ Validation:
           \right.
     inputs:
       x:
-        doc: Probabilities N-D array. :math:`D_1 \times ... \times D_i \times ...
+        doc:
+          Probabilities N-D array. :math:`D_1 \times ... \times D_i \times ...
           \times D_N`
       target:
-        doc: N-D array of labels. :math:`D_1 \times ... \times 1 \times ... \times
+        doc:
+          N-D array of labels. :math:`D_1 \times ... \times 1 \times ... \times
           D_N`
         template: TI
     arguments:
@@ -6396,10 +6514,11 @@ Validation:
       n:
         doc: top N
         type: int64
-        default: '1'
+        default: "1"
     outputs:
       output:
-        doc: Element-wise error N-D array. (:math:`D_1 \times ... \times 1 \times
+        doc:
+          Element-wise error N-D array. (:math:`D_1 \times ... \times 1 \times
           ... \times D_N`)
     function_ids:
       ii: 115
@@ -6422,7 +6541,8 @@ Validation:
       x:
         doc: Probabilities N-D array. :math:`-\infty` to :math:`\infty`.
       target:
-        doc: Labels N-D array. Usually set as 0 or 1, but, it allows probability (0
+        doc:
+          Labels N-D array. Usually set as 0 or 1, but, it allows probability (0
           to 1) as inputs.
     outputs:
       output:
@@ -6438,7 +6558,8 @@ Validation:
       The return value is already summed over samples.
     inputs:
       x:
-        doc: Probabilities N-D array. (:math:`D_1 \times ... \times D_i \times ...
+        doc:
+          Probabilities N-D array. (:math:`D_1 \times ... \times D_i \times ...
           \times D_N`)
       target:
         doc: Labels N-D array. (:math:`D_1 \times ... \times 1 \times ... \times D_N`)
@@ -6450,7 +6571,8 @@ Validation:
         default: len(x.shape) - 1
     outputs:
       output:
-        doc: Confusion matrix 2-D array. Col index is estimated class. Row index is
+        doc:
+          Confusion matrix 2-D array. Col index is estimated class. Row index is
           label class.
     function_ids:
       i: 117
@@ -6488,7 +6610,8 @@ Unsupported, Special Use:
             <https://arxiv.org/abs/1507.00677>`_
     inputs:
       x:
-        doc: N-D array of noise input. Noise is standard Gaussian noise initially,
+        doc:
+          N-D array of noise input. Noise is standard Gaussian noise initially,
           but the next step, fed back gradient variable.
       w:
         doc: N-D array for keep gradient values.
@@ -6496,11 +6619,11 @@ Unsupported, Special Use:
       base_axis:
         doc: Dimensions up to base_axis is treated as sample dimension.
         type: int64
-        default: '1'
+        default: "1"
       eps:
         doc: Noise norm (l2) factor.
         type: float
-        default: '1.0'
+        default: "1.0"
     outputs:
       y:
         doc: N-D array
@@ -6560,10 +6683,11 @@ Unsupported, Special Use:
         variadic: true
     arguments:
       one_input_grad:
-        doc: Set grads of inputs as one during backward. It is useful to set false
+        doc:
+          Set grads of inputs as one during backward. It is useful to set false
           if you want to set external gradients to the input variables.
         type: bool
-        default: 'True'
+        default: "True"
     outputs:
       y:
         doc: Dummy variable.
@@ -6649,17 +6773,19 @@ Unsupported, Special Use:
       ignore_border:
         doc: If false, kernels covering borders are also considered for the output.
         type: bool
-        default: 'True'
+        default: "True"
       pad:
-        doc: Border padding values for each spatial axis. Padding will be added both
+        doc:
+          Border padding values for each spatial axis. Padding will be added both
           sides of the dimension.
         type: Shape
         default: (0,) * len(kernel)
       channel_last:
-        doc: If True, the last dimension is considered as channel dimension, a.k.a
+        doc:
+          If True, the last dimension is considered as channel dimension, a.k.a
           NHWC order.
         type: bool
-        default: 'False'
+        default: "False"
     outputs:
       dx:
         doc: Output
@@ -6751,30 +6877,35 @@ Unsupported, Special Use:
         doc: Input N-D array with shape :math:`(N, H, W, C)`.
     arguments:
       patch:
-        doc: A tuple with height and width of the correlation patch. A single integer
+        doc:
+          A tuple with height and width of the correlation patch. A single integer
           expands to identical height and width.
         type: Shape
         default: (1, 1)
       shift:
-        doc: A tuple of maximum vertical and horizontal displacement of patches from
+        doc:
+          A tuple of maximum vertical and horizontal displacement of patches from
           `x2` that are correlated with a single patch from `x1`. A single integer
           expands to identical vertical and horizontal displacement.
         type: Shape
         default: (0, 0)
       patch_step:
-        doc: A tuple of vertical and horizontal increments for advancing the position
+        doc:
+          A tuple of vertical and horizontal increments for advancing the position
           of the correlation patch within the input image shape. A single integer
           expands to identical vertical and horizontal increments.
         type: Shape
         default: (1, 1)
       shift_step:
-        doc: A tuple of vertical and horizontal increments for advancing the relative
+        doc:
+          A tuple of vertical and horizontal increments for advancing the relative
           offset position within the shift range. A single integer expands to identical
           vertical and horizontal increments.
         type: Shape
         default: (1, 1)
       padding:
-        doc: A tuple of top, bottom, left and right padding extent. A tuple of two
+        doc:
+          A tuple of top, bottom, left and right padding extent. A tuple of two
           values yields identical top/bottom and left/right padding from the first
           and second tuple value. A single integer expands to indential padding extent
           for all sides.
