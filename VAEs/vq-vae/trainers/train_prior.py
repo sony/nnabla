@@ -85,7 +85,7 @@ class TrainerPrior(object):
 		print('Saving reconstrutions in', path)	
 
 	def forward_pass(self, img_var, labels):
-		enc_indices, quantized = self.base_model(img_var, return_encoding_indices=True)
+		enc_indices, quantized = self.base_model(img_var, return_encoding_indices=True, test=True)
 
 		labels = nn.Variable.from_numpy_array(labels)
 		labels = F.one_hot(labels, shape=(self.num_classes,))
@@ -146,4 +146,37 @@ class TrainerPrior(object):
 		self.monitor_val_loss.add(epoch, avg_epoch_loss)
 		self.visualize_discrete_img(enc_indices, epoch, 'val_original')
 		self.visualize_discrete_img(enc_recon, epoch, 'val_recon')
+  
+	def random_generate(self, num_images, path):
+		
+		# Generate from the uniform prior of the base model
+		indices = F.randint(low=0, high=self.num_embedding, shape=[num_images]+self.latent_shape)
+		indices = F.reshape(indices, (-1,), inplace=True)
+		quantized = F.embed(indices, self.base_model.vq.embedding_weight)
+		quantized = F.transpose(quantized.reshape([num_images]+self.latent_shape + [quantized.shape[-1]]), (0,3,1,2))
+  
+		img_gen_uniform_prior = self.base_model(quantized, quantized_as_input=True, test=True)
+  
+		# Generate images using pixelcnn prior
+		indices = nn.Variable.from_numpy_array(np.zeros(shape=[num_images]+self.latent_shape))
+		labels = F.randint(low=0, high=self.num_classes, shape=(num_images,1))
+		labels = F.one_hot(labels, shape=(self.num_classes,))
+
+		# Sample from pixelcnn - pixel by pixel
+		for i in range(self.latent_shape[0]):
+			for j in range(self.latent_shape[1]):
+				quantized = F.embed(indices.reshape((-1,)), self.base_model.vq.embedding_weight)
+				quantized = F.transpose(quantized.reshape([num_images]+self.latent_shape + [quantized.shape[-1]]), (0,3,1,2))
+				indices_sample = self.prior(quantized, labels)
+				indices[:,i,j] = F.max(indices_sample, axis=1, only_index=True).reshape(indices.shape)[:,i,j].d
+
+		quantized = F.embed(indices.reshape((-1,)), self.base_model.vq.embedding_weight)
+		quantized = F.transpose(quantized.reshape([num_images]+self.latent_shape + [quantized.shape[-1]]), (0,3,1,2))
+  
+		img_gen_pixelcnn_prior = self.base_model(quantized, quantized_as_input=True, test=True)
+
+		self.save_image(img_gen_uniform_prior, os.path.join(path, 'generate_uniform.png'))
+		self.save_image(img_gen_pixelcnn_prior, os.path.join(path, 'generate_pixelcnn.png'))
+
+		print('Random labels generated for pixelcnn prior:', list(F.max(labels, axis=1, only_index=True).d))
   
