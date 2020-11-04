@@ -17,7 +17,7 @@ This is implementation of [VQ-VAE](https://arxiv.org/abs/1711.00937) in Nnabla.
 
 ## Configuration file
 
-The config folder has a yaml file for each of the datasets (imagenet.yaml, cifar10.yaml, mnist.yaml) which allows for editing of the following: 
+The config folder has a yaml file for each of the datasets ([imagenet.yaml](configs/imagenet.yaml), [cifar10.yaml](configs/cifar10.yaml), [mnist.yaml](configs/mnist.yaml)) which allows for editing of the following: 
 - model configurations (hidden dimension. embedding dimension, number of embedding layers, commitment cost, rng, 
 checkpoint to start retraining and saving models directory)
 - training configuration (batch size, number of epochs, weight decay, learning rate, learning rate decay, solver type, 
@@ -35,7 +35,7 @@ To start training, execute:
  This will start training  on 1 gpu. For multi-gpu execution (n=4 GPUs), run as follows:        
  `mpirun -n 4 python main.py --data [imagenet/cifar10/mnist]`    
 
-**Note: For MNIST and CIFAR10, the dataset will be automatically downloaded if not found in specified path. For Imagenet, the dataset path must be specified in configs/imagenet.yaml**)
+**Note: For MNIST and CIFAR10, the dataset will be automatically downloaded if not found in specified path. For Imagenet, the dataset path must be specified in [imagenet.yaml](configs/imagenet.yaml)**)
 
 The model and solver parameters along with the average epoch loss and reconstructions of training and validation dataset will be 
 stored in `tmp.monitor_[imagenet/cifar10/mnist]` folder by default. 
