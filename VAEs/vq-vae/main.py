@@ -1,28 +1,22 @@
 import os
 import sys
+from argparse import ArgumentParser
+import time
+
 common_utils_path = os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..', '..', 'utils'))
 sys.path.append(common_utils_path)
+from neu.yaml_wrapper import read_yaml
+from neu.comm import CommunicatorWrapper
 
-from argparse import ArgumentParser
-import time
-import numpy as np
 import nnabla as nn
 import nnabla.solvers as S
 from nnabla.monitor import Monitor, MonitorSeries, MonitorImageTile
 from nnabla.ext_utils import get_extension_context
 
-from models.vq_vae import Model
-from models.gated_pixel_cnn import GatedPixelCNN
-from trainers.vq_vae_train import VQVAEtrainer
-from trainers.train_prior import TrainerPrior
-from data.cifar10 import data_iterator_cifar10
-from data.mnist import data_iterator_mnist
-from data.imagenet_data import data_iterator_imagenet
-
-
-from neu.yaml_wrapper import read_yaml
-from neu.comm import CommunicatorWrapper
+from models import VQVAE, GatedPixelCNN
+from trainers import VQVAEtrainer, TrainerPrior
+from data import mnist_iterator, imagenet_iterator, cifar10_iterator
 
 
 def make_parser():
@@ -55,7 +49,7 @@ def train(data_iterator, monitor, config, comm, args):
         monitor_val_recon = MonitorImageTile(config['monitor']['val_recon'], monitor, interval=config['train']['logger_step_interval'],
                                              num_images=config['train']['batch_size'])
 
-    model = Model(config)
+    model = VQVAE(config)
     if config['train']['solver'] == 'adam':
         solver = S.Adam()
     else:
@@ -109,11 +103,11 @@ if __name__ == '__main__':
     nn.set_auto_forward(True)
 
     if args.data == 'mnist':
-        data_iterator = data_iterator_mnist
+        data_iterator = mnist_iterator
     elif args.data == 'imagenet':
-        data_iterator = data_iterator_imagenet
+        data_iterator = imagenet_iterator
     elif args.data =='cifar10':
-        data_iterator = data_iterator_cifar10
+        data_iterator = cifar10_iterator
     else:
         print('Dataset not recognized')
         exit(1)

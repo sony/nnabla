@@ -36,16 +36,6 @@ class GatedPixelCNN(object):
         W = mask*W
         return W
 
-    def mask_type_affine(self, W):
-        c_x, c_y = W.shape[0]//2, W.shape[0]//2
-
-        mask = np.ones(W.shape)
-        mask[c_x, c_y+1:] = 0
-        mask[c_x+1:, :] = 0
-        mask = nn.Variable.from_numpy_array(mask)
-        W = mask*W
-        return W
-
     def gated_conv(self, x, kernel_shape, h=None, mask_type='', gated=True, payload=None,
                    scope_name='gated_conv'):
         pad_dim_0 = (kernel_shape[0]-1)/2
@@ -63,16 +53,16 @@ class GatedPixelCNN(object):
                     out_g += payload
                 if self.conditional:
                     h_out_f = PF.affine(
-                        h, self.num_features, apply_w=self.mask_type_affine, name='h_out_f')
+                        h, self.num_features, name='h_out_f')
                     h_out_f = h_out_f.reshape(
                         (h_out_f.shape[0], h_out_f.shape[1], 1, 1))
                     h_out_g = PF.affine(
-                        h, self.num_features, apply_w=self.mask_type_affine, name='h_out_g')
+                        h, self.num_features, name='h_out_g')
                     h_out_g = h_out_g.reshape(
                         (h_out_g.shape[0], h_out_g.shape[1], 1, 1))
-                    out = F.tanh(out_f+h_out_f) + F.sigmoid(out_g+h_out_g)
+                    out = F.tanh(out_f+h_out_f) * F.sigmoid(out_g+h_out_g)
                 else:
-                    out = F.tanh(out_f) + F.sigmoid(out_g)
+                    out = F.tanh(out_f) * F.sigmoid(out_g)
             else:
                 out = PF.convolution(x, self.num_features, kernel_shape, stride=(1, 1),
                                      pad=(pad_dim_0, pad_dim_1), apply_w=mask_type)

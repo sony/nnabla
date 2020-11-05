@@ -83,7 +83,7 @@ class VectorQuantizer(object):
 
 		return loss, F.transpose(quantized, (0, 3, 1, 2)), perplexity, encodings
 
-class Model(object):
+class VQVAE(object):
 
 	def __init__(self, config, training = True):
 		self.in_channels = config['model']['in_channels']
