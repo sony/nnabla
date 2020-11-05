@@ -5,7 +5,7 @@ This is implementation of [VQ-VAE](https://arxiv.org/abs/1711.00937) in Nnabla.
 ## Requirements
 
 - [Nnabla](https://nnabla.readthedocs.io/en/latest/python/install_on_linux.html#installation) (along with [cuda](https://nnabla.readthedocs.io/en/latest/python/pip_installation_cuda.html#pip-installation-cuda) and [distributed execution](https://nnabla.readthedocs.io/en/latest/python/pip_installation_cuda.html#pip-installation-distributed))
-- [DALI](https://docs.nvidia.com/deeplearning/sdk/dali-developer-guide/docs/quickstart.html) (For Imagenet Training)
+- [DALI](https://docs.nvidia.com/deeplearning/sdk/dali-developer-guide/docs/quickstart.html) (For Imagenet Training) (v0.18.0)
 - NumPy
 - MatPlotLib
 
@@ -70,3 +70,10 @@ After training VQVAE and PixelCNN, we can compare the randomized image generatio
 <p float="center">
   <img src="results/imagenet.png"/>
 </p> 
+
+## References
+
+https://github.com/ritheshkumar95/pytorch-vqvae
+https://github.com/deepmind/sonnet/blob/master/sonnet/examples/vqvae_example.ipynb
+https://github.com/jiazhao97/VQ-VAE_withPixelCNNprior
+https://github.com/anordertoreclaim/PixelCNN
