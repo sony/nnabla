@@ -56,8 +56,7 @@ class VectorQuantizer(object):
 		emb_wt_squared = F.transpose(
 			F.sum(self.embedding_weight**2, axis=1, keepdims=True), (1, 0))
 
-		distances = x_flat_squared + emb_wt_squared - 2 * \
-			F.batch_matmul(x_flat, F.transpose(self.embedding_weight, (1, 0)))
+		distances = x_flat_squared + emb_wt_squared - 2 * F.affine(x_flat, F.transpose(self.embedding_weight, (1, 0)))
 
 		encoding_indices = F.min(
 			distances, only_index=True, axis=1, keepdims=True)
@@ -139,7 +138,6 @@ class Model(object):
 		with nn.parameter_scope('vq_vae'):
 			if quantized_as_input:
 				return self.decoder(img, test)
-      
 			z = self.encoder(img, test)
 			z = PF.convolution(z, self.embedding_dim, (1,1), stride=(1,1))
 			if return_encoding_indices:

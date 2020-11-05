@@ -12,11 +12,10 @@ model:
   decay: 0.99
 
 train:
-  batch_size: 32
+  batch_size: 64
   num_training_updates: 25000 
   learning_rate: 1.5e-4
   weight_decay: 1.0e-5
-  decay: 0.99 # For VQ with EMA (to be implemented later)
   num_epochs: 30
   save_param_step_interval: 5
   logger_step_interval: 1000

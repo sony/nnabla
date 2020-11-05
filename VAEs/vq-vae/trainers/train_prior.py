@@ -27,22 +27,18 @@ class TrainerPrior(object):
 		self.num_embedding = self.base_model.num_embedding
 
 		self.batch_size = config['train']['batch_size']
-		self.iters_per_epoch = int(np.ceil(config['dataset']['train_size']/config['train']['batch_size']))
+		self.iters_per_epoch = int(np.ceil(self.data_loader.size/config['train']['batch_size']))
 		self.weight_decay = config['train']['weight_decay']
   
 		self.latent_recon_path = os.path.join(config['monitor']['path'], config['monitor']['prior_recon'])
 		os.makedirs(self.latent_recon_path, exist_ok=True)
 
-		self.data_variance = np.var(self.data_loader._data_source._images/255.0)
-		print("Variance:", self.data_variance)
-  
-		assert config['model']['checkpoint'] is not None, 'Prior needs to be trained over a learnt discretized latent space. Please specify checkpoint for a trained VAE'
-		self.load_base_params(config['model']['checkpoint'])
-  
 		self.dataset_name = config['dataset']['name']
 		if self.dataset_name != 'imagenet':
 			self.val_iterations_per_epoch = int(np.ceil(self.val_data_loader.size/self.val_data_loader.batch_size/comm.n_procs))
-			self.data_variance = np.var(self.data_loader._data_source._images/255.0)
+  
+		assert config['model']['checkpoint'] is not None, 'Prior needs to be trained over a learnt discretized latent space. Please specify checkpoint for a trained VAE'
+		self.load_base_params(config['model']['checkpoint'])
 
 	def load_base_params(self, path):
 		nn.load_parameters(os.path.join(path, 'params.h5'))
@@ -86,29 +82,32 @@ class TrainerPrior(object):
 
 	def forward_pass(self, img_var, labels):
 		enc_indices, quantized = self.base_model(img_var, return_encoding_indices=True, test=True)
-
-		labels = nn.Variable.from_numpy_array(labels)
-		labels = F.one_hot(labels, shape=(self.num_classes,))
-		enc_recon = self.prior(quantized, labels)
+		labels_var = nn.Variable(labels.shape)
+		if isinstance(labels, nn.NdArray):
+			labels_var.data  = labels
+		else:
+			labels_var.d = labels
+		labels_var = F.one_hot(labels_var, shape=(self.num_classes,))
+		enc_recon = self.prior(quantized, labels_var)
 		loss = F.mean(F.softmax_cross_entropy(enc_recon, enc_indices))
 
 		return loss, enc_indices, enc_recon
 
 	def convert_to_var(self, img):
-		img = (img-0.5)/1
+		img = (img-0.5)/0.5
 		img_var = nn.Variable.from_numpy_array(img)
 		return img_var
-
-	def scale_back_var(self, img_var):
-		img = img_var.d*0.5 + 1
-		return img
 
 	def train(self, epoch):
 		epoch_loss = 0
 		pbar = trange(self.iters_per_epoch, desc='Training at epoch {}'.format(epoch))
 		for i in pbar:
 			data = self.data_loader.next()
-			img_var = self.convert_to_var(data[0])
+			if self.dataset_name == 'imagenet':
+				img_var = nn.Variable(data[0].shape)
+				img_var.data = data[0]
+			else:
+				img_var = self.convert_to_var(data[0])
 			loss, enc_indices, enc_recon = self.forward_pass(img_var, data[1]) 
 
 			epoch_loss += loss.d 

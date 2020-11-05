@@ -6,26 +6,15 @@ model:
   num_embeddings: 512
   commitment_cost: 0.5
   saved_models_dir: tmp.monitor_imagenet/trained_models_imagenet/
-  checkpoint: None
+  checkpoint: tmp.monitor_imagenet/trained_models_imagenet/epoch_10/
   rng: 313
   decay: 0.99
 
-pixelcnn:
-  in_channels: 128
-  out_channels: 128
-  num_features: 64
-  num_layers: 15
-  conditional: True
-  num_classes: 10
-  saved_models_dir: trained_prior/
-  base_model_checkpoint: trained_models_imagenet/epoch_29
-
 train:
-  batch_size: 32
+  batch_size: 128
   num_training_updates: 25000 
   learning_rate: 2.0e-4
   weight_decay: 0
-  decay: 0.99 # For VQ with EMA (to be implemented later)
   num_epochs: 40
   save_param_step_interval: 5
   logger_step_interval: 1
@@ -43,6 +32,8 @@ monitor:
   train_recon: Training-reconstructions-imagenet
   val_loss: Validation-loss-imagenet 
   val_recon: Validation-reconstructions-imagenet
+  prior_recon: Latent-reconstruction-pixelcnn-imagenet
+
 
 dataset:
   name: imagenet
@@ -53,6 +44,21 @@ dataset:
   val_path: /net/fs1.ubiq.sony.co.jp/Data1/sDeep/Data/Dataset/imagenet_lsvrc2012/preprocessed/320x320_png_for_data_iterator_csv_dataset/valid/ILSVRC2012_img_val/
   dali_threads: 4
   cache_dir: /net/fs1.ubiq.sony.co.jp/Data1/sDeep/Data/Dataset/ImageNet/201612_128x128_mat_for_sdeepy_data_reader/training.cache
+
+prior:
+  num_latent_vectors: 512
+  in_channels: 32
+  out_channels: 512
+  num_layers: 18
+  num_features: 64
+  num_classes: 1000
+  latent_shape: [32,32] # Height and Width of encoder output. Hard-coded for each dataset here.
+  conditional: True
+  checkpoint: tmp.monitor_imagenet/trained_models_mnist/epoch_10
+
+  train:
+    num_epochs: 50
+    lr: 3.0e-4
 
 
 extension_module: cudnn

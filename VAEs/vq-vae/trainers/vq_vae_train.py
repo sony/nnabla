@@ -51,17 +51,11 @@ class VQVAEtrainer(object):
 	def convert_to_var(self, img):
 		if not np.all(img < 1):
 			img = img/255.0
-		img = (img - 0.5)/1
+		img = (img - 0.5)/0.5
 		return nn.Variable.from_numpy_array(img)
 
-	def scale_back_var(self, img_var):
-		img = img_var.d
-		img = np.transpose(img, (0,2,3,1))
-		img = (img - np.min(img))/np.ptp(img)
-		return img
-
-	def compute_loss(self, img_var):
-		vq_loss, img_recon, perplexity = self.model(img_var)
+	def compute_loss(self, img_var, test=False):
+		vq_loss, img_recon, perplexity = self.model(img_var, test=test)
 		recon_loss = F.mean(F.squared_error(img_recon,img_var))/self.data_variance
 		loss = recon_loss + vq_loss
 		return loss, recon_loss, perplexity, img_recon
@@ -87,7 +81,7 @@ class VQVAEtrainer(object):
 			self.save_image(img_recon.d, os.path.join(self.val_recon_path, 'epoch_{}.png'.format(epoch)))
 
 	def train(self, epoch):
-		pbar = trange(self.iterations_per_epoch//10, desc='Train at epoch '+str(epoch), disable=self.comm.rank > 0)
+		pbar = trange(self.iterations_per_epoch//self.comm.n_procs, desc='Train at epoch '+str(epoch), disable=self.comm.rank > 0)
 		epoch_loss = 0
 
 		if epoch in self.learning_rate_decay_epochs:
@@ -132,7 +126,7 @@ class VQVAEtrainer(object):
 				img_var.data = data[0]
 			else:
 				img_var = self.convert_to_var(data[0])
-			loss, _, _, img_recon = self.compute_loss(img_var)
+			loss, _, _, img_recon = self.compute_loss(img_var, test=True)
 
 			pbar.set_description('Batch Loss: {}'.format(loss.d))
 			epoch_loss += loss.d

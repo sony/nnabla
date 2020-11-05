@@ -7,7 +7,6 @@ import numpy as np
 class GatedPixelCNN(object):
     
     def __init__(self, config):
-        self.in_channels = config['in_channels']
         self.out_channels = config['out_channels']
         self.num_layers = config['num_layers']
         self.num_features = config['num_features']
@@ -15,9 +14,6 @@ class GatedPixelCNN(object):
         self.conditional = config['conditional']
         
         self.input_shape = config['latent_shape']
-        
-        # with nn.parameter_scope('pixelcnn/embed'):
-        #     self.embedding_weight = nn.parameter.get_parameter_or_create('W', shape=(config['num_latent_vectors'], self.in_channels), need_grad=True)
 
     def mask_type_A(self, W):
         c_x, c_y = W.shape[2]//2, W.shape[3]//2
@@ -62,7 +58,7 @@ class GatedPixelCNN(object):
                                        pad=(pad_dim_0, pad_dim_1), apply_w=mask_type, name='conv_f')
                 out_g = PF.convolution(x, self.num_features, kernel_shape,
                                        pad=(pad_dim_0, pad_dim_1), apply_w=mask_type, name='conv_g')
-                if type(payload) == nn._variable.Variable:
+                if isinstance(payload, nn.Variable):
                     out_f += payload
                     out_g += payload
                 if self.conditional:
