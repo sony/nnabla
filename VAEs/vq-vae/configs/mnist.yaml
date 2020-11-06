@@ -56,7 +56,7 @@ prior:
   checkpoint: tmp.monitor_mnist/trained_models_mnist/epoch_20
 
   train:
-    num_epochs: 50
+    num_epochs: 15
     lr: 3.0e-4
 
 extension_module: cudnn

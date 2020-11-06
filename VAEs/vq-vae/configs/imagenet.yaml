@@ -6,12 +6,12 @@ model:
   num_embeddings: 512
   commitment_cost: 0.5
   saved_models_dir: tmp.monitor_imagenet/trained_models_imagenet/
-  checkpoint: tmp.monitor_imagenet/trained_models_imagenet/epoch_10/
+  checkpoint: tmp.monitor_imagenet/trained_models_imagenet/epoch_20/
   rng: 313
   decay: 0.99
 
 train:
-  batch_size: 128
+  batch_size: 64
   num_training_updates: 25000 
   learning_rate: 2.0e-4
   weight_decay: 0
@@ -38,7 +38,7 @@ monitor:
 dataset:
   name: imagenet
   dali: True
-  train_size: 50000
+  train_size: 1281167
   val_size: 10000
   path: /net/fs1.ubiq.sony.co.jp/Data1/sDeep/Data/Dataset/imagenet_lsvrc2012/preprocessed/320x320_png_for_data_iterator_csv_dataset/train
   val_path: /net/fs1.ubiq.sony.co.jp/Data1/sDeep/Data/Dataset/imagenet_lsvrc2012/preprocessed/320x320_png_for_data_iterator_csv_dataset/valid/ILSVRC2012_img_val/
