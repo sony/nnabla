@@ -358,6 +358,9 @@ BatchInv:
 BatchDet:
   float: [float]
   half: [Half]
+BatchLogdet:
+  float: [float]
+  half: [Half]
 Interpolate:
   float: [float]
   half: [Half]

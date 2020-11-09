@@ -247,3 +247,5 @@
   NormNormalization_fiIf: 317
 24:
   Norm_fiIB: 318
+25:
+  BatchLogdet_Empty: 319

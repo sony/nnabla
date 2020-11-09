@@ -3977,7 +3977,12 @@ Array Manipulation:
     snake_name: batch_det
     doc: |2
 
-      Returns determinant of an input array
+      Batch-wise determinant function.
+
+      .. math::
+        Y_b = \det(X_b), 
+
+      where :math:`X_b` and :math:`Y_b` are the :math:`b`-th input and output, respectively. 
     inputs:
       x:
         doc: batched N-D array
@@ -3987,6 +3992,25 @@ Array Manipulation:
     c_runtime: not support
     function_ids:
       Empty: 276
+  BatchLogdet:
+    snake_name: batch_logdet
+    doc: |2
+
+      Batch-wise log absolute determinant function.
+
+      .. math::
+        Y_b = \log(|\det(X_b)|), 
+
+      where :math:`X_b` and :math:`Y_b` are the :math:`b`-th input and output, respectively. 
+    inputs:
+      x:
+        doc: batched N-D array
+    outputs:
+      y:
+        doc: batched N-D array of log absolute determinant
+    c_runtime: not support
+    function_ids:
+      Empty: 319
   Assign:
     snake_name: assign
     doc: |2

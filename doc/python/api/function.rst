@@ -223,6 +223,7 @@ Array Manipulation
 .. autofunction:: one_hot
 .. autofunction:: batch_inv
 .. autofunction:: batch_det
+.. autofunction:: batch_logdet
 .. autofunction:: assign
 .. autofunction:: top_k_data
 .. autofunction:: top_k_grad
