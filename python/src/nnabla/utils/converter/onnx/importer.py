@@ -21,7 +21,7 @@ try:
     from onnx import (ModelProto, TensorProto, AttributeProto)
 except:
     print('ONNX import support disabled because onnx python package is not found.')
-    print(' You may install onnx package with "pip install onnx".')
+    print(' You may install onnx package with "pip install onnx==1.6.0".')
 
 from .utils import *
 
