@@ -295,7 +295,7 @@ class DataSourceWithFileCache(DataSource):
                 h5 = h5py.File(self._cache_file_names[cache_file_index], 'r')
                 self._current_cache_data = {}
                 for k, v in h5.items():
-                    self._current_cache_data[k] = v.value
+                    self._current_cache_data[k] = v[()]
                 h5.close()
 
         d = [self._current_cache_data[v][cache_data_position]
