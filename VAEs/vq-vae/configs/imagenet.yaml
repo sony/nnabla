@@ -54,7 +54,7 @@ prior:
   num_classes: 1000
   latent_shape: [32,32] # Height and Width of encoder output. Hard-coded for each dataset here.
   conditional: True
-  checkpoint: tmp.monitor_imagenet/trained_models_imagenet/epoch_3
+  checkpoint: tmp.monitor_imagenet/trained_models_imagenet/epoch_0
 
   train:
     num_epochs: 50

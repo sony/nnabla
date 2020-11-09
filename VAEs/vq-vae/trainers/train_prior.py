@@ -82,13 +82,14 @@ class TrainerPrior(object):
 
 	def forward_pass(self, img_var, labels):
 		enc_indices, quantized = self.base_model(img_var, return_encoding_indices=True)
+		import pdb; pdb.set_trace()
 
 		if self.dataset_name == 'imagenet':
 			labels = nn.Variable(labels.shape).apply(data=labels)
 		else:
 			labels = nn.Variable.from_numpy_array(labels)
 		labels = F.one_hot(labels, shape=(self.num_classes,))
-		enc_recon = self.prior(quantized, labels)
+		enc_recon = self.prior(enc_indices, labels)
 		loss = F.mean(F.softmax_cross_entropy(enc_recon, enc_indices))
 
 		return loss, enc_indices, enc_recon
@@ -178,14 +179,12 @@ class TrainerPrior(object):
      
 					sampled_idx = np.random.multinomial(1, indices_prob)
 					indices[c,i,j] = sampled_idx.argmax()
-					print(sampled_idx.argmax(), sampled_idx.max())
 					# np.random.multinomial(self.num_embedding, indices_sample[c,i,j].d)
 				# indices[:,i,j].d = F.max(indices_sample, axis=1, only_index=True).reshape(indices.shape)[:,i,j].d
 
 		quantized = F.embed(indices.reshape((-1,)), self.base_model.vq.embedding_weight)
 		quantized = F.transpose(quantized.reshape([num_images]+self.latent_shape + [quantized.shape[-1]]), (0,3,1,2))
 
-		import pdb; pdb.set_trace()
 		img_gen_pixelcnn_prior = self.base_model(quantized, quantized_as_input=True, test=True)
 
 		self.save_image(img_gen_uniform_prior, os.path.join(path, 'generate_uniform.png'))

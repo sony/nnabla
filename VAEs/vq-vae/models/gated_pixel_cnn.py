@@ -16,6 +16,9 @@ class GatedPixelCNN(object):
         
         self.input_shape = config['latent_shape']
         
+        with nn.parameter_scope('ConditionalPixelCNN/embedding'):
+			self.embedding_weight = nn.parameter.get_parameter_or_create('W', shape=(self.in_channels self.input_shape[0]), need_grad=True)
+        
     def mask_type_A(self, W):
         c_x, c_y = W.shape[2]//2, W.shape[3]//2
 
@@ -80,6 +83,8 @@ class GatedPixelCNN(object):
         return out
 
     def __call__(self, conv_in, h=None):
+        
+        conv_in = F.embed(conv_in, self.embedding_weight)
                 
         v_stack_in = conv_in
         h_stack_in = conv_in
