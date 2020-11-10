@@ -1,3 +1,17 @@
+# Copyright (c) 2020 Sony Corporation. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import os
 import sys
 from argparse import ArgumentParser
@@ -69,13 +83,13 @@ def train(data_iterator, monitor, config, comm, args):
     else:
         pixelcnn_model = GatedPixelCNN(config['prior'])
         trainer = TrainerPrior(model, pixelcnn_model, solver, train_loader, val_loader, monitor_train_loss, 
-                               monitor_train_recon, monitor_val_loss, monitor_val_recon, config, comm)
+                               monitor_train_recon, monitor_val_loss, monitor_val_recon, config, comm, eval=args.sample_from_pixelcnn)
         num_epochs = config['prior']['train']['num_epochs']
         
 
     if os.path.exists(config['model']['checkpoint']) and (args.load_checkpoint or args.sample_from_pixelcnn):
         checkpoint_path = config['model']['checkpoint'] if not args.pixelcnn_prior else config['prior']['checkpoint']
-        trainer.load_checkpoint(checkpoint_path)
+        trainer.load_checkpoint(checkpoint_path, msg='Parameters loaded from {}'.format(config["model"]["checkpoint"]), load_solver=not args.sample_from_pixelcnn)
         
     if args.sample_from_pixelcnn:
         trainer.random_generate(args.sample_from_pixelcnn, args.sample_save_path)
@@ -98,7 +112,7 @@ if __name__ == '__main__':
 
     parser = make_parser()
     args = parser.parse_args()
-    config = read_yaml(os.path.join('configs', f'{args.data}.yaml'))
+    config = read_yaml(os.path.join('configs', '{}.yaml'.format(args.data)))
     ctx = get_extension_context(config['extension_module'], device_id=config['device_id'])
     nn.set_auto_forward(True)
 

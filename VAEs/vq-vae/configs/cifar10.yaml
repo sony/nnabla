@@ -11,12 +11,12 @@ model:
   decay: 0.99
 
 train:
-  batch_size: 32
+  batch_size: 20
   num_training_updates: 25000 
-  learning_rate: 2.0e-4
+  learning_rate: 1.0e-4
   weight_decay: 0
   num_epochs: 40
-  save_param_step_interval: 5
+  save_param_step_interval: 2
   logger_step_interval: 100
   learning_rate_decay_epochs: []
   learning_rate_decay_factor: 1
@@ -44,14 +44,14 @@ dataset:
 
 prior:
   num_latent_vectors: 128
-  in_channels: 32
+  in_channels: 256
   out_channels: 128
   num_layers: 12
   num_features: 128
   num_classes: 10
   latent_shape: [8,8] # Height and Width of encoder output. Hard-coded for each dataset here.
   conditional: True
-  checkpoint: tmp.monitor_cifar10/trained_models_cifar10/epoch_5
+  checkpoint: tmp.monitor_cifar10/trained_models_cifar10/epoch_2
 
   train:
     num_epochs: 50

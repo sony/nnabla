@@ -11,12 +11,12 @@ model:
   decay: 0.99
 
 train:
-  batch_size: 64
+  batch_size: 32
   num_training_updates: 25000 
   learning_rate: 2.0e-4
   weight_decay: 0
   num_epochs: 40
-  save_param_step_interval: 5
+  save_param_step_interval: 2
   logger_step_interval: 1
   solver: adam
   learning_rate_decay_epochs: [10, 30]
@@ -47,14 +47,14 @@ dataset:
 
 prior:
   num_latent_vectors: 512
-  in_channels: 32
+  in_channels: 128
   out_channels: 512
-  num_layers: 18
-  num_features: 64
+  num_layers: 12
+  num_features: 128
   num_classes: 1000
   latent_shape: [32,32] # Height and Width of encoder output. Hard-coded for each dataset here.
-  conditional: True
-  checkpoint: tmp.monitor_imagenet/trained_models_imagenet/epoch_0
+  conditional: False
+  checkpoint: tmp.monitor_imagenet/trained_models_imagenet/epoch_0/
 
   train:
     num_epochs: 50
