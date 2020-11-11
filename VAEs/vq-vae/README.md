@@ -8,6 +8,7 @@ This is implementation of [VQ-VAE](https://arxiv.org/abs/1711.00937) in Nnabla.
 - [DALI](https://docs.nvidia.com/deeplearning/sdk/dali-developer-guide/docs/quickstart.html) (For Imagenet Training) (v0.18.0)
 - NumPy
 - MatPlotLib
+- Torch (just for pixelcnn inference)
 
 ## Datasets tested
 
