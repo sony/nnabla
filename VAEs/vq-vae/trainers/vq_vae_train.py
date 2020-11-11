@@ -20,85 +20,98 @@ from tqdm import trange
 
 from .base import BaseTrainer
 
+
 class VQVAEtrainer(BaseTrainer):
 
-	def __init__(self, model, solver, data_loader, val_data_loader, monitor_train_loss, monitor_train_recon,
-		monitor_val_loss, monitor_val_recon, config, comm):
-     
-		super(VQVAEtrainer, self).__init__(solver, data_loader, val_data_loader, monitor_train_loss, monitor_train_recon,
-		monitor_val_loss, monitor_val_recon, config, comm)
-     
-		self.model = model
+    def __init__(self, model, solver, data_loader, val_data_loader, monitor_train_loss, monitor_train_recon,
+                 monitor_val_loss, monitor_val_recon, config, comm):
 
-		self.train_recon_path = os.path.join(config['monitor']['path'], config['monitor']['train_recon'])
-		self.val_recon_path = os.path.join(config['monitor']['path'], config['monitor']['val_recon'])
-		os.makedirs(self.train_recon_path, exist_ok=True)
-		os.makedirs(self.val_recon_path, exist_ok=True)
+        super(VQVAEtrainer, self).__init__(solver, data_loader, val_data_loader, monitor_train_loss, monitor_train_recon,
+                                           monitor_val_loss, monitor_val_recon, config, comm)
 
-		if self.dataset_name != 'imagenet':
-			self.data_variance = np.var(self.data_loader._data_source._images/255.0)
-		else:
-			self.data_variance = 1
+        self.model = model
 
-	def forward_pass(self, img_var, test=False):
-		vq_loss, img_recon, perplexity = self.model(img_var, test=test)
-		recon_loss = F.mean(F.squared_error(img_recon,img_var))/self.data_variance
-		loss = recon_loss + vq_loss
-		return loss, recon_loss, perplexity, img_recon
+        self.train_recon_path = os.path.join(
+            config['monitor']['path'], config['monitor']['train_recon'])
+        self.val_recon_path = os.path.join(
+            config['monitor']['path'], config['monitor']['val_recon'])
+        os.makedirs(self.train_recon_path, exist_ok=True)
+        os.makedirs(self.val_recon_path, exist_ok=True)
 
-	def train(self, epoch):
-		pbar = trange(self.iterations_per_epoch//self.comm.n_procs, desc='Train at epoch '+str(epoch), disable=self.comm.rank > 0)
-		epoch_loss = 0
+        if self.dataset_name != 'imagenet':
+            self.data_variance = np.var(
+                self.data_loader._data_source._images/255.0)
+        else:
+            self.data_variance = 1
 
-		if epoch in self.learning_rate_decay_epochs:
-			self.solver.set_learning_rate(self.solver.learning_rate()*self.learning_rate_decay_factor)
+    def forward_pass(self, img_var, test=False):
+        vq_loss, img_recon, perplexity = self.model(img_var, test=test)
+        recon_loss = F.mean(F.squared_error(
+            img_recon, img_var))/self.data_variance
+        loss = recon_loss + vq_loss
+        return loss, recon_loss, perplexity, img_recon
 
-		for i in pbar:
-			data = self.data_loader.next()
-			if self.dataset_name == 'imagenet':
-				img_var = nn.Variable(data[0].shape)
-				img_var.data = data[0]
-			else:
-				img_var = self.convert_to_var(data[0])
-			loss, recon_loss, perplexity, img_recon = self.forward_pass(img_var)
+    def train(self, epoch):
+        pbar = trange(self.iterations_per_epoch//self.comm.n_procs,
+                      desc='Train at epoch '+str(epoch), disable=self.comm.rank > 0)
+        epoch_loss = 0
 
-			pbar.set_description('Batch Loss: {}'.format(loss.d))
-			epoch_loss += loss.d
+        if epoch in self.learning_rate_decay_epochs:
+            self.solver.set_learning_rate(
+                self.solver.learning_rate()*self.learning_rate_decay_factor)
 
-			self.solver.set_parameters(nn.get_parameters(), reset=False, retain_state=True)
-			self.solver.zero_grad()
-			
-			loss.backward(clear_buffer=True)
+        for i in pbar:
+            data = self.data_loader.next()
+            if self.dataset_name == 'imagenet':
+                img_var = nn.Variable(data[0].shape)
+                img_var.data = data[0]
+            else:
+                img_var = self.convert_to_var(data[0])
+            loss, recon_loss, perplexity, img_recon = self.forward_pass(
+                img_var)
 
-			params = [x.grad for x in nn.get_parameters().values()]
-			self.comm.all_reduce(params, division=False, inplace=True)
+            pbar.set_description('Batch Loss: {}'.format(loss.d))
+            epoch_loss += loss.d
 
-			self.solver.weight_decay(self.weight_decay)
-			self.solver.update()
+            self.solver.set_parameters(
+                nn.get_parameters(), reset=False, retain_state=True)
+            self.solver.zero_grad()
 
-		avg_epoch_loss = epoch_loss/self.iterations_per_epoch 
-		self.log_loss(epoch, avg_epoch_loss, train=True)
-		self.save_image(img_var, os.path.join(self.train_recon_path, 'original_epoch_{}.png'.format(epoch)))
-		self.save_image(img_recon, os.path.join(self.train_recon_path, 'recon_epoch_{}.png'.format(epoch)))
-  
+            loss.backward(clear_buffer=True)
 
-	def validate(self, epoch):
-		pbar = trange(self.val_iterations_per_epoch, desc='Validate at epoch '+str(epoch), disable=self.comm.rank > 0)
-		epoch_loss = 0
+            params = [x.grad for x in nn.get_parameters().values()]
+            self.comm.all_reduce(params, division=False, inplace=True)
 
-		for i in pbar:
-			data = self.val_data_loader.next()
-			if self.dataset_name == 'imagenet':
-				img_var = nn.Variable(data[0].shape)
-				img_var.data = data[0]
-			else:
-				img_var = self.convert_to_var(data[0])
-			loss, _, _, img_recon = self.forward_pass(img_var, test=True)
+            self.solver.weight_decay(self.weight_decay)
+            self.solver.update()
 
-			pbar.set_description('Batch Loss: {}'.format(loss.d))
-			epoch_loss += loss.d
+        avg_epoch_loss = epoch_loss/self.iterations_per_epoch
+        self.log_loss(epoch, avg_epoch_loss, train=True)
+        self.save_image(img_var, os.path.join(
+            self.train_recon_path, 'original_epoch_{}.png'.format(epoch)))
+        self.save_image(img_recon, os.path.join(
+            self.train_recon_path, 'recon_epoch_{}.png'.format(epoch)))
 
-		avg_epoch_loss = epoch_loss/self.iterations_per_epoch 
-		self.log_loss(epoch, avg_epoch_loss, train=False)
-		self.save_image(img_var, os.path.join(self.val_recon_path, 'original_epoch_{}.png'.format(epoch)))
-		self.save_image(img_recon, os.path.join(self.val_recon_path, 'recon_epoch_{}.png'.format(epoch)))
+    def validate(self, epoch):
+        pbar = trange(self.val_iterations_per_epoch,
+                      desc='Validate at epoch '+str(epoch), disable=self.comm.rank > 0)
+        epoch_loss = 0
+
+        for i in pbar:
+            data = self.val_data_loader.next()
+            if self.dataset_name == 'imagenet':
+                img_var = nn.Variable(data[0].shape)
+                img_var.data = data[0]
+            else:
+                img_var = self.convert_to_var(data[0])
+            loss, _, _, img_recon = self.forward_pass(img_var, test=True)
+
+            pbar.set_description('Batch Loss: {}'.format(loss.d))
+            epoch_loss += loss.d
+
+        avg_epoch_loss = epoch_loss/self.iterations_per_epoch
+        self.log_loss(epoch, avg_epoch_loss, train=False)
+        self.save_image(img_var, os.path.join(
+            self.val_recon_path, 'original_epoch_{}.png'.format(epoch)))
+        self.save_image(img_recon, os.path.join(
+            self.val_recon_path, 'recon_epoch_{}.png'.format(epoch)))

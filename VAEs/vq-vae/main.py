@@ -41,7 +41,7 @@ def make_parser():
                         help='Pass this argument to load saved parameters. Path of the saved parameters needs to be defined in config file.')
     parser.add_argument('--pixelcnn-prior', action='store_true', default=False,
                         help='Pass this argument to train a PixelCNN on the trained discretized latent space')
-    
+
     parser.add_argument('--sample-from-pixelcnn', type=int,
                         help='To generate images by randomly sampling using a trained pixelcnn prior. Enter number of images to generate')
     parser.add_argument('--sample-save-path', type=str, default='',
@@ -64,7 +64,7 @@ def train(data_iterator, monitor, config, comm, args):
                                              num_images=config['train']['batch_size'])
 
     model = VQVAE(config)
-    
+
     if not args.sample_from_pixelcnn:
         if config['train']['solver'] == 'adam':
             solver = S.Adam()
@@ -76,36 +76,37 @@ def train(data_iterator, monitor, config, comm, args):
         if config['dataset']['name'] != 'imagenet':
             val_loader = data_iterator(config, comm, train=False)
         else:
-            val_loader = None 
+            val_loader = None
     else:
-        solver, train_loader, val_loader = None, None, None 
+        solver, train_loader, val_loader = None, None, None
 
     if not args.pixelcnn_prior:
-        trainer = VQVAEtrainer(model, solver, train_loader, val_loader, monitor_train_loss, 
+        trainer = VQVAEtrainer(model, solver, train_loader, val_loader, monitor_train_loss,
                                monitor_train_recon, monitor_val_loss, monitor_val_recon, config, comm)
         num_epochs = config['train']['num_epochs']
     else:
         pixelcnn_model = GatedPixelCNN(config['prior'])
-        trainer = TrainerPrior(model, pixelcnn_model, solver, train_loader, val_loader, monitor_train_loss, 
+        trainer = TrainerPrior(model, pixelcnn_model, solver, train_loader, val_loader, monitor_train_loss,
                                monitor_train_recon, monitor_val_loss, monitor_val_recon, config, comm, eval=args.sample_from_pixelcnn)
         num_epochs = config['prior']['train']['num_epochs']
-        
 
     if os.path.exists(config['model']['checkpoint']) and (args.load_checkpoint or args.sample_from_pixelcnn):
         checkpoint_path = config['model']['checkpoint'] if not args.pixelcnn_prior else config['prior']['checkpoint']
-        trainer.load_checkpoint(checkpoint_path, msg='Parameters loaded from {}'.format(checkpoint_path), pixelcnn=args.pixelcnn_prior, load_solver=not args.sample_from_pixelcnn)
-        
+        trainer.load_checkpoint(checkpoint_path, msg='Parameters loaded from {}'.format(
+            checkpoint_path), pixelcnn=args.pixelcnn_prior, load_solver=not args.sample_from_pixelcnn)
+
     if args.sample_from_pixelcnn:
-        trainer.random_generate(args.sample_from_pixelcnn, args.sample_save_path)
+        trainer.random_generate(
+            args.sample_from_pixelcnn, args.sample_save_path)
         return
 
     for epoch in range(num_epochs):
-        
+
         trainer.train(epoch)
-        
-        if epoch%config['val']['interval'] == 0 and val_loader!=None:
-            trainer.validate(epoch)        
-            
+
+        if epoch % config['val']['interval'] == 0 and val_loader != None:
+            trainer.validate(epoch)
+
         if comm.rank == 0:
             if epoch % config['train']['save_param_step_interval'] == 0 or epoch == config['train']['num_epochs']-1:
                 trainer.save_checkpoint(
@@ -117,14 +118,15 @@ if __name__ == '__main__':
     parser = make_parser()
     args = parser.parse_args()
     config = read_yaml(os.path.join('configs', '{}.yaml'.format(args.data)))
-    ctx = get_extension_context(config['extension_module'], device_id=config['device_id'])
+    ctx = get_extension_context(
+        config['extension_module'], device_id=config['device_id'])
     nn.set_auto_forward(True)
 
     if args.data == 'mnist':
         data_iterator = mnist_iterator
     elif args.data == 'imagenet':
         data_iterator = imagenet_iterator
-    elif args.data =='cifar10':
+    elif args.data == 'cifar10':
         data_iterator = cifar10_iterator
     else:
         print('Dataset not recognized')

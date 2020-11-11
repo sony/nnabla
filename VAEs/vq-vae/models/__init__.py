@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .vq_vae import VQVAE 
+from .vq_vae import VQVAE
 from .gated_pixel_cnn import GatedPixelCNN
 
 __all__ = ['VQVAE', 'GatedPixelCNN']
