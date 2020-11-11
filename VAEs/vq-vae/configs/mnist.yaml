@@ -25,7 +25,7 @@ train:
 
 val:
   batch_size: 32
-  interval: 1
+  interval: 100
 
 monitor:
   path: tmp.monitor_mnist/
@@ -53,7 +53,7 @@ prior:
   num_classes: 10
   latent_shape: [7,7] # Height and Width of encoder output. Hard-coded for each dataset here.
   conditional: True
-  checkpoint: tmp.monitor_mnist/trained_models_mnist/epoch_20
+  checkpoint: tmp.monitor_mnist/trained_models_mnist/epoch_10
 
   train:
     num_epochs: 15

@@ -21,7 +21,6 @@ import numpy as np
 class GatedPixelCNN(object):
 	
 	def __init__(self, config):
-		self.in_channels = config['in_channels']
 		self.out_channels = config['out_channels']
 		self.num_layers = config['num_layers']
 		self.num_features = config['num_features']
@@ -29,7 +28,7 @@ class GatedPixelCNN(object):
 		self.conditional = config['conditional']
 		
 		self.input_shape = config['latent_shape']
-		
+
 	def mask_type_A(self, W):
 		c_x, c_y = W.shape[2]//2, W.shape[3]//2
 
@@ -51,24 +50,20 @@ class GatedPixelCNN(object):
 		W = mask*W
 		return W
 
-	def gated_conv(self, x, kernel_shape, h=None, mask_type='', gated=True, payload=None,
-				   return_payload=False, scope_name='gated_conv'):
+	def gated_conv(self, x, kernel_shape, h=None, mask_type='', gated=True, payload=None, return_payload=False, scope_name='gated_conv'):
 		pad_dim_0 = (kernel_shape[0]-1)/2
 		pad_dim_1 = (kernel_shape[1]-1)/2
 		if mask_type == '':
 			mask_type = self.mask_type_B
 		with nn.parameter_scope(scope_name):
-			
 			if gated:
 				out_f = PF.convolution(x, self.num_features, kernel_shape,
-									pad=(pad_dim_0, pad_dim_1), name='conv_f')
+									 pad=(pad_dim_0, pad_dim_1), apply_w=mask_type, name='conv_f')
 				out_g = PF.convolution(x, self.num_features, kernel_shape,
-										pad=(pad_dim_0, pad_dim_1), name='conv_g')
-				
-				if type(payload) == nn._variable.Variable:
-					out_f += payload[:, :self.num_features, :, :]
-					out_g += payload[:, self.num_features:, :, :]
-					
+									 pad=(pad_dim_0, pad_dim_1), apply_w=mask_type, name='conv_g')
+				if isinstance(payload, nn.Variable):
+					out_f += payload[:,:self.num_features, :, :]
+					out_g += payload[:,self.num_features:, :, :]
 				if self.conditional:
 					h_out_f = PF.affine(
 						h, self.num_features, name='h_out_f')
@@ -81,32 +76,19 @@ class GatedPixelCNN(object):
 					out = F.tanh(out_f+h_out_f) * F.sigmoid(out_g+h_out_g)
 				else:
 					out = F.tanh(out_f) * F.sigmoid(out_g)
-					
+				if return_payload:
+					payload = PF.convolution(F.concatenate(out_f, out_g, axis=1), 2*self.num_features, (1,1), name='conv_1x1')
+					payload = F.relu(payload) 
+					return out, payload
+				
 			else:
 				out = PF.convolution(x, self.num_features, kernel_shape, stride=(1, 1),
-									 pad=(pad_dim_0, pad_dim_1))
+									 pad=(pad_dim_0, pad_dim_1), apply_w=mask_type)
 				out = F.relu(out)
-				
-			if return_payload:
-				payload = PF.convolution(F.concatenate(out_f, out_g, axis=1), self.num_features*2, (1,1), name='conv1x1')
-				return out, payload
 
 		return out
 
-	def __call__(self, encoding_indices, h=None, return_embed=False):
-		
-		# conv_in = F.embed(encoding_indices.reshape(encoding_indices.shape[:-1]), self.embedding_weight)
-		# conv_in = F.reshape(conv_in, [-1]+self.input_shape+[conv_in.shape[-1]], inplace=True)
-		# conv_in = F.transpose(conv_in, (0,3,1,2))
-  
-		# conv_in = F.reshape(encoding_indices, [-1, 1] + self.input_shape, inplace=True)
-  
-		conv_in = PF.embed(encoding_indices, self.out_channels, self.in_channels, initializer=nn.initializer.NormalInitializer())
-		conv_in = F.reshape(conv_in, [-1]+self.input_shape+[conv_in.shape[-1]], inplace=True)
-		conv_in = F.transpose(conv_in, (0,3,1,2))
-  
-		if return_embed:
-			return conv_in
+	def __call__(self, conv_in, h=None):
 				
 		v_stack_in = conv_in
 		h_stack_in = conv_in
@@ -123,9 +105,8 @@ class GatedPixelCNN(object):
 					mask_type = self.mask_type_B
 					residual = True
 
-				v_stack_gated, v_stack_conv = self.gated_conv(v_stack_in, kernel_shape, h, mask_type=mask_type, return_payload=True,
+				v_stack_gated, v_stack_conv= self.gated_conv(v_stack_in, kernel_shape, h, mask_type=mask_type, return_payload=True,
 												scope_name='vertical_stack_gated_'+str(i))
-
 				h_stack_gated = self.gated_conv(h_stack_in, (1, kernel_shape[0]), h, mask_type=mask_type,
 												payload=v_stack_conv, scope_name='horizontal_stack_gated_'+str(i))
 				h_stack_conv = self.gated_conv(h_stack_gated, (1, 1), h, mask_type=mask_type, gated=False,

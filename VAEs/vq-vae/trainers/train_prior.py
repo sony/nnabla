@@ -44,21 +44,21 @@ class TrainerPrior(BaseTrainer):
 		self.load_checkpoint(config['model']['checkpoint'], msg='VQVAE Checkpoint Loaded! {}'.format(config['model']['checkpoint']), load_solver=False)	
 
 	def forward_pass(self, img_var, labels):
-		enc_indices, _ = self.base_model(img_var, return_encoding_indices=True)
-
-		if self.dataset_name == 'imagenet':
-			labels = nn.Variable(labels.shape).apply(data=labels)
+		enc_indices, quantized = self.base_model(img_var, return_encoding_indices=True, test=True)
+		labels_var = nn.Variable(labels.shape)
+		if isinstance(labels, nn.NdArray):
+			labels_var.data  = labels
 		else:
-			labels = nn.Variable.from_numpy_array(labels)
-		labels = F.one_hot(labels, shape=(self.num_classes,))
-		enc_recon = self.prior(enc_indices, labels)
+			labels_var.d = labels
+		labels_var = F.one_hot(labels_var, shape=(self.num_classes,))
+		enc_recon = self.prior(quantized, labels_var)
 		loss = F.mean(F.softmax_cross_entropy(enc_recon, enc_indices))
 
 		return loss, enc_indices, enc_recon
 
 	def train(self, epoch):
 		epoch_loss = 0
-		pbar = trange(self.iterations_per_epoch//10, desc='Training at epoch {}'.format(epoch))
+		pbar = trange(self.iterations_per_epoch, desc='Training at epoch {}'.format(epoch))
 		for i in pbar:
 			data = self.data_loader.next()
 			if self.dataset_name == 'imagenet':
@@ -105,43 +105,41 @@ class TrainerPrior(BaseTrainer):
 		self.visualize_discrete_image(enc_recon, os.path.join(self.latent_recon_path, 'recon_{}.png'.format(epoch)))
   
 	def random_generate(self, num_images, path):
-		
+    		
 		# Generate from the uniform prior of the base model
 		indices = F.randint(low=0, high=self.num_embedding, shape=[num_images]+self.latent_shape)
 		indices = F.reshape(indices, (-1,), inplace=True)
-		q1 = F.embed(indices, self.base_model.vq.embedding_weight)
-		q1 = F.transpose(q1.reshape([num_images]+self.latent_shape + [q1.shape[-1]]), (0,3,1,2))
-		
-		img_gen_uniform_prior = self.base_model(q1, quantized_as_input=True, test=True)
+		quantized = F.embed(indices, self.base_model.vq.embedding_weight)
+		quantized = F.transpose(quantized.reshape([num_images]+self.latent_shape + [quantized.shape[-1]]), (0,3,1,2))
   
-		self.visualize_discrete_image(indices, os.path.join(path, 'latent_uniform.png'))
-		self.save_image(img_gen_uniform_prior, os.path.join(path, 'generate_uniform.png'))
+		img_gen_uniform_prior = self.base_model(quantized, quantized_as_input=True, test=True)
   
 		# Generate images using pixelcnn prior
-		indices = nn.Variable.from_numpy_array(np.ones(shape=[num_images]+self.latent_shape))
-		labels = F.randint(low=0, high=self.num_classes//2, shape=(num_images, 1))
+		indices = nn.Variable.from_numpy_array(np.zeros(shape=[num_images]+self.latent_shape))
+		labels = F.randint(low=0, high=self.num_classes, shape=(num_images,1))
 		labels = F.one_hot(labels, shape=(self.num_classes,))
 
+		# Sample from pixelcnn - pixel by pixel
+		import torch # Numpy behavior is different and not giving correct output
 		for i in range(self.latent_shape[0]):
 			for j in range(self.latent_shape[1]):
-				indices_sample = self.prior(indices.reshape((-1,1)), labels)
-				indices_sample = F.reshape(indices_sample, indices.shape+(indices_sample.shape[-1], ), inplace=True)
-				# indices_sample = F.softmax(indices_sample)
-				for b_i in range(indices.shape[0]):
-					indices_prob = indices_sample[b_i,i,j,:].d.astype(np.float64)
-					indices_prob = (indices_prob - indices_prob.min() )/(indices_prob.max() - indices_prob.min() )
-					indices_prob /= indices_prob.sum()
-					sampled_idx = np.random.multinomial(1, indices_prob)
-					print(sampled_idx.argmax(), indices_prob.argmax())
-					indices[b_i,i,j] = sampled_idx.argmax()
+				quantized = F.embed(indices.reshape((-1,)), self.base_model.vq.embedding_weight)
+				quantized = F.transpose(quantized.reshape([num_images]+self.latent_shape + [quantized.shape[-1]]), (0,3,1,2))
+				indices_sample = self.prior(quantized, labels)
+				indices_prob = F.reshape(indices_sample, indices.shape+(indices_sample.shape[-1],), inplace=True)[:,i,j]
+				indices_prob = F.softmax(indices_prob)
+
+				indices_prob_tensor = torch.from_numpy(indices_prob.d)
+				sample = indices_prob_tensor.multinomial(1).squeeze().numpy()
+				indices[:,i,j] = sample
+    
 		print(indices.d)
-		# q2 = F.embed(indices.reshape((-1,)), self.base_model.vq.embedding_weight)
-		# q2 = F.transpose(q2.reshape([num_images]+self.latent_shape + [q2.shape[-1]]), (0,3,1,2))
-		q2 = self.prior(F.reshape(indices, (-1,1), inplace=True), return_embed=True)
+		quantized = F.embed(indices.reshape((-1,)), self.base_model.vq.embedding_weight)
+		quantized = F.transpose(quantized.reshape([num_images]+self.latent_shape + [quantized.shape[-1]]), (0,3,1,2))
+  
+		img_gen_pixelcnn_prior = self.base_model(quantized, quantized_as_input=True, test=True)
 
-		img_gen_pixelcnn_prior = self.base_model(q2, quantized_as_input=True, test=True)
-
-		self.visualize_discrete_image(F.reshape(indices, (-1,), inplace=True), os.path.join(path, 'latent_pixelcnn.png'))
+		self.save_image(img_gen_uniform_prior, os.path.join(path, 'generate_uniform.png'))
 		self.save_image(img_gen_pixelcnn_prior, os.path.join(path, 'generate_pixelcnn.png'))
 
 		print('Random labels generated for pixelcnn prior:', list(F.max(labels, axis=1, only_index=True).d))

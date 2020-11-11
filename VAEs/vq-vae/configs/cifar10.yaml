@@ -6,7 +6,7 @@ model:
   num_embeddings: 128
   commitment_cost: 1
   saved_models_dir: tmp.monitor_cifar10/trained_models_cifar10/
-  checkpoint: tmp.monitor_cifar10/trained_models_cifar10/epoch_5
+  checkpoint: tmp.monitor_cifar10/trained_models_cifar10/epoch_30
   rng: 313
   decay: 0.99
 
@@ -51,7 +51,7 @@ prior:
   num_classes: 10
   latent_shape: [8,8] # Height and Width of encoder output. Hard-coded for each dataset here.
   conditional: True
-  checkpoint: tmp.monitor_cifar10/trained_models_cifar10/epoch_2
+  checkpoint: tmp.monitor_cifar10/trained_models_cifar10/epoch_48
 
   train:
     num_epochs: 50

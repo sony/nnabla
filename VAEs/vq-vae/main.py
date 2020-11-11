@@ -64,17 +64,21 @@ def train(data_iterator, monitor, config, comm, args):
                                              num_images=config['train']['batch_size'])
 
     model = VQVAE(config)
-    if config['train']['solver'] == 'adam':
-        solver = S.Adam()
-    else:
-        solver = S.momentum()
-    solver.set_learning_rate(config['train']['learning_rate'])
+    
+    if not args.sample_from_pixelcnn:
+        if config['train']['solver'] == 'adam':
+            solver = S.Adam()
+        else:
+            solver = S.momentum()
+        solver.set_learning_rate(config['train']['learning_rate'])
 
-    train_loader = data_iterator(config, comm, train=True)
-    if config['dataset']['name'] != 'imagenet':
-        val_loader = data_iterator(config, comm, train=False)
+        train_loader = data_iterator(config, comm, train=True)
+        if config['dataset']['name'] != 'imagenet':
+            val_loader = data_iterator(config, comm, train=False)
+        else:
+            val_loader = None 
     else:
-        val_loader = None 
+        solver, train_loader, val_loader = None, None, None 
 
     if not args.pixelcnn_prior:
         trainer = VQVAEtrainer(model, solver, train_loader, val_loader, monitor_train_loss, 
@@ -89,7 +93,7 @@ def train(data_iterator, monitor, config, comm, args):
 
     if os.path.exists(config['model']['checkpoint']) and (args.load_checkpoint or args.sample_from_pixelcnn):
         checkpoint_path = config['model']['checkpoint'] if not args.pixelcnn_prior else config['prior']['checkpoint']
-        trainer.load_checkpoint(checkpoint_path, msg='Parameters loaded from {}'.format(config["model"]["checkpoint"]), load_solver=not args.sample_from_pixelcnn)
+        trainer.load_checkpoint(checkpoint_path, msg='Parameters loaded from {}'.format(checkpoint_path), pixelcnn=args.pixelcnn_prior, load_solver=not args.sample_from_pixelcnn)
         
     if args.sample_from_pixelcnn:
         trainer.random_generate(args.sample_from_pixelcnn, args.sample_save_path)
@@ -105,7 +109,7 @@ def train(data_iterator, monitor, config, comm, args):
         if comm.rank == 0:
             if epoch % config['train']['save_param_step_interval'] == 0 or epoch == config['train']['num_epochs']-1:
                 trainer.save_checkpoint(
-                    config['model']['saved_models_dir'], epoch)
+                    config['model']['saved_models_dir'], epoch, pixelcnn=args.pixelcnn_prior)
 
 
 if __name__ == '__main__':
