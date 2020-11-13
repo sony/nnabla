@@ -515,6 +515,51 @@ def weight_standardization(w, channel_axis=0, eps=1e-05, output_stat=False):
         * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
 
     """
+    from .function_bases import weight_standardization as weight_standardization_base
+    n_outputs = 3 if output_stat else 1
+
+    return weight_standardization_base(w, channel_axis=channel_axis, eps=eps, n_outputs=n_outputs)
+
+
+def _weight_standardization_v1(w, channel_axis=0, eps=1e-05, output_stat=False):
+    r"""
+    Applies Weight Standardization over an input weight, which is defined as:
+    .. math::
+      \begin{eqnarray}
+        \mu_{W_i} &=& \frac{1}{I} \sum_{j=1}^{I} W_{ij} \\
+        \sigma_{W_i} &=& \sqrt{\frac{1}{I} \sum_{i=1}^{I} \left(W_{ij} - \mu_{W_{i}}\right)^2 + \epsilon} \\
+        \hat{W_{ij}} &=& \frac{W_{ij} - \mu_{W_i}}{\sigma_{W_i}} \\
+        y &=& \hat{W} \ast x
+      \end{eqnarray}
+    Example:
+        .. code-block:: python
+            import numpy as np
+            import nnabla as nn
+            import nnabla.functions as F
+            import nnabla.parametric_functions as PF
+            rng = np.random.RandomState(313)
+            x = nn.Variable.from_numpy_array(rng.randn(*(32, 16, 3, 3)))
+            # For convolution:
+            def ws_callback_conv(w):
+                return F.weight_standardization(w, channel_axis=0)
+            y = PF.convolution(x, 10, (2, 2), apply_w=ws_callback_conv)
+            # For affine:
+            def ws_callback_affine(w): 
+                return F.weight_standardization(w, channel_axis=1)
+            y = PF.affine(x, 10, apply_w=ws_callback_affine)
+    References:
+      * `Siyuan Qiao, Huiyu Wang, Chenxi Liu, Wei Shen, Alan Yuille, Weight Standardization
+        <https://arxiv.org/pdf/1903.10520v1.pdf>`_
+    Args:
+        w (Variable): A weight variable.
+        channel_axis (int): An axis for output channel. Default value is 0 which assumes the weights of convolution.
+        eps (float): Tiny value to avoid zero division by std.
+        output_stat(bool): If true, the batch statistics of mean and variance.
+    Returns:
+        * :obj:`~nnabla.Variable`: Standardized output weight.
+        * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`)
+        * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
+    """
     # check channel axis
     _check_axis(len(w.shape), channel_axis)
 
@@ -556,6 +601,45 @@ def layer_normalization(x, beta, gamma, batch_axis=0, eps=1e-05, output_stat=Fal
         * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`).
         * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
     """
+    from .function_bases import layer_normalization as layer_normalization_base
+    n_outputs = 3 if output_stat else 1
+
+    batch_axis = _force_list(batch_axis)
+
+    no_scale = gamma is None
+    no_bias = beta is None
+
+    return layer_normalization_base(x, beta=beta, gamma=gamma, batch_axis=batch_axis, eps=eps, no_scale=no_scale, no_bias=no_bias, n_outputs=n_outputs)
+
+
+def _layer_normalization_v1(x, beta, gamma, batch_axis=0, eps=1e-05, output_stat=False):
+    r"""
+    Applies Layer Normalization over an input tensor, which is defined as:
+    .. math::
+      \begin{eqnarray}
+        \mu^l &=& \frac{1}{H} \sum_{i=1}^{H} x_i^l \\
+        \sigma^l &=& \sqrt{\frac{1}{H} \sum_{i=1}^{H} \left(x_i^l - \mu^l\right)^2 + \epsilon} \\
+        y &=& \frac{x - \mu^l}{\sigma^l} \gamma + \beta
+      \end{eqnarray}
+    where :math:`x` and :math:`y` are input and output variable,
+    :math:`\mu^l` and :math:`\sigma^l` are the mean and std of each layer which is separately calculated for each batch,
+    and :math:`\beta` and :math:`\gamma` are adaptive biases and gains.
+    If the input shape is [B, C, H, W] (= batch_axis=0), the shape of calculated mean and std are [B, 1, 1, 1]
+    References:
+        * `Jimmy Lei Ba, Jamie Ryan Kiros, Geoffrey E. Hinton, Layer Normalization.
+          <https://arxiv.org/abs/1607.06450>`_
+    Args:
+        x (Variable): An input variable.
+        beta (Variable or None): An Adaptive biases. If None, the bias term is omitted.
+        gamma (Variable or None): An Adaptive gains. If None, the scale term is omitted.
+        batch_axis (int or repeated int): Axes mean and variance are taken.
+        eps (float): Tiny value to avoid zero division by std.
+        output_stat(bool): If true, calculated mean and variance are also returned.
+    Returns:
+        * :obj:`~nnabla.Variable`: output variable which is normalized its statics and rescaled by alpha and beta.
+        * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`).
+        * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
+    """
 
     batch_axis = _check_batch_axis_and_force_list(len(x.shape), batch_axis)
 
@@ -573,6 +657,53 @@ def layer_normalization(x, beta, gamma, batch_axis=0, eps=1e-05, output_stat=Fal
 
 
 def instance_normalization(x, beta, gamma, channel_axis=1, batch_axis=0, eps=1e-05, output_stat=False):
+    r"""
+    Applies Instance Normalization over an input tensor, which is defined as:
+
+    .. math::
+      \begin{eqnarray}
+        \mu^i &=& \frac{1}{H} \sum_{i=1}^{H} x_i^i \\
+        \sigma^i &=& \sqrt{\frac{1}{H} \sum_{i=1}^{H} \left(x_i^i - \mu^i\right)^2 + \epsilon} \\
+        y &=& \frac{x - \mu^i}{\sigma^i} \gamma + \beta
+      \end{eqnarray}
+
+    where :math:`x` and :math:`y` are input and output variable,
+    :math:`\mu^i` and :math:`\sigma^i` are the mean and std of each instance which is separately calculated for each batch and channel,
+    and :math:`\gamma` and :math:`\beta` are adaptive gains and biases.
+
+    If the input shape is [B, C, H, W] (= channel_axis=1, batch_axis=0), the shape of calculated mean and std are [B, C, 1, 1]
+
+    References:
+
+        * `Dmitry Ulyanov, Andrea Vedaldi, Victor Lempitsky, Instance Normalization: The Missing Ingredient for Fast Stylization.
+          <https://arxiv.org/abs/1607.08022>`_
+
+    Args:
+        x (Variable): An input variable.
+        beta (Variable or None): An Adaptive biases. If None, the bias term is omitted.
+        gamma (Variable or None): An Adaptive gains. If None, the scale term is omitted.
+        channel_axis (int): Channel axis.
+        batch_axis (int or repeated int): Batch axes.
+        eps (float): Tiny value to avoid zero division by std.
+        output_stat(bool): If true, the batch statistics of mean and variance.
+
+    Returns:
+        * :obj:`~nnabla.Variable`: Normalized output variable.
+        * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`)
+        * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
+    """
+    from .function_bases import instance_normalization as instance_normalization_base
+    n_outputs = 3 if output_stat else 1
+
+    batch_axis = _force_list(batch_axis)
+
+    no_scale = gamma is None
+    no_bias = beta is None
+
+    return instance_normalization_base(x, beta=beta, gamma=gamma, channel_axis=channel_axis, batch_axis=batch_axis, eps=eps, no_scale=no_scale, no_bias=no_bias, n_outputs=n_outputs)
+
+
+def _instance_normalization_v1(x, beta, gamma, channel_axis=1, batch_axis=0, eps=1e-05, output_stat=False):
     r"""
     Applies Instance Normalization over an input tensor, which is defined as:
 
@@ -641,6 +772,59 @@ def instance_normalization(x, beta, gamma, channel_axis=1, batch_axis=0, eps=1e-
 
 
 def group_normalization(x, beta, gamma, num_groups, channel_axis=1, batch_axis=0, eps=1e-05, output_stat=False):
+    r"""
+    Applies Group Normalization over an input tensor, which is defined as:
+
+    .. math::
+      \begin{eqnarray}
+        \mu^g &=& \frac{1}{H} \sum_{i=1}^{H} x_i^g \\
+        \sigma^g &=& \sqrt{\frac{1}{H} \sum_{i=1}^{H} \left(x_i^g - \mu^g\right)^2 + \epsilon} \\
+        y &=& \frac{x - \mu^g}{\sigma^g} \gamma + \beta
+      \end{eqnarray}
+
+    where :math:`x` and :math:`y` are input and output variable,
+    :math:`\mu^g` and :math:`\sigma^g` are the mean and std of each group which contains `num_channels / num_groups` channels,
+    and :math:`\gamma` and :math:`\beta` are adaptive gains and biases.
+
+    The input channels, specified by :attr:`channel_axis`, are separated into :attr:`num_groups` groups,
+    and the mean and std are calculated over the each group.
+    For example, if the input shape is [B, C, H, W] (= channel_axis=1, batch_axis=0),
+    an input variable is once reshaped to [B, num_groups, C / num_groups, H, W]
+    and standardize by its mean and std whose shapes are [B, num_groups, 1, 1, 1].
+    Finally, an output variable is reshaped again to the original input shape (= [B, C, H, W] in the case above).
+
+    References:
+
+        * `Yuxin Wu, Kaiming He, Group Normalization.
+          <https://arxiv.org/abs/1803.08494>`_
+
+    Args:
+        x (Variable): An input variable.
+        beta (Variable or None): An Adaptive biases. If None, the bias term is omitted.
+        gamma (Variable or None): An Adaptive gains. If None, the scale term is omitted.
+        num_groups (int): A number of groups. The channel dim of 'x' must be integer multiple of `num_groups`.
+        channel_axis (int): Channel axis.
+        batch_axis (int or repeated int): Batch axes.
+        eps (float): Tiny value to avoid zero division by std.
+        output_stat(bool): If true, the batch statistics of mean and variance.
+
+    Returns:
+        * :obj:`~nnabla.Variable`: Normalized output variable.
+        * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`)
+        * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
+    """
+    from .function_bases import group_normalization as group_normalization_base
+    n_outputs = 3 if output_stat else 1
+
+    batch_axis = _force_list(batch_axis)
+
+    no_scale = gamma is None
+    no_bias = beta is None
+
+    return group_normalization_base(x, beta=beta, gamma=gamma, num_groups=num_groups, channel_axis=channel_axis, batch_axis=batch_axis, eps=eps, no_scale=no_scale, no_bias=no_bias, n_outputs=n_outputs)
+
+
+def _group_normalization_v1(x, beta, gamma, num_groups, channel_axis=1, batch_axis=0, eps=1e-05, output_stat=False):
     r"""
     Applies Group Normalization over an input tensor, which is defined as:
 

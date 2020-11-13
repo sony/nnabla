@@ -2,9 +2,11 @@ import pytest
 import numpy as np
 import nnabla as nn
 import nnabla.functions as F
-from nnabla.testing import assert_allclose
+from nbla_test_utils import list_context
 
 from nnabla.normalization_functions import _force_list, _get_axes_excluding
+
+ctxs = list_context('InstanceNormalization')
 
 
 def ref_instance_normalization(x, beta, gamma, channel_axis, batch_axis, eps, output_stat):
@@ -18,12 +20,31 @@ def ref_instance_normalization(x, beta, gamma, channel_axis, batch_axis, eps, ou
 
     norm = (x - x_mean) / (x_var + eps) ** 0.5
 
+    if gamma is not None:
+        norm *= gamma
+
+    if beta is not None:
+        norm += beta
+
     if output_stat:
-        return norm * gamma + beta, x_mean, x_var
+        return norm, x_mean, x_var
 
-    return norm * gamma + beta
+    return norm
 
 
+def create_inputs(rng, x_shape, batch_axis, channel_axis, no_scale, no_bias):
+    x = np.array(rng.randn(*x_shape).astype(np.float32))
+
+    stat_shape = tuple([x_shape[i] if i in _force_list(batch_axis) + [channel_axis, ] else 1
+                        for i in range(len(x_shape))])
+
+    beta = None if no_bias else rng.randn(*stat_shape).astype(np.float32)
+    gamma = None if no_scale else rng.randn(*stat_shape).astype(np.float32)
+
+    return x, beta, gamma
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("x_shape , batch_axis, channel_axis",
                          [((4, 32, 8, 8), 0, 1),  # convolution (NCHW)
@@ -32,40 +53,44 @@ def ref_instance_normalization(x, beta, gamma, channel_axis, batch_axis, eps, ou
                           # time-series (T, B, C) or (B, T, C)
                           ((10, 4, 16), [0, 1], 2)
                           ])
+@pytest.mark.parametrize("eps", [1e-05])
 @pytest.mark.parametrize("output_stat", [False, True])
-def test_instance_normalization_forward_backward(seed, x_shape, batch_axis, channel_axis, output_stat):
+@pytest.mark.parametrize("no_scale", [False, True])
+@pytest.mark.parametrize("no_bias", [False, True])
+def test_instance_normalization_forward(ctx, func_name, seed, x_shape, batch_axis, channel_axis, eps, output_stat, no_scale, no_bias):
+    from nbla_test_utils import function_tester
 
     rng = np.random.RandomState(seed)
-    input = np.array(rng.randn(*x_shape).astype(np.float32))
-    eps = 1e-05
+    x, beta, gamma = create_inputs(
+        rng, x_shape, batch_axis, channel_axis, no_scale, no_bias)
 
-    stat_shape = tuple([x_shape[i] if i in _force_list(batch_axis) + [channel_axis, ] else 1
-                        for i in range(len(x_shape))])
+    function_tester(rng, F.instance_normalization, ref_instance_normalization, [x, beta, gamma], [channel_axis, batch_axis, eps, output_stat], ctx=ctx,
+                    func_name=func_name, dstep=1e-2, atol_b=1e-2, backward=[False, False, False], disable_half_test=True)
 
-    beta = rng.randn(*stat_shape).astype(np.float32)
-    gamma = rng.randn(*stat_shape).astype(np.float32)
 
-    x = nn.Variable.from_numpy_array(input)
-    v_beta = nn.Variable.from_numpy_array(beta)
-    v_gamma = nn.Variable.from_numpy_array(gamma)
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("x_shape , batch_axis, channel_axis",
+                         [((2, 4, 3, 3), 0, 1),  # convolution (NCHW)
+                          ((2, 3, 3, 4), 0, 3),  # convolution (NHWC)
+                          ((16, 4), 0, 1),  # affine
+                          # time-series (T, B, C) or (B, T, C)
+                          ((5, 2, 6), [0, 1], 2)
+                          ])
+@pytest.mark.parametrize("eps", [1e-05])
+@pytest.mark.parametrize("output_stat", [False, True])
+@pytest.mark.parametrize("no_scale", [False, True])
+@pytest.mark.parametrize("no_bias", [False, True])
+def test_instance_normalization_forward_backward(ctx, func_name, seed, x_shape, batch_axis, channel_axis, eps, output_stat, no_scale, no_bias):
+    from nbla_test_utils import function_tester
 
-    output = F.instance_normalization(
-        x, v_beta, v_gamma, channel_axis, batch_axis, eps, output_stat)
-    ref = ref_instance_normalization(
-        input, beta, gamma, channel_axis, batch_axis, eps, output_stat)
+    rng = np.random.RandomState(seed)
+    x, beta, gamma = create_inputs(
+        rng, x_shape, batch_axis, channel_axis, no_scale, no_bias)
 
-    if output_stat:
-        tmp = F.sink(*output)
-        tmp.forward()
-        tmp.backward()
+    # 'need_grad' of beta and gamma must be same in batch_norm
+    param_backward = not no_bias or not no_scale
+    backward = [True, param_backward, param_backward]
 
-        for o, r in zip(output, ref):
-            assert o.shape == r.shape
-            assert_allclose(o.d, r, atol=1e-2, rtol=1e-5)
-
-    else:
-        output.forward()
-        output.backward()
-
-        assert output.shape == ref.shape
-        assert_allclose(output.d, ref, atol=1e-2, rtol=1e-5)
+    function_tester(rng, F.instance_normalization, ref_instance_normalization, [x, beta, gamma], [channel_axis, batch_axis, eps, output_stat], ctx=ctx,
+                    func_name=func_name, dstep=1e-2, atol_b=1e-2, backward=backward, disable_half_test=True)

@@ -1550,6 +1550,189 @@ Normalization:
     function_ids:
       iIffB: 22
     c_runtime: support
+  GroupNormalization:
+    snake_name: group_normalization
+    doc: |2
+
+      Applies Group Normalization over an input tensor, which is defined as:
+
+      .. math::
+        \begin{eqnarray}
+          \mu^g &=& \frac{1}{H} \sum_{i=1}^{H} x_i^g \\
+          \sigma^g &=& \sqrt{\frac{1}{H} \sum_{i=1}^{H} \left(x_i^g - \mu^g\right)^2 + \epsilon} \\
+          y &=& \frac{x - \mu^g}{\sigma^g} \gamma + \beta
+        \end{eqnarray}
+
+      where :math:`x` and :math:`y` are input and output variable,
+      :math:`\mu^g` and :math:`\sigma^g` are the mean and std of each group which contains `num_channels / num_groups` channels,
+      and :math:`\gamma` and :math:`\beta` are adaptive gains and biases.
+
+      The input channels, specified by :attr:`channel_axis`, are separated into :attr:`num_groups` groups,
+      and the mean and std are calculated over the each group.
+      For example, if the input shape is [B, C, H, W] (= channel_axis=1, batch_axis=0),
+      an input variable is once reshaped to [B, num_groups, C / num_groups, H, W]
+      and standardize by its mean and std whose shapes are [B, num_groups, 1, 1, 1].
+      Finally, an output variable is reshaped again to the original input shape (= [B, C, H, W] in the case above).
+
+      References:
+
+          * `Yuxin Wu, Kaiming He, Group Normalization.
+            <https://arxiv.org/abs/1803.08494>`_
+    inputs:
+      x:
+        doc: N-D array of input.
+      beta:
+        doc: N-D array of beta which is learned.
+        optional: true
+      gamma:
+        doc: N-D array of gamma which is learned.
+        optional: true
+    arguments:
+      num_groups:
+        doc: A number of groups. The channel dim of 'x' must be integer multiple of
+          `num_groups`.
+        type: int64
+        default: 1
+      channel_axis:
+        doc: Channel axis.
+        type: int64
+        default: 1
+      batch_axis:
+        doc: Axes mean and variance are taken.
+        type: repeated int64
+        default: (0,)
+      eps:
+        doc: Tiny value to avoid zero division by std.
+        type: float
+        default: 1e-05
+      no_scale:
+        doc: If `True`, the scale term is omitted.
+        type: bool
+        default: 'False'
+      no_bias:
+        doc: If `True`, the bias term is omitted.
+        type: bool
+        default: 'False'
+    outputs:
+      y:
+        doc: N-D array
+    c_runtime: not support
+    function_ids:
+      iiiIfBB: 321
+  InstanceNormalization:
+    snake_name: instance_normalization
+    doc: |2
+
+      Applies Instance Normalization over an input tensor, which is defined as
+
+      .. math::
+        \begin{eqnarray}
+          \mu^i &=& \frac{1}{H} \sum_{i=1}^{H} x_i^i \\
+          \sigma^i &=& \sqrt{\frac{1}{H} \sum_{i=1}^{H} \left(x_i^i - \mu^i\right)^2 + \epsilon} \\
+          y &=& \frac{x - \mu^i}{\sigma^i} \gamma + \beta
+        \end{eqnarray}
+
+      where :math:`x` and :math:`y` are input and output variable,
+      :math:`\mu^i` and :math:`\sigma^i` are the mean and std of each instance which is separately calculated for each batch and channel,
+      and :math:`\gamma` and :math:`\beta` are adaptive gains and biases.
+
+      If the input shape is [B, C, H, W] (= channel_axis=1, batch_axis=0), the shape of calculated mean and std are [B, C, 1, 1]
+
+      References:
+
+          * `Dmitry Ulyanov, Andrea Vedaldi, Victor Lempitsky, Instance Normalization: The Missing Ingredient for Fast Stylization.
+            <https://arxiv.org/abs/1607.08022>`_
+    inputs:
+      x:
+        doc: N-D array of input.
+      beta:
+        doc: N-D array of beta which is learned.
+        optional: true
+      gamma:
+        doc: N-D array of gamma which is learned.
+        optional: true
+    arguments:
+      channel_axis:
+        doc: Channel axis.
+        type: int64
+        default: 1
+      batch_axis:
+        doc: Axes mean and variance are taken.
+        type: repeated int64
+        default: (0,)
+      eps:
+        doc: Tiny value to avoid zero division by std.
+        type: float
+        default: 1e-05
+      no_scale:
+        doc: If `True`, the scale term is omitted.
+        type: bool
+        default: 'False'
+      no_bias:
+        doc: If `True`, the bias term is omitted.
+        type: bool
+        default: 'False'
+    outputs:
+      y:
+        doc: N-D array
+    c_runtime: not support
+    function_ids:
+      iiIfBB: 322
+  LayerNormalization:
+    snake_name: layer_normalization
+    doc: |2
+
+      Applies Layer Normalization over an input tensor, which is defined as
+
+      .. math::
+        \begin{eqnarray}
+          \mu^l &=& \frac{1}{H} \sum_{i=1}^{H} x_i^l \\
+          \sigma^l &=& \sqrt{\frac{1}{H} \sum_{i=1}^{H} \left(x_i^l - \mu^l\right)^2 + \epsilon} \\
+          y &=& \frac{x - \mu^l}{\sigma^l} \gamma + \beta
+        \end{eqnarray}
+
+      where :math:`x` and :math:`y` are input and output variable,
+      :math:`\mu^l` and :math:`\sigma^l` are the mean and std of each layer which is separately calculated for each batch,
+      and :math:`\beta` and :math:`\gamma` are adaptive biases and gains.
+
+      If the input shape is [B, C, H, W] (= batch_axis=0), the shape of calculated mean and std are [B, 1, 1, 1]
+
+      References:
+
+          * `Jimmy Lei Ba, Jamie Ryan Kiros, Geoffrey E. Hinton, Layer Normalization.
+            <https://arxiv.org/abs/1607.06450>`_
+    inputs:
+      x:
+        doc: N-D array of input.
+      beta:
+        doc: N-D array of beta which is learned.
+        optional: true
+      gamma:
+        doc: N-D array of gamma which is learned.
+        optional: true
+    arguments:
+      batch_axis:
+        doc: Axes mean and variance are taken.
+        type: repeated int64
+        default: (0,)
+      eps:
+        doc: Tiny value to avoid zero division by std.
+        type: float
+        default: 1e-05
+      no_scale:
+        doc: If `True`, the scale term is omitted.
+        type: bool
+        default: 'False'
+      no_bias:
+        doc: If `True`, the bias term is omitted.
+        type: bool
+        default: 'False'
+    outputs:
+      y:
+        doc: N-D array
+    c_runtime: not support
+    function_ids:
+      iIfBB: 323
   NormNormalization:
     snake_name: norm_normalization
     doc: |2
@@ -1644,6 +1827,47 @@ Normalization:
     c_runtime: not support
     function_ids:
       CiiIffB: 263
+  TensorNormalization:
+    snake_name: tensor_normalization
+    doc: |2
+
+      General tensor normalization.
+      Input variable `x` is normalized by mean and std calculated by `x` itself.
+      Mean and variance are calculated along `axes`.
+      For example, if the input shape is (B, C, H, W) and axes is [0, 1],
+      the shape of calculated mean and std are (B, C, 1 ,1).
+    inputs:
+      x:
+        doc: N-D array of input.
+      beta:
+        doc: N-D array of beta which is learned.
+        optional: true
+      gamma:
+        doc: N-D array of gamma which is learned.
+        optional: true
+    arguments:
+      axes:
+        doc: Axes mean and variance are taken.
+        type: repeated int64
+        default: (1,)
+      eps:
+        doc: Tiny value to avoid zero division by std.
+        type: float
+        default: 1e-05
+      no_scale:
+        doc: If `True`, the scale term is omitted.
+        type: bool
+        default: 'False'
+      no_bias:
+        doc: If `True`, the bias term is omitted.
+        type: bool
+        default: 'False'
+    outputs:
+      y:
+        doc: N-D array
+    c_runtime: support
+    function_ids:
+      iIfBB: 324
   WeightNormalization:
     snake_name: weight_normalization
     doc: |2
@@ -1679,6 +1903,44 @@ Normalization:
     c_runtime: not support
     function_ids:
       if: 304
+  WeightStandardization:
+    snake_name: weight_standardization
+    doc: |2
+
+      Applies Weight Standardization over an input weight, which is defined as
+
+      .. math::
+        \begin{eqnarray}
+          \mu_{W_i} &=& \frac{1}{I} \sum_{j=1}^{I} W_{ij} \\
+          \sigma_{W_i} &=& \sqrt{\frac{1}{I} \sum_{i=1}^{I} \left(W_{ij} - \mu_{W_{i}}\right)^2 + \epsilon} \\
+          \hat{W_{ij}} &=& \frac{W_{ij} - \mu_{W_i}}{\sigma_{W_i}} \\
+          y &=& \hat{W} \ast x
+        \end{eqnarray}
+
+      References:
+
+        * `Siyuan Qiao, Huiyu Wang, Chenxi Liu, Wei Shen, Alan Yuille, Weight Standardization
+          <https://arxiv.org/pdf/1903.10520v1.pdf>`_
+          
+    inputs:
+      w:
+        doc: N-D array of learnable weights.
+    arguments:
+      channel_axis:
+        doc: An axis for output channel. Default value is 0 which assumes the weights
+          of convolution.
+        type: int64
+        default: 0
+      eps:
+        doc: Tiny value to avoid zero division by std.
+        type: float
+        default: 1e-05
+    outputs:
+      y:
+        doc: N-D array
+    c_runtime: not support
+    function_ids:
+      if: 325
   MeanSubtraction:
     snake_name: mean_subtraction
     doc: |2

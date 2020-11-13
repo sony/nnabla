@@ -251,3 +251,9 @@
   BatchLogdet_Empty: 319
 26:
   RandomShift_iIifii: 320
+27:
+  GroupNormalization_iiiIfBB: 321
+  InstanceNormalization_iiIfBB: 322
+  LayerNormalization_iIfBB: 323
+  TensorNormalization_iIfBB: 324
+  WeightStandardization_if: 325

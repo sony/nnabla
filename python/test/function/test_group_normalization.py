@@ -2,9 +2,11 @@ import pytest
 import numpy as np
 import nnabla as nn
 import nnabla.functions as F
-from nnabla.testing import assert_allclose
+from nbla_test_utils import list_context
 
 from nnabla.normalization_functions import _force_list, _get_axes_excluding
+
+ctxs = list_context('GroupNormalization')
 
 
 def ref_group_normalization(x, beta, gamma, num_groups, channel_axis, batch_axis, eps, output_stat):
@@ -28,56 +30,81 @@ def ref_group_normalization(x, beta, gamma, num_groups, channel_axis, batch_axis
 
     norm = (tmp - x_mean) / (x_var + eps) ** 0.5
 
+    norm = norm.reshape(x.shape)
+
+    if gamma is not None:
+        norm *= gamma
+
+    if beta is not None:
+        norm += beta
+
     if output_stat:
-        return norm.reshape(x.shape) * gamma + beta, x_mean, x_var
+        return norm, x_mean, x_var
 
-    return norm.reshape(x.shape) * gamma + beta
+    return norm
 
 
-@pytest.mark.parametrize("seed", [313])
-@pytest.mark.parametrize("num_groups", [2, 4])
-@pytest.mark.parametrize("x_shape , batch_axis, channel_axis",
-                         [((4, 32, 8, 8), 0, 1),  # convolution (NCHW)
-                          ((4, 16, 16, 8), 0, 3),  # convolution (NHWC)
-                          ((16, 4), 0, 1),  # affine
-                          # time-series (T, B, C) or (B, T, C)
-                          ((10, 4, 16), [0, 1], 2)
-                          ])
-@pytest.mark.parametrize("output_stat", [False, True])
-def test_group_normalization_forward_backward(seed, num_groups, x_shape, batch_axis, channel_axis, output_stat):
-
-    rng = np.random.RandomState(seed)
-    input = np.array(rng.randn(*x_shape).astype(np.float32))
+def create_inputs(rng, x_shape, channel_axis, no_scale, no_bias):
+    x = np.array(rng.randn(*x_shape).astype(np.float32))
 
     stat_shape = [1 for _ in range(len(x_shape))]
-    stat_shape[channel_axis] = input.shape[channel_axis]
+    stat_shape[channel_axis] = x_shape[channel_axis]
 
-    beta = rng.randn(*stat_shape).astype(np.float32)
-    gamma = rng.randn(*stat_shape).astype(np.float32)
+    beta = None if no_bias else rng.randn(*stat_shape).astype(np.float32)
+    gamma = None if no_scale else rng.randn(*stat_shape).astype(np.float32)
 
-    eps = 1e-05
+    return x, beta, gamma
 
-    x = nn.Variable.from_numpy_array(input)
-    v_beta = nn.Variable.from_numpy_array(beta)
-    v_gamma = nn.Variable.from_numpy_array(gamma)
 
-    output = F.group_normalization(
-        x, v_beta, v_gamma, num_groups, channel_axis, batch_axis, eps, output_stat)
-    ref = ref_group_normalization(
-        input, beta, gamma, num_groups, channel_axis, batch_axis, eps, output_stat)
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("num_groups", [2, 3])
+@pytest.mark.parametrize("x_shape , batch_axis, channel_axis",
+                         [((4, 24, 8, 8), 0, 1),  # convolution (NCHW)
+                          ((4, 16, 16, 6), 0, 3),  # convolution (NHWC)
+                          ((8, 6), 0, 1),  # affine
+                          # time-series (T, B, C) or (B, T, C)
+                          ((4, 3, 6), [0, 1], 2)
+                          ])
+@pytest.mark.parametrize("eps", [1e-05])
+@pytest.mark.parametrize("output_stat", [False, True])
+@pytest.mark.parametrize("no_scale", [False, True])
+@pytest.mark.parametrize("no_bias", [False, True])
+def test_group_normalization_forward(ctx, func_name, seed, num_groups, x_shape, batch_axis, channel_axis, eps, output_stat, no_scale, no_bias):
+    from nbla_test_utils import function_tester
 
-    if output_stat:
-        tmp = F.sink(*output)
-        tmp.forward()
-        tmp.backward()
+    rng = np.random.RandomState(seed)
+    x, beta, gamma = create_inputs(
+        rng, x_shape, channel_axis, no_scale, no_bias)
 
-        for o, r in zip(output, ref):
-            assert o.shape == r.shape
-            assert_allclose(o.d, r, atol=1e-2, rtol=1e-5)
+    function_tester(rng, F.group_normalization, ref_group_normalization, [x, beta, gamma], [num_groups, channel_axis, batch_axis, eps, output_stat], ctx=ctx,
+                    func_name=func_name, dstep=1e-2, atol_b=4e-2, atol_accum=1e-5, backward=[False, False, False], disable_half_test=True)
 
-    else:
-        output.forward()
-        output.backward()
 
-        assert output.shape == ref.shape
-        assert_allclose(output.d, ref, atol=1e-2, rtol=1e-5)
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("num_groups", [2, 3])
+@pytest.mark.parametrize("x_shape , batch_axis, channel_axis",
+                         [((2, 6, 3, 3), 0, 1),  # convolution (NCHW)
+                          ((2, 3, 3, 6), 0, 3),  # convolution (NHWC)
+                          ((8, 6), 0, 1),  # affine
+                          # time-series (T, B, C) or (B, T, C)
+                          ((4, 3, 6), [0, 1], 2)
+                          ])
+@pytest.mark.parametrize("eps", [1e-05])
+@pytest.mark.parametrize("output_stat", [False, True])
+@pytest.mark.parametrize("no_scale", [False, True])
+@pytest.mark.parametrize("no_bias", [False, True])
+def test_group_normalization_forward_backward(ctx, func_name, seed, num_groups, x_shape, batch_axis, channel_axis, eps, output_stat, no_scale, no_bias):
+    from nbla_test_utils import function_tester
+
+    rng = np.random.RandomState(seed)
+    x, beta, gamma = create_inputs(
+        rng, x_shape, channel_axis, no_scale, no_bias)
+
+    # 'need_grad' of beta and gamma must be same in batch_norm
+    param_backward = not no_bias or not no_scale
+    backward = [True, param_backward, param_backward]
+
+    function_tester(rng, F.group_normalization, ref_group_normalization, [x, beta, gamma], [num_groups, channel_axis, batch_axis, eps, output_stat], ctx=ctx,
+                    func_name=func_name, dstep=1e-2, atol_b=4e-2, atol_accum=1e-5, backward=backward, disable_half_test=True)
