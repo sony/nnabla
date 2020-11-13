@@ -2061,28 +2061,11 @@ class OnnxExporter:
         input_a_shape = list(self._var_dict[inputs[0]].dim[:])
         input_b_shape = list(self._var_dict[inputs[1]].dim[:])
 
-        # Reshape input_a
-        input_a_shape = np.array(np.concatenate(
-            ([np.prod(input_a_shape[:-2])], input_a_shape[-2:])))
-        rout_a = fork_name(inputs[0]) + "_reshape"
-        n = generate_reshape(self._model_proto.graph, inputs[0],
-                             rout_a, input_a_shape)
-        nl.append(n)
-        inputs[0] = rout_a
-
-        # Reshape input_b
-        input_b_shape = np.array(np.concatenate(
-            ([np.prod(input_b_shape[:-2])], input_b_shape[-2:])))
-        rout_b = fork_name(inputs[1]) + "_reshape"
-        n = generate_reshape(self._model_proto.graph, inputs[1],
-                             rout_b, input_b_shape)
-        nl.append(n)
-        inputs[1] = rout_b
-
         # Transpse input_a
         if bmp.transpose_a:
             transpose_out = fork_name(inputs[0]) + "_transpose"
-            transpose = [0, 2, 1]
+            transpose = list(range(len(input_a_shape)))
+            transpose[-1], transpose[-2] = transpose[-2], transpose[-1]
             n = onnx.helper.make_node(
                 'Transpose',
                 [inputs[0]],
@@ -2095,7 +2078,8 @@ class OnnxExporter:
         # Transpse input_b
         if bmp.transpose_b:
             transpose_out = fork_name(inputs[1]) + "_transpose"
-            transpose = [0, 2, 1]
+            transpose = list(range(len(input_a_shape)))
+            transpose[-1], transpose[-2] = transpose[-2], transpose[-1]
             n = onnx.helper.make_node(
                 'Transpose',
                 [inputs[1]],
@@ -2106,19 +2090,11 @@ class OnnxExporter:
             inputs[1] = transpose_out
 
         # MatMul
-        mout = fork_name(func.output[0]) + "_matmul"
         n = onnx.helper.make_node(
             'MatMul',
             inputs,
-            [mout]
+            func.output
         )
-        nl.append(n)
-
-        # Reshape
-        output_shape = np.array(
-            self._var_dict[func.output[0]].dim)
-        n = generate_reshape(self._model_proto.graph, mout,
-                             func.output[0], output_shape)
         nl.append(n)
 
         return nl
