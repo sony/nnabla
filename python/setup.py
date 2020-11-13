@@ -45,7 +45,7 @@ install_requires = setup_requires + [
 if sys.platform == 'win32':
     install_requires.append('pywin32')
 else:
-    install_requires.append('onnx==1.6.0')
+    install_requires.append('onnx<1.9.0')
 
 
 def extopts(library_name, library_dir):

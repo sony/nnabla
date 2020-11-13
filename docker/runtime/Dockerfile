@@ -3,12 +3,11 @@
 ############################################################
 FROM ubuntu:18.04 as miniconda
 
-RUN cd /tmp \
-	&& apt-get update \
-	&& apt-get install -y wget bzip2 openssh-client \
-        && rm -rf /var/lib/apt/lists/* \
-        && cd / \
-        && rm -rf /tmp/*
+RUN apt-get update
+RUN apt-get install -y --no-install-recommends \
+        bzip2 \
+        ca-certificates \
+        wget
 
 ARG PYTHON_VERSION_MAJOR
 ARG PYTHON_VERSION_MINOR
@@ -25,6 +24,7 @@ RUN . /opt/miniconda3/bin/activate && conda install python=${PYVERNAME}
 RUN . /opt/miniconda3/bin/activate && conda update -y --all
 RUN . /opt/miniconda3/bin/activate && conda install pip
 RUN . /opt/miniconda3/bin/activate && conda install wheel
+RUN . /opt/miniconda3/bin/activate && conda install protobuf
 RUN . /opt/miniconda3/bin/activate && conda install opencv || true
 RUN . /opt/miniconda3/bin/activate && conda clean -y --all
 
@@ -40,7 +40,10 @@ FROM ubuntu:18.04
 
 RUN cd /tmp \
 	&& apt-get update \
-	&& apt-get install -y wget bzip2 openssh-client \
+        && apt-get install -y \
+               bzip2 \
+               ca-certificates \
+               wget \
         && rm -rf /var/lib/apt/lists/* \
         && cd / \
         && rm -rf /tmp/*
