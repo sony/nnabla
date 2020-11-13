@@ -21,7 +21,7 @@ try:
     from onnx import (ModelProto, TensorProto, AttributeProto)
 except:
     print('ONNX import support disabled because onnx python package is not found.')
-    print(' You may install onnx package with "pip install onnx".')
+    print(' You may install onnx package with "pip install onnx==1.6.0".')
 
 from .utils import *
 
@@ -124,19 +124,6 @@ def generate_broadcast(node_name, in_name, out_name, shape, base_name, func_coun
     btp = bt.broadcast_param
     btp.shape.dim.extend(shape)
     return bt
-
-
-def generate_batchmatmul(node_name, in_name, out_name, transpose_a, transpose_b, base_name, func_counter):
-    """Generate a BatchMatmul operator to brodcast specified buffer"""
-    bm = nnabla_pb2.Function()
-    bm.type = "BatchMatmul"
-    set_function_name(bm, node_name, base_name, func_counter)
-    bm.input.extend(in_name)
-    bm.output.extend([out_name])
-    bmp = bm.batch_matmul_param
-    bmp.transpose_a = transpose_a
-    bmp.transpose_b = transpose_b
-    return bm
 
 
 def generate_split(node_name, in_name, out_name, axis, base_name, func_counter):
@@ -668,7 +655,8 @@ class OnnxImporter:
             for i in self._graph.input:
                 if i.name == input_name:
                     t = i.type.tensor_type
-                    input_shape = [x.dim_value for x in t.shape.dim]
+                    input_shape = [
+                        x.dim_value if not x.dim_param else 1 for x in t.shape.dim]
             if len(input_shape) == 0:
                 for i in self._graph.initializer:
                     if i.name == input_name:
@@ -742,6 +730,62 @@ class OnnxImporter:
         func.input.extend(n.input)
         func.output.extend(n.output)
         return func
+
+    def generate_expand_batchmatmul(self, node_name, inputs, output, transpose):
+        def batchmatmul(in_names, out_name):
+            bm = nnabla_pb2.Function()
+            bm.type = "BatchMatmul"
+            set_function_name(bm, node_name, self._graph.name,
+                              self._func_counter)
+            bm.input.extend(in_names)
+            bm.output.extend(out_name)
+            bmp = bm.batch_matmul_param
+            bmp.transpose_a = transpose[0]
+            bmp.transpose_b = transpose[1]
+            return bm
+
+        f_list = []
+        transA_shape = self.get_func_input_shape(inputs[0])
+        transB_shape = self.get_func_input_shape(inputs[1])
+        output_shape = []
+        output_shape.append(
+            transA_shape[-1] if transpose[0] else transA_shape[-2])
+        output_shape.append(
+            transB_shape[-2] if transpose[1] else transB_shape[-1])
+        assert len(transA_shape) == len(
+            transB_shape), "ndim of inputs[0] must be ndim of inputs[1]."
+        if len(transA_shape) < 3:
+            # Expand input[0]
+            transA_rp_out = fork_name(inputs[0]) + "_reshape"
+            rp = generate_reshape(node_name, inputs[0], transA_rp_out,
+                                  [1] + transA_shape, self._graph.name, self._func_counter)
+            self._shape_output[transA_rp_out] = [1] + transA_shape
+            f_list.append(rp)
+
+            # Expand input[1]
+            transB_rp_out = fork_name(inputs[1]) + "_reshape"
+            rp = generate_reshape(node_name, inputs[1], transB_rp_out,
+                                  [1] + transB_shape, self._graph.name, self._func_counter)
+            self._shape_output[transB_rp_out] = [1] + transB_shape
+            f_list.append(rp)
+
+            # BatchMatmul
+            matmul_out = fork_name(output[0]) + "_batchmatmul"
+            bm = batchmatmul([transA_rp_out, transB_rp_out], [matmul_out])
+            self._shape_output[matmul_out] = [1] + output_shape
+            f_list.append(bm)
+
+            # Reshape
+            rp = generate_reshape(node_name, matmul_out, output[0],
+                                  output_shape, self._graph.name, self._func_counter)
+            f_list.append(rp)
+            self._shape_output[output[0]] = output_shape
+        else:
+            bm = batchmatmul(inputs, output)
+            self._shape_output[output[0]] = output_shape
+            f_list.append(bm)
+
+        return f_list
 
     def Convolution(self, func_list, n):
         func = self.generate_default_function("Convolution", n)
@@ -1257,7 +1301,6 @@ class OnnxImporter:
             func_list.append(func)
 
     def Gemm(self, func_list, n):
-        func = self.generate_default_function("Add2", n)
         alpha = 1.0
         beta = 1.0
         transpose_a = 0
@@ -1299,15 +1342,14 @@ class OnnxImporter:
             muls_out = fork_name(inputs[0])+"_muls"
             muls = generate_mul_scalar(n.name, inputs[0], muls_out,
                                        alpha, self._graph.name, self._func_counter)
-            self._shape_output[muls_out] = shape
+            self._shape_output[muls_out] = transA_shape
             func_list.append(muls)
             inputs[0] = muls_out
 
         if len(inputs) < 3:
-            bm = generate_batchmatmul(n.name, inputs[:2], n.output[0], transpose_a, transpose_b,
-                                      self._graph.name, self._func_counter)
-            self._shape_output[n.output[0]] = shape
-            func_list.append(bm)
+            expand_bm = self.generate_expand_batchmatmul(
+                n.name, inputs, n.output, [transpose_a, transpose_b])
+            func_list.extend(expand_bm)
         else:
             bias_shape = self.get_func_input_shape(inputs[2])
             if beta != 1.0:
@@ -1319,12 +1361,11 @@ class OnnxImporter:
                 func_list.append(muls)
                 inputs[2] = muls_out
 
-            bmout = fork_name(n.input[0]) + "_batchmatmul"
-            bm = generate_batchmatmul(n.name, inputs[:2], bmout, transpose_a, transpose_b,
-                                      self._graph.name, self._func_counter)
-            self._shape_output[bmout] = shape
-            func_list.append(bm)
-            inputs[0] = bmout
+            expand_bm_out = fork_name(n.output[0]) + "_bm"
+            expand_bm = self.generate_expand_batchmatmul(
+                n.name, inputs, [expand_bm_out], [transpose_a, transpose_b])
+            func_list.extend(expand_bm)
+
             if len(bias_shape) != len(shape):
                 rout = fork_name(inputs[2]) + "_reshape"
                 bias_shape = [1] * (len(shape) - len(bias_shape)) + bias_shape
@@ -1336,7 +1377,7 @@ class OnnxImporter:
 
             add2_func = self.generate_default_function("Add2", n)
             del add2_func.input[:]
-            add2_func.input.extend([bmout, inputs[2]])
+            add2_func.input.extend([expand_bm_out, inputs[2]])
             func_list.append(add2_func)
             self._shape_output[n.output[0]] = shape
 
@@ -1722,17 +1763,9 @@ class OnnxImporter:
         func_list.append(func)
 
     def BatchMatmul(self, func_list, n):
-        func = self.generate_default_function("BatchMatmul", n)
-        output_shape = []
-        shape_a = self.get_func_input_shape(func.input[0])
-        shape_b = self.get_func_input_shape(func.input[1])
-        row_a = shape_a[len(shape_a) - 2]
-        col_b = shape_b[len(shape_b) - 1]
-        output_shape.extend(shape_a[:-2])
-        output_shape.append(row_a)
-        output_shape.append(col_b)
-        self._shape_output[func.output[0]] = output_shape
-        func_list.append(func)
+        expand_bm = self.generate_expand_batchmatmul(
+            n.name, n.input, n.output, [0, 0])
+        func_list.extend(expand_bm)
 
     def ElementWiseScalar(self, func_name, func_list, n):
         func = self.generate_default_function(func_name, n)

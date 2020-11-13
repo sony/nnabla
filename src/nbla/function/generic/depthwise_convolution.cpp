@@ -71,7 +71,7 @@ void DepthwiseConvolution<T>::setup_impl(const Variables &inputs,
              "Depthwise convolution requires 1D or 2D image shape.");
 
   NBLA_CHECK(weight_shape.size() == 1 + kernel_dims, error_code::value,
-             "Weights must be a %dD tensor to match a %D kernel.",
+             "Weights must be a %dD tensor to match a %dD kernel.",
              kernel_dims + 1, kernel_dims);
 
   NBLA_CHECK(padding_.size() == kernel_dims, error_code::value,

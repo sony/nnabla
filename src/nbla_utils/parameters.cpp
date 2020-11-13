@@ -416,8 +416,8 @@ void load_parameters(ParameterDirectory &pd, string filename) {
   bool ret = load_parameters(pv, filename);
 
   if (!ret) {
-    NBLA_ERROR(error_code::value, "Cannot load parameter file:%s",
-               filename.c_str());
+    NBLA_LOG_INFO("Cannot load parameter file: %s\n", filename.c_str());
+    return;
   }
 
   for (auto it = pv.begin(); it != pv.end(); ++it) {
