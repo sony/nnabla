@@ -86,7 +86,8 @@ CgVariablePtr contrastive_loss(CgVariablePtr sd, CgVariablePtr l,
   auto dissim_cost =
       (1 - l) *
       (f::pow_scalar(
-          f::maximum_scalar(margin - f::pow_scalar(sd + eps, 0.5), 0), 2.0));
+          f::maximum_scalar(margin - f::pow_scalar(sd + eps, 0.5, false), 0),
+          2.0, false));
   return sim_cost + dissim_cost;
 }
 

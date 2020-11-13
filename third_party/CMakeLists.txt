@@ -44,8 +44,8 @@ endif()
 download_and_extract_library(eigen-3.3.5 .zip https://gitlab.com/libeigen/eigen/-/archive/3.3.5/eigen-3.3.5.zip)
 
 if(BUILD_TEST)
-  download_and_extract_library(googletest-release-1.7.0 .zip https://github.com/google/googletest/archive/release-1.7.0.zip)
-  add_subdirectory(googletest-release-1.7.0)
+  download_and_extract_library(googletest-release-1.10.0 .zip https://github.com/google/googletest/archive/release-1.10.0.zip)
+  add_subdirectory(googletest-release-1.10.0)
 endif()
 
 if(BUILD_CPP_UTILS)

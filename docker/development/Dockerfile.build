@@ -46,8 +46,7 @@ RUN yum install -y \
     && yum group install -y "Development Tools" \
     && yum clean all
 
-############################################################# cmake
-
+############################################################# gcc
 RUN mkdir /tmp/deps \
     && cd /tmp/deps \
     && wget http://ftp.tsukuba.wide.ad.jp/software/gcc/releases/gcc-4.9.2/gcc-4.9.2.tar.bz2 \
@@ -59,6 +58,7 @@ RUN mkdir /tmp/deps \
     && cd / \
     && rm -rf /tmp/*
 
+############################################################# cmake
 ARG CMAKEVER=3.14.3
 RUN mkdir /tmp/deps \
     && cd /tmp/deps \

@@ -195,7 +195,7 @@ class CacheDataSource(DataSource):
             next_data = {}
             with self._filereader.open_cache(filename) as cache:
                 for k, v in cache.items():
-                    next_data[k] = v.value
+                    next_data[k] = v[()]
 
         if current_communicator():
             if set(self._variables) != set(next_data.keys()):

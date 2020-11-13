@@ -232,3 +232,12 @@
 20:
   PackPaddedSequence_B: 305
   PadPackedSequence_Bfi: 306
+21:
+  AddScalar_fB: 312
+  BcAdd2_B: 307
+  Div2_B: 310
+  Mul2_B: 309
+  MulScalar_fB: 313
+  Pow2_B: 311
+  PowScalar_fB: 314
+  Sub2_B: 308

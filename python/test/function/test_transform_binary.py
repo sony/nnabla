@@ -14,6 +14,7 @@
 
 import pytest
 import numpy as np
+import nnabla as nn
 import nnabla.functions as F
 
 
@@ -71,6 +72,21 @@ def get_inputs(fname, shapes, rng):
 # -----------------------------------------------------------------------------
 # Test body
 # -----------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("fname, ctx, func_name",
+                         list_ctx_and_func_name(['sub2',
+                                                 'mul2',
+                                                 'div2',
+                                                 'pow2']))
+@pytest.mark.parametrize("seed", [314])
+def test_transform_binary_inplace(seed, fname, ctx, func_name):
+    from nbla_test_utils import inplace_function_test_helper
+    x0 = nn.Variable([2, 3, 4], need_grad=True)
+    x1 = nn.Variable([2, 3, 4], need_grad=True)
+    func = getattr(F, fname)
+    inplace_function_test_helper(
+        [x0, x1], func, ctx=ctx, rng=np.random.RandomState(seed))
 
 
 atol_list = {

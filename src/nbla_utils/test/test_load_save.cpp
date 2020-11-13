@@ -35,19 +35,28 @@ const Context kCpuCtx{{"cpu:float"}, "CpuCachedArray", "0"};
 TEST(test_load_nnp_on_memory, test_load_nnp_on_memory) {
   std::ifstream file("tmp.nnp", std::ios::binary | std::ios::ate);
   std::streamsize size = file.tellg();
-  file.seekg(0, std::ios::beg);
 
-  std::vector<char> buffer(size);
-  if (!file.read(buffer.data(), size)) {
-    ASSERT_TRUE(false);
+  // Skip when tmp.nnp does not exist.
+  // Because it will generate with python test.
+  if (size >= 0) {
+    file.seekg(0, std::ios::beg);
+
+    std::vector<char> buffer(size);
+    if (!file.read(buffer.data(), size)) {
+      ASSERT_TRUE(false);
+    }
+
+    nbla::utils::nnp::Nnp nnp(kCpuCtx);
+    nnp.add(buffer.data(), size);
+    std::vector<std::string> executor_names = nnp.get_executor_names();
+    EXPECT_STREQ(executor_names[0].c_str(), "runtime");
+    shared_ptr<nnp::Executor> executor = nnp.get_executor(executor_names[0]);
+    EXPECT_NE(executor.get(), nullptr);
+  } else {
+    std::cout
+        << "[  SKIPPED ] test_load_nnp_on_memory. 'tmp.nnp' does not generated."
+        << std::endl;
   }
-
-  nbla::utils::nnp::Nnp nnp(kCpuCtx);
-  nnp.add(buffer.data(), size);
-  std::vector<std::string> executor_names = nnp.get_executor_names();
-  EXPECT_STREQ(executor_names[0].c_str(), "runtime");
-  shared_ptr<nnp::Executor> executor = nnp.get_executor(executor_names[0]);
-  EXPECT_NE(executor.get(), nullptr);
 }
 }
 }
