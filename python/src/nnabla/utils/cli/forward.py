@@ -291,6 +291,8 @@ def forward_command(args):
                 if index == 0:
                     for name, dim in zip(result.names, result.dims):
                         if dim == 1:
+                            if e.repeat_evaluation_type == "std":
+                                name = "Uncertainty(Std)"
                             row0.append(name)
                         else:
                             for d in range(dim):
