@@ -157,8 +157,8 @@ def _forward(args, index, config, data, variables, output_image=True):
         elif e.repeat_evaluation_type == "std":
             mux = np.array([s / e.num_evaluations for s in sum_mux])
             muy = np.array([(s / e.num_evaluations)**2 for s in sum])
-            val = mux - muy
-            avg = np.sqrt(val)
+            std_result = [np.nan_to_num(np.sqrt(x / e.num_evaluations - (y / e.num_evaluations)**2)) for x, y in zip(sum_mux, sum)]
+            avg = std_result
         else:
             avg = [s / e.num_evaluations for s in sum]
 
