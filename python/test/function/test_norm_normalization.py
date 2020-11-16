@@ -43,6 +43,10 @@ def ref_norm_normalization(x, p, axis, eps=1e-12):
 @pytest.mark.parametrize("eps", [1e-12])
 def test_norm_normalization_forward_backward(eps, axis, p, shape, seed, ctx, func_name):
     from nbla_test_utils import cap_ignore_region, function_tester
+    from sys import platform
+    if platform == "darwin":
+        pytest.skip("NormNormalization is not supported in macOS.")
+
     rng = np.random.RandomState(seed)
     inputs = [cap_ignore_region(
         rng.randn(*shape).astype(np.float32) * 2, (-1e-3, 1e-3))]

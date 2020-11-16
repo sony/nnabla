@@ -29,9 +29,13 @@ NBLA_REGISTER_FUNCTION_SOURCE(NormNormalization, float, const vector<int> &,
 template <typename T>
 void NormNormalization<T>::setup_impl(const Variables &inputs,
                                       const Variables &outputs) {
+#ifdef __APPLE__
+  NBLA_ERROR(error_code::target_specific,
+             "NormNormalization is not supported in macOS.");
+#endif
+
   NBLA_CHECK(p_ >= 1, error_code::value,
              "`p` must be greater than or equal to 1. (p = %f)", p_);
-
   // Set output shape
   const auto inshape = inputs[0]->shape();
   outputs[0]->reshape(inshape, true);
