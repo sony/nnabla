@@ -331,6 +331,16 @@ def _create_optimizer(datasets, name, solver, network, dataset_names, weight_dec
     elif o.solver.type == 'Adagrad':
         o.solver.adagrad_param.lr = solver.info['lr']
         o.solver.adagrad_param.eps = solver.info['eps']
+    elif o.solver.type == 'AdaBelief':
+        o.solver.adabelief_param.alpha = solver.info['alpha']
+        o.solver.adabelief_param.beta1 = solver.info['beta1']
+        o.solver.adabelief_param.beta2 = solver.info['beta2']
+        o.solver.adabelief_param.eps = solver.info['eps']
+        o.solver.adabelief_param.wd = solver.info['wd']
+        o.solver.adabelief_param.amsgrad = solver.info['amsgrad']
+        o.solver.adabelief_param.weight_decouple = solver.info['weight_decouple']
+        o.solver.adabelief_param.fixed_decay = solver.info['fixed_decay']
+        o.solver.adabelief_param.rectify = solver.info['rectify']
     elif o.solver.type == 'Adam':
         o.solver.adam_param.alpha = solver.info['alpha']
         o.solver.adam_param.beta1 = solver.info['beta1']
