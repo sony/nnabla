@@ -245,3 +245,5 @@
   ScatterAdd_i: 315
 23:
   NormNormalization_fiIf: 317
+24:
+  Norm_fiIB: 318
