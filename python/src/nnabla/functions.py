@@ -161,6 +161,59 @@ def min(x, axis=None, keepdims=False, with_index=False, only_index=False):
     return min_base(x, axis, keepdims, with_index, only_index, n_outputs)
 
 
+def norm(x, p=None, axis=None, keepdims=False):
+    r"""
+    Reduction along axes with norm operation.
+
+    .. math::
+        y = \|x\|_p = \left( \sum_i |x_i|^p \right)^{\frac{1}{p}}
+
+    Args:
+        x (Variable): An input variable.
+        p (float): Order of the norm.
+        axis (None, int or tuple of ints): Axis or axes along which product is
+            calculated. Passing the default value `None` will reduce all dimensions.
+        keepdims (bool): Flag whether the reduced axes are kept as a dimension with 1 element.
+
+    Returns:
+        ~nnabla.Variable: N-D array.
+
+    """
+    from .function_bases import norm as norm_base
+    if axis is None:
+        axis = range(x.ndim)
+    elif not hasattr(axis, '__iter__'):
+        axis = [axis]
+    return norm_base(x, p, axis, keepdims)
+
+
+def norm_normalization(x, p=None, axes=None, eps=None):
+    r"""
+    Norm normalization.
+
+    .. math::
+        y = \frac{x_i}{\|x\|_p}
+
+    Args:
+        x(~nnabla.Variable): N-D array.
+        p(float): Order of the norm.
+            [default= `2` ]
+        axes(repeated int64): Axes to be reduced. If empty list is given, all dimensions are reduced.
+            [default= `range(x.ndim)` ]
+        eps(float): Epsilon for the normalization. This `eps` is added before taking the p-th root in the norm computation.
+            [default= `1e-12` ]
+
+    Returns:
+        ~nnabla.Variable: N-D array
+    """
+    from .function_bases import norm_normalization as norm_normalization_base
+    if axes is None:
+        axes = range(x.ndim)
+    elif not hasattr(axes, '__iter__'):
+        axes = [axes]
+    return norm_normalization_base(x, p, axes, eps)
+
+
 def prod(x, axis=None, keepdims=False):
     """Reduction along axes with product operation.
 

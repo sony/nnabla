@@ -114,6 +114,9 @@ FusedBatchNormalization:
   half: [Half]
 BatchNormalization:
   float: [float]
+  half: [Half]      
+NormNormalization:
+  float: [float]
   half: [Half]
 SyncBatchNormalization:
   float: [float]
@@ -579,5 +582,8 @@ PackPaddedSequence:
   float: [float]
   half: [Half]
 PadPackedSequence:
+  float: [float]
+  half: [Half]
+Norm:
   float: [float]
   half: [Half]

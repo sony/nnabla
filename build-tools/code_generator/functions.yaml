@@ -1550,6 +1550,37 @@ Normalization:
     function_ids:
       iIffB: 22
     c_runtime: support
+  NormNormalization:
+    snake_name: norm_normalization
+    doc: |2
+
+      Norm normalization.
+          
+      .. math::
+          y = \frac{x_i}{\|x\|_p}
+    inputs:
+      x:
+        doc: N-D array.
+    arguments:
+      p:
+        doc: Order of the norm.
+        type: float
+        default: 2
+      axes:
+        doc: Axes to be reduced. If empty list is given, all dimensions are reduced.
+        type: repeated int64
+        default: range(x.ndim)
+      eps:
+        doc: Epsilon for the normalization. This `eps` is added before taking the
+          p-th root in the norm computation.
+        type: float
+        default: 1e-12
+    outputs:
+      y:
+        doc: N-D array
+    c_runtime: not support
+    function_ids:
+      fiIf: 317
   SyncBatchNormalization:
     snake_name: sync_batch_normalization
     doc: |2
@@ -1887,6 +1918,37 @@ Reduction:
       iIB: 27
       iIBBB: 130
     c_runtime: not support
+  Norm:
+    snake_name: norm
+    doc: |2
+
+      Reduction along axis or axes with norm operation.
+
+      .. math::
+          y = \|x\|_p = \left( \sum_i |x_i|^p \right)^{\frac{1}{p}}
+    inputs:
+      x:
+        doc: N-D array.
+    arguments:
+      p:
+        doc: Order of the norm.
+        type: float
+        default: 2
+      axes:
+        doc: Axes to be reduced. If empty list is given, all dimensions are reduced
+          to scalar.
+        type: repeated int64
+        default: range(x.ndim)
+      keep_dims:
+        doc: Flag whether the reduced axis is kept.
+        type: bool
+        default: 'False'
+    outputs:
+      y:
+        doc: N-D array
+    c_runtime: not support
+    function_ids:
+      fiIB: 316
   Prod:
     snake_name: prod
     doc: |2
