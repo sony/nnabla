@@ -115,6 +115,9 @@ FusedBatchNormalization:
 BatchNormalization:
   float: [float]
   half: [Half]      
+NormNormalization:
+  float: [float]
+  half: [Half]
 SyncBatchNormalization:
   float: [float]
   half: [Half]
@@ -300,7 +303,7 @@ Identity:
   half: [Half]
 BatchMatmul:
   float: [float]
-  half: [Half]  
+  half: [Half]
 Concatenate:
   float: [float]
   half: [Half]
@@ -456,7 +459,7 @@ Pow2Quantize:
 QuantizeLinear:
   float: [float]
   half: [Half]
-DequantizeLinear:  
+DequantizeLinear:
   float: [float]
   half: [Half]
 TopNError:
@@ -523,7 +526,7 @@ ACosh:
   half: [Half]
 ATanh:
   float: [float]
-  half: [Half]      
+  half: [Half]
 NmsDetection2d:
   float: [float]
 #  half: [Half]
@@ -546,6 +549,9 @@ GatherNd:
   float: [float]
   half: [Half]
 ScatterNd:
+  float: [float]
+  half: [Half]
+ScatterAdd:
   float: [float]
   half: [Half]
 MaxPoolingBackward:
@@ -576,5 +582,8 @@ PackPaddedSequence:
   float: [float]
   half: [Half]
 PadPackedSequence:
+  float: [float]
+  half: [Half]
+Norm:
   float: [float]
   half: [Half]

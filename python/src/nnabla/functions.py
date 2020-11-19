@@ -161,6 +161,59 @@ def min(x, axis=None, keepdims=False, with_index=False, only_index=False):
     return min_base(x, axis, keepdims, with_index, only_index, n_outputs)
 
 
+def norm(x, p=None, axis=None, keepdims=False):
+    r"""
+    Reduction along axes with norm operation.
+
+    .. math::
+        y = \|x\|_p = \left( \sum_i |x_i|^p \right)^{\frac{1}{p}}
+
+    Args:
+        x (Variable): An input variable.
+        p (float): Order of the norm.
+        axis (None, int or tuple of ints): Axis or axes along which product is
+            calculated. Passing the default value `None` will reduce all dimensions.
+        keepdims (bool): Flag whether the reduced axes are kept as a dimension with 1 element.
+
+    Returns:
+        ~nnabla.Variable: N-D array.
+
+    """
+    from .function_bases import norm as norm_base
+    if axis is None:
+        axis = range(x.ndim)
+    elif not hasattr(axis, '__iter__'):
+        axis = [axis]
+    return norm_base(x, p, axis, keepdims)
+
+
+def norm_normalization(x, p=None, axes=None, eps=None):
+    r"""
+    Norm normalization.
+
+    .. math::
+        y = \frac{x_i}{\|x\|_p}
+
+    Args:
+        x(~nnabla.Variable): N-D array.
+        p(float): Order of the norm.
+            [default= `2` ]
+        axes(repeated int64): Axes to be reduced. If empty list is given, all dimensions are reduced.
+            [default= `range(x.ndim)` ]
+        eps(float): Epsilon for the normalization. This `eps` is added before taking the p-th root in the norm computation.
+            [default= `1e-12` ]
+
+    Returns:
+        ~nnabla.Variable: N-D array
+    """
+    from .function_bases import norm_normalization as norm_normalization_base
+    if axes is None:
+        axes = range(x.ndim)
+    elif not hasattr(axes, '__iter__'):
+        axes = [axes]
+    return norm_normalization_base(x, p, axes, eps)
+
+
 def prod(x, axis=None, keepdims=False):
     """Reduction along axes with product operation.
 
@@ -775,7 +828,7 @@ def interpolate(x, scale=None, output_size=None, mode='linear',
         raise ValueError('Either scale or output_size must be given')
     elif output_size is None:
         input_size = x.shape[-len(scale)-1:-1] if channel_last \
-          else x.shape[-len(scale):]
+            else x.shape[-len(scale):]
         output_size = [int(math.floor(s * d))
                        for d, s in zip(input_size, scale)]
     return interpolate_base(x, output_size, mode, align_corners, half_pixel, half_pixel_for_nn, channel_last)
@@ -1148,6 +1201,49 @@ def scatter_nd(data, indices, shape=None, out=None):
     return scatter_nd_base(data, indices, out, shape)
 
 
+def scatter_add(x0, indices, x1, axis=None):
+    '''Add all values from `x1` into the `x0` according to index specified by `indices`.
+    This function adds `x1` into the copy of `x0` and outputs the copy.
+    The original `x0` will not be changed.
+    `x0`, `indices` and `x1` must have same number of dimensions.
+
+    The forward of :func:`~nnabla.functions.scatter_add` is equivalent to:
+
+    .. code-block:: python
+
+      def scatter_add(x0, indices, x1, axis):
+          # Assuming each input is 3 dimensional
+          import numpy as np
+          output = np.copy(x0)
+          for i in range(indices.shape[0]):
+              for j in range(indices.shape[1]):
+                  for k in range(indices.shape[2]):
+                      if axis == 0:
+                          output[indices[i][j][k]][j][k] += x1[i][j][k]
+                      elif axis == 1:
+                          output[i][indices[i][j][k]][k] += x1[i][j][k]
+                      elif axis == 2:
+                          output[i][j][indices[i][j][k]] += x1[i][j][k]
+          return output
+
+    Args:
+        x0(~nnabla.Variable): N-D array which the data is added to its copy.
+        indices(~nnabla.Variable): N-D array scatter indices. 
+          The size of each dimension must be equal or smaller than that of x0 except for the specified axis. 
+          The value of indices must be smaller than the size of specified axis' dimension of x0. 
+          The size of each dimension must be equal or smaller than that of x1. 
+          Indices must not be negative.
+        x1(~nnabla.Variable): N-D array which is scattered and added to x0.
+        axis(int): Axis along which to index. The axis must not exceed the inputs' dimension.
+            [default= `0` ]
+
+    Returns:
+        ~nnabla.Variable: N-D array which contains the result of scatter addition. The shape is same as x0.
+    '''
+    from .function_bases import scatter_add as scatter_add_base
+    return scatter_add_base(x0, indices, x1, axis)
+
+
 def multi_head_attention(query, key, value, num_heads, q_weight, k_weight, v_weight, out_weight, q_bias=None, k_bias=None, v_bias=None, out_bias=None, attn_bias_k=None, attn_bias_v=None, dropout=0.0, additive_mask=None, key_padding_mask=None):
     '''MultiHeadAttention.
 
@@ -1242,7 +1338,7 @@ def multi_head_attention(query, key, value, num_heads, q_weight, k_weight, v_wei
     # attn_output_weights: (B*H, L_T, L_S)
     attn_output_weights = F.batch_matmul(q, k, transpose_b=True)
     assert list(attn_output_weights.shape) == [
-                batch_size * num_heads, tgt_len, src_len]
+        batch_size * num_heads, tgt_len, src_len]
 
     if additive_mask is not None:
         additive_mask = F.reshape(additive_mask, ((1,) + additive_mask.shape))
@@ -1270,7 +1366,7 @@ def multi_head_attention(query, key, value, num_heads, q_weight, k_weight, v_wei
     # (B*H, L_T, L_S) x (B*H, L_S, head_vdim) --> (B*H, L_T, head_vdim)
     attn_output = F.batch_matmul(attn_output_weights, v)
     assert list(attn_output.shape) == [
-                batch_size * num_heads, tgt_len, head_vdim]
+        batch_size * num_heads, tgt_len, head_vdim]
     attn_output = F.reshape(F.transpose(
         attn_output, (1, 0, 2)), (tgt_len, batch_size, v_embed_dim))  # attn_output: (L_T, B, E_v)
 

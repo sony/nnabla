@@ -312,13 +312,11 @@ Neural Network Layer:
 
           A spatial size of the output is calculated as
 
-          .. math:: 
-            
-            L'_i = \frac{L_i + 2 p_i - d_i (k_i - 1) - 1}{s_i} + 1, 
-            
-          where :math:`L_i` is the spatial size, :math:`p_i` is the padding, :math:`d_i` is the dilation, :math:`k_i` is the kernel size, and :math:`s_i` is the stride for :math:`i`-th spatial dimension. The same calculation can also be applied to the other spatial dimensions. 
+          .. math::
 
-            
+            L'_i = \frac{L_i + 2 p_i - d_i (k_i - 1) - 1}{s_i} + 1,
+
+          where :math:`L_i` is the spatial size, :math:`p_i` is the padding, :math:`d_i` is the dilation, :math:`k_i` is the kernel size, and :math:`s_i` is the stride for :math:`i`-th spatial dimension. The same calculation can also be applied to the other spatial dimensions.
     function_ids:
       iiIiIiIi: 1
       iiIiIiIiB: 265
@@ -510,17 +508,17 @@ Neural Network Layer:
 
           .. math::
 
-            C' =  m \times C, 
-            
+            C' =  m \times C,
+
           where :math:`m` is the multiplier.
 
           A spatial size of the output is calculated as
 
-          .. math:: 
-            
-            L'_i = \frac{L_i + 2 p_i - d_i (k_i - 1) - 1}{s_i} + 1, 
-            
-          where :math:`L_i` is the spatial size, :math:`p_i` is the padding, :math:`d_i` is the dilation, :math:`k_i` is the kernel size, and :math:`s_i` is the stride for :math:`i`-th spatial dimension. The same calculation can also be applied to the other spatial dimensions. 
+          .. math::
+
+            L'_i = \frac{L_i + 2 p_i - d_i (k_i - 1) - 1}{s_i} + 1,
+
+          where :math:`L_i` is the spatial size, :math:`p_i` is the padding, :math:`d_i` is the dilation, :math:`k_i` is the kernel size, and :math:`s_i` is the stride for :math:`i`-th spatial dimension. The same calculation can also be applied to the other spatial dimensions.
     function_ids:
       iiIiIiIi: 2
     c_runtime: support
@@ -592,11 +590,11 @@ Neural Network Layer:
 
           A spatial size of the output is calculated as
 
-          .. math:: 
+          .. math::
 
             L'_i =s_i (L_i - 1) - 2 p_i + d_i (k_i - 1) + 1,
-            
-          where :math:`s_i` is the stride, :math:`L_i` is the spatial size, :math:`p_i` is the padding, :math:`d_i` is the dilation, and :math:`k_i` is the kernel size for :math:`i`-th spatial dimension. The same calculation can also be applied to the other spatial dimensions.  
+
+          where :math:`s_i` is the stride, :math:`L_i` is the spatial size, :math:`p_i` is the padding, :math:`d_i` is the dilation, and :math:`k_i` is the kernel size for :math:`i`-th spatial dimension. The same calculation can also be applied to the other spatial dimensions.
     function_ids:
       iiIiIiIi: 3
       iiIiIiIiB: 279
@@ -649,15 +647,15 @@ Neural Network Layer:
 
           .. math::
 
-            C' =  \frac{C}{d}, 
-            
+            C' =  \frac{C}{d},
+
           where :math:`d` is the divisor.
 
           A spatial size of the output is calculated as
 
-          .. math:: 
+          .. math::
             L'_i =s_i (L_i - 1) - 2 p_i + d_i (k_i - 1) + 1,
-                      
+
           where :math:`s_i` is the stride, :math:`L_i` is the spatial size, :math:`p_i` is the padding, :math:`d_i` is the dilation, and :math:`k_i` is the kernel size for :math:`i`-th spatial dimension. The same calculation can also be applied to the other spatial dimensions.
     function_ids:
       iiIiIiIi: 4
@@ -667,31 +665,31 @@ Neural Network Layer:
     doc: |2
 
       2-D Adaptive Separable Convolution for NCHW (the channel-first tensor).
-      Sample and pixel dependent vertical and horizontal kernels are dynamically generated ones, 
-      which are used for approximating a feature-independent 2-D kernel in this function. 
+      Sample and pixel dependent vertical and horizontal kernels are dynamically generated ones,
+      which are used for approximating a feature-independent 2-D kernel in this function.
       Thus, the kernel used in this function is dependent on samples and pixels but independent on features.
 
       If the padding is needed, use the pad function to the input :math:`x` before this function.
 
-      Adaptive separable convolution is formulated as 
+      Adaptive separable convolution is formulated as
 
       .. math::
 
-        \tilde{I}(c, h, w) = \sum_{j, i} K_v(j, h, w) \times K_h(i, h, w) \times I(c, h + j, w + i), 
+        \tilde{I}(c, h, w) = \sum_{j, i} K_v(j, h, w) \times K_h(i, h, w) \times I(c, h + j, w + i),
 
-      where :math:`I(c, h, w)` and :math:`\tilde{I}(c, h, w)` are the input and output images 
+      where :math:`I(c, h, w)` and :math:`\tilde{I}(c, h, w)` are the input and output images
       at :math:`c`-th channel, :math:`h`-th height, :math:`w`-th width.
-      :math:`K_V(:, h, w)` and :math:`K_h(:, h, w)` are vertical and horizontal 1-D kernels 
+      :math:`K_V(:, h, w)` and :math:`K_h(:, h, w)` are vertical and horizontal 1-D kernels
       at :math:`h`-th height and :math:`w`-th width.
 
       References:
 
-          * `Simon Niklaus, Long Mai, Feng Liu, 
-            Video Frame Interpolation via Adaptive Separable Convolution, 
+          * `Simon Niklaus, Long Mai, Feng Liu,
+            Video Frame Interpolation via Adaptive Separable Convolution,
             <https://arxiv.org/abs/1708.01692>`_
 
-          * `Mart Kartasev, Carlo Rapisarda, Dominik Fay, 
-            Implementing Adaptive Separable Convolution for Video Frame Interpolation, 
+          * `Mart Kartasev, Carlo Rapisarda, Dominik Fay,
+            Implementing Adaptive Separable Convolution for Video Frame Interpolation,
             <https://arxiv.org/abs/1809.07759>`_
     inputs:
       x:
@@ -1317,8 +1315,8 @@ Neural Network Activation Functions:
 
       Segment-wise linear approximation of sigmoid.
       Preferable when speed of computation is more important than precision.
-      Returns :math:`0` if :math:`x < -2.5`. 
-      Returns :math:`1` if :math:`x> 2.5`. 
+      Returns :math:`0` if :math:`x < -2.5`.
+      Returns :math:`1` if :math:`x> 2.5`.
       Returns :math:`0.2x + 0.5` if :math:`-2.5 <= x <= 2.5`.
     inputs:
       x:
@@ -1336,8 +1334,8 @@ Neural Network Activation Functions:
 
       Element-wise HardTanh function.
       Computationally cheaper than Tanh function.
-      Returns :math:`1` if :math:`x > 1`. 
-      Returns :math:`-1` if :math:`x < -1`. 
+      Returns :math:`1` if :math:`x > 1`.
+      Returns :math:`-1` if :math:`x < -1`.
       Returns :math:`x` otherwise.
     inputs:
       x:
@@ -1552,6 +1550,37 @@ Normalization:
     function_ids:
       iIffB: 22
     c_runtime: support
+  NormNormalization:
+    snake_name: norm_normalization
+    doc: |2
+
+      Norm normalization.
+          
+      .. math::
+          y = \frac{x_i}{\|x\|_p}
+    inputs:
+      x:
+        doc: N-D array.
+    arguments:
+      p:
+        doc: Order of the norm.
+        type: float
+        default: 2
+      axes:
+        doc: Axes to be reduced. If empty list is given, all dimensions are reduced.
+        type: repeated int64
+        default: range(x.ndim)
+      eps:
+        doc: Epsilon for the normalization. This `eps` is added before taking the
+          p-th root in the norm computation.
+        type: float
+        default: 1e-12
+    outputs:
+      y:
+        doc: N-D array
+    c_runtime: not support
+    function_ids:
+      fiIf: 317
   SyncBatchNormalization:
     snake_name: sync_batch_normalization
     doc: |2
@@ -1623,13 +1652,12 @@ Normalization:
 
       .. math::
         \mathbf{w}_{WN} = g \dfrac{\mathbf{w}}{\|\mathbf{w}\|}
-        
+
       where :math:`\mathbf{w}` is the input weights to be normalized.
       and :math:`g` is learnable multiplication factors each of which is applied to each data at `dim`.
 
       References:
           * `Tim Salimans, Diederik P. Kingma, Weight Normalization: A Simple Reparameterization to Accelerate Training of Deep Neural Networks. <https://arxiv.org/abs/1602.07868>`_
-          
     inputs:
       w:
         doc: N-D array of learnable weights.
@@ -1707,18 +1735,17 @@ Normalization:
                   g_y & (otherwise) \\
                   min & (g_y < min)
                  \end{cases}.
-                 
-      A typical case for use is to prevent the gradient explosion through a whole computational graph. 
-      For example, if you want to clip gradient values for each feature map, 
+
+      A typical case for use is to prevent the gradient explosion through a whole computational graph.
+      For example, if you want to clip gradient values for each feature map,
 
       .. code-block:: python
-        
+
         x = nn.Variable([16, 3, 32, 32])
         min = F.broadcast(nn.Variable.from_numpy_array(np.asarray([-1.0]).reshape((1, 1, 1, 1))), (16, 3, 32, 32))
         max = F.broadcast(nn.Variable.from_numpy_array(np.asarray([1.0]).reshape((1, 1, 1, 1))), (16, 3, 32, 32))
         c = F.clip_grad_by_value(x, min=min, max=max)
         h = PF.convolution(c, 64, (3, 3), pad=(1, 1))
-                               
     inputs:
       x:
         doc: N-D array of input.
@@ -1891,6 +1918,37 @@ Reduction:
       iIB: 27
       iIBBB: 130
     c_runtime: not support
+  Norm:
+    snake_name: norm
+    doc: |2
+
+      Reduction along axis or axes with norm operation.
+
+      .. math::
+          y = \|x\|_p = \left( \sum_i |x_i|^p \right)^{\frac{1}{p}}
+    inputs:
+      x:
+        doc: N-D array.
+    arguments:
+      p:
+        doc: Order of the norm.
+        type: float
+        default: 2
+      axes:
+        doc: Axes to be reduced. If empty list is given, all dimensions are reduced
+          to scalar.
+        type: repeated int64
+        default: range(x.ndim)
+      keep_dims:
+        doc: Flag whether the reduced axis is kept.
+        type: bool
+        default: 'False'
+    outputs:
+      y:
+        doc: N-D array
+    c_runtime: not support
+    function_ids:
+      fiIB: 316
   Prod:
     snake_name: prod
     doc: |2
@@ -3082,9 +3140,9 @@ Math:
 
       Batch matrix multiplication.
 
-      Two of batchs of matrices are multiplied for each sample in a batch. 
-      A batch of matrices is composed as [..., P, Q] where the last two dimensions compose matrix dimensions, 
-      and the first dimensions up to the third last dimension are considered as batch samples. 
+      Two of batchs of matrices are multiplied for each sample in a batch.
+      A batch of matrices is composed as [..., P, Q] where the last two dimensions compose matrix dimensions,
+      and the first dimensions up to the third last dimension are considered as batch samples.
       These batch dimensions are internally broadcasted when the size of a dimension is 1.
 
       Example:
@@ -3094,7 +3152,7 @@ Math:
         import nnabla as nn
         import nnabla.functions as F
         import numpy as np
-        
+
         nn.set_auto_forward(True)
 
         # Same batch size
@@ -3108,7 +3166,7 @@ Math:
         c = F.batch_matmul(a, b)
 
       .. WARNING::
-        Since the version 1.13, the behavior of the batch dimensions changed, it supported the internal 
+        Since the version 1.13, the behavior of the batch dimensions changed, it supported the internal
         broadcast when the size of a dimension is 1. Accordingly, this function does not supports different
         batch dimensions between two inputs even if the total sample size for each input is same.
     inputs:
@@ -3552,7 +3610,7 @@ Array Manipulation:
       reflect
         Pads with the reflection of the vector mirrored on the first
         and last values of the vector along each axis.
-        
+
         .. code-block:: python
 
           x = nn.Variable.from_numpy_array(np.array([1, 2, 3, 4], dtype=np.int))
@@ -3717,7 +3775,7 @@ Array Manipulation:
 
                 y_train = F.one_hot(labels, shape=(num_class_1, num_class_2))
                 y_train.forward()
-        
+
                 print(y_train.shape)  # (5, 10, 8)
                 print(y_train.d)
 
@@ -3967,8 +4025,8 @@ Array Manipulation:
     doc: |
       Gather from the input data according to the index.
 
-      Given the input data :math:`X` of :math:`(D_{0}, \ldots, D_{N-1})` shape and 
-      the indices :math:`IDX` of :math:`(I_{0}, \ldots, I_{M-1})` shape, in case of `batch_dims = 0`, 
+      Given the input data :math:`X` of :math:`(D_{0}, \ldots, D_{N-1})` shape and
+      the indices :math:`IDX` of :math:`(I_{0}, \ldots, I_{M-1})` shape, in case of `batch_dims = 0`,
       the gather outputs
 
       .. math::
@@ -3981,7 +4039,7 @@ Array Manipulation:
         && Y[d_{0}, \ldots, d_{axis - 1}, i_{B}, \ldots, i_{M-1}, d_{axis + 1}, \ldots, d_{N-1}] = \\
         && X[d_{0}, \ldots, d_{axis - 1}, IDX[i_{0}, \ldots, i_{B - 1}, i_{B} \ldots, i_{M-1}], d_{axis + 1}, \ldots d_{N-1}].
 
-      where :math:`B` = `batch_dims`. 
+      where :math:`B` = `batch_dims`.
 
       `x.shape[:batch_dims]` must be equal to `indices.shape[:batch_dims]`.
 
@@ -4124,6 +4182,56 @@ Array Manipulation:
     c_runtime: not support
     function_ids:
       iI: 271
+  ScatterAdd:
+    snake_name: scatter_add
+    doc: |2
+
+      Add all values from `x1` into the `x0` according to index specified by `indices`.
+      This function adds `x1` into the copy of `x0` and outputs the copy.
+      The original `x0` will not be changed.
+      `x0`, `indices` and `x1` must have same number of dimensions.
+
+      The forward of :func:`~nnabla.functions.scatter_add` is equivalent to:
+
+      .. code-block:: python
+
+        def scatter_add(x0, indices, x1, axis):
+            # Assuming each input is 3 dimensional
+            import numpy as np
+            output = np.copy(x0)
+            for i in range(indices.shape[0]):
+                for j in range(indices.shape[1]):
+                    for k in range(indices.shape[2]):
+                        if axis == 0:
+                            output[indices[i][j][k]][j][k] += x1[i][j][k]
+                        elif axis == 1:
+                            output[i][indices[i][j][k]][k] += x1[i][j][k]
+                        elif axis == 2:
+                            output[i][j][indices[i][j][k]] += x1[i][j][k]
+            return output
+    inputs:
+      x0:
+        doc: N-D array which the data is added to its copy.
+      indices:
+        doc: N-D array scatter indices. The size of each dimension must be equal or
+          smaller than that of x0 except for the specified axis. The value of indices
+          must be smaller than the size of specified axis' dimension of x0. The size
+          of each dimension must be equal or smaller than that of x1. Indices must
+          not be negative.
+      x1:
+        doc: N-D array which is scattered and added to x0.
+    arguments:
+      axis:
+        doc: Axis along which to index. The axis must not exceed the inputs' dimension.
+        type: int64
+        default: 0
+    outputs:
+      y:
+        doc: N-D array which contains the result of scatter addition. The shape is
+          same as x0.
+    c_runtime: not support
+    function_ids:
+      i: 315
   PackPaddedSequence:
     snake_name: pack_padded_sequence
     doc: |
@@ -4132,15 +4240,14 @@ Array Manipulation:
       This method packs a padded variable-length sequences.
 
       :math:`T_i` is the length of the :math:`i`-th Variable in the sequences.
-      :math:`B` is the batch size equal to the length of the sequences. 
-      :math:`T` is the max of :math:`T_i` for all :math:`i`. 
+      :math:`B` is the batch size equal to the length of the sequences.
+      :math:`T` is the max of :math:`T_i` for all :math:`i`.
       :math:`*` is the remaining dimensions including none.
 
       .. note::
         This function assumes the length-sorted padded sequence in the decreasing order
         and must be used by :func:`~nnabla.utils.rnn.pack_padded_sequence` in the dynamic computation mode.
         See :
-        
     inputs:
       padded_sequence:
         doc: |
@@ -4150,7 +4257,7 @@ Array Manipulation:
     arguments:
       batch_first:
         doc: |
-          `padded_sequence` is of (:math:`T`, :math:`B`, :math:`*`) shape if False, 
+          `padded_sequence` is of (:math:`T`, :math:`B`, :math:`*`) shape if False,
           otherwise (:math:`B`, :math:`T`, :math:`*`).
         type: bool
         default: 'False'
@@ -4168,14 +4275,14 @@ Array Manipulation:
       Pad packed sequence.
 
       This method unpacks the packed sequqnce and pad it, the inverse operation of :func:`pack_padded_sequence`.
-       
+
       :math:`T_i` is the length of the :math:`i`-th Variable in the sequences.
-      :math:`B` is the batch size equal to the length of the sequences. 
-      :math:`T` is the max of :math:`T_i` for all :math:`i`. 
+      :math:`B` is the batch size equal to the length of the sequences.
+      :math:`T` is the max of :math:`T_i` for all :math:`i`.
       :math:`*` is the remaining dimensions including none.
 
       .. note::
-        This function assumes the output of the length-sorted padded sequence in the decreasing order 
+        This function assumes the output of the length-sorted padded sequence in the decreasing order
         and must be used by :func:`~nnabla.utils.rnn.pad_packed_sequence` in the dynamic computation mode.
     inputs:
       packed_sequence:
@@ -4186,7 +4293,7 @@ Array Manipulation:
     arguments:
       batch_first:
         doc: |
-          `padded_sequence` is of (:math:`T`, :math:`B`, :math:`*`) shape if False, 
+          `padded_sequence` is of (:math:`T`, :math:`B`, :math:`*`) shape if False,
           otherwise (:math:`B`, :math:`T`, :math:`*`).
         type: bool
         default: 'False'
@@ -4196,8 +4303,8 @@ Array Manipulation:
         default: 0.0
       total_length:
         doc: |
-          If not None, the outputs are padded up to the `total_length`. 
-          If the `total_length` is less than the max length in the `sequences`, 
+          If not None, the outputs are padded up to the `total_length`.
+          If the `total_length` is less than the max length in the `sequences`,
           the error is thrown.
         type: int64
         default: -1
@@ -4270,7 +4377,7 @@ Signal Processing:
 
       .. math::
 
-        X_{k_1, \ldots, k_d} = \sum_{n_1=0}^{N_1-1} \dots \sum_{n_d=0}^{N_d-1} x_{n_1, \ldots, n_d} \exp\left(-2 \pi j \left( \sum_{i=0}^{d} \frac{k_i n_i}{N_i} \right) \right), 
+        X_{k_1, \ldots, k_d} = \sum_{n_1=0}^{N_1-1} \dots \sum_{n_d=0}^{N_d-1} x_{n_1, \ldots, n_d} \exp\left(-2 \pi j \left( \sum_{i=0}^{d} \frac{k_i n_i}{N_i} \right) \right),
 
       where
 
@@ -4280,28 +4387,28 @@ Signal Processing:
 
       This function now supports 1-D, 2-D, and 3-D DFT with or without the leading batch dimension(s).
 
-      The input is expected to be complex-valued with at least signal_ndim + 1 dimensions. 
+      The input is expected to be complex-valued with at least signal_ndim + 1 dimensions.
       The last dimension has a shape of two where x[..., 0] is the real part and x[..., 1] the imaginary part.
 
       Example:
-        
+
       .. code-block:: python
 
         import numpy as np
         import nnabla as nn
         import nnabla.functions as F
         from nnabla.ext_utils import get_extension_context
-        
+
         ctx = get_extension_context("cudnn")
         nn.set_default_context(ctx)
-        
+
         # Example for a batched 2D-FFT and 2D-IFFT (batch-size: 2, data-size: 4x3)
         x_data = np.random.rand(2, 4, 3) + 1j * np.random.rand(2, 4, 3)
         x = nn.Variable.from_numpy_array(np.stack([np.real(x_data), np.imag(x_data)], axis=3))
         y = F.fft(x, signal_ndim=2, normalized=True)
         z = F.ifft(y, signal_ndim=2, normalized=True)
         z.forward()
-        
+
         np.allclose(z.d[..., 0] + 1j*z.d[...,1], x_data)
 
     inputs:
@@ -4330,7 +4437,7 @@ Signal Processing:
 
       .. math::
 
-        X_{k_1, \ldots, k_d} = \frac{1}{\prod_{i=1}^{d} N_i} \sum_{n_1=0}^{N_1-1} \dots \sum_{n_d=0}^{N_d-1} x_{n_1, \ldots, n_d} \exp\left(2 \pi j \left( \sum_{i=0}^{d} \frac{k_i n_i}{N_i} \right) \right), 
+        X_{k_1, \ldots, k_d} = \frac{1}{\prod_{i=1}^{d} N_i} \sum_{n_1=0}^{N_1-1} \dots \sum_{n_d=0}^{N_d-1} x_{n_1, \ldots, n_d} \exp\left(2 \pi j \left( \sum_{i=0}^{d} \frac{k_i n_i}{N_i} \right) \right),
 
       where
 
@@ -4340,7 +4447,7 @@ Signal Processing:
 
       This function now supports 1-D, 2-D, and 3-D DFT with or without the leading batch dimension(s).
 
-      The input is expected to be complex-valued with at least signal_ndim + 1 dimensions. 
+      The input is expected to be complex-valued with at least signal_ndim + 1 dimensions.
       The last dimension has a shape of two where x[..., 0] is the real part and x[..., 1] the imaginary part.
 
     inputs:
@@ -4845,35 +4952,35 @@ Stochasticity:
     doc: |
       Randomly erase patches of the inputs and replace with random values.
 
-      Erasing is applied for each sample and for each `n` with the given probability, the randomly 
-      selected area ratio and aspect ratio if `share` is `True`; 
-      otherwise (`share`=`False`), for each feature additionally. 
+      Erasing is applied for each sample and for each `n` with the given probability, the randomly
+      selected area ratio and aspect ratio if `share` is `True`;
+      otherwise (`share`=`False`), for each feature additionally.
 
       Random patch are selected by random coordinates as the following,
 
       .. math::
-        
+
         S_e &&= Uniform(s_l, s_h) \times S \\
         r_e &&= Uniform(r_l, r_h) \\
         H_e &&= \sqrt{S_e \times r_e} \\
         W_e &&= \sqrt{S_e / r_e} \\
         y_e &&= Uniform(0, H - H_e) \\
-        x_e &&= Uniform(0, W - W_e), 
+        x_e &&= Uniform(0, W - W_e),
 
-      where :math:`S` is the area, :math:`s_l` and :math:`s_h` are the low and high values of 
+      where :math:`S` is the area, :math:`s_l` and :math:`s_h` are the low and high values of
       the area ratio range, :math:`r_l` and :math:`r_h` are the low and high values
-      of the aspect ratio range, :math:`H_e` and :math:`W_e` are height and width of a patch,  
+      of the aspect ratio range, :math:`H_e` and :math:`W_e` are height and width of a patch,
       and :math:`y_e` and :math:`x_e` are the start coordinates of a patch. If a pixel of the inputs
-      falls in this patch, the value of that pixel is replaced with a random value in `replacements` 
+      falls in this patch, the value of that pixel is replaced with a random value in `replacements`
       range.
 
-      Backward is implemented as passing gradients if `ste_fine_grained` is False; otherwise, 
+      Backward is implemented as passing gradients if `ste_fine_grained` is False; otherwise,
       the backward only occurs in regions not erased.
 
       References:
 
         * `Zhun Zhong, Liang Zheng, Guoliang Kang, Shaozi Li, Yi Yang,
-          Random Erasing Data Augmentation, 
+          Random Erasing Data Augmentation,
           <https://arxiv.org/abs/1708.04896>`_
     inputs:
       x:
@@ -5278,11 +5385,11 @@ Geometric Neural Network Layers:
     snake_name: affine_grid
     doc: |
       Generate the source grid based on the normalized target grid with `size`.
-      The target grid is first normalized in [-1, 1], then 
-      tranformed by the affine transformation :math:`\theta` to generate 
+      The target grid is first normalized in [-1, 1], then
+      tranformed by the affine transformation :math:`\theta` to generate
       the source grid. 2D and 3D grid are supported now.
 
-      This function is normally used with the `warp_by_grid` function for 
+      This function is normally used with the `warp_by_grid` function for
       constructing the spatial transformer.
     inputs:
       theta:
@@ -5311,8 +5418,8 @@ Geometric Neural Network Layers:
   WarpByGrid:
     snake_name: warp_by_grid
     doc: |
-      Warp the input data by the grid. 
-      This function is normally used with the generated normalized grid by 
+      Warp the input data by the grid.
+      This function is normally used with the generated normalized grid by
       the `affine_grid` function for constructing the spatial transformer.
     inputs:
       x:
@@ -5374,7 +5481,7 @@ Geometric Neural Network Layers:
       the *flow* channel dimension (which is always 2).
 
       .. math::
-          output_{n,c,y,x} = data_{n,c,y',x'}, 
+          output_{n,c,y,x} = data_{n,c,y',x'},
 
       where
 
@@ -6008,50 +6115,50 @@ Quantization Neural Network Layers:
     snake_name: min_max_quantize
     doc: |+
       This function simulates to uniformly quantize values in the range of min and max quantization levels.
-       
+
       Min-max quantization is defined as the following equation
-       
+
       .. math::
-       
-          y = round \left(\frac{\min(\max(x, m), M) - m}{scale} \right) \times scale + m, 
-       
-      where the :math:`scale` is defined as 
-       
+
+          y = round \left(\frac{\min(\max(x, m), M) - m}{scale} \right) \times scale + m,
+
+      where the :math:`scale` is defined as
+
       .. math::
-       
-          scale = \frac{M - m}{M_q - m_q}, 
-       
-      and 
-       
+
+          scale = \frac{M - m}{M_q - m_q},
+
+      and
+
       .. math::
-       
+
           m_q = ql_{min}, \\
           M_q = ql_{max}, \\
           m = qr_{min}, \\
           M = qr_{max}.
-       
+
       In the backward pass when using `ste_fine_grained` as false,
-       
+
           .. math::
-       
+
             \frac{\partial q_i}{\partial x_i} = 1.
-       
-       
+
+
       In the backward pass when using `ste_fine_grained` as true,
-       
+
           .. math::
-       
+
              \frac{\partial q_i}{\partial x_i}= \left\{
            \begin{array}{ll}
              0 & if \ \ \ x_i > M \\
              1 & if \ \ m \le x_i \le M \\
              0 & if \ \ x_i < m \\
            \end{array} \right..
-       
+
       :math:`qr_{min}` and :math:`qr_{max}` are treaded as follows.
-       
-          * `x_min_max` is `True` and `ema` is `True`: 
-            Exponential moving average are computed for each :math:`min(x)` and :math:`max(x)` 
+
+          * `x_min_max` is `True` and `ema` is `True`:
+            Exponential moving average are computed for each :math:`min(x)` and :math:`max(x)`
             then stored in :math:`qr_{min}` and :math:`qr_{max}`.
           * `x_min_max` is `True` and `ema` is `False`:
             :math:`min(x)` and :math:`max(x)` are computed then stored in :math:`qr_{min}` and :math:`qr_{max}`.
@@ -6059,13 +6166,13 @@ Quantization Neural Network Layers:
             Exponential moving average stored in :math:`qr_{min}` and :math:`qr_{max}` are used.
           * `x_min_max` is `False` and `ema` is `False`
             Gradients of :math:`qr_{min}` and :math:`qr_{max}` are computed in the backward pass.
-       
+
       More precisely, in inference of the min-max quantization, one has to consider *zero-point (zp)*
       which corresponds
-      to the real value 0, and its data type is an integer. *zero-point* is defined as 
-       
+      to the real value 0, and its data type is an integer. *zero-point* is defined as
+
           .. math::
-       
+
              && zp_f = ql_{min} -\frac{qr_{min}}{scale}, \\
              && zp = \left\{
            \begin{array}{ll}
@@ -6073,17 +6180,17 @@ Quantization Neural Network Layers:
              round(zp_f) & if \ \ otherwise \\
              ql_{min}  & if \ \ zp_f <= ql_{min} \\
            \end{array} \right..
-       
-      Accordingly, in order to simulate quantization effect of *zero-point*, 
+
+      Accordingly, in order to simulate quantization effect of *zero-point*,
       during both forward and backward pass, :math:`qr_{min}` and :math:`qr_{max}` are adjusted as follows,
-       
+
           .. math::
-           
+
              qr_{min}^{adj} = ql_{min} - zp * scale, \\
              qr_{max}^{adj} = ql_{max} - zp * scale.
-       
-      These operations are often called *nudge*. 
-       
+
+      These operations are often called *nudge*.
+
       Finally, in the formulas of the min-max quantization, :math:`m` and :math:`M` are replaced by
       :math:`qr_{min}^{adj}` and :math:`qr_{max}^{adj}` respectively.
 
@@ -6629,7 +6736,7 @@ Unsupported, Special Use:
     snake_name: max_pooling_backward
     doc: |2
 
-      Max pooling backward. This is tentative and temporal solution to support the double backward of 
+      Max pooling backward. This is tentative and temporal solution to support the double backward of
       the max pooling. The document of this function must not be shown.
     inputs:
       x:
@@ -6677,17 +6784,17 @@ Unsupported, Special Use:
         the, optionally padded, input image sizeand :math:`C_y, C_x` are determined
         by the optionally shifted patch positions.
 
-        Mathmatically, the patch correlation is formulated as 
+        Mathmatically, the patch correlation is formulated as
 
         .. math::
-          
-          O(s_y, s_x, h_0, w_0) =
-          \sum_{c} \sum_{k_h} \sum_{k_w} I_1(c, h + k_h, w + k_w) \times I_2(c, h + k_h + s_h, w + k_w + s_w), 
 
-        where :math:`I_1(c, h, w)` and :math:`I_2(c, h, w)` are the inputs at :math:`c`-th channel, 
-        :math:`h`-th height, and :math:`w`-th width, :math:`k_h, k_w` indices for the patch size 
+          O(s_y, s_x, h_0, w_0) =
+          \sum_{c} \sum_{k_h} \sum_{k_w} I_1(c, h + k_h, w + k_w) \times I_2(c, h + k_h + s_h, w + k_w + s_w),
+
+        where :math:`I_1(c, h, w)` and :math:`I_2(c, h, w)` are the inputs at :math:`c`-th channel,
+        :math:`h`-th height, and :math:`w`-th width, :math:`k_h, k_w` indices for the patch size
         and :math:`s_h, s_w` indices for the shifts.
-          
+
         A single correlation value (per sample) is produced if the patch extends
         to the image dimensions and all other parameters use the default values.
 
@@ -6739,7 +6846,7 @@ Unsupported, Special Use:
         (1, 21, 21, 44, 60)
 
         References:
-        
+
             * `Fischer et al., FlowNet: Learning Optical Flow with Convolutional
               Networks. <https://arxiv.org/abs/1504.06852>`_
     inputs:
@@ -6786,14 +6893,14 @@ Unsupported, Special Use:
 
           A spatial size of the output is calculated as
 
-          .. math:: 
+          .. math::
 
             H_o = \frac{H + (top\_pad + bottom\_pad) - patch_v }{patch\_step_v} + 1.
 
           A channel size of the ouptut is calculated as
 
           .. math::
-            
+
             C_y = \frac{2 \times shift_v}{shift\_step_v} + 1.
 
           :math:`W_o` and :math:`C_x` are the same calculation with differenct components.

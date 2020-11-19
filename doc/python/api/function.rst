@@ -94,6 +94,7 @@ Normalization
 .. autofunction:: fused_batch_normalization
 .. autofunction:: sync_batch_normalization
 .. autofunction:: mean_subtraction
+.. autofunction:: norm_normalization
 .. autofunction:: clip_by_value
 .. autofunction:: clip_grad_by_value
 .. autofunction:: clip_by_norm
@@ -112,6 +113,7 @@ Reduction
 .. autofunction:: mean
 .. autofunction:: max
 .. autofunction:: min
+.. autofunction:: norm 
 .. autofunction:: prod
 .. autofunction:: reduce_sum
 .. autofunction:: reduce_mean
@@ -208,6 +210,7 @@ Array Manipulation
 .. autofunction:: gather
 .. autofunction:: gather_nd
 .. autofunction:: scatter_nd
+.. autofunction:: scatter_add
 .. autofunction:: pad
 .. autofunction:: transpose
 .. autofunction:: broadcast

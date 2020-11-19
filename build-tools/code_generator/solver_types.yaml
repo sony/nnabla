@@ -10,6 +10,8 @@ Adadelta:
   float: [float]
 Adagrad:
   float: [float]
+AdaBelief:
+  float: [float]
 Adam:
   float: [float]
 AdamW:
