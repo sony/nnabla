@@ -29,7 +29,8 @@ RUN umask 0 \
     && rm -rf Miniconda3-latest-Linux-x86_64.sh \
     && PATH=/opt/miniconda3/bin:$PATH \
     && conda install python=3.7 \
-    && conda install pip wheel opencv \
+    && conda install pip wheel \
+    && conda install opencv || true \
     && conda clean -y --all \
     && cd / \
     && rm -rf /tmp/*
@@ -37,3 +38,4 @@ RUN umask 0 \
 ENV PATH /opt/miniconda3/bin:$PATH
 
 RUN pip install nnabla
+

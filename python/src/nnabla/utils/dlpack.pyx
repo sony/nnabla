@@ -116,6 +116,8 @@ def to_dlpack(a, dtype=None, ctx=None):
         import nnabla as nn
         from nnabla.ext_utils import get_extension_context
         ctx = get_extension_context('cudnn')
+        nn.set_default_context(ctx)
+
         a = nn.NdArray.from_numpy_array(np.ones((5, 5), dtype=np.float32))
         a.cast(np.float32, ctx)
 
@@ -131,7 +133,7 @@ def to_dlpack(a, dtype=None, ctx=None):
         # Changing the values in Torch will also be affected in nnabla
         # because they share memory.
         t.add_(1)
-        print(a.d)  # All values become 2.
+        print(a.data)  # All values become 2.
 
     Args:
         a (~nnabla.NdArray):

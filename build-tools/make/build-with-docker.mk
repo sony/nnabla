@@ -161,10 +161,10 @@ bwd-nnabla-shell: docker_image_build
 # Docker image with current nnabla
 .PHONY: docker_image_nnabla
 docker_image_nnabla:
-	docker pull ubuntu:16.04
+	docker pull ubuntu:18.04
 	cd $(NNABLA_DIRECTORY) \
-	&& cp docker/development/Dockerfile.build Dockerfile \
-	&& echo ADD $(shell echo build_wheel_py$(PYTHON_VERSION_MAJOR)$(PYTHON_VERSION_MINOR)/dist/*.whl) /tmp/ >>Dockerfile \
-	&& echo RUN pip install /tmp/$(shell basename build_wheel_py$(PYTHON_VERSION_MAJOR)$(PYTHON_VERSION_MINOR)/dist/*.whl) >>Dockerfile \
-	&& docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_NNABLA) . \
-	&& rm -f Dockerfile
+	&& docker build $(DOCKER_BUILD_ARGS) \
+		--build-arg WHL=$$(echo build_wheel_py$(PYTHON_VERSION_MAJOR)$(PYTHON_VERSION_MINOR)/dist/*.whl) \
+		-f docker/runtime/Dockerfile \
+		-t $(DOCKER_IMAGE_NNABLA) .
+

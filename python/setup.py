@@ -45,7 +45,7 @@ install_requires = setup_requires + [
 if sys.platform == 'win32':
     install_requires.append('pywin32')
 else:
-    install_requires.append('onnx==1.6.0')
+    install_requires.append('onnx<1.9.0')
 
 
 def extopts(library_name, library_dir):
@@ -271,7 +271,6 @@ if __name__ == '__main__':
                 'nnabla.utils.converter.nnabla',
                 'nnabla.utils.converter.nnablart',
                 'nnabla.utils.converter.onnx',
-                'nnabla.utils.converter.tensorflow',
                 'nnabla.utils.factorization',
                 'nnabla.utils.image_utils',
                 'nnabla.utils.image_utils.backend_events',

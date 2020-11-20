@@ -3,7 +3,7 @@ boto3
 h5py
 imageio
 numpy
-onnx==1.6.0
+onnx<1.9.0
 pillow
 protobuf
 pyyaml
