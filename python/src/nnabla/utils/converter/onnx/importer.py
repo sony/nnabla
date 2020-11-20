@@ -21,7 +21,7 @@ try:
     from onnx import (ModelProto, TensorProto, AttributeProto)
 except:
     print('ONNX import support disabled because onnx python package is not found.')
-    print(' You may install onnx package with "pip install onnx==1.6.0".')
+    print(' You may install onnx package with "pip install onnx".')
 
 from .utils import *
 
@@ -655,12 +655,19 @@ class OnnxImporter:
             for i in self._graph.input:
                 if i.name == input_name:
                     t = i.type.tensor_type
-                    input_shape = [
-                        x.dim_value if not x.dim_param else 1 for x in t.shape.dim]
-            if len(input_shape) == 0:
-                for i in self._graph.initializer:
-                    if i.name == input_name:
-                        input_shape = i.dims
+                    if len(t.shape.dim):
+                        input_shape = [
+                            x.dim_value if not x.dim_param else 1 for x in t.shape.dim]
+                    else:
+                        input_shape = [1]
+                    return input_shape
+            for i in self._graph.initializer:
+                if i.name == input_name:
+                    if len(i.dims):
+                        input_shape = list(i.dims)
+                    else:
+                        input_shape = [1]
+                    return input_shape
         if not input_shape:
             raise ValueError(
                 "The shape of {} was not found".format(input_name))
@@ -954,7 +961,9 @@ class OnnxImporter:
 
     def Reshape(self, func_list, n):
         func = self.generate_default_function("Reshape", n)
+        input_shape = self.get_func_input_shape(func.input[0])
         rp = func.reshape_param
+        new_shape = []
         shape_found = False
         for attr in n.attribute:
             if attr.name == "shape":
@@ -962,7 +971,7 @@ class OnnxImporter:
                 if attr.type != AttributeProto.INTS:
                     raise ValueError(
                         "Only INTS is supported for shape in {} op_type".format(n.op_type))
-                rp.shape.dim.extend(attr.ints)
+                new_shape.extend(attr.ints)
                 shape_found = True
             else:
                 raise ValueError("Unsupported attribute {} was specified at {}"
@@ -974,14 +983,29 @@ class OnnxImporter:
             # so we convert the shape input to a parameter
             shape_input = func.input[1]
             raw_data = self.get_input_raw_data(shape_input, TensorProto.INT64)
-            rp.shape.dim.extend(raw_data)
+            new_shape.extend(raw_data)
             shape_found = True
             # stored the merged input so we can ignore it later
             del func.input[1]
         if not shape_found:
             raise ValueError(
                 "Shape information was not found in {} op_type".format(n.op_type))
-        self._shape_output[func.output[0]] = rp.shape.dim
+
+        if -1 in new_shape:
+            shape_infer_index = -1
+            reset_size = 1
+            for i, s in enumerate(new_shape):
+                if s < 0:
+                    if shape_infer_index >= 0:
+                        raise ValueError(
+                            'Reshape: shape has multiple negative number.')
+                    shape_infer_index = i
+                else:
+                    reset_size *= s
+            new_shape[shape_infer_index] = int(
+                np.prod(input_shape) / reset_size)
+        rp.shape.dim.extend(new_shape)
+        self._shape_output[func.output[0]] = new_shape
         func_list.append(func)
 
     def Transpose(self, func_list, n):
@@ -2442,35 +2466,37 @@ class OnnxImporter:
         cp.base_axis = 1
         cp.group = 1
         dim = len(input_shape) - 2
+        auto_pad = 'NOTSET'
         pads = [0] * dim * 2
-        strides = []
-        dilations = []
-        output_padding = []
+        strides = [1] * dim
+        dilations = [1] * dim
+        output_padding = [0] * dim
         output_shape = []
         convt_output_shape = []  # explicitly set the shape of the output.
-        output_need_pad = False
 
         for attr in n.attribute:
             if attr.name == "pads":
                 if attr.type != AttributeProto.INTS:
                     raise ValueError(
-                        "Only INTS are supported for pads in Conv op_type")
+                        "Only INTS are supported for pads in ConvTranspose op_type")
                 pads.clear()
                 pads.extend(attr.ints)
             elif attr.name == "strides":
                 if attr.type != AttributeProto.INTS:
                     raise ValueError(
-                        "Only INTS are supported for strides in Conv op_type")
+                        "Only INTS are supported for strides in ConvTranspose op_type")
+                strides.clear()
                 strides.extend(attr.ints)
             elif attr.name == "dilations":
                 if attr.type != AttributeProto.INTS:
                     raise ValueError(
-                        "Only INTS are supported for dilations in Conv op_type")
+                        "Only INTS are supported for dilations in ConvTranspose op_type")
+                dilations.clear()
                 dilations.extend(attr.ints)
             elif attr.name == "group":
                 if attr.type != AttributeProto.INT:
                     raise ValueError(
-                        "Only INT is supported for group in Conv op_type")
+                        "Only INT is supported for group in ConvTranspose op_type")
                 cp.group = attr.i
             elif attr.name == "kernel_shape":
                 # We do not set 'kernel_shape' to NNabla
@@ -2480,17 +2506,23 @@ class OnnxImporter:
             elif attr.name == "output_padding":
                 if attr.type != AttributeProto.INTS:
                     raise ValueError(
-                        "Only INTS are supported for dilations in Conv op_type")
+                        "Only INTS are supported for dilations in ConvTranspose op_type")
+                output_padding.clear()
                 output_padding.extend(attr.ints)
-                output_need_pad = True
             elif attr.name == "output_shape":
                 if attr.type != AttributeProto.INTS:
                     raise ValueError(
-                        "Only INTS are supported for dilations in Conv op_type")
+                        "Only INTS are supported for dilations in ConvTranspose op_type")
                 convt_output_shape.extend(attr.ints)
+            elif attr.name == "auto_pad":
+                if attr.type != AttributeProto.STRING:
+                    raise ValueError(
+                        "Only STRING is supported for auto_pad in ConvTranspose op_type")
+                auto_pad = attr.s.decode("utf-8")
             else:
                 raise ValueError("Unsupported attribute {} was specified at {}"
                                  .format(attr.name, n.op_type))
+
         # NNabla requires for the dimensions of strides, pads, dilations to match.
         # We align the dimensions for all three attributes to the shortest one
         if strides:
@@ -2504,13 +2536,43 @@ class OnnxImporter:
             # Do we really need this? (Default value should be set by NNabla)
             cp.dilation.dim.extend([1]*dim)
 
+        if convt_output_shape:
+            for index in range(dim):
+                d = cp.dilation.dim[index]
+                s = cp.stride.dim[index]
+                w = weight_shape[2 + index]
+                i = input_shape[2 + index]
+                o = convt_output_shape[index]
+                adj = output_padding[index]
+                p = (i - 1) * s + adj + (w - 1) * d + 1 - o
+                if p <= 0:
+                    output_padding[index] -= p
+                else:
+                    if auto_pad == 'SAME_UPPER':
+                        pads[index] = p - int(p / 2)
+                        pads[index+dim] = int(p / 2)
+                    else:
+                        pads[index] = int(p / 2)
+                        pads[index + dim] = p - int(p / 2)
+            output_shape = convt_output_shape
+        else:
+            for index in range(dim):
+                d = cp.dilation.dim[index]
+                s = cp.stride.dim[index]
+                w = weight_shape[2 + index]
+                i = input_shape[2 + index]
+                adj = output_padding[index]
+                o = (i - 1) * s + adj + (w - 1) * \
+                    d + 1 - pads[index] - pads[index+dim]
+                output_shape.append(o)
+
         padval = []
         asymmetry = check_padding(pads, dim, padval)
         if asymmetry:
             # Add a separate padding function for
             # asymmetry padding
             input = n.input[0]
-            padded = fork_name(input)+"_pad"
+            padded = fork_name(input) + "_pad"
             pad_width = rearrange_pads(pads)
             padf = generate_pad(n.name, input, padded,
                                 "constant", pad_width, 0,
@@ -2521,40 +2583,18 @@ class OnnxImporter:
                 shape[i + 2] += pad_width[2 * i + 1]
             self._shape_output[padded] = shape
             func_list.append(padf)
-            # Rewire input to the padded version
             del func.input[:]
             func.input.extend(padded)
         cp.pad.dim.extend(padval)
 
-        output_shape = input_shape[:1]
-        output_shape.append(weight_shape[1])
-        for index in range(dim):
-            d = cp.dilation.dim[index]
-            s = cp.stride.dim[index]
-            w = weight_shape[2+index]
-            i = input_shape[2+index]
-            k = d * (w - 1) + 1
-            o = s * (i - 1) + k - pads[index] - pads[index+dim]
-            output_shape.append(o)
-
-        if convt_output_shape:
-            import operator
-            if operator.ne(output_shape[2:], convt_output_shape):
-                output_need_pad = True
-                del output_padding[:]
-                for index in range(dim):
-                    output_padding.append(
-                        convt_output_shape[index] - output_shape[2+index])
-
-        if output_need_pad:
+        if output_padding != [0] * dim:
             deconv_out = fork_name(func.output[0]) + "_deconv"
             del func.output[:]
             func.output.extend([deconv_out])
-            self._shape_output[deconv_out] = output_shape
+            self._shape_output[deconv_out] = input_shape[:1] + \
+                [weight_shape[1]] + [output_shape[i] - output_padding[i]
+                                     for i in range(dim)]
             func_list.append(func)
-
-            for index in range(dim):
-                output_shape[2+index] += output_padding[index]
 
             pad_width = [output_padding[i % 2] if i %
                          2 else 0 for i in range(2*dim)]
@@ -2562,10 +2602,10 @@ class OnnxImporter:
                                 "constant", pad_width, 0,
                                 self._graph.name, self._func_counter)
             func_list.append(padf)
-            self._shape_output[n.output[0]] = output_shape
         else:
             func_list.append(func)
-        self._shape_output[n.output[0]] = output_shape
+        self._shape_output[n.output[0]] = input_shape[:1] + \
+            [weight_shape[1]] + output_shape
 
     def ConstantOfShape(self, func_list, n):
         func = self.generate_default_function("Constant", n)

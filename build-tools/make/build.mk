@@ -152,7 +152,11 @@ nnabla-install-cpplib:
 .PHONY: nnabla-install
 nnabla-install:
 	-pip uninstall -y nnabla
-	pip install $(BUILD_DIRECTORY_WHEEL)/dist/*.whl
+	whl='$(shell find $(BUILD_DIRECTORY_WHEEL)/dist/ -type f -name nnabla$(shell echo $(WHEEL_SUFFIX) | sed -e 's/-/_/g')-*.whl)'; \
+	if [ ! -z $$whl ] && [ -f $$whl ];\
+	then \
+	    pip install $$whl; \
+	fi;
 
 ########################################################################################################################
 # Shell (for rapid development)

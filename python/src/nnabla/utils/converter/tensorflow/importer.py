@@ -15,10 +15,9 @@
 import os
 from ..onnx import OnnxImporter
 import tensorflow as tf
-import tf2onnx
-from tf2onnx import constants, loader
-from tf2onnx.graph import GraphUtil
 from tensorflow.core.framework import graph_pb2
+from tf2onnx import constants, tf_loader, optimizer
+from tf2onnx.tfonnx import process_tf_graph
 from tensorflow.python.tools import freeze_graph
 from .common import find_out_terminal_node
 
@@ -34,27 +33,20 @@ class TensorflowImporter:
         self._inputs = kwargs.get("inputs")
 
     def convert_to_onnx(self, graph_def, inputs, outputs):
-
-        # FIXME: folding const = False
-        graph_def = tf2onnx.tfonnx.tf_optimize(
-            inputs, outputs, graph_def, False)
         with tf.Graph().as_default() as tf_graph:
             tf.import_graph_def(graph_def, name='')
-        with tf.Session(graph=tf_graph):
-            onnx_graph = tf2onnx.tfonnx.process_tf_graph(tf_graph,
-                                                         continue_on_error=False,
-                                                         verbose=False,
-                                                         target=",".join(
-                                                             constants.DEFAULT_TARGET),
-                                                         opset=9,
-                                                         input_names=inputs,
-                                                         output_names=outputs,
-                                                         inputs_as_nchw=None)
+        with tf_loader.tf_session(graph=tf_graph):
+            g = process_tf_graph(tf_graph,
+                                 continue_on_error=False,
+                                 target=",".join(
+                                     constants.DEFAULT_TARGET),
+                                 opset=9,
+                                 input_names=inputs,
+                                 output_names=outputs,
+                                 inputs_as_nchw=None)
+        onnx_graph = optimizer.optimize_graph(g)
         model_proto = onnx_graph.make_model(
             "converted from {}".format(self._tf_file))
-        new_model_proto = GraphUtil.optimize_model_proto(model_proto)
-        if new_model_proto:
-            model_proto = new_model_proto
         return model_proto
 
     def load_checkpoint_v1(self):
@@ -89,6 +81,8 @@ class TensorflowImporter:
             with tf.gfile.GFile(self._tf_file, 'rb') as f:
                 graph_def.ParseFromString(f.read())
             inputs, outputs = find_out_terminal_node(graph_def, postfix=True)
+            graph_def, inputs, outputs = tf_loader.from_graphdef(
+                self._tf_file, inputs, outputs)
         else:
             if self._outputs is None:
                 raise ImportError("Missing '--outputs' parameter.")
@@ -100,7 +94,7 @@ class TensorflowImporter:
             if self._tf_format == 'TF_CKPT_V1':
                 graph_def = self.load_checkpoint_v1()
             elif self._tf_format == 'TF_CKPT_V2':
-                graph_def, inputs, outputs = loader.from_checkpoint(
+                graph_def, inputs, outputs = tf_loader.from_checkpoint(
                     self._tf_file, inputs, outputs)
         onnx_model = self.convert_to_onnx(graph_def, inputs, outputs)
         onnx_importer = OnnxImporter()

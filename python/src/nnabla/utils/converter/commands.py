@@ -53,7 +53,11 @@ def _import_file(args, ifiles):
     elif args.import_format == 'TF_PB' or \
             args.import_format == 'TF_CKPT_V1' or \
             args.import_format == "TF_CKPT_V2":
-        from .tensorflow import TensorflowImporter
+        try:
+            from .tensorflow import TensorflowImporter
+        except ImportError:
+            raise ImportError(
+                'nnabla-tf-converter python package is not found, install nnabla-tf-converter package with "pip install nnabla_tf_converter"')
         return TensorflowImporter(*ifiles, tf_format=args.import_format, outputs=args.outputs, inputs=args.inputs).execute()
     return None
 
@@ -177,11 +181,19 @@ def _export_from_nnp(args, nnp, output, output_ext):
         else:
             OnnxExporter(nnp, args.batch_size).execute(output)
     elif output_ext == '.pb':
-        from .tensorflow import TensorflowExporter
+        try:
+            from .tensorflow import TensorflowExporter
+        except ImportError:
+            raise ImportError(
+                'nnabla-tf-converter python package is not found, install nnabla-tf-converter package with "pip install nnabla_tf_converter"')
         TensorflowExporter(
             nnp, args.batch_size, enable_optimize=args.enable_optimize_pb).execute(output)
     elif output_ext == '.tflite':
-        from .tensorflow import TensorflowLiteExporter
+        try:
+            from .tensorflow import TensorflowLiteExporter
+        except ImportError:
+            raise ImportError(
+                'nnabla-tf-converter python package is not found, install nnabla-tf-converter package with "pip install nnabla_tf_converter"')
         TensorflowLiteExporter(
             nnp, args.batch_size, enable_optimize=args.enable_optimize_pb).execute(output)
     else:
