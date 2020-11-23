@@ -337,7 +337,7 @@ File format converter
     optional arguments:
       -h, --help            show this help message and exit
       -I IMPORT_FORMAT, --import-format IMPORT_FORMAT
-                            [import] import format. (one of [NNP,ONNX,'TF_CKPT_V1','TF_CKPT_V2','TF_PB','SAVED_MODEL'])
+                            [import] import format. (one of [NNP,ONNX,TF_CKPT_V1,TF_CKPT_V2,TF_PB,SAVED_MODEL,TFLITE])
       --nnp-no-expand-network
                             [import][NNP] expand network with repeat or recurrent.
       --outputs OUTPUTS
@@ -370,7 +370,9 @@ File format converter
                             [export][ONNX] define convert to onnx for TensorRT. e.g. opset_tensorrt
                             [export][NNB] define binary format version. e.g. nnb_3
       --api API             [export][NNB] Set API Level to convert to, default is highest API Level.
-      --enable-optimize-pb  [export][tensorflow] enable optimization when export to pb or tflite.
+      --enable-optimize-pb  [export][tensorflow] enable optimization when export to pb.
+      --channel_last        [export][TFLite] Specify the data_format of the NNP network,
+                                             data_format default is channel_first.
 
 Optimize pb model
 -----------------

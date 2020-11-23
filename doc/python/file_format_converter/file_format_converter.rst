@@ -103,7 +103,7 @@ Supported Formats
 ^^^^^^^^^^^^^^^^^
 
 NNP
-^^^
+"""
 
 **NNP** is file format of NNabla.
 
@@ -116,10 +116,10 @@ But with this file format converter is work with several variation of NNP.
 
 
 ONNX
-^^^^
+""""
 
 Limitation
-++++++++++
+**********
 
 - Training is not supported.
 - Support operator set 7,9,10,11.
@@ -128,7 +128,7 @@ Limitation
 - Before using this converter, please use command `pip install nnabla_converter` to install nnabla_converter.
 
 NNB
-^^^
+"""
 
 NNB is compact binary format for NNabla C Runtime. The file format is shown as
 the following diagram:
@@ -146,16 +146,15 @@ It is designed for `nnabla-c-runtime`_.
 
 
 C Source Code
-^^^^^^^^^^^^^
+"""""""""""""
 
 File format converter supports C source code output for `nnabla-c-runtime`_.
 
 Tensorflow
-^^^^^^^^^^
+""""""""""
 
 Limitation
-++++++++++
-
+**********
 
 Bridged by onnx, tensorflow import and export is supported with some limitations.
 
@@ -170,6 +169,23 @@ The output of converter is tensorflow saved_model format.
 
 Before using this converter, please use command `pip install nnabla_converter` to install nnabla_converter.
 
+
+Tensorflow Lite
+"""""""""""""""
+
+Limitation
+**********
+
+For export to tensorflow lite, please install `flatbuffers` package:
+  - For Windows platform, download package from `FlatBuffers`_ and extract.
+  - For Linux platform, use command `snap install nnabla_converter` to install flatbuffers.
+  - For MaxOS platform, use command `brew install flatbuffers` to install flatbuffers.
+and add the executable file `flatc` to the system PATH.
+
+.. _FlatBuffers: https://github.com/google/flatbuffers/releases
+
+After exporting TFLite, a json file with the same name will be generated,
+recording whether the input and output of the TFLite network need to be transposed to channel_last according to base_axis.
 
 Process
 +++++++

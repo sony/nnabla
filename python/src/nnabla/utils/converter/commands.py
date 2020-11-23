@@ -44,8 +44,8 @@ def _import_file(args, ifiles):
         from .tensorflow import TensorflowImporter
         return TensorflowImporter(*ifiles, tf_format=args.import_format, outputs=args.outputs, inputs=args.inputs).execute()
     elif args.import_format == 'TFLITE':
-        from .tensorflow import TensorflowLiteImporter
-        return TensorflowLiteImporter(*ifiles).execute()
+        from .tflite import TFLiteImporter
+        return TFLiteImporter(*ifiles).execute()
     return None
 
 
@@ -171,8 +171,9 @@ def _export_from_nnp(args, nnp, output):
         TensorflowExporter(nnp, args.batch_size,
                            model_format=args.export_format).execute(output)
     elif args.export_format == 'TFLITE':
-        from .tensorflow import TensorflowLiteExporter
-        TensorflowLiteExporter(nnp, args.batch_size).execute(output)
+        from .tflite import TFLiteExporter
+        TFLiteExporter(nnp, args.batch_size,
+                       channel_last=args.channel_last).execute(output)
     else:
         print('Output file ({})'.format(args.export_format) +
               ' is not supported or output directory does not exist.')
