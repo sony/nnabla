@@ -171,13 +171,22 @@ public:
    */
   void set_states(const vector<pair<string, SolverState>> &params);
 
+  /** Clear states.
+   */
+  void clear_state(const string& key) {
+      for (auto &p: states_[key].pstate) {
+        p.second->data()->array()->clear();
+      }
+    }
+
   /** Update all params using stored grads in #params_ by backpropagation.
 
   This internally calls update_impl() which must be implemented in a derived
   class.
   */
   void update(update_hook_type pre_callback = nullptr,
-              update_hook_type post_callback = nullptr);
+              update_hook_type post_callback = nullptr,
+              bool clear_each = false);
 
   /** Apply weight decay to raw gradient.
   It must be called before running update() if necessary.

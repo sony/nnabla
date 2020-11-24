@@ -185,7 +185,7 @@ struct ScopedCallback {
 }
 
 void Solver::update(update_hook_type pre_callback,
-                    update_hook_type post_callback) {
+                    update_hook_type post_callback, bool clear_each) {
 
   for (auto &kv : params_) {
     SyncedArrayPtr g = kv.second.p->grad()->array();
@@ -195,6 +195,12 @@ void Solver::update(update_hook_type pre_callback,
     }
     ScopedCallback(pre_callback, post_callback);
     update_impl(kv.first, kv.second.p);
+
+    if (clear_each) {
+      kv.second.p->data()->array()->clear();
+      kv.second.p->grad()->array()->clear();
+      clear_state(kv.first);
+    }
   }
 }
 

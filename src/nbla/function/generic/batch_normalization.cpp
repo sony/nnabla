@@ -211,7 +211,7 @@ void BatchNormalization<T>::backward_impl(const Variables &inputs,
                                           const Variables &outputs,
                                           const vector<bool> &propagate_down,
                                           const vector<bool> &accum) {
-  if (batch_stat_) { // Training mode.
+ if (batch_stat_) { // Training mode.
     backward_impl_batch(inputs, outputs, propagate_down, accum);
   } else { // Testing mode.
     backward_impl_global(inputs, outputs, propagate_down, accum);

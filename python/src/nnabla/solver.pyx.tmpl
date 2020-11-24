@@ -347,7 +347,7 @@ cdef class Solver:
         with nogil:
             self.solverp.zero_grad()
 
-    def update(self, object update_pre_hook=None, object update_post_hook=None):
+    def update(self, object update_pre_hook=None, object update_post_hook=None, cpp_bool clear_each=False):
         """
         When this function is called, parameter values are updated using the gradients accumulated in backpropagation,
         stored in the ``grad`` field of the parameter ``Variable`` s.
@@ -372,7 +372,7 @@ cdef class Solver:
             update_post_hook_c = create_update_hook_with_object(update_post_hook)
 
         with nogil:
-            self.solverp.update(update_pre_hook_c, update_post_hook_c)
+            self.solverp.update(update_pre_hook_c, update_post_hook_c, clear_each)
 
     def weight_decay(self, float decay_rate, object pre_hook=None, object post_hook=None):
         """
