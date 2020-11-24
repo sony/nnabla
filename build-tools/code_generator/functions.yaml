@@ -1948,7 +1948,7 @@ Reduction:
         doc: N-D array
     c_runtime: not support
     function_ids:
-      fiIB: 316
+      fiIB: 318
   Prod:
     snake_name: prod
     doc: |2
