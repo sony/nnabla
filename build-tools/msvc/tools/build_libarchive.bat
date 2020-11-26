@@ -32,7 +32,9 @@ IF EXIST %libarchive_library% (
 IF EXIST %libarchive_folder%.zip (
    DEL /Q %libarchive_folder%.zip
 )
-powershell "iwr %nnabla_iwr_options% -Uri https://www.libarchive.org/downloads/libarchive-3.4.3.zip -OutFile %libarchive_folder%.zip" || GOTO :error
+
+
+powershell "iwr %nnabla_iwr_options% -Uri https://github.com/libarchive/libarchive/archive/v3.4.3.zip -OutFile %libarchive_folder%.zip" || GOTO :error
 
 RMDIR /S /Q %libarchive_folder%
 CD %third_party_folder%
