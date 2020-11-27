@@ -110,16 +110,15 @@ public:
       @param[in] dtype Enum of data type.
       @param[in] ctx Descriptor of array backend.
       @param[in] write_only No synchronization happens.
-      @param[in] async_flags AsyncFlag::NONE  -> Synchronous synchronization
-     happens.
-                             AsyncFlag::ASYNC -> Asynchronous synchronization
-     happens.
-                             AsyncFlag::SAFE  -> Same as AsyncFlag::NONE.
-                             AsyncFlag::ASYNC | AsyncFlag::SAFE -> Asynchronous
-     synchronization happens and,
-                                   the source array of synchronization keeps
-     safe
-                                   against the memory change by host.
+      @param[in] async_flags:
+        AsyncFlag::NONE  -> Synchronous synchronization happens.
+        AsyncFlag::ASYNC -> Asynchronous synchronization happens.
+        AsyncFlag::SAFE  -> Same as AsyncFlag::NONE.
+        AsyncFlag::ASYNC | AsyncFlag::SAFE -> Asynchronous synchronization
+     happens
+                                              and the synchronized source array
+                                              keeps safe against the host
+     operation.
    */
   const void *data_ptr(dtypes dtype, const Context &ctx,
                        bool write_only = false,

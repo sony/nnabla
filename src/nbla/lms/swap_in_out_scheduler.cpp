@@ -204,7 +204,7 @@ void SwapInOutScheduler::schedule() {
   // Using for prefetch cancel
   vector<unsigned int> prefetch_stopper(order.size(), 1);
 
-  // todo : revisit
+  // for debugging
   vector<bytes_state> bytes_debugger;
 
   do {
@@ -217,7 +217,6 @@ void SwapInOutScheduler::schedule() {
     head_type = first_head_type;
     ScheduleParams params;
 
-    // todo : revisit
     bytes_debugger.clear();
 
     // Preclear schedule will be used in swap-out schedule.
@@ -285,7 +284,6 @@ void SwapInOutScheduler::schedule() {
     // The end of schedule
     do_reschedule = false;
 
-// todo revisit
 #if 0
     for (int i = 0; i < bytes_debugger.size(); i++) {
       auto e = bytes_debugger[i];
@@ -911,13 +909,15 @@ void SwapInOutScheduler::post_callback() {}
 
 void SwapInOutScheduler::run(const ScheduleType &s) {
   if (auto p = s.r->sawptr.lock()) {
-    // cout << "type: " << to_str(s.tag);
-    // cout << " said: " << s.r->said;
-    // cout << " saptr: " << (uint64_t) s.r->sawptr.lock().get();
-    // cout << " bytes: " << byte_to_human_readable(s.r->size *
-    // sizeof_dtype(s.r->dtype));
-    // cout << " dtype: " << dtype_to_string(s.r->dtype) << endl;
-    // cout << " count: " << s.r->sawptr.use_count() << endl;
+#if 0
+    cout << "type: " << to_str(s.tag);
+    cout << " said: " << s.r->said;
+    cout << " saptr: " << (uint64_t) s.r->sawptr.lock().get();
+    cout << " bytes: " << byte_to_human_readable(s.r->size *
+    sizeof_dtype(s.r->dtype));
+    cout << " dtype: " << dtype_to_string(s.r->dtype) << endl;
+    cout << " count: " << s.r->sawptr.use_count() << endl;
+#endif
 
     if (s.tag == ScheduleTag::SWAP_IN_GET) {
       p->get(s.r->dtype, device_ctx, AsyncFlag::ASYNC | AsyncFlag::UNSAFE);
@@ -987,7 +987,7 @@ void SwapInOutScheduler::swap_out_first_iter() {
         r->temporary_buffer = true;
         auto p = r->sawptr.lock();
         p->clear();
-      }else if (auto p = r->sawptr.lock()) {
+      } else if (auto p = r->sawptr.lock()) {
         // The array is not cleared yet. Swap it out.
         if (is_not_cleared_yet(p))
           p->cast(p->dtype(), host_ctx, false);

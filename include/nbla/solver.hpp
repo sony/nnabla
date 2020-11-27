@@ -173,11 +173,11 @@ public:
 
   /** Clear states.
    */
-  void clear_state(const string& key) {
-      for (auto &p: states_[key].pstate) {
-        p.second->data()->array()->clear();
-      }
+  void clear_state(const string &key) {
+    for (auto &p : states_[key].pstate) {
+      p.second->data()->array()->clear();
     }
+  }
 
   /** Update all params using stored grads in #params_ by backpropagation.
 
@@ -185,8 +185,7 @@ public:
   class.
   */
   void update(update_hook_type pre_callback = nullptr,
-              update_hook_type post_callback = nullptr,
-              bool clear_each = false);
+              update_hook_type post_callback = nullptr);
 
   /** Apply weight decay to raw gradient.
   It must be called before running update() if necessary.

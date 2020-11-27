@@ -21,4 +21,5 @@ Python API Reference
     api/utils
     api/ext
     api/models
+    api/lms
     api/experimental

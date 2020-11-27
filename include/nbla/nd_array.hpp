@@ -156,10 +156,6 @@ public:
   NBLA_API shared_ptr<Array> cast_sp(dtypes dtype, const Context &ctx,
                                      bool write_only = false);
 
-  NBLA_API unsigned long synced_array_ptr() {
-    return (unsigned long)array_.get();
-  }
-
   DISABLE_COPY_AND_ASSIGN(NdArray);
 };
 

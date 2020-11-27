@@ -20,13 +20,6 @@ using std::cout;
 using std::endl;
 using std::cerr;
 
-void debug() { cerr << "(L" << __LINE__ << ")" << endl; }
-
-template <typename H, typename... T> void debug(H h, T... t) {
-  cerr << h << " ";
-  debug(t...);
-}
-
 inline VirtualCachingAllocatorBase::PhysicalMemoryCache &get_device_cache_map(
     unordered_map<string, VirtualCachingAllocatorBase::PhysicalMemoryCache> &m,
     const string &device_id) {
@@ -134,13 +127,13 @@ void VirtualCachingAllocatorBase::transfer_memory_from_cache(
 
   int i = 0;
   // Move physical memory
-  for (; i < p_mems.size() && alloc_bytes > p_mem_bytes; i++) {
+  for (; i < p_mems.size() && alloc_bytes > p_mem_bytes; ++i) {
     ext_pmems.emplace_back(p_mems[i]);
     p_mem_bytes += p_mems[i]->bytes();
   }
 
   // Move back unecessary memories to cache.
-  for (; i < p_mems.size(); i++) {
+  for (; i < p_mems.size(); ++i) {
     physical_memory_cache_[dev].push(p_mems[i]);
   }
 }
@@ -159,7 +152,6 @@ VirtualCachingAllocatorBase::alloc_impl(size_t orig_bytes,
 
   // 1. There is no cache in memory. Allocate a new one.
   if (mapped_cache.size() == 0) {
-    // cout << "case 1" << endl;
     vector<PhysicalMemoryPtr> p_mems;
 
     size_t p_mem_bytes = 0;
@@ -195,7 +187,6 @@ VirtualCachingAllocatorBase::alloc_impl(size_t orig_bytes,
   // 2. If exactly the same size memory exists, return it.
   auto it = mapped_cache.lower_bound(alloc_bytes);
   if (it != mapped_cache.end() && it->first == alloc_bytes) {
-    // cout << "case 2" << endl;
     // Just reuse memory.
     auto ret = it->second.second;
     mapped_cache.erase(it);
@@ -205,7 +196,6 @@ VirtualCachingAllocatorBase::alloc_impl(size_t orig_bytes,
   // there is no exact match
   // 3. There is at least one smaller memory than request. Can grow memory.
   if (it != mapped_cache.begin()) {
-    // cout << "case 3" << endl;
     // Use maximum memory among smaller memoryies than request as a base.
 
     // lower_bound()-- is the maximum smaller memory. Remove from cache to use.
@@ -231,14 +221,12 @@ VirtualCachingAllocatorBase::alloc_impl(size_t orig_bytes,
       auto it2 = mapped_cache.lower_bound(alloc_bytes - p_mem_bytes);
 
       if (it2 != mapped_cache.end()) {
-        // cout << "case 3-1" << endl;
         // There is a larger memory in chace than remaining bytes.
         transfer_memory_from_cache(it2->second, ext_p_mems, alloc_bytes,
                                    p_mem_bytes);
 
         mapped_cache.erase(it2);
       } else {
-        // cout << "case 3-2" << endl;
         // There is no larger memories in chace than remaining bytes.
         // Unbind from larger ones.
         auto it3 = mapped_cache.rbegin();
@@ -291,8 +279,6 @@ VirtualCachingAllocatorBase::alloc_impl(size_t orig_bytes,
     return ret;
   }
 
-  // cout << "case 4" << endl;
-
   // 4. There is no smaller memory than request.
   // Unmap minimum memory among larger memories than request.
   auto prev = it->second;
@@ -344,10 +330,11 @@ size_t VirtualCachingAllocatorBase::free_unused_device_caches_impl(
 void VirtualCachingAllocatorBase::print_memory_cache_map_impl() {
   for (auto &p : physical_memory_cache_) {
     string device_id = p.first;
-    printf("===== device_id: %s =====\n# waiting memory: %lu\ncached bytes "
-           "(small): %s\ncached bytes (large): %s\n",
-           device_id.c_str(), waiting_list_.size(),
-           byte_to_human_readable(p.second.size() * chunk_size_).c_str());
+    string bytes = byte_to_human_readable(p.second.size() * chunk_size_);
+    printf("===== device_id: %s =====\n"
+           " waiting memory: %lu\n"
+           " cached bytes : %s\n",
+           device_id.c_str(), waiting_list_.size(), bytes.c_str());
   }
 }
 

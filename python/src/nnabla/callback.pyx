@@ -1,4 +1,4 @@
-# Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+# Copyright (c) 2020 Sony Corporation. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,12 +19,30 @@ from solver cimport update_hook_type, create_update_hook_with_object
 
 def set_function_pre_hook(string key, object function_pre_hook):
     """
-    Set function_pre_hook globally with key as an callback identifier.
+    Set function_pre_hook globally with a key as an callback identifier.
     All callbacks registered through this API will be called just before performing forward / backward of all functions.
 
     Args:
-        key (string): A callback identifier. This can be used when deleting callback.
-        function_pre_hook (obj): Callable object.
+        key (string): A name of callback which identifies registered callback. This can be used when deleting callback.
+        function_pre_hook (obj): Callable object to be registered which takes a function as a argument.
+
+    Example:
+
+        .. code-block:: python
+
+            from nnabla import set_function_pre_hook
+
+            def callback(f):
+                print(f)
+
+            # callback() is executed right before every function during fwd/bwd
+            set_function_pre_hook("print_function_name", callback)
+
+            loss = graph(...)
+
+            # Names of all functions will be printed out in stdout during fwd/bwd
+            loss.forward()
+            loss.backward()
     """
     if function_pre_hook is None:
         return
@@ -39,12 +57,30 @@ def set_function_pre_hook(string key, object function_pre_hook):
 
 def set_function_post_hook(string key, object function_post_hook):
     """
-    Set function_pre_hook globally with key as an callback identifier.
+    Set function_post_hook globally with a key as an callback identifier.
     All callbacks registered through this API will be called just after performing forward / backward of all functions.
 
     Args:
-        key (string): A callback identifier. This can be used when deleting callback.
-        function_post_hook (obj): Callable object.
+        key (string): A name of callback which identifies registered callback. This can be used when deleting callback.
+        function_pre_hook (obj): Callable object to be registered which takes a function as a argument.
+
+    Example:
+
+        .. code-block:: python
+
+            from nnabla import set_function_post_hook
+
+            def callback(f):
+                print(f)
+
+            # callback() is executed right after every function during fwd/bwd
+            set_function_post_hook("print_function_name", callback)
+
+            loss = graph(...)
+
+            # Names of all functions will be printed out in stdout during fwd/bwd
+            loss.forward()
+            loss.backward()
     """
     if function_post_hook is None:
         return
@@ -62,7 +98,33 @@ def unset_function_pre_hook(string key):
     Unset function_pre_hook which was previously set as global callback through set_function_pre_hook.
 
     Args:
-        key (string): A callback identifier. Delete a callback whose key equals to this.
+        key (string): A name of callback which identifies registered callback. The callback whose name equals to `key` is deleted.
+    
+    Example:
+
+        .. code-block:: python
+
+            from nnabla import set_function_pre_hook, unset_function_pre_hook
+
+            def callback(f):
+                print(f)
+
+            # callback() is executed right after every function during fwd/bwd
+            set_function_pre_hook("print_function_name", callback)
+
+            loss = graph(...)
+
+            # Names of all functions will be printed out in stdout during fwd/bwd
+            loss.forward()
+            loss.backward()
+
+            # Unset callback()
+            unset_function_pre_hook("print_function_name")
+
+            # Nothing will be shown.
+            loss.forward()
+            loss.backward()
+    
     """
     with nogil:
         callback.c_unset_function_pre_hook(key)
@@ -73,7 +135,33 @@ def unset_function_post_hook(string key):
     Unset function_post_hook which was previously set as global callback through set_function_post_hook.
 
     Args:
-        key (string): A callback identifier. Delete a callback whose key equals to this.
+        key (string): A name of callback which identifies registered callback. The callback whose name equals to `key` is deleted.
+    
+    Example:
+
+        .. code-block:: python
+
+            from nnabla import set_function_post_hook, unset_function_post_hook
+
+            def callback(f):
+                print(f)
+
+            # callback() is executed right after every function during fwd/bwd
+            set_function_post_hook("print_function_name", callback)
+
+            loss = graph(...)
+
+            # Names of all functions will be printed out in stdout during fwd/bwd
+            loss.forward()
+            loss.backward()
+
+            # Unset callback()
+            unset_function_post_hook("print_function_name")
+
+            # Nothing will be shown.
+            loss.forward()
+            loss.backward()
+    
     """
     with nogil:
         callback.c_unset_function_post_hook(key)
@@ -81,14 +169,14 @@ def unset_function_post_hook(string key):
 
 def set_solver_pre_hook(string key, object solver_pre_hook):
     """
-    Set solver_pre_hook globally with key as an callback identifier.
-    All callbacks registered through this API will be called just before performing solver functions (e.g. update, weight_decay, clip_grad_by_norm, ...).
-    In general, these solver functions are performed on every parameters sequentially,
-     and registered callbacks are called at every parameters as well.
+    Set solver_pre_hook globally with key as a callback identifier.
+    All callbacks registered through this API will be called right before performing solver functions,
+     e.g. update, weight_decay, clip_grad_by_norm, and so on.
+    The registerd callbacks are performed sequentially in order of registration before processing each parameter.
 
     Args:
         key (string): A callback identifier. This can be used when deleting callback.
-        solver_pre_hook (obj): Callable object.
+        solver_pre_hook (obj): Callable object which takes no arguments.
     """
     if solver_pre_hook is None:
         return
@@ -103,14 +191,14 @@ def set_solver_pre_hook(string key, object solver_pre_hook):
 
 def set_solver_post_hook(string key, object solver_post_hook):
     """
-    Set solver_post_hook globally with key as an callback identifier.
-    All callbacks registered through this API will be called just before performing solver functions (e.g. update, weight_decay, clip_grad_by_norm, ...).
-    In general, these solver functions are performed on every parameters sequentially,
-     and registered callbacks are called at every parameters as well.
+    Set solver_post_hook globally with key as a callback identifier.
+    All callbacks registered through this API will be called right before performing solver functions,
+     e.g. update, weight_decay, clip_grad_by_norm, and so on.
+    The registerd callbacks are performed sequentially in order of registration before processing each parameter.
 
     Args:
         key (string): A callback identifier. This can be used when deleting callback.
-        solver_post_hook (obj): Callable object.
+        solver_pre_hook (obj): Callable object which takes no arguments.
     """
     if solver_post_hook is None:
         return

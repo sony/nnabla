@@ -129,12 +129,6 @@ cdef class NdArray:
 
     """
 
-    @property
-    def synced_arr_ptr(self):
-        with nogil:
-            ptr = <unsigned long> self.arrp.synced_array_ptr()
-        return ptr
-
     @staticmethod
     cdef object create(NdArrayPtr arr):
         a = NdArray()

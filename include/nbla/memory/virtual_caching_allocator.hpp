@@ -28,8 +28,68 @@ using std::queue;
 using std::make_shared;
 using std::multimap;
 
-typedef std::chrono::system_clock::time_point Tp;
+typedef std::chrono::time_point<std::chrono::high_resolution_clock> Tp;
 
+/** A base class of VirtualCachingAllocator.
+ *
+ *  This implements a virtual addressing logic and caching logic
+ *  but it leaves an instantiation of Memory class as a virtual function
+ *  `VirtualCachingAllocatorBase::create_physical_memory_impl` and
+ *  `VirtualCachingAllocatorBase::create_virtual_memory_impl`. It
+ *  enables an easy realization of this allocator with any Memory class
+ *  implementation such as a pair of CudaVirtaulMemory and CudaPhysicalMemory.
+ *
+ *  Virtual addressing and caching logic is summarized as follows:
+ *
+ *  ## Allocation
+ *  When a memory is requested, this allocator combines multiple physical
+ *  memories to map virtual memory whose size is enough for the request
+ *  and returns mapped virtual address as Memeory instance.
+ *  To reduce allocation overhead, cached virtual address and physical memory
+ * will
+ *  be reused preferentially rather than newlly allocated.
+ *  VirtualCachingAllocator manages virtual and physical cache
+ *  separately and reuses memory at both level
+ *  (reusing virtual adrress without freeing and reserving is preferable in
+ * terms of allocation overhead).
+ *
+ *  ## Caching and reusing virtual address
+ *  When a memory is freed and returned to VirtualCachingAllocator,
+ *  returned virtual memory is cached for future memory request.
+ *  Cached memories are reused in several ways depending on request as follows:
+ *   - case 1: No cached memory exists in cache -> create new memory
+ *   - case 2: A memory whose size is exactly the same as a request exists ->
+ * just return this cached memory
+ *   - case 3: At least one smaller memory than a request exists -> grow this
+ * cached memory
+ *   - case 4: Only larger memories exist -> unbind smallest memories and create
+ * new virtual memory
+ *  See implementation for the detail of how to release, reuse, unbind, and bind
+ * virtual and physical memory.
+ *
+ *  ## Free
+ *  When a cached virtual memory is needed to be unbinded to move its physical
+ * memories to new virtual memory,
+ *  the physical memories can be unbinded imediately.
+ *  However, the virtual address have to be kept from being released
+ *  until the device computation using this virtual address is finished,
+ *  because device computation (e.g. CUDA) is fully asynchronous with host.
+ *  This allocator keeps all virtual memories whose
+ *  device_memory_state are DeviceMemoryState::Locked in waiting_list_.
+ *  This waiting_list_ will be evaluated before every allocation request.
+ *
+ *  ## Physical memory size and rounding
+ *  Physical memory size is 20MB in default and mapped virtual memory will be
+ * rounded up
+ *  by a multiple of 20MB (multiple of physical memory size).
+ *  This memory size can be changed by
+ * VirtualCachingAllocatorBase::set_chunk_size.
+ *  Larger size means faster allocation but larger fragmentation while smaller
+ * size means vice versa.
+ *  Note that min and max size of a chunk depends on the device.
+ *
+ *  @sa VirtualCachingAllocatorBase
+ */
 class NBLA_API VirtualCachingAllocatorBase : public Allocator {
 public:
   // Types realted to memory cache

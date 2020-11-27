@@ -24,7 +24,7 @@ namespace nbla {
 // Memory interface
 // ----------------------------------------------------------------------
 Memory::Memory(size_t bytes, const string &device_id)
-    : bytes_(std::max(bytes, (size_t)1)), device_id_(device_id),
+    : device_id_(device_id), bytes_(std::max(bytes, (size_t)1)),
       requested_bytes_(bytes_) {}
 
 Memory::~Memory() {}
@@ -103,11 +103,11 @@ void Memory::try_merge(Memory *from) {
 
 void Memory::bind() {
   /*
-   * Try to bind physical memories (p_memories_) on virtual address, and make
-   * ptr_ usable as a data pointer.
-   * This method can be executed only if memory_type_ == MemoryType::Virtual.
-   * Actual implementation should be implemented as bind_impl()
-   * in a derived class whose memory_type == MemoryType::Virtual.
+    Bind physical memories (p_memories_) to virtual address, and make
+    ptr_ available as a data pointer.
+    This method can be executed only if memory_type_ == MemoryType::Virtual.
+    Actual implementation should be implemented as bind_impl()
+    in a derived class whose memory_type == MemoryType::Virtual.
    */
   NBLA_CHECK(memory_type_ == MemoryType::Virtual, error_code::memory,
              "This Memory instance is not Virtual Memory. Calling bind() is "
@@ -117,11 +117,11 @@ void Memory::bind() {
 
 void Memory::unbind() {
   /*
-   * Try to unbind physical memories (p_memories_) from virtual address, and
-   * make ptr_ disable.
-   * This method can be executed only if memory_type_ == MemoryType::Virtual.
-   * Actual implementation should be implemented as unbind_impl()
-   * in a derived class whose memory_type == MemoryType::Virtual.
+    Unbind physical memories (p_memories_) from virtual address, and
+    make ptr_ disable.
+    This method can be executed only if memory_type_ == MemoryType::Virtual.
+    Actual implementation should be implemented as unbind_impl()
+    in a derived class whose memory_type == MemoryType::Virtual.
    */
   NBLA_CHECK(memory_type_ == MemoryType::Virtual, error_code::memory,
              "This Memory instance is not Virtual Memory. Calling unbind() is "
@@ -133,10 +133,10 @@ void Memory::unbind() {
 
 bool Memory::grow(VecPhysicalMemoryPtr &p_mems) {
   /**
-   * Try to grow virtual memory.
-   * This method can be executed only if memory_type_ == MemoryType::Virtual.
-   * ctual implementation should be implemented as unbind_impl()
-   * in a derived class whose memory_type == MemoryType::Virtual.
+    Grow virtual memory.
+    This method can be executed only if memory_type_ == MemoryType::Virtual.
+    ctual implementation should be implemented as unbind_impl()
+    in a derived class whose memory_type == MemoryType::Virtual.
    */
 
   NBLA_CHECK(memory_type_ == MemoryType::Virtual, error_code::memory,

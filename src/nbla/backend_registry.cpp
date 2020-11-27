@@ -51,7 +51,7 @@ BackendUtils::get_backend_getter(const Context ctx) {
   auto key = get_key(ctx);
 
   NBLA_CHECK(registry.count(key) == 1, error_code::unclassified,
-             "'%s' cannot be found in host stream synchronizer.", key);
+             "'%s' cannot be found in host stream synchronizer.", key.c_str());
 
   return registry[key];
 }
