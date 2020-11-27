@@ -17,4 +17,5 @@ done
 echo "PATH: $PATH"
 echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
 
+chmod u+x $test_nbla_utils
 $test_nbla_utils

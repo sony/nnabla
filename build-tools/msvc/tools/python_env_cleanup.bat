@@ -37,3 +37,6 @@ CALL conda env remove -y -n %CONDAENV%
 IF [%ENVNAME%] == [%CONDAENV%] (
    RMDIR /s /q %ENVDIR%
 )
+
+# Ignore error.
+EXIT /b 0
