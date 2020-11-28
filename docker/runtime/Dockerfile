@@ -28,10 +28,10 @@ RUN . /opt/miniconda3/bin/activate && conda install protobuf
 RUN . /opt/miniconda3/bin/activate && conda install opencv || true
 RUN . /opt/miniconda3/bin/activate && conda clean -y --all
 
-ARG WHL
-ADD $WHL /tmp/
+ARG WHL_PATH
+ADD $WHL_PATH/*.whl /tmp/
 
-RUN . /opt/miniconda3/bin/activate && pip install /tmp/$(basename $WHL)
+RUN . /opt/miniconda3/bin/activate && pip install /tmp/*.whl
 
 ############################################################
 # Runtime image

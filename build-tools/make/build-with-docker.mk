@@ -164,7 +164,7 @@ docker_image_nnabla:
 	docker pull ubuntu:18.04
 	cd $(NNABLA_DIRECTORY) \
 	&& docker build $(DOCKER_BUILD_ARGS) \
-		--build-arg WHL=$$(echo build_wheel_py$(PYTHON_VERSION_MAJOR)$(PYTHON_VERSION_MINOR)/dist/*.whl) \
+		--build-arg WHL_PATH=$$(echo build_wheel_py$(PYTHON_VERSION_MAJOR)$(PYTHON_VERSION_MINOR)/dist) \
 		-f docker/runtime/Dockerfile \
 		-t $(DOCKER_IMAGE_NNABLA) .
 
