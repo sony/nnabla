@@ -54,7 +54,7 @@ and check if all works.
 Installation with Multi-GPU supported
 -------------------------------------
 
-Multi-GPU wheel package is only available on ubuntu18.04 and python3.6+.
+Multi-GPU wheel package is only available on python3.6+.
 
 .. _cuda-cudnn-compatibility:
 
