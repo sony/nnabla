@@ -70,14 +70,12 @@ void Tile<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   // the requested number of copies (tiles) for that dimension (this is a bit
   // like unfolding a cross folded piece of paper).
   for (int axis = reps.size() - 2; axis > 0; axis--) {
-    auto src = idx;
     do {
-      auto dst = idx + ndi::nd2flat(src_index, idxmap_.strides());
+      auto src = dst = idx + ndi::nd2flat(src_index, idxmap_.strides());
       auto cnt = ndi::inner_size(map_shape, axis) / reps.at(axis);
       for (int rep = 1; rep < reps.at(axis); rep++) {
         std::memcpy(dst + rep * cnt, src, cnt * sizeof(int));
       }
-      src += ndi::inner_size(map_shape, axis);
     } while (ndi::increment(src_index, src_shape, axis - 1));
   }
 }
