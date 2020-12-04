@@ -27,10 +27,10 @@ Running `generate.py` will automatically download the converted weight, but you 
 You can generate non-existent person's face by;
 
 ```
-python generate.py --seed 217
+python generate.py --seed 217 --batch-size 4
 ```
 
-With `--seed` option, you need to specify the random seed used to obtain latent code (**z** in the paper).
+With `--seed` option, you need to specify the random seed used to obtain latent code (**z** in the paper). With `--batch-size` option, you can specify the number of images to generate.
 
 As written in the paper, truncation trick is used by default. You can change the value for that by `--truncation-psi`. Also, seed used for noise input to the synthesis network (input to **B** block in the paper) can be specified by `--stochastic-seed`. For example;
 

@@ -15,6 +15,7 @@
 import numpy as np
 import nnabla as nn
 import nnabla.functions as F
+import nnabla.initializer as I
 
 
 """
@@ -133,3 +134,25 @@ def convert_images_to_uint8(images, drange=[-1, 1]):
     scale = 255 / (drange[1] - drange[0])
     images = images * scale + (0.5 - drange[0] * scale)
     return np.uint8(np.clip(images, 0, 255))
+
+def weight_init_fn(shape, gain=1, use_wscale=True, lrmul=1, weight_var='affine', 
+                   return_init=False):
+    """
+    Weight Initialization function taken from original StyleGANv2 code
+    """    
+    fan_in = np.prod(shape[:-1]) # [kernel, kernel, fmaps_in, fmaps_out] or [in, out]
+    he_std = gain / np.sqrt(fan_in) # He init
+
+    # Equalized learning rate and custom learning rate multiplier.
+    if use_wscale:
+        init_std = 1.0 / lrmul
+        runtime_coef = he_std * lrmul
+    else:
+        init_std = he_std / lrmul
+        runtime_coef = lrmul
+
+    init = I.NormalInitializer(sigma=init_std)
+    if return_init:
+        return init
+    
+    return nn.parameter.get_parameter_or_create(name=f'{weight_var}/W', shape=shape, initializer=init), nn.parameter.get_parameter_or_create(name=f'{weight_var}/b', shape=(shape[-1],))

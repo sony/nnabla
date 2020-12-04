@@ -16,57 +16,25 @@ import numpy as np
 
 import nnabla as nn
 import nnabla.functions as F
-import nnabla.parametric_functions as PF
 
-from ops import upsample_conv_2d
+from ops import upsample_conv_2d, weight_init_fn
 
 
-def mapping_network(noise, outmaps=512):
+def mapping_network(noise, outmaps=512, num_layers=8, net_scope='G_mapping/Dense'):
     """
         a mapping network which embeds input noise into a vector in latent space.
         activation layer contains multiplication by np.sqrt(2).
     """
-
-    # he_std = 1. / np.sqrt(512)
     lrmul = 0.01
-    # runtime_coef = he_std * lrmul
-    runtime_coef = 0.00044194172
-
-    with nn.parameter_scope("G_mapping/Dense0"):
-        h1 = F.leaky_relu(PF.affine(noise, n_outmaps=outmaps, with_bias=True,
-                                    apply_w=lambda x: x * runtime_coef,
-                                    apply_b=lambda x: x * lrmul), alpha=0.2) * np.sqrt(2)
-        # why multiplying by np.sqrt(2)? see the fused_bias_act. gain is the key.
-    with nn.parameter_scope("G_mapping/Dense1"):
-        h2 = F.leaky_relu(PF.affine(h1, n_outmaps=outmaps, with_bias=True,
-                                    apply_w=lambda x: x * runtime_coef,
-                                    apply_b=lambda x: x * lrmul), alpha=0.2) * np.sqrt(2)
-    with nn.parameter_scope("G_mapping/Dense2"):
-        h3 = F.leaky_relu(PF.affine(h2, n_outmaps=outmaps, with_bias=True,
-                                    apply_w=lambda x: x * runtime_coef,
-                                    apply_b=lambda x: x * lrmul), alpha=0.2) * np.sqrt(2)
-    with nn.parameter_scope("G_mapping/Dense3"):
-        h4 = F.leaky_relu(PF.affine(h3, n_outmaps=outmaps, with_bias=True,
-                                    apply_w=lambda x: x * runtime_coef,
-                                    apply_b=lambda x: x * lrmul), alpha=0.2) * np.sqrt(2)
-    with nn.parameter_scope("G_mapping/Dense4"):
-        h5 = F.leaky_relu(PF.affine(h4, n_outmaps=outmaps, with_bias=True,
-                                    apply_w=lambda x: x * runtime_coef,
-                                    apply_b=lambda x: x * lrmul), alpha=0.2) * np.sqrt(2)
-    with nn.parameter_scope("G_mapping/Dense5"):
-        h6 = F.leaky_relu(PF.affine(h5, n_outmaps=outmaps, with_bias=True,
-                                    apply_w=lambda x: x * runtime_coef,
-                                    apply_b=lambda x: x * lrmul), alpha=0.2) * np.sqrt(2)
-    with nn.parameter_scope("G_mapping/Dense6"):
-        h7 = F.leaky_relu(PF.affine(h6, n_outmaps=outmaps, with_bias=True,
-                                    apply_w=lambda x: x * runtime_coef,
-                                    apply_b=lambda x: x * lrmul), alpha=0.2) * np.sqrt(2)
-    with nn.parameter_scope("G_mapping/Dense7"):
-        w = F.leaky_relu(PF.affine(h7, n_outmaps=outmaps, with_bias=True,
-                                   apply_w=lambda x: x * runtime_coef,
-                                   apply_b=lambda x: x * lrmul), alpha=0.2) * np.sqrt(2)
-    return w
-
+    runtime_coef = 0.00044194172 
+        
+    out = noise
+    for i in range(num_layers):
+        with nn.parameter_scope(f'{net_scope}{i}'):
+            W, bias = weight_init_fn(shape=(out.shape[1], outmaps), lrmul=lrmul)
+            out = F.affine(out, W*runtime_coef, bias*lrmul)
+            out = F.mul_scalar(F.leaky_relu(out, alpha=0.2, inplace=True), np.sqrt(2), inplace=True)
+    return out
 
 def conv_block(input, w, noise=None, res=4, outmaps=512, inmaps=512,
                kernel_size=3, pad_size=1, demodulate=True, namescope="Conv",
@@ -78,8 +46,10 @@ def conv_block(input, w, noise=None, res=4, outmaps=512, inmaps=512,
     batch_size = input.shape[0]
     with nn.parameter_scope(f"G_synthesis/{res}x{res}/{namescope}"):
         runtime_coef = 1. / np.sqrt(512)
-        s = PF.affine(w, n_outmaps=inmaps, with_bias=True,
-                      apply_w=lambda x: x * runtime_coef) + 1.
+        W, bias = weight_init_fn(shape=(w.shape[1], inmaps)) 
+        runtime_coef = 1. / np.sqrt(512) 
+        s = F.affine(w, W*runtime_coef, bias) + 1.0
+    runtime_coef_for_conv = 1/np.sqrt(np.prod([inmaps, kernel_size, kernel_size]))
 
     runtime_coef_for_conv = 1 / \
         np.sqrt(np.prod([inmaps, kernel_size, kernel_size]))
