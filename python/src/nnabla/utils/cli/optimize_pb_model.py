@@ -21,8 +21,9 @@ def optimize_pb_model_command(args):
         from tensorflow.python.platform import gfile
         from nnabla.utils.converter.tensorflow.refine_parser import RefineParser
         from nnabla.utils.converter.tensorflow.refine_graph import RefineGraph
-    except:
-        print("Need to install tensorflow.")
+    except ImportError:
+        raise ImportError(
+            'nnabla_converter python package is not found, install nnabla_converter package with "pip install nnabla_converter"')
 
     input_pb_file = args.input_pb_file[0]
     output_pb_file = args.output_pb_file[0]

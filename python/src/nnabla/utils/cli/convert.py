@@ -14,43 +14,86 @@
 
 
 import nnabla.utils.converter
-from nnabla.utils.converter import get_category_info_string
+import os
 
 
 def dump_command(args):
-    if 'import_format' in args:
-        if args.import_format not in nnabla.utils.converter.formats.import_name:
-            print('Import format ({}) is not supported.'.format(args.import_format))
-            return False
+    resolve_file_format(args, args.files)
+
+    if args.import_format not in nnabla.utils.converter.formats.import_name:
+        print('Import format ({}) is not supported.'.format(args.import_format))
+        return False
+
     nnabla.utils.converter.dump_files(args, args.files)
     return True
 
 
 def nnb_template_command(args):
-    if 'import_format' in args:
+    if len(args.files) >= 2:
+        output = args.files.pop()
+        resolve_file_format(args, args.files)
+
         if args.import_format not in nnabla.utils.converter.formats.import_name:
             print('Import format ({}) is not supported.'.format(args.import_format))
             return False
-    if len(args.files) >= 2:
-        output = args.files.pop()
+
         nnabla.utils.converter.nnb_template(args, args.files, output)
-    return True
+        return True
+
+    print('Input and Output arg is mandatory.')
+    return False
+
+
+def resolve_file_format(args, import_files, export_file=None):
+    if len(import_files) == 1:
+        input_ext = os.path.splitext(import_files[0])[1]
+        if input_ext == '.nnp':
+            args.import_format = 'NNP'
+        elif input_ext == '.onnx':
+            args.import_format = 'ONNX'
+        elif input_ext == '.pb':
+            args.import_format = "TF_PB"
+        elif input_ext == '.ckpt':
+            args.import_format = "TF_CKPT_V1"
+        elif input_ext == '.meta':
+            args.import_format = "TF_CKPT_V2"
+
+    if export_file and not os.path.isdir(export_file):
+        output_ext = os.path.splitext(export_file)[1]
+        if output_ext == '.nnp':
+            args.export_format == 'NNP'
+        elif output_ext == '.nnb':
+            args.export_format == 'NNB'
+        elif output_ext == '.onnx':
+            args.export_format = 'ONNX'
+        elif output_ext == '.pb':
+            args.export_format = 'TF_PB'
+        elif output_ext == '.tflite':
+            args.export_format = 'TFLITE'
+
+    if args.import_format in ['ONNX', 'TF_CKPT_V1', 'TF_CKPT_V2', 'TF_PB'] or \
+            args.export_format in ['ONNX', 'TF_PB', 'TFLITE']:
+        try:
+            import nnabla.utils.converter.onnx
+            import nnabla.utils.converter.tensorflow
+        except ImportError:
+            raise ImportError(
+                'nnabla_converter python package is not found, install nnabla_converter package with "pip install nnabla_converter"')
 
 
 def convert_command(args):
+    if len(args.files) >= 2:
+        output = args.files.pop()
+        resolve_file_format(args, args.files, output)
 
-    if 'import_format' in args:
         if args.import_format not in nnabla.utils.converter.formats.import_name:
             print('Import format ({}) is not supported.'.format(args.import_format))
             return False
 
-    if 'export_format' in args:
         if args.export_format not in nnabla.utils.converter.formats.export_name:
             print('Export format ({}) is not supported.'.format(args.export_format))
             return False
 
-    if len(args.files) >= 2:
-        output = args.files.pop()
         nnabla.utils.converter.convert_files(args, args.files, output)
         return True
 
