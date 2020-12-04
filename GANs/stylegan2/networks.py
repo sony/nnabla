@@ -26,15 +26,18 @@ def mapping_network(noise, outmaps=512, num_layers=8, net_scope='G_mapping/Dense
         activation layer contains multiplication by np.sqrt(2).
     """
     lrmul = 0.01
-    runtime_coef = 0.00044194172 
-        
+    runtime_coef = 0.00044194172
+
     out = noise
     for i in range(num_layers):
         with nn.parameter_scope(f'{net_scope}{i}'):
-            W, bias = weight_init_fn(shape=(out.shape[1], outmaps), lrmul=lrmul)
+            W, bias = weight_init_fn(
+                shape=(out.shape[1], outmaps), lrmul=lrmul)
             out = F.affine(out, W*runtime_coef, bias*lrmul)
-            out = F.mul_scalar(F.leaky_relu(out, alpha=0.2, inplace=True), np.sqrt(2), inplace=True)
+            out = F.mul_scalar(F.leaky_relu(
+                out, alpha=0.2, inplace=True), np.sqrt(2), inplace=True)
     return out
+
 
 def conv_block(input, w, noise=None, res=4, outmaps=512, inmaps=512,
                kernel_size=3, pad_size=1, demodulate=True, namescope="Conv",
@@ -46,10 +49,11 @@ def conv_block(input, w, noise=None, res=4, outmaps=512, inmaps=512,
     batch_size = input.shape[0]
     with nn.parameter_scope(f"G_synthesis/{res}x{res}/{namescope}"):
         runtime_coef = 1. / np.sqrt(512)
-        W, bias = weight_init_fn(shape=(w.shape[1], inmaps)) 
-        runtime_coef = 1. / np.sqrt(512) 
+        W, bias = weight_init_fn(shape=(w.shape[1], inmaps))
+        runtime_coef = 1. / np.sqrt(512)
         s = F.affine(w, W*runtime_coef, bias) + 1.0
-    runtime_coef_for_conv = 1/np.sqrt(np.prod([inmaps, kernel_size, kernel_size]))
+    runtime_coef_for_conv = 1 / \
+        np.sqrt(np.prod([inmaps, kernel_size, kernel_size]))
 
     runtime_coef_for_conv = 1 / \
         np.sqrt(np.prod([inmaps, kernel_size, kernel_size]))
