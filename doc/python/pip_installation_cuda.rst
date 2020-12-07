@@ -64,12 +64,12 @@ CUDA vs cuDNN Compatibility
 =================================== ============ =============
 Package name                        CUDA version cuDNN version
 =================================== ============ =============
-nnabla-ext-cuda100-7-nccl2-mpi2-1-1  10.0         7.6
-nnabla-ext-cuda100-7-nccl2-mpi3-1-6  10.0         7.6
-nnabla-ext-cuda102-8-nccl2-mpi2-1-1  10.2         8.0
-nnabla-ext-cuda102-8-nccl2-mpi3-1-6  10.2         8.0
-nnabla-ext-cuda110-8-nccl2-mpi2-1-1  11.0         8.0
-nnabla-ext-cuda110-8-nccl2-mpi3-1-6  11.0         8.0
+nnabla-ext-cuda100-nccl2-mpi2-1-1  10.0         7.6
+nnabla-ext-cuda100-nccl2-mpi3-1-6  10.0         7.6
+nnabla-ext-cuda102-nccl2-mpi2-1-1  10.2         8.0
+nnabla-ext-cuda102-nccl2-mpi3-1-6  10.2         8.0
+nnabla-ext-cuda110-nccl2-mpi2-1-1  11.0         8.0
+nnabla-ext-cuda110-nccl2-mpi3-1-6  11.0         8.0
 =================================== ============ =============
 
 You can install as the following.
@@ -77,7 +77,7 @@ You can install as the following.
 .. code-block:: bash
 
   pip install nnabla
-  pip install nnabla-ext-cuda100-7-nccl2-mpi2-1-1
+  pip install nnabla-ext-cuda100-nccl2-mpi2-1-1
 
 
 If you already installed NNabla, uninstall all of it, or start from a clean environment which you create using Anaconda, venv.
