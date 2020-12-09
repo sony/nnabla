@@ -41,7 +41,7 @@ if __name__ == '__main__':
     ############################################################################
     # Package information
 
-    pkg_name = "nnabla_tf_converter"
+    pkg_name = "nnabla_converter"
     src_dir = os.path.join(root_dir, 'tensorflow')
 
     # Setup
