@@ -57,7 +57,7 @@ def _import_file(args, ifiles):
             from .tensorflow import TensorflowImporter
         except ImportError:
             raise ImportError(
-                'nnabla-tf-converter python package is not found, install nnabla-tf-converter package with "pip install nnabla_tf_converter"')
+                'nnabla-converter python package is not found, install nnabla-converter package with "pip install nnabla_converter"')
         return TensorflowImporter(*ifiles, tf_format=args.import_format, outputs=args.outputs, inputs=args.inputs).execute()
     return None
 
@@ -185,7 +185,7 @@ def _export_from_nnp(args, nnp, output, output_ext):
             from .tensorflow import TensorflowExporter
         except ImportError:
             raise ImportError(
-                'nnabla-tf-converter python package is not found, install nnabla-tf-converter package with "pip install nnabla_tf_converter"')
+                'nnabla-converter python package is not found, install nnabla-converter package with "pip install nnabla_converter"')
         TensorflowExporter(
             nnp, args.batch_size, enable_optimize=args.enable_optimize_pb).execute(output)
     elif output_ext == '.tflite':
@@ -193,7 +193,7 @@ def _export_from_nnp(args, nnp, output, output_ext):
             from .tensorflow import TensorflowLiteExporter
         except ImportError:
             raise ImportError(
-                'nnabla-tf-converter python package is not found, install nnabla-tf-converter package with "pip install nnabla_tf_converter"')
+                'nnabla-converter python package is not found, install nnabla-converter package with "pip install nnabla_converter"')
         TensorflowLiteExporter(
             nnp, args.batch_size, enable_optimize=args.enable_optimize_pb).execute(output)
     else:

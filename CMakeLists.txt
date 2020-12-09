@@ -152,7 +152,7 @@ if (${CMAKE_SOURCE_DIR}/src/nbla/proto/nnabla.proto
     message(FATAL_ERROR "protoc for Python failed.")
   endif ()
 endif()
-                         
+
 if (${CMAKE_SOURCE_DIR}/src/nbla/proto/nnabla.proto
     IS_NEWER_THAN
     ${CMAKE_SOURCE_DIR}/src/nbla_utils/nnabla.pb.cc)
@@ -167,7 +167,7 @@ execute_process(
     message(FATAL_ERROR "protoc for C++ failed.")
   endif ()
 endif()
-  
+
 ###############################################################################
 # C++ Library
 ###############################################################################
@@ -176,13 +176,13 @@ if(BUILD_CPP_LIB)
   # Third party libraries
   ###############################################################################
   add_subdirectory(third_party)
-  
+
   if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING
       "Build type release is default on single-configuration build system like GNU make."
       FORCE)
   endif()
-  
+
   # Flags
   if(MSVC)
     # Force to always compile with W4
@@ -193,7 +193,7 @@ if(BUILD_CPP_LIB)
     endif()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj")
   endif()
-  
+
   if(UNIX OR APPLE)
     find_program(CCACHE_FOUND ccache)
     if(CCACHE_FOUND)
@@ -203,7 +203,7 @@ if(BUILD_CPP_LIB)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall")
   endif()
   nbla_warnings_disable(CMAKE_CXX_FLAGS -Wno-sign-compare -Wno-uninitialized /wd4099)
-  
+
   # Setting output directory naively
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
   if (WIN32)
@@ -213,7 +213,7 @@ if(BUILD_CPP_LIB)
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
   endif()
-  
+
   ###############################################################################
   # C++ core
   ###############################################################################
@@ -222,15 +222,15 @@ if(BUILD_CPP_LIB)
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/third_party/eigen-3.3.5
     ${CMAKE_SOURCE_DIR}/include/third_party)
-  
+
   if(BUILD_CPP_UTILS)
     list(APPEND NBLA_INCLUDE_DIRS
       ${CMAKE_SOURCE_DIR}/third_party/cmdline-master)
   endif()
-  
+
   include_directories(${NBLA_INCLUDE_DIRS};${PROJECT_BINARY_DIR})
   add_subdirectory(src/nbla)
-  
+
   ###############################################################################
   # C++ Utilities
   ###############################################################################
@@ -281,7 +281,7 @@ if(BUILD_CPP_LIB)
   endif()
 
   option(CONFIG_BUILD_DIR ${CMAKE_BINARY_DIR})
-  
+
   # Two-step configure_file generation with generate-time property (target_file_name).
   # http://cmake.3232098.n2.nabble.com/cmp0026-file-GENERATE-and-configure-file-td7590275.html
   # Since multiple-configuration build system like Visual Studio requires
@@ -290,14 +290,14 @@ if(BUILD_CPP_LIB)
   # the setup.cfg file by setup.cfg-<config>. The default setup.cfg is for Release build.
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/python/setup.cfg.in
     ${CMAKE_CURRENT_SOURCE_DIR}/python/setup.cfg.in.configured)
-  
+
   file(GENERATE OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/python/setup.cfg-$<CONFIG>
     INPUT ${CMAKE_CURRENT_SOURCE_DIR}/python/setup.cfg.in.configured)
-  
+
   file(GENERATE OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/python/setup.cfg
     INPUT ${CMAKE_CURRENT_SOURCE_DIR}/python/setup.cfg.in.configured
     CONDITION $<CONFIG:${CMAKE_BUILD_TYPE}>)
-  
+
   set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/python/setup.cfg
     ${CMAKE_CURRENT_SOURCE_DIR}/python/setup.cfg.in.configured
@@ -324,7 +324,7 @@ if(BUILD_PYTHON_PACKAGE)
 	message(FATAL_ERROR "Invalid CPPLIB_LIBRARY :[${CPPLIB_LIBRARY}]")
       endif()
     endif()
-    
+
     set(NBLA_LIBRARY_NAME ${CPPLIB_LIBRARY})  # No one sets if !BUILD_CPP_LIB
     set(CPPLIB_LIBRARY_NAME nnabla${LIB_NAME_SUFFIX})
     set(CPPLIB_TARGET_FILE ${CPPLIB_LIBRARY})
@@ -354,23 +354,23 @@ if(BUILD_PYTHON_PACKAGE)
     ${CMAKE_CURRENT_SOURCE_DIR}/python/src/*.h,
     ${CMAKE_CURRENT_SOURCE_DIR}/python/src/utils/dlpack/*.cpp,
     ${CMAKE_CURRENT_SOURCE_DIR}/python/src/utils/dlpack/*.h)
-  
+
   set(NBLA_PYTHON_SETUP ${CMAKE_CURRENT_SOURCE_DIR}/python/setup.py)
-  set(NNABLA_TF_CONVERTER_SETUP ${CMAKE_CURRENT_SOURCE_DIR}/python/src/nnabla/utils/converter/setup.py)
+  set(NNABLA_CONVERTER_SETUP ${CMAKE_CURRENT_SOURCE_DIR}/python/src/nnabla/utils/converter/setup.py)
   set(NBLA_PYTHON_OUTPUT ${CMAKE_BINARY_DIR}/build)
   set(NBLA_PYTHON_OUTPUT_WHEEL ${NBLA_PYTHON_OUTPUT}/.timestamp.wheel)
   set(NBLA_WHEEL_DEPENDS ${NBLA_PYTHON_DEPS} ${NBLA_LIBRARY_NAME})
-  set(NNABLA_TF_CONVERTER_COMMAND ${CMAKE_COMMAND} -E echo "Currently, The NNabla-tf-converter does not support python3.8" )
+  set(NNABLA_CONVERTER_COMMAND ${CMAKE_COMMAND} -E echo "Currently, The NNabla_converter does not support python3.8" )
   if(UNIX)
     if(NOT "${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}" STREQUAL "3.8")
-      set(NNABLA_TF_CONVERTER_COMMAND ${CMAKE_COMMAND} -E env
+      set(NNABLA_CONVERTER_COMMAND ${CMAKE_COMMAND} -E env
           WHEEL_SUFFIX=${WHEEL_SUFFIX}
-          ${PYTHON_COMMAND} ${NNABLA_TF_CONVERTER_SETUP} -q bdist_wheel --python-tag py${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR})
+          ${PYTHON_COMMAND} ${NNABLA_CONVERTER_SETUP} -q bdist_wheel --python-tag py${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR})
     endif()
   else()
     if(DEFINED ENV{PYVER})
       if(NOT "$ENV{PYVER}" STREQUAL "3.8")
-        set(NNABLA_TF_CONVERTER_COMMAND ${PYTHON_COMMAND} ${NNABLA_TF_CONVERTER_SETUP} -q bdist_wheel --python-tag py$ENV{PYVER_MAJOR}$ENV{PYVER_MINOR})
+        set(NNABLA_CONVERTER_COMMAND ${PYTHON_COMMAND} ${NNABLA_CONVERTER_SETUP} -q bdist_wheel --python-tag py$ENV{PYVER_MAJOR}$ENV{PYVER_MINOR})
       endif()
     else()
       message(FATAL_ERROR "not defined environment variable: PYVER")
@@ -385,7 +385,7 @@ if(BUILD_PYTHON_PACKAGE)
         COMMAND ${CMAKE_COMMAND} -E env
                 WHEEL_SUFFIX=${WHEEL_SUFFIX}
                 ${PYTHON_COMMAND} ${NBLA_PYTHON_SETUP} -q bdist_wheel
-        COMMAND ${NNABLA_TF_CONVERTER_COMMAND}
+        COMMAND ${NNABLA_CONVERTER_COMMAND}
         COMMAND ${CMAKE_SOURCE_DIR}/build-tools/auditwheel-nnabla ${CMAKE_BINARY_DIR}/dist/*-linux_*.whl
         COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_BINARY_DIR}/dist/*-linux*.whl
         COMMAND ${CMAKE_COMMAND} -E touch ${NBLA_PYTHON_OUTPUT_WHEEL}
@@ -397,7 +397,7 @@ if(BUILD_PYTHON_PACKAGE)
         COMMAND ${CMAKE_COMMAND} -E env
                 WHEEL_SUFFIX=${WHEEL_SUFFIX}
                 ${PYTHON_COMMAND} ${NBLA_PYTHON_SETUP} -q bdist_wheel
-        COMMAND ${NNABLA_TF_CONVERTER_COMMAND}
+        COMMAND ${NNABLA_CONVERTER_COMMAND}
         COMMAND ${CMAKE_COMMAND} -E touch ${NBLA_PYTHON_OUTPUT_WHEEL}
         DEPENDS ${NBLA_WHEEL_DEPENDS})
     endif()
@@ -406,7 +406,7 @@ if(BUILD_PYTHON_PACKAGE)
       COMMAND ${CMAKE_COMMAND} -E remove -f ${NBLA_PYTHON_OUTPUT_CYTHON}
       COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_BINARY_DIR}/dist/*.whl
       COMMAND ${PYTHON_COMMAND} ${NBLA_PYTHON_SETUP} -q bdist_wheel
-      COMMAND ${NNABLA_TF_CONVERTER_COMMAND}
+      COMMAND ${NNABLA_CONVERTER_COMMAND}
       COMMAND ${CMAKE_COMMAND} -E touch ${NBLA_PYTHON_OUTPUT_WHEEL}
       DEPENDS ${NBLA_WHEEL_DEPENDS})
   endif()
@@ -424,7 +424,7 @@ if(BUILD_PYTHON_PACKAGE)
       bash -c "py.test -x")
     add_dependencies(benchmark wheel)
   endif()
-  
+
   #############################################################################
   # Document
   #############################################################################
