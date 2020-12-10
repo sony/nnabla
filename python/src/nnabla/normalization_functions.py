@@ -204,12 +204,15 @@ def batch_normalization(x, beta, gamma, mean, variance, axes=[1], decay_rate=0.9
         raise ValueError(
             "If batch_stat is False, mean and variable must not be None.")
 
-    beta, gamma, mean, variance = _create_bn_dummy_vars(
+    _, _, mean, variance = _create_bn_dummy_vars(
         x, axes, beta, gamma, mean, variance)
 
     if batch_stat and (mean.parent or variance.parent) is not None:
         raise ValueError(
             "if batch_stat is True, mean and variable must not have a parent function.")
+
+    no_scale = gamma is None
+    no_bias = beta is None
 
     if len(axes) == 1:
         return batch_normalization_base(x, beta, gamma, mean, variance,
@@ -217,13 +220,17 @@ def batch_normalization(x, beta, gamma, mean, variance, axes=[1], decay_rate=0.9
                                         decay_rate=decay_rate,
                                         eps=eps,
                                         batch_stat=batch_stat,
+                                        no_scale=no_scale,
+                                        no_bias=no_bias,
                                         n_outputs=n_outputs)
 
     in_adapter = BatchNormalizationInOutAdapter(x.ndim, axes)
     param_adapter = BatchNormalizationInOutAdapter(x.ndim, axes)
     inp = in_adapter(x)
-    beta = param_adapter(beta)
-    gamma = param_adapter(gamma)
+    if beta is not None:
+        beta = param_adapter(beta)
+    if gamma is not None:
+        gamma = param_adapter(gamma)
     mean = param_adapter(mean)
     variance = param_adapter(variance)
     axis = x.ndim - len(axes)
@@ -234,6 +241,8 @@ def batch_normalization(x, beta, gamma, mean, variance, axes=[1], decay_rate=0.9
                                        decay_rate=decay_rate,
                                        eps=eps,
                                        batch_stat=batch_stat,
+                                       no_scale=no_scale,
+                                       no_bias=no_bias,
                                        n_outputs=n_outputs)
         return in_adapter.inv(out)
     out, mean, variance = batch_normalization_base(inp, beta, gamma, mean, variance,
@@ -241,6 +250,8 @@ def batch_normalization(x, beta, gamma, mean, variance, axes=[1], decay_rate=0.9
                                                    decay_rate=decay_rate,
                                                    eps=eps,
                                                    batch_stat=batch_stat,
+                                                   no_scale=no_scale,
+                                                   no_bias=no_bias,
                                                    n_outputs=n_outputs)
     out = in_adapter.inv(out)
     mean = param_adapter.inv(mean)

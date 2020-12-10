@@ -1521,12 +1521,16 @@ Normalization:
         doc: N-D array of input.
       beta:
         doc: N-D array of beta which is learned.
+        optional: true
       gamma:
         doc: N-D array of gamma which is learned.
+        optional: true
       mean:
         doc: N-D array of running mean (modified during forward execution).
+        optional: true
       variance:
         doc: N-D array of running variance (modified during forward execution).
+        optional: true
     arguments:
       axes:
         doc: Axes mean and variance are taken.
@@ -1544,11 +1548,20 @@ Normalization:
         doc: Use mini-batch statistics rather than running ones.
         type: bool
         default: 'True'
+      no_scale:
+        doc: If `True`, the scale term is omitted.
+        type: bool
+        default: 'False'
+      no_bias:
+        doc: If `True`, the bias term is omitted.
+        type: bool
+        default: 'False'
     outputs:
       y:
         doc: N-D array
     function_ids:
       iIffB: 22
+      iIffBBB: 326
     c_runtime: support
   GroupNormalization:
     snake_name: group_normalization

@@ -86,9 +86,5 @@ def test_layer_normalization_forward_backward(ctx, func_name, seed, x_shape, bat
     rng = np.random.RandomState(seed)
     x, beta, gamma = create_inputs(rng, x_shape, batch_axis, no_scale, no_bias)
 
-    # 'need_grad' of beta and gamma must be same in batch_norm
-    param_backward = not no_bias or not no_scale
-    backward = [True, param_backward, param_backward]
-
     function_tester(rng, F.layer_normalization, ref_layer_normalization, [x, beta, gamma], [batch_axis, eps, output_stat], ctx=ctx,
-                    func_name=func_name, dstep=1e-2, atol_b=1e-2, backward=backward, disable_half_test=True)
+                    func_name=func_name, dstep=1e-2, atol_b=1e-2, backward=[True, not no_bias, not no_scale], disable_half_test=True)

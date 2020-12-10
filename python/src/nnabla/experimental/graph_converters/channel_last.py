@@ -88,6 +88,10 @@ class ChannelLastModifier(FunctionModifier):
             mean = inputs[3]
             var = inputs[4]
             args['axes'] = [len(x.shape) - 1]
+            if 'no_scale' in args:
+                del args['no_scale']
+            if 'no_bias' in args:
+                del args['no_bias']
             scope = self.get_parameter_scope(beta)
             with nn.parameter_scope(scope):
                 beta_d = beta.d.copy().transpose(0, 2, 3, 1)

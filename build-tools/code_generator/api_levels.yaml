@@ -257,3 +257,5 @@
   LayerNormalization_iIfBB: 323
   TensorNormalization_iIfBB: 324
   WeightStandardization_if: 325
+28:
+  BatchNormalization_iIffBBB: 326

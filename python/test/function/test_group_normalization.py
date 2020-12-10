@@ -102,9 +102,5 @@ def test_group_normalization_forward_backward(ctx, func_name, seed, num_groups, 
     x, beta, gamma = create_inputs(
         rng, x_shape, channel_axis, no_scale, no_bias)
 
-    # 'need_grad' of beta and gamma must be same in batch_norm
-    param_backward = not no_bias or not no_scale
-    backward = [True, param_backward, param_backward]
-
     function_tester(rng, F.group_normalization, ref_group_normalization, [x, beta, gamma], [num_groups, channel_axis, batch_axis, eps, output_stat], ctx=ctx,
-                    func_name=func_name, dstep=1e-2, atol_b=4e-2, atol_accum=1e-5, backward=backward, disable_half_test=True)
+                    func_name=func_name, dstep=1e-2, atol_b=4e-2, atol_accum=1e-5, backward=[True, not no_bias, not no_scale], disable_half_test=True)

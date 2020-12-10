@@ -70,6 +70,10 @@ public:
       bn_input_shape_.push_back(transposed_shape_[i]);
     }
     bn_input_shape_.push_back(reduced_inner_size);
+    // ndim of batch_norm input x muse be greater than or equal to 2.
+    if (bn_input_shape_.size() == 1) {
+      bn_input_shape_ = {1, bn_input_shape_[0]};
+    }
 
     // inv_transpose_axes = argsort(transpose_axes)
     vector<pair<int, int>> transpose_axes_with_index;

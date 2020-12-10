@@ -216,8 +216,8 @@ vector<CgVariablePtr> deconvolution(Context &ctx, CgVariablePtr x, CgVariablePtr
   return deconvolution(ctx, x, weight, bias, base_axis, opts.pad(), opts.stride(), opts.dilation(), group, opts.channel_last(), opts.output_padding());
 }
 
-vector<CgVariablePtr> batch_normalization(Context &ctx, CgVariablePtr x, CgVariablePtr beta, CgVariablePtr gamma, CgVariablePtr mean, CgVariablePtr variance, bool batch_stat, BatchNormalizationOpts batch_opts){
-  return batch_normalization(ctx, x, beta, gamma, mean, variance, batch_opts.axes(), batch_opts.decay_rate(), batch_opts.eps(), batch_stat);
+vector<CgVariablePtr> batch_normalization(Context &ctx, CgVariablePtr x, CgVariablePtr beta, CgVariablePtr gamma, CgVariablePtr mean, CgVariablePtr variance, bool batch_stat, bool no_scale, bool no_bias, BatchNormalizationOpts batch_opts){
+  return batch_normalization(ctx, x, beta, gamma, mean, variance, batch_opts.axes(), batch_opts.decay_rate(), batch_opts.eps(), batch_stat, no_scale, no_bias);
 }
 
 vector<CgVariablePtr> max_pooling(Context &ctx, CgVariablePtr x, const vector<int> & kernel, const vector<int> & stride, PoolingOpts pooling_opts){
@@ -260,9 +260,9 @@ CgVariablePtr deconvolution(CgVariablePtr x, CgVariablePtr weight, CgVariablePtr
   return deconvolution(global_ctx, x, weight, bias, base_axis, opts.pad(), opts.stride(), opts.dilation(), group, opts.channel_last(), opts.output_padding())[0];
 }
 
-CgVariablePtr batch_normalization(CgVariablePtr x, CgVariablePtr beta, CgVariablePtr gamma, CgVariablePtr mean, CgVariablePtr variance, bool batch_stat, BatchNormalizationOpts batch_opts){
+CgVariablePtr batch_normalization(CgVariablePtr x, CgVariablePtr beta, CgVariablePtr gamma, CgVariablePtr mean, CgVariablePtr variance, bool batch_stat, bool no_scale, bool no_bias, BatchNormalizationOpts batch_opts){
   auto global_ctx = SingletonManager::get<GlobalContext>()->get_current_context();
-  return batch_normalization(global_ctx, x, beta, gamma, mean, variance, batch_opts.axes(), batch_opts.decay_rate(), batch_opts.eps(), batch_stat)[0];
+  return batch_normalization(global_ctx, x, beta, gamma, mean, variance, batch_opts.axes(), batch_opts.decay_rate(), batch_opts.eps(), batch_stat, no_scale, no_bias)[0];
 }
 
 }
