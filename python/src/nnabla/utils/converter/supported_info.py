@@ -16,7 +16,7 @@ import collections
 
 _SupportedInfo = collections.namedtuple(
     '_SupportedInfo', 'import_name export_name')
-extensions = _SupportedInfo(import_name=['.nnp', '.onnx', '.ckpt', '.meta', '.pb'], export_name=[
-                            '.nnp', '.nnb', '.onnx', '.pb', '.tflite'])
-formats = _SupportedInfo(import_name=['NNP', 'ONNX', 'TF_CKPT_V1', 'TF_CKPT_V2', 'TF_PB'], export_name=[
-                         'NNP', 'NNB', 'CSRC', 'ONNX', 'TF_PB', 'TFLITE'])
+extensions = _SupportedInfo(import_name=['.nnp', '.onnx', '.ckpt', '.meta', '.pb', 'saved_model'], export_name=[
+                            '.nnp', '.nnb', '.onnx', '.tflite', 'saved_model'])
+formats = _SupportedInfo(import_name=['NNP', 'ONNX', 'TF_CKPT_V1', 'TF_CKPT_V2', 'TF_PB', 'SAVED_MODEL'], export_name=[
+                         'NNP', 'NNB', 'CSRC', 'ONNX', 'SAVED_MODEL', 'TFLITE'])

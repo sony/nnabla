@@ -383,7 +383,10 @@ def add_tensor_as_parameter(pb, tensor):
     """Add given tensor as a parameter"""
     p = pb.parameter.add()
     p.variable_name = tensor.name
-    p.shape.dim.extend(tensor.dims)
+    shape = tensor.dims
+    if not shape:
+        shape = [1]
+    p.shape.dim.extend(shape)
     if tensor.data_type == TensorProto.FLOAT:
         # convert raw bytestream to floating points
         if tensor.raw_data:
@@ -435,7 +438,7 @@ def add_tensor_as_parameter(pb, tensor):
     # Add tensor as variable
     v = pb.network[0].variable.add()
     v.name = tensor.name
-    v.shape.dim.extend(tensor.dims)
+    v.shape.dim.extend(shape)
     v.type = "Parameter"
     v.initializer.type = "Constant"
     v.initializer.multiplier = 1.0
@@ -496,7 +499,7 @@ class OnnxImporter:
             "GlobalAveragePool": partial(self.BasePooling, 'GlobalAveragePooling'),
             "MaxPool": partial(self.BasePooling, 'MaxPooling'),
             "AveragePool": partial(self.BasePooling, 'AveragePooling'),
-            "Sum": partial(self.GeneralOperator, 'Add2'),
+            "Sum": partial(self.GeneralOperator, 'AddN'),
             "Gemm": self.Gemm,
             "Add": partial(self.BroadcastOperator, 'Add2'),
             "Mul": partial(self.BroadcastOperator, 'Mul2'),
@@ -582,7 +585,6 @@ class OnnxImporter:
 
         # opset_9 table
         self.table_op_set_9 = {
-            "Sum": partial(self.BroadcastOperator_9, 'Add2'),
             "Min": partial(self.BroadcastOperator_9, 'Minimum2'),
             "Max": partial(self.BroadcastOperator_9, 'Maximum2'),
             # Currently, caffe2 does not support this function.
@@ -797,33 +799,36 @@ class OnnxImporter:
     def Convolution(self, func_list, n):
         func = self.generate_default_function("Convolution", n)
         cp = func.convolution_param
+        input_shape = self.get_func_input_shape(func.input[0])
+        weight_shape = self.get_func_input_shape(func.input[1])
         # We shouldn't need these default settings
         # since NNabla will set these for us
         cp.base_axis = 1
         cp.group = 1
-        dims = []
-        pads = []
-        strides = []
-        dilations = []
+        dims = len(input_shape) - 2
+        pads = [0] * dims * 2
+        strides = [1] * dims
+        dilations = [1] * dims
+        auto_pad = "NOTSET"
         for attr in n.attribute:
             if attr.name == "pads":
                 if attr.type != AttributeProto.INTS:
                     raise ValueError(
                         "Only INTS are supported for pads in Conv op_type")
+                pads.clear()
                 pads.extend(attr.ints)
-                dims.append(len(pads)//2)
             elif attr.name == "strides":
                 if attr.type != AttributeProto.INTS:
                     raise ValueError(
                         "Only INTS are supported for strides in Conv op_type")
+                strides.clear()
                 strides.extend(attr.ints)
-                dims.append(len(strides))
             elif attr.name == "dilations":
                 if attr.type != AttributeProto.INTS:
                     raise ValueError(
                         "Only INTS are supported for dilations in Conv op_type")
+                dilations.clear()
                 dilations.extend(attr.ints)
-                dims.append(len(dilations))
             elif attr.name == "group":
                 if attr.type != AttributeProto.INT:
                     raise ValueError(
@@ -834,59 +839,60 @@ class OnnxImporter:
                 # since NNabla doesn't have a parameter for it
                 # (it will be inferred from weight input)
                 pass
+            elif attr.name == "auto_pad":
+                if attr.type != AttributeProto.STRING:
+                    raise ValueError("Only STRING is supported for auto_pad in {} op_type"
+                                     .format(n.op_type))
+                auto_pad = attr.s.decode("utf-8")
             else:
                 raise ValueError("Unsupported attribute {} was specified at {}"
                                  .format(attr.name, n.op_type))
+
         # NNabla requires for the dimensions of strides, pads, dilations to match.
         # We align the dimensions for all three attributes to the shortest one
-        dim = min(dims)
-        if strides:
-            cp.stride.dim.extend(strides[:])
-        else:
-            cp.stride.dim.extend([1]*dim)
-        if pads:
-            padval = []
-            asymmetry = check_padding(pads, dim, padval)
-            if asymmetry:
-                # Add a separate padding function for
-                # asymmetry padding
-                input = n.input[0]
-                padded = fork_name(input)+"_pad"
-                pad_width = rearrange_pads(pads)
-                padf = generate_pad(n.name, input, padded,
-                                    "constant", pad_width, 0,
-                                    self._graph.name, self._func_counter)
-                output_shape = []
-                input_shape = self.get_func_input_shape(input)
-                s = len(pad_width) // 2
-                shape = input_shape[-s:]
-                for i in range(s):
-                    shape[i] += pad_width[2 * i]
-                    shape[i] += pad_width[2 * i + 1]
-                output_shape.extend(input_shape[:-s])
-                output_shape.extend(shape)
-                self._shape_output[padded] = output_shape
-                func_list.append(padf)
-                # Rewire input to the padded version
-                func.input[0] = padded
-            cp.pad.dim.extend(padval)
-        else:
-            # Set default values.
-            # Do we really need this? (Default value should be set by NNabla)
-            cp.pad.dim.extend([0]*dim)
-        if dilations:
-            cp.dilation.dim.extend(dilations[:])
-        else:
-            # Set default values.
-            # Do we really need this? (Default value should be set by NNabla)
-            cp.dilation.dim.extend([1]*dim)
+        cp.stride.dim.extend(strides[:])
+        cp.dilation.dim.extend(dilations[:])
+        if auto_pad != 'NOTSET':
+            o = input_shape[2:]
+            k = weight_shape[2:]
+            pads_value = [0] * dims
+            if auto_pad in ('SAME_UPPER', 'SAME_LOWER'):
+                for i in range(dims):
+                    pads_value[i] = (o[i] - 1) * strides[i] + \
+                                     k[i] - input_shape[2 + i]
+            elif auto_pad == 'VALID':
+                pass
+            for i in range(dims):
+                if auto_pad == 'SAME_LOWER':
+                    pads[i + dims] = pads_value[i] // 2
+                    pads[i] = pads_value[i] - pads[i + dims]
+                elif auto_pad == 'SAME_UPPER':
+                    pads[i] = pads_value[i] // 2
+                    pads[i + dims] = pads_value[i] - pads[i + dims]
 
-        output_shape = []
-        input_shape = self.get_func_input_shape(func.input[0])
-        weight_shape = self.get_func_input_shape(func.input[1])
+        padval = []
+        asymmetry = check_padding(pads, dims, padval)
+        if asymmetry:
+            # Add a separate padding function for
+            # asymmetry padding
+            input = n.input[0]
+            padded = fork_name(input)+"_pad"
+            pad_width = rearrange_pads(pads)
+            padf = generate_pad(n.name, input, padded,
+                                "constant", pad_width, 0,
+                                self._graph.name, self._func_counter)
+            for i in range(dims):
+                input_shape[2 + i] += pad_width[2 * i]
+                input_shape[2 + i] += pad_width[2 * i + 1]
+            self._shape_output[padded] = input_shape
+            func_list.append(padf)
+            # Rewire input to the padded version
+            func.input[0] = padded
+        cp.pad.dim.extend(padval)
+
         output_shape = input_shape[:1]
         output_shape.append(weight_shape[0])
-        for index in range(dim):
+        for index in range(dims):
             d = cp.dilation.dim[index]
             p = cp.pad.dim[index]
             s = cp.stride.dim[index]
@@ -1082,7 +1088,6 @@ class OnnxImporter:
                                               kp,
                                               input_spatial_shape
                                               ):
-            dims = []
             strides = []
             pads = []
             kernel = []
@@ -1094,19 +1099,16 @@ class OnnxImporter:
                         raise ValueError("Only INTS are supported for strides in {}"
                                          .format(node.op_type))
                     strides.extend(attr.ints)
-                    dims.append(len(strides))
                 elif attr.name == "pads":
                     if attr.type != AttributeProto.INTS:
                         raise ValueError("Only INTS are supported for pads in {}"
                                          .format(node.op_type))
                     pads.extend(attr.ints)
-                    dims.append(len(pads))
                 elif attr.name == "kernel_shape":
                     if attr.type != AttributeProto.INTS:
                         raise ValueError("Only INTS are supported for kernel_shape in {}"
                                          .format(node.op_type))
                     kernel.extend(attr.ints)
-                    dims.append(len(kernel))
                 elif attr.name == "count_include_pad":
                     if attr.type != AttributeProto.INT:
                         raise ValueError("Only INT is supported for count_include_pad in {} op_type"
@@ -1271,11 +1273,11 @@ class OnnxImporter:
 
     def BroadcastOperator_9(self, func_name, func_list, n):
         func = self.generate_default_function(func_name, n)
-        # NNabla can only process two inputs for max/min/sum.
+        # NNabla can only process two inputs for max/min.
         # Check if this is fulfilled.
         if len(n.input) != 2:
             raise ValueError(
-                "NNabla can only process Min/Max/Sum of two tensors")
+                "NNabla can only process Min/Max of two tensors")
         input0_shape = self.get_func_input_shape(func.input[0])
         input1_shape = self.get_func_input_shape(func.input[1])
         input0_dim = len(input0_shape)
@@ -1951,20 +1953,24 @@ class OnnxImporter:
     def Unsqueeze(self, func_list, n):
         func = self.generate_default_function("Reshape", n)
         rp = func.reshape_param
-        output_shape = self.get_func_input_shape(func.input[0])
+        input_shape = self.get_func_input_shape(func.input[0])
+        axes = []
         for attr in n.attribute:
             if attr.name == "axes":
                 if attr.type != AttributeProto.INTS:
                     raise ValueError(
                         "Only INTS is supported for axes in {} op_type".format(n.op_type))
                 for index in attr.ints:
-                    if index < 0:
-                        output_shape.insert(len(output_shape) + index, 1)
-                    else:
-                        output_shape.insert(index, 1)
+                    axes.append(index)
             else:
                 raise ValueError("Unsupported attribute {} was specified at {}"
                                  .format(attr.name, n.op_type))
+        output_shape = [0] * (len(input_shape) + len(axes))
+        for axis in axes:
+            output_shape[axis] = 1
+        for i in reversed(range(len(output_shape))):
+            if output_shape[i] == 0:
+                output_shape[i] = input_shape.pop()
         rp.shape.dim.extend(output_shape)
         func_list.append(func)
         self._shape_output[func.output[0]] = output_shape
@@ -2227,7 +2233,7 @@ class OnnxImporter:
         _shape = [b, c * (blocksize**2), reduced_h, reduced_w]
         rp = generate_reshape(n.name, trans_out, n.output[0], _shape,
                               self._graph.name, self._func_counter)
-        self._shape_output[rout] = _shape
+        self._shape_output[n.output[0]] = _shape
         func_list.append(rp)
 
     def ElementIndices(self, func_name, func_list, n):
@@ -2583,8 +2589,7 @@ class OnnxImporter:
                 shape[i + 2] += pad_width[2 * i + 1]
             self._shape_output[padded] = shape
             func_list.append(padf)
-            del func.input[:]
-            func.input.extend(padded)
+            func.input[0] = padded
         cp.pad.dim.extend(padval)
 
         if output_padding != [0] * dim:

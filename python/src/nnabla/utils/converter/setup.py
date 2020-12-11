@@ -33,9 +33,10 @@ if __name__ == '__main__':
 
     install_requires = [
         'ply',
-        'tensorflow==1.15.0',
-        'onnx_tf==1.5.0',
-        'tf2onnx==1.6.1',
+        'tensorflow==2.3.1',
+        'onnx_tf==1.7.0',
+        'tf2onnx==1.7.2',
+        'tensorflow-addons',
     ]
 
     ############################################################################
@@ -48,7 +49,7 @@ if __name__ == '__main__':
     # Setup
     setup(
         name=pkg_name,
-        description='NNabla Converter and Optimization Tools',
+        description='NNabla File Format Converter',
         version=__version__,
         author=__author__,
         author_email=__email__,
@@ -63,13 +64,14 @@ if __name__ == '__main__':
             'Topic :: Scientific/Engineering :: Artificial Intelligence',
             'License :: OSI Approved :: Apache Software License',
             'Programming Language :: Python :: 3.6',
-            'Programming Language :: Python :: 3.7'
+            'Programming Language :: Python :: 3.7',
+            'Programming Language :: Python :: 3.8'
         ],
         packages=['nnabla.utils.converter.tensorflow',
                   'nnabla.utils.converter.onnx'],
         package_dir={'nnabla.utils.converter.tensorflow': tensorflow_src_dir,
                      'nnabla.utils.converter.onnx': onnx_src_dir},
         install_requires=install_requires,
-        keywords="NNabla Converter and Optimization Tools",
-        python_requires='>=3.6, <3.8',
+        keywords="NNabla File Format Converter",
+        python_requires='>=3.6',
     )

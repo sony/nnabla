@@ -40,7 +40,7 @@ class TensorflowImporter:
                                  continue_on_error=False,
                                  target=",".join(
                                      constants.DEFAULT_TARGET),
-                                 opset=9,
+                                 opset=11,
                                  input_names=inputs,
                                  output_names=outputs,
                                  inputs_as_nchw=None)
@@ -78,11 +78,14 @@ class TensorflowImporter:
     def execute(self):
         if self._tf_format == 'TF_PB':
             graph_def = graph_pb2.GraphDef()
-            with tf.gfile.GFile(self._tf_file, 'rb') as f:
+            with tf.io.gfile.GFile(self._tf_file, 'rb') as f:
                 graph_def.ParseFromString(f.read())
             inputs, outputs = find_out_terminal_node(graph_def, postfix=True)
             graph_def, inputs, outputs = tf_loader.from_graphdef(
                 self._tf_file, inputs, outputs)
+        elif self._tf_format == 'SAVED_MODEL':
+            graph_def, inputs, outputs = tf_loader.from_saved_model(
+                self._tf_file, None, None)
         else:
             if self._outputs is None:
                 raise ImportError("Missing '--outputs' parameter.")
