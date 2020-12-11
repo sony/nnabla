@@ -52,8 +52,6 @@ def conv_block(input, w, noise=None, res=4, outmaps=512, inmaps=512,
         W, bias = weight_init_fn(shape=(w.shape[1], inmaps))
         runtime_coef = 1. / np.sqrt(512)
         s = F.affine(w, W*runtime_coef, bias) + 1.0
-    runtime_coef_for_conv = 1 / \
-        np.sqrt(np.prod([inmaps, kernel_size, kernel_size]))
 
     runtime_coef_for_conv = 1 / \
         np.sqrt(np.prod([inmaps, kernel_size, kernel_size]))
