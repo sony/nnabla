@@ -115,9 +115,8 @@ class Resolver:
         return pa_np
 
     def GRU(self, network, func):
-        def gru(x, h, w, b, with_bias):
+        def register_parameters(h, w, b, with_bias):
             hidden_size = h.shape[1]
-            xh = F.concatenate(*(x, h), axis=1)
             w0, w1, w2 = (np.squeeze(wd, 0)
                           for wd in np.split(w, w.shape[0], axis=0))
             w0_nn = nn.Variable.from_numpy_array(np.transpose(w0, (1, 0)))
@@ -144,6 +143,29 @@ class Resolver:
                 b0, b1, b2, b3 = b_dict.values()
                 names.update(b_dict)
                 params.update(b_dict)
+
+            parameters_dict = {
+                'w0_nn': w0_nn,
+                'w1_nn': w1_nn,
+                'w2_0_nn': w2_0_nn,
+                'w2_1_nn': w2_1_nn,
+                'b0': b0,
+                'b1': b1,
+                'b2': b2,
+                'b3': b3,
+            }
+            return parameters_dict
+
+        def gru(x, h, parameters_dict):
+            xh = F.concatenate(*(x, h), axis=1)
+            w0_nn = parameters_dict.get('w0_nn', None)
+            w1_nn = parameters_dict.get('w1_nn', None)
+            w2_0_nn = parameters_dict.get('w2_0_nn', None)
+            w2_1_nn = parameters_dict.get('w2_1_nn', None)
+            b0 = parameters_dict.get('b0', None)
+            b1 = parameters_dict.get('b1', None)
+            b2 = parameters_dict.get('b2', None)
+            b3 = parameters_dict.get('b3', None)
 
             r_t = F.sigmoid(F.affine(xh, w0_nn, b0))
             z_t = F.sigmoid(F.affine(xh, w1_nn, b1))
@@ -181,10 +203,11 @@ class Resolver:
                 bif = None
                 if with_bias:
                     bif = b[i, 0]
+                p_dict = register_parameters(hif, wif, bif, with_bias)
                 hs = []
                 for j, x in enumerate(xs):
                     # x : [B, I]
-                    hif = gru(x, hif, wif, bif, with_bias)
+                    hif = gru(x, hif, p_dict)
                     hs.append(hif)
                 hn.append(hif)
 
@@ -198,10 +221,11 @@ class Resolver:
                 bib = None
                 if with_bias:
                     bib = b[i, 1]
+                p_dict = register_parameters(hib, wib, bib, with_bias)
                 for k, x, in enumerate(reversed(xs)):
                     j = len(xs) - 1 - k
                     # x : [B, I]
-                    hib = gru(x, hib, wib, bib, with_bias)
+                    hib = gru(x, hib, p_dict)
                     hs[j] = F.concatenate(hs[j], hib, axis=1)
                 hn.append(hib)
                 xs = hs
