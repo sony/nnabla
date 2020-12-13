@@ -358,3 +358,25 @@ def test_no_need_grad_backward():
     d.backward(clear_buffer=True, function_pre_hook=hook)
 
     assert np.isclose(y.g, 1.5)
+
+
+def test_no_need_grad_forward():
+    '''
+    Previously, an intermediate variable with need_grad=False
+    causes unexpected data clearing if it's used from multiple functions
+    and some conditions meet. This test checks if it is resolved.
+    '''
+    import nnabla as nn
+    import nnabla.functions as F
+    nn.prefer_cached_array(False)
+
+    x = nn.Variable(tuple(), need_grad=False)
+    xx = x * 1
+    a = xx.reshape(x.shape)
+    b = xx * 1
+    d = a * b
+
+    x.data.fill(1)
+
+    d.forward(clear_no_need_grad=True)
+    assert np.isclose(d.d, 1.0)

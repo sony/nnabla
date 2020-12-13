@@ -77,6 +77,7 @@ class ForwardCallback {
   function_hook_type function_post_hook_;
   unordered_map<CgVariablePtr, int> vseen_;
   unordered_set<CgVariablePtr> need_grad_variable_set_;
+  unordered_set<CgVariablePtr> inplace_variable_set_;
   vector<string> history_;
 
 public:
@@ -120,6 +121,11 @@ public:
         // computation of some function.
         need_grad_variable_set_.insert(vi);
       }
+      if (func->function()->inplace_data(i)) {
+        // Inplaced variable shouldn't be cleared during forward
+        inplace_variable_set_.insert(vi);
+      }
+
       // This comes first because check_last_visit must be called in order to
       // increment the visit count of vi.
       if (!check_last_visit(vi)) {
@@ -140,6 +146,9 @@ public:
         // Not clear if any function requiring gradient computation uses this
         // variable.
         if (need_grad_variable_set_.find(vi) != need_grad_variable_set_.end()) {
+          continue;
+        }
+        if (inplace_variable_set_.find(vi) != inplace_variable_set_.end()) {
           continue;
         }
         ret[i] = true;
