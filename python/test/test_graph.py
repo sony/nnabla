@@ -328,3 +328,33 @@ def test_function_context(seed):
     with nn.context_scope(y.parent.context):
         z = F.relu(x)
     assert str(y.parent.context) == str(z.parent.context)
+
+
+def test_no_need_grad_backward():
+    '''
+    This tests a previously existing bug where an
+    intermediate variable with need_grad=False yet required
+    to compute a gradient in a function has been unexpectedly cleared.
+    '''
+    nn.prefer_cached_array(False)
+    x = nn.Variable(tuple(), need_grad=False)
+    y = nn.Variable(tuple(), need_grad=True)
+    z = nn.Variable(tuple(), need_grad=False)
+    xx = x * 1
+    yy = y * 1
+    zz = z * 1
+    a = xx * 3
+    b = xx * yy
+    c = xx * zz
+    d = a * b * c
+
+    x.data.fill(1)
+    y.data.fill(2)
+    z.data.fill(0.5)
+
+    hook = None  # lambda f: print(f, list(map(lambda x: x.d, f.inputs)))
+    d.forward(clear_no_need_grad=True, function_pre_hook=hook)
+    y.grad.zero()
+    d.backward(clear_buffer=True, function_pre_hook=hook)
+
+    assert np.isclose(y.g, 1.5)
