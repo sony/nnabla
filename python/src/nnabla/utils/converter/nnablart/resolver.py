@@ -288,14 +288,18 @@ class Resolver:
                     rebuild = True
                     break
 
-            if not rebuild:
-                networks.append(network)
-                continue
-
             self._variables = OrderedDict()
             self._functions = []
             for v in network.variable:
                 self._variables[v.name] = v
+
+            if not rebuild:
+                networks.append(network)
+                for func in network.function:
+                    for i in func.input:
+                        if self._variables[i].type == 'Parameter':
+                            self._referred.add(i)
+                continue
 
             for func in network.function:
                 resolver = self._resolve_table.get(

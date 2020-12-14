@@ -170,7 +170,7 @@ As for the importer, 3 formats tends to be supported:
 As for the exporter, some of Neural Network Console projects are supported. See :any:`Model_Support_Status`.
 The output of converter is tensorflow frozen graph format(e.g. *.pb)
 
-Before using this converter, please use command `pip install nnabla_tf_converter` to install nnabla_tf_converter.
+Before using this converter, please use command `pip install nnabla_converter` to install nnabla_converter.
 
 
 Process

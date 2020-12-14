@@ -37,5 +37,5 @@ RUN umask 0 \
 
 ENV PATH /opt/miniconda3/bin:$PATH
 
-RUN pip install nnabla
+RUN pip install nnabla nnabla_converter
 
