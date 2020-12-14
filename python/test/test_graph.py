@@ -360,11 +360,13 @@ def test_no_need_grad_backward():
     assert np.isclose(y.g, 1.5)
 
 
-def test_no_need_grad_forward():
+@pytest.mark.parametrize("clear_buffer", [False, True])
+def test_no_need_grad_forward(clear_buffer):
     '''
-    Previously, an intermediate variable with need_grad=False
-    causes unexpected data clearing if it's used from multiple functions
-    and some conditions meet. This test checks if it is resolved.
+    This tests a previously existing bug where an intermediate variable
+    has been unexpectedly cleared before the end of life if
+    it is used in an in-place function and
+    another function at the same time.
     '''
     import nnabla as nn
     import nnabla.functions as F
@@ -378,5 +380,5 @@ def test_no_need_grad_forward():
 
     x.data.fill(1)
 
-    d.forward(clear_no_need_grad=True)
+    d.forward(clear_no_need_grad=True, clear_buffer=clear_buffer)
     assert np.isclose(d.d, 1.0)

@@ -138,6 +138,9 @@ public:
           func->function()->inplace_data(i) || vi->prohibit_clear_data()) {
         continue;
       }
+      if (inplace_variable_set_.find(vi) != inplace_variable_set_.end()) {
+        continue;
+      }
       if (clear_buffer_) {
         ret[i] = true;
         continue;
@@ -146,9 +149,6 @@ public:
         // Not clear if any function requiring gradient computation uses this
         // variable.
         if (need_grad_variable_set_.find(vi) != need_grad_variable_set_.end()) {
-          continue;
-        }
-        if (inplace_variable_set_.find(vi) != inplace_variable_set_.end()) {
           continue;
         }
         ret[i] = true;
