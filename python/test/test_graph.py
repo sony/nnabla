@@ -382,3 +382,23 @@ def test_no_need_grad_forward(clear_buffer):
 
     d.forward(clear_no_need_grad=True, clear_buffer=clear_buffer)
     assert np.isclose(d.d, 1.0)
+
+
+def test_no_need_grad_forward_double():
+    '''
+    This tests a previously existing bug where a variable used
+    twice by a single function caused an unexpected clear due to
+    incorrect count of function references.
+    '''
+    import nnabla as nn
+    import nnabla.functions as F
+    nn.prefer_cached_array(False)
+
+    x = nn.Variable(tuple())
+    xx = x * 1
+    y = xx * xx
+    z = xx * 1
+    a = y * z
+    x.data.fill(1)
+    a.forward(clear_no_need_grad=True)
+    assert np.isclose(a.d, 1.0)

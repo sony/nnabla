@@ -89,7 +89,8 @@ public:
         function_post_hook_(function_post_hook) {}
 
   bool check_last_visit(CgVariablePtr v) {
-    if (v->function_reference_count() < 2) {
+    size_t num_ref = v->function_reference_count();
+    if (num_ref < 2) {
       // A variable referenced by <2 is always visited last.
       return true;
     }
@@ -101,7 +102,7 @@ public:
       return false;
     }
     // Check
-    if (++(it->second) == v->function_reference_count()) {
+    if (++(it->second) == num_ref) {
       // For better search performance of another. (maybe not required)
       vseen_.erase(it);
       return true;
@@ -631,18 +632,28 @@ void CgVariable::backward(
 }
 
 vector<CgFunctionPtr> CgVariable::function_references() {
-  vector<CgFunctionPtr> ret(this->function_reference_count(), nullptr);
+  vector<CgFunctionPtr> ret;
   int i = 0;
   for (auto pair : function_references_) {
     if (auto shared = pair.second.first.lock())
-      ret[i++] = shared;
+      ret.push_back(shared);
   }
 
   return ret;
 }
 
+size_t CgVariable::function_reference_count() const {
+  return function_reference_count_;
+}
+
 void CgVariable::insert_function_reference(CgFunctionPtr func) {
   std::weak_ptr<CgFunction> wp(func);
+  function_reference_count_++;
+  auto it = function_references_.find(func.get());
+  if (it != function_references_.end()) {
+    it->second.second.count++;
+    return;
+  }
   function_references_.insert(
       {func.get(), {wp, CgVariable::FunctionReferenceInfo()}});
 }
@@ -652,6 +663,7 @@ void CgVariable::remove_function_reference(CgFunction *funcp) {
   if (it == function_references_.end())
     return;
   function_references_.erase(it);
+  function_reference_count_ -= it->second.second.count;
 }
 
 void CgVariable::mark_need_setup() {
