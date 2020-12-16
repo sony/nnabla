@@ -211,7 +211,7 @@ def test_rnn(seed, num_layers, nonlinearity, dropout, bidirectional, training, s
         backward = [True for _ in inputs]
 
     function_tester(rng, F.rnn, execute_fixed_length_rnn, inputs, func_kwargs=dict(
-                    num_layers=num_layers, nonlinearity=nonlinearity, dropout=dropout, bidirectional=bidirectional, training=training), atol_f=1e-4, atol_b=1e-3, dstep=1e-3, backward=backward, ctx=ctx, func_name=func_name, ref_grad=get_rnn_grad, disable_half_test=True)
+                    num_layers=num_layers, nonlinearity=nonlinearity, dropout=dropout, bidirectional=bidirectional, training=training), atol_f=2e-1, atol_b=2e-1, dstep=1e-3, backward=backward, ctx=ctx, func_name=func_name, ref_grad=get_rnn_grad, disable_half_test=True)
 
 
 @pytest.mark.parametrize("num_layers", [2])

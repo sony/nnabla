@@ -41,7 +41,7 @@ if __name__ == '__main__':
     ############################################################################
     # Package information
 
-    pkg_name = "nnabla_tf_converter"
+    pkg_name = "nnabla_converter"
     src_dir = os.path.join(root_dir, 'tensorflow')
 
     # Setup
@@ -61,17 +61,12 @@ if __name__ == '__main__':
             'Topic :: Scientific/Engineering',
             'Topic :: Scientific/Engineering :: Artificial Intelligence',
             'License :: OSI Approved :: Apache Software License',
-            'Programming Language :: Python :: 3.5',
             'Programming Language :: Python :: 3.6',
-            'Programming Language :: Python :: 3.7',
-            'Programming Language :: Python :: Implementation :: CPython',
-            'Operating System :: Microsoft :: Windows',
-            'Operating System :: POSIX :: Linux',
-            'Operating System :: MacOS :: MacOS X'
+            'Programming Language :: Python :: 3.7'
         ],
         packages=['nnabla.utils.converter.tensorflow'],
         package_dir={'nnabla.utils.converter.tensorflow': src_dir},
         install_requires=install_requires,
         keywords="Converter between NNabla and Tensorflow",
-        python_requires='>=3.5, <3.8',
+        python_requires='>=3.6, <3.8',
     )

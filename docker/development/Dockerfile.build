@@ -96,10 +96,11 @@ RUN mkdir /tmp/deps \
     && rm -rf /tmp/*
 
 ############################################################ libarchive
+ARG LIBARCHIVEVER=3.4.3
 RUN mkdir /tmp/deps \
     && cd /tmp/deps \
-    && curl -L https://www.libarchive.org/downloads/libarchive-3.3.2.tar.gz -o libarchive-3.3.2.tar.gz \
-    && tar xfa libarchive-3.3.2.tar.gz \
+    && curl -L https://github.com/libarchive/libarchive/archive/v${LIBARCHIVEVER}.tar.gz -o libarchive-${LIBARCHIVEVER}.tar.gz \
+    && tar xfa libarchive-${LIBARCHIVEVER}.tar.gz \
     && mkdir libarchive-build \
     && cd libarchive-build \
     && cmake \
@@ -109,7 +110,7 @@ RUN mkdir /tmp/deps \
         -DENABLE_CNG=FALSE -DENABLE_TAR=FALSE -DENABLE_TAR_SHARED=FALSE -DENABLE_CPIO=FALSE \
         -DENABLE_CPIO_SHARED=FALSE -DENABLE_CAT=FALSE -DENABLE_CAT_SHARED=FALSE -DENABLE_XATTR=FALSE \
         -DENABLE_ACL=FALSE -DENABLE_ICONV=FALSE -DENABLE_TEST=FALSE \
-        ../libarchive-3.3.2 \
+        ../libarchive-${LIBARCHIVEVER} \
     && make -j8 \
     && make install \
     && cd / \

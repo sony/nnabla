@@ -1948,7 +1948,7 @@ Reduction:
         doc: N-D array
     c_runtime: not support
     function_ids:
-      fiIB: 316
+      fiIB: 318
   Prod:
     snake_name: prod
     doc: |2
@@ -4486,7 +4486,7 @@ Stochasticity:
 
       Note:
           Usually dropout only applied during training as below
-          (except `Bayesian dropout`_).
+          (except `MC dropout`_). If you want to use dropout as an MC dropout, remove 'if train:'.
 
           .. code-block:: python
 
@@ -4494,7 +4494,7 @@ Stochasticity:
               if train:
                   h = F.dropout(h, 0.5)
 
-      .. _Bayesian dropout: https://arxiv.org/abs/1506.02142
+      .. _MC dropout: https://arxiv.org/abs/1506.02142
     inputs:
       x:
         doc: N-D array
