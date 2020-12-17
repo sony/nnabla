@@ -32,6 +32,9 @@ class Token:
         'StopGradient',
         'SquaredDifference',
         'Rsqrt',
+        'AddV2',
+        'RealDiv',
+        'Sum',
     )
 
     def __init__(self, op):
@@ -77,6 +80,7 @@ class RefineGraph:
         self.run_list = []
         self.random_seed = 0
         self.affine_resolved = False
+        self._rename_node_dict = {}
         tf.import_graph_def(self.graph_def, name='')
 
     def __exit__(self):
@@ -166,48 +170,60 @@ class RefineGraph:
                     self.token_list.append(Token(op))
                 op.resolved = True
 
-    def _run_tensor(self, tensor_name):
-        if ':' not in tensor_name:
-            tensor_name += ":0"
-        tensor = self.sess.graph.get_tensor_by_name(tensor_name)
-        result = self.sess.run(tensor)
+    def _run_tensor(self, tensor_name, output_num=1):
+        result = []
+        for i in range(output_num):
+            name = tensor_name.split(":")[0] + ":" + str(i)
+            tensor = self.sess.graph.get_tensor_by_name(name)
+            result.append(self.sess.run(tensor))
         return result
 
     def _create_const_node(self, name, value):
-        tensor_content = value.tobytes()
-        dt = tf.as_dtype(value.dtype).as_datatype_enum
-        tensor_shape = TensorShapeProto(
-            dim=[TensorShapeProto.Dim(size=s) for s in value.shape])
-        tensor_proto = TensorProto(tensor_content=tensor_content,
-                                   tensor_shape=tensor_shape,
-                                   dtype=dt)
-        node = tf.compat.v1.NodeDef(name=name, op='Const',
-                                    attr={'value': tf.compat.v1.AttrValue(tensor=tensor_proto),
-                                          'dtype': tf.compat.v1.AttrValue(type=dt)})
-        return node
+        for i in range(len(value)):
+            fixed_name = name
+            if i > 0:
+                original_name = name + ":" + str(i)
+                fixed_name = original_name.replace(":", "_")
+                self._rename_node_dict[original_name] = fixed_name
+            tensor_content = value[i].tobytes()
+            dt = tf.as_dtype(value[i].dtype).as_datatype_enum
+            tensor_shape = TensorShapeProto(
+                dim=[TensorShapeProto.Dim(size=s) for s in value[i].shape])
+            tensor_proto = TensorProto(tensor_content=tensor_content,
+                                       tensor_shape=tensor_shape,
+                                       dtype=dt)
+            node = tf.compat.v1.NodeDef(name=fixed_name, op='Const',
+                                        attr={'value': tf.compat.v1.AttrValue(tensor=tensor_proto),
+                                              'dtype': tf.compat.v1.AttrValue(type=dt)})
+            self.op_dict[fixed_name] = Operator(node)
 
     def _recursive_del_node(self, op):
         for inp in op.inputs:
             self._recursive_del_node(inp)
         self.decrease_refcount(op)
 
+    def _get_node_output_num(self, op):
+        output_num = 1
+        if op.node.op == "Split":
+            output_num = op.node.attr['num_split'].i
+        return output_num
+
     def _merge_run_list(self):
         for r in self.run_list:
             self._recursive_del_node(self.op_dict[r.node.name])
-            value = self._run_tensor(r.node.name)
-            node = self._create_const_node(r.node.name, value)
-            self.op_dict[r.node.name] = Operator(node)
+            output_num = self._get_node_output_num(r)
+            value = self._run_tensor(r.node.name, output_num=output_num)
+            self._create_const_node(r.node.name, value)
 
     def _nchw_to_nhwc(self, op):
         node_name = [inp.node.name for inp in op.inputs if inp.const]
         if node_name:
             node_name = node_name[0]
-            value = self._run_tensor(node_name)
+            value = self._run_tensor(node_name)[0]
             if len(value.shape) == 4:
                 value = np.transpose(value, (0, 2, 3, 1))
                 self._remove_node(self.op_dict[node_name])
-                node = self._create_const_node(node_name, value)
-                self.op_dict[node_name] = Operator(node)
+                self._create_const_node(node_name, [value])
 
     def prepare(self):
         self._build_graph()
@@ -217,6 +233,12 @@ class RefineGraph:
             for inp in r.inputs:
                 if inp in self.run_list:
                     self.run_list.remove(inp)
+
+            # When the number of node outputs is huge, merging will be abandoned because it takes a lot of time.
+            output_num = self._get_node_output_num(r)
+            if output_num > 50:
+                self.run_list.remove(r)
+                self.run_list.extend(r.inputs)
 
         self._merge_run_list()
 
@@ -229,6 +251,10 @@ class RefineGraph:
                 op.node.attr['shape'].shape.Clear()
                 op.node.attr['shape'].shape.CopyFrom(
                     tf.TensorShape(shape).as_proto())
+
+            for i in range(len(op.node.input)):
+                if op.node.input[i] in self._rename_node_dict:
+                    op.node.input[i] = self._rename_node_dict[op.node.input[i]]
 
     def save_back(self, pb_file_name):
         gdef = tf.compat.v1.GraphDef()
@@ -293,12 +319,11 @@ class RefineGraph:
         for op in op_list:
             if op.node.op == "Transpose":
                 self._remove_node(op)
-            elif op.node.op == 'PadV2':
-                paddings = self._run_tensor(op.node.input[1])
+            elif op.node.op == 'PadV2' or op.node.op == 'Pad':
+                paddings = self._run_tensor(op.node.input[1])[0]
                 if any(paddings.flatten().tolist()):
                     paddings[[1, 2, 3]] = paddings[[2, 3, 1]]
-                    node = self._create_const_node(op.node.input[1], paddings)
-                    self.op_dict[op.node.input[1]] = Operator(node)
+                    self._create_const_node(op.node.input[1], [paddings])
                 else:
                     self._remove_node(op)
         return op_list[-2]
@@ -309,43 +334,30 @@ class RefineGraph:
         for op in op_list[0]:
             if op.node.op == "Conv2D":
                 conv_op = op
-            elif op.node.op == "Add":
+            elif op.node.op == "Add" or op.node.op == "AddV2":
                 add_op = op
 
         for op in op_list[1:]:
             if op.node.op == "Mul":
                 self._remove_node(self.op_dict[op.node.name])
-                value = self._run_tensor(op.node.input[1])
+                value = self._run_tensor(op.node.input[1])[0]
                 mul_value = np.transpose(value, (0, 2, 3, 1))
-            elif op.node.op == "Add":
+            elif op.node.op == "Add" or op.node.op == "AddV2":
                 self._remove_node(self.op_dict[op.node.name])
-                value = self._run_tensor(op.node.input[1])
+                value = self._run_tensor(op.node.input[1])[0]
                 add_value = np.transpose(value, (0, 2, 3, 1))
 
-        weight_node = self.op_dict[conv_op.node.input[1].split(":")[0]]
-        if weight_node.node.op == 'Const':
-            weight_value = self._run_tensor(conv_op.node.input[1])
-            weight_value *= mul_value
-            weight_tensor = self._create_const_node(
-                conv_op.node.input[1], weight_value)
-            self.op_dict[conv_op.node.input[1]] = Operator(weight_tensor)
-        elif weight_node.node.op == 'Split':
-            weight_value = self._run_tensor(weight_node.node.input[1])
-            weight_value *= mul_value
-            weight_tensor = self._create_const_node(
-                weight_node.node.input[1], weight_value)
-            self.op_dict[weight_node.node.input[1]] = Operator(weight_tensor)
+        weight_value = self._run_tensor(conv_op.node.input[1])[0]
+        weight_value *= mul_value
+        self._create_const_node(conv_op.node.input[1], [weight_value])
         if add_op:
-            bias_value = self._run_tensor(add_op.node.input[1])
+            bias_value = self._run_tensor(add_op.node.input[1])[0]
             bias_value = bias_value * mul_value + add_value
-            bias_tensor = self._create_const_node(
-                add_op.node.input[1], bias_value)
-            self.op_dict[add_op.node.input[1]] = Operator(bias_tensor)
+            self._create_const_node(add_op.node.input[1], [bias_value])
         else:
             bias_value = add_value
             bias_name = self.fork_name("bias")
-            bias_tensor = self._create_const_node(bias_name, bias_value)
-            self.op_dict[bias_name] = Operator(bias_tensor)
+            self._create_const_node(bias_name, [bias_value])
             node = tf.NodeDef()
             node.name = self.fork_name("add")
             node.op = "Add"
@@ -366,11 +378,10 @@ class RefineGraph:
         nodes = []
         for op in op_list:
             if op.node.op == "Pad":
-                paddings = self._run_tensor(op.node.input[1])
+                paddings = self._run_tensor(op.node.input[1])[0]
                 if any(paddings.flatten().tolist()):
                     paddings[[1, 2, 3]] = paddings[[2, 3, 1]]
-                    node = self._create_const_node(op.node.input[1], paddings)
-                    self.op_dict[op.node.input[1]] = Operator(node)
+                    self._create_const_node(op.node.input[1], [paddings])
                 else:
                     self._remove_node(op)
             elif op.node.op == "Transpose" or op.node.op == "Identity":
@@ -406,34 +417,36 @@ class RefineGraph:
     def bn(self, op_list):
         if not self.affine_resolved:
             for op in op_list:
-                if op.node.op == "Mul" or op.node.op == "Add" or op.node.op == "Sub":
+                if op.node.op == "Mul" or op.node.op == "Add" or op.node.op == "Sub" or op.node.op == "AddV2":
                     self._nchw_to_nhwc(op)
                 elif op.node.op == "Mean":
                     indices = np.array([1, 2], dtype=np.int32)
-                    indices_tensor = self._create_const_node(
-                        op.node.input[1], indices)
-                    self.op_dict[op.node.input[1]] = Operator(indices_tensor)
+                    self._create_const_node(op.node.input[1], [indices])
+                elif op.node.op == "Sum":
+                    indices = np.array([0, 1, 2], dtype=np.int32)
+                    self._create_const_node(op.node.input[1], [indices])
+                elif op.node.op == "Reshape":
+                    shape = self._run_tensor(op.node.input[1])[0]
+                    shape[[1, 2, 3]] = shape[[2, 3, 1]]
+                    self._create_const_node(op.node.input[1], [shape])
         else:
             for op in op_list:
-                if op.node.op == "Mul" or op.node.op == "Add" or op.node.op == "Sub":
+                if op.node.op == "Mul" or op.node.op == "Add" or op.node.op == "Sub" or op.node.op == "AddV2":
                     node_name = [
                         inp.node.name for inp in op.inputs if inp.const]
                     if node_name:
                         node_name = node_name[0]
-                        value = self._run_tensor(node_name)
+                        value = self._run_tensor(node_name)[0]
                         if len(value.shape) == 4:
                             self._remove_node(self.op_dict[node_name])
-                            node = self._create_const_node(node_name, value)
-                            self.op_dict[node_name] = Operator(node)
+                            self._create_const_node(node_name, [value])
         return op_list[-1]
 
     def affine(self, op_list):
         if not self.affine_resolved:
             transpose_perm_name = self.fork_name("transpose_perm")
             transpose_perm = np.array([0, 3, 1, 2], dtype=np.int32)
-            transpose_perm_tensor = self._create_const_node(
-                transpose_perm_name, transpose_perm)
-            self.op_dict[transpose_perm_name] = Operator(transpose_perm_tensor)
+            self._create_const_node(transpose_perm_name, [transpose_perm])
 
             input = op_list[0].node.input[0]
             transpose_name = self.fork_name("transpose")
@@ -464,18 +477,15 @@ class RefineGraph:
         for op in layers:
             if not isinstance(op, list):
                 if op.node.op == "ConcatV2":
-                    value = self._run_tensor(op.node.input[-1])
+                    value = self._run_tensor(op.node.input[-1])[0]
                     if value == 1:
-                        node = self._create_const_node(op.node.input[-1],
-                                                       np.array(3, dtype=np.int32))
-                        self.op_dict[op.node.input[-1]] = Operator(node)
+                        self._create_const_node(
+                            op.node.input[-1], [np.array(3, dtype=np.int32)])
                 elif op.node.op == "Slice":
-                    begin = self._run_tensor(op.node.input[1])
-                    size = self._run_tensor(op.node.input[2])
+                    begin = self._run_tensor(op.node.input[1])[0]
+                    size = self._run_tensor(op.node.input[2])[0]
                     if len(begin) == 4 and len(size) == 4:
                         begin[[1, 2, 3]] = begin[[2, 3, 1]]
                         size[[1, 2, 3]] = size[[2, 3, 1]]
-                        node = self._create_const_node(op.node.input[1], begin)
-                        self.op_dict[op.node.input[1]] = Operator(node)
-                        node = self._create_const_node(op.node.input[2], size)
-                        self.op_dict[op.node.input[2]] = Operator(node)
+                        self._create_const_node(op.node.input[1], [begin])
+                        self._create_const_node(op.node.input[2], [size])
