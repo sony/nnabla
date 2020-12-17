@@ -20,6 +20,7 @@
 #include <nbla/function/add2.hpp>
 #include <nbla/function/instance_normalization.hpp>
 #include <nbla/function/mul2.hpp>
+#include <nbla/function/sub2.hpp>
 #include <nbla/imperative.hpp>
 
 namespace nbla {
@@ -116,6 +117,23 @@ void GroupNormalization<T>::setup_impl(const Variables &inputs,
     f_mul2_ = create_Mul2(ctx_, false);
   if (!no_bias_)
     f_add2_ = create_Add2(ctx_, false);
+  if (!no_bias_ && no_scale_)
+    f_sub2_ = create_Sub2(ctx_, false); // needed for backward
+
+  // setup instance norm
+
+  auto x = inputs[0];
+  auto y = outputs[0];
+
+  // instance norm
+  x->reshape(instn_x_shape_, false);
+  y->reshape(instn_x_shape_, false);
+
+  nbla::execute(f_instance_norm_, Variables{x}, outputs);
+
+  // restore shape
+  x->reshape(gn_x_shape_, false);
+  y->reshape(gn_x_shape_, false);
 }
 
 template <typename T>
@@ -132,7 +150,7 @@ void GroupNormalization<T>::forward_impl(const Variables &inputs,
   x->reshape(instn_x_shape_, false);
   y->reshape(instn_x_shape_, false);
 
-  nbla::execute(f_instance_norm_, Variables{x}, outputs);
+  f_instance_norm_->forward(Variables{x}, outputs);
 
   x->reshape(gn_x_shape_, false); // restore input shape
   y->reshape(gn_x_shape_, false);
@@ -160,7 +178,7 @@ void GroupNormalization<T>::backward_impl(const Variables &inputs,
   auto x = inputs[0];
 
   // instance_norm variables
-  Variable out_instn_y_buf;
+  Variable out_instn_y_buf(instn_x_shape_);
   Variable *out_instn_y = no_scale_ && no_bias_ ? outputs[0] : &out_instn_y_buf;
   const auto instn_inputs = Variables{x};
   const auto instn_outputs =
@@ -179,15 +197,25 @@ void GroupNormalization<T>::backward_impl(const Variables &inputs,
 
   // forward (instance_norm -> affine)
 
+  // We need instance_norm forward recalculation only when scale operation is
+  // enabled because Mul2 input cannot be restored from its output.
+  const bool need_instn_forward = !no_scale_;
   x->reshape(instn_x_shape_, false);
-  nbla::execute(f_instance_norm_, instn_inputs, instn_outputs);
-  out_instn_y->reshape(gn_x_shape_, false);
+  if (need_instn_forward) {
+    f_instance_norm_->forward(instn_inputs, instn_outputs);
+    out_instn_y->reshape(gn_x_shape_, false);
 
-  if (scale) {
-    nbla::execute(f_mul2_, mul2_inputs, mul2_outputs);
-  }
-  if (bias) {
-    nbla::execute(f_add2_, add2_inputs, add2_outputs);
+    if (scale) {
+      nbla::execute(f_mul2_, mul2_inputs, mul2_outputs);
+    }
+    if (bias) {
+      nbla::execute(f_add2_, add2_inputs, add2_outputs);
+    }
+  } else { // no_scale == true
+    if (bias) {
+      // instance_norm outputs are restored by group_norm output - bias
+      nbla::execute(f_sub2_, {outputs[0], bias}, {out_instn_y});
+    }
   }
 
   // backward (affine -> instance_norm)
@@ -205,8 +233,7 @@ void GroupNormalization<T>::backward_impl(const Variables &inputs,
 
   if (propagate_down[0]) {
     out_instn_y->reshape(instn_x_shape_, false);
-    nbla::backward(f_instance_norm_, instn_inputs, instn_outputs, {true},
-                   {accum[0]});
+    f_instance_norm_->backward(instn_inputs, instn_outputs, {true}, {accum[0]});
     out_instn_y->reshape(gn_x_shape_, false);
   }
   x->reshape(gn_x_shape_, false); // restore input shape

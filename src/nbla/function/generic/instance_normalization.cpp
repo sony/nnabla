@@ -124,6 +124,32 @@ void InstanceNormalization<T>::setup_impl(const Variables &inputs,
   tn_axes.push_back(channel_axis_);
   f_tensor_norm_ =
       create_TensorNormalization(ctx_, tn_axes, eps_, no_scale_, no_bias_);
+
+  // setup tensor_norm
+  auto x = inputs[0];
+
+  // tensor_norm variables
+  Variable beta_bc, gamma_bc;
+  Variable *tn_beta = beta;
+  Variable *tn_gamma = gamma;
+
+  // broadcast
+  if (beta && need_beta_broadcast_) {
+    f_broadcast_beta_->setup(Variables{beta}, Variables{&beta_bc});
+    tn_beta = &beta_bc;
+  }
+  if (gamma && need_gamma_broadcast_) {
+    f_broadcast_gamma_->setup(Variables{gamma}, Variables{&gamma_bc});
+    tn_gamma = &gamma_bc;
+  }
+
+  // tensor_norm
+  auto tn_inputs = Variables{x};
+  if (beta)
+    tn_inputs.push_back(tn_beta);
+  if (gamma)
+    tn_inputs.push_back(tn_gamma);
+  f_tensor_norm_->setup(tn_inputs, outputs);
 }
 
 template <typename T>
@@ -154,7 +180,7 @@ void InstanceNormalization<T>::forward_impl(const Variables &inputs,
     tn_inputs.push_back(tn_beta);
   if (gamma)
     tn_inputs.push_back(tn_gamma);
-  nbla::execute(f_tensor_norm_, tn_inputs, outputs);
+  f_tensor_norm_->forward(tn_inputs, outputs);
 }
 
 template <typename T>
@@ -194,7 +220,9 @@ void InstanceNormalization<T>::backward_impl(const Variables &inputs,
   if (gamma)
     tn_inputs.push_back(tn_gamma);
 
-  nbla::execute(f_tensor_norm_, tn_inputs, outputs);
+  // We can skip tensor_norm forward calculation since its outputs are already
+  // in data region of `outputs`
+  // nbla::execute(f_tensor_norm_, tn_inputs, outputs);
 
   // backward (tensor_norm -> broadcast)
 
@@ -204,7 +232,7 @@ void InstanceNormalization<T>::backward_impl(const Variables &inputs,
   if (gamma)
     tn_accum.push_back(accum[gamma_idx_] && !need_gamma_broadcast_);
 
-  nbla::backward(f_tensor_norm_, tn_inputs, outputs, propagate_down, tn_accum);
+  f_tensor_norm_->backward(tn_inputs, outputs, propagate_down, tn_accum);
 
   if (beta && need_beta_broadcast_ && propagate_down[beta_idx_]) {
     nbla::backward(f_broadcast_beta_, Variables{beta}, Variables{&beta_bc},

@@ -73,25 +73,84 @@ void TensorNormalization<T>::setup_impl(const Variables &inputs,
   }
 
   // batch_norm adapter
-  bn_in_adapter_.reset(
-      new BatchNormalizationInOutAdapter(ctx_, ndim, x_shape, axes_));
-  bn_param_adapter_.reset(
-      new BatchNormalizationInOutAdapter(ctx_, ndim, bn_param_shape_, axes_));
+  need_adapter_ = this->axes_.size() != 1;
+  if (need_adapter_) {
+    bn_in_adapter_.reset(
+        new BatchNormalizationInOutAdapter(ctx_, ndim, x_shape, axes_));
+    bn_param_adapter_.reset(
+        new BatchNormalizationInOutAdapter(ctx_, ndim, bn_param_shape_, axes_));
 
-  // function
-  const int bn_axis = ndim - axes_.size();
-  // ndim of batch_norm input x will be 1 when ndim - axes_.size() == 0. In this
-  // case, batch_norm adapter add extra outer axis to batch_norm input x, and
-  // the axis of batch_norm also need to be shifted.
-  const vector<int> bn_axes = {bn_axis == 0 ? 1 : bn_axis};
-  f_batch_norm_ =
-      create_BatchNormalization(ctx_, bn_axes, 0. /* decay_rate */, eps_,
-                                true /* batch_stat */, no_scale_, no_bias_);
+    const int bn_axis = ndim - axes_.size();
+    // ndim of batch_norm input x will be 1 when ndim - axes_.size() == 0. In
+    // this case, batch_norm adapter add extra outer axis to batch_norm input x,
+    // and the axis of batch_norm also need to be shifted.
+    const vector<int> bn_axes = {bn_axis == 0 ? 1 : bn_axis};
+    f_batch_norm_ =
+        create_BatchNormalization(ctx_, bn_axes, 0. /* decay_rate */, eps_,
+                                  true /* batch_stat */, no_scale_, no_bias_);
+  } else {
+    const vector<int> bn_axes = this->axes_;
+    f_batch_norm_ =
+        create_BatchNormalization(ctx_, bn_axes, 0. /* decay_rate */, eps_,
+                                  true /* batch_stat */, no_scale_, no_bias_);
+  }
+
+  setup_batch_norm(inputs, outputs);
 }
 
 template <typename T>
-void TensorNormalization<T>::forward_impl(const Variables &inputs,
-                                          const Variables &outputs) {
+void TensorNormalization<T>::setup_batch_norm(const Variables &inputs,
+                                              const Variables &outputs) {
+  if (need_adapter_) {
+    // tensor norm variables
+    auto x = inputs[0];
+    auto beta = no_bias_ ? nullptr : inputs[beta_idx_];
+    auto gamma = no_scale_ ? nullptr : inputs[gamma_idx_];
+
+    // batch norm variables
+    Variable bn_x, bn_beta, bn_gamma, bn_in_mean, bn_in_variance;
+    Variable bn_y, bn_out_mean, bn_out_variance;
+    Variable mean(bn_param_shape_);     // dummy
+    Variable variance(bn_param_shape_); // dummy
+
+    Variables bn_inputs;
+    bn_inputs.push_back(&bn_x);
+    if (!no_bias_)
+      bn_inputs.push_back(&bn_beta);
+    if (!no_scale_)
+      bn_inputs.push_back(&bn_gamma);
+    bn_inputs.push_back(&bn_in_mean);
+    bn_inputs.push_back(&bn_in_variance);
+    const auto bn_outputs =
+        output_stat_ ? Variables{&bn_y, &bn_out_mean, &bn_out_variance}
+                     : Variables{&bn_y};
+
+    bn_in_adapter_->tn2bn(x, &bn_x);
+    if (beta)
+      bn_param_adapter_->tn2bn(beta, &bn_beta);
+    if (gamma)
+      bn_param_adapter_->tn2bn(gamma, &bn_gamma);
+    bn_param_adapter_->tn2bn(&mean, &bn_in_mean);
+    bn_param_adapter_->tn2bn(&variance, &bn_in_variance);
+
+    f_batch_norm_->setup(bn_inputs, bn_outputs);
+  } else {
+    auto bn_inputs = inputs;
+    const auto bn_outputs = outputs;
+
+    // dummy variables for batch_norm
+    Variable mean(bn_param_shape_);     // dummy
+    Variable variance(bn_param_shape_); // dummy
+    bn_inputs.push_back(&mean);
+    bn_inputs.push_back(&variance);
+
+    f_batch_norm_->setup(bn_inputs, bn_outputs);
+  }
+}
+
+template <typename T>
+void TensorNormalization<T>::forward_with_adapter(const Variables &inputs,
+                                                  const Variables &outputs) {
   // tensor norm variables
   auto x = inputs[0];
   auto beta = no_bias_ ? nullptr : inputs[beta_idx_];
@@ -115,28 +174,65 @@ void TensorNormalization<T>::forward_impl(const Variables &inputs,
                               ? Variables{&bn_y, &bn_out_mean, &bn_out_variance}
                               : Variables{&bn_y};
 
-  bn_in_adapter_->pre_op(x, &bn_x);
+  bn_in_adapter_->tn2bn(x, &bn_x);
   if (beta)
-    bn_param_adapter_->pre_op(beta, &bn_beta);
+    bn_param_adapter_->tn2bn(beta, &bn_beta);
   if (gamma)
-    bn_param_adapter_->pre_op(gamma, &bn_gamma);
-  bn_param_adapter_->pre_op(&mean, &bn_in_mean);
-  bn_param_adapter_->pre_op(&variance, &bn_in_variance);
+    bn_param_adapter_->tn2bn(gamma, &bn_gamma);
+  bn_param_adapter_->tn2bn(&mean, &bn_in_mean);
+  bn_param_adapter_->tn2bn(&variance, &bn_in_variance);
 
-  nbla::execute(f_batch_norm_, bn_inputs, bn_outputs);
+  bn_y.reshape(bn_x.shape(), true);
+  bn_out_mean.reshape(bn_in_mean.shape(), true);
+  bn_out_variance.reshape(bn_in_variance.shape(), true);
+  f_batch_norm_->forward(bn_inputs, bn_outputs);
 
-  bn_in_adapter_->post_op(&bn_y, outputs[0]);
+  bn_in_adapter_->bn2tn(&bn_y, outputs[0]);
   if (output_stat_) {
-    bn_param_adapter_->post_op(&bn_out_mean, outputs[1]);
-    bn_param_adapter_->post_op(&bn_out_variance, outputs[2]);
+    bn_param_adapter_->bn2tn(&bn_out_mean, outputs[1]);
+    bn_param_adapter_->bn2tn(&bn_out_variance, outputs[2]);
   }
 }
 
 template <typename T>
-void TensorNormalization<T>::backward_impl(const Variables &inputs,
-                                           const Variables &outputs,
-                                           const vector<bool> &propagate_down,
-                                           const vector<bool> &accum) {
+void TensorNormalization<T>::forward_without_adapter(const Variables &inputs,
+                                                     const Variables &outputs) {
+  // tensor norm variables
+  auto x = inputs[0];
+  auto beta = no_bias_ ? nullptr : inputs[beta_idx_];
+  auto gamma = no_scale_ ? nullptr : inputs[gamma_idx_];
+
+  // batch norm variables
+  Variable mean(bn_param_shape_);     // dummy
+  Variable variance(bn_param_shape_); // dummy
+
+  Variables bn_inputs;
+  bn_inputs.push_back(x);
+  if (!no_bias_)
+    bn_inputs.push_back(beta);
+  if (!no_scale_)
+    bn_inputs.push_back(gamma);
+  bn_inputs.push_back(&mean);
+  bn_inputs.push_back(&variance);
+  const auto bn_outputs = outputs;
+
+  f_batch_norm_->forward(bn_inputs, bn_outputs);
+}
+
+template <typename T>
+void TensorNormalization<T>::forward_impl(const Variables &inputs,
+                                          const Variables &outputs) {
+  if (need_adapter_) {
+    forward_with_adapter(inputs, outputs);
+  } else {
+    forward_without_adapter(inputs, outputs);
+  }
+}
+
+template <typename T>
+void TensorNormalization<T>::backward_with_adapter(
+    const Variables &inputs, const Variables &outputs,
+    const vector<bool> &propagate_down, const vector<bool> &accum) {
   if (!(propagate_down[0] || (inputs.size() > 1 && propagate_down[1]) ||
         (inputs.size() > 2 && propagate_down[2]))) {
     return;
@@ -180,40 +276,108 @@ void TensorNormalization<T>::backward_impl(const Variables &inputs,
 
   // forward (in_adapter -> batch_norm -> out_adapter)
 
-  bn_in_adapter_->pre_op(x, &bn_x);
+  bn_in_adapter_->tn2bn(x, &bn_x);
   if (beta)
-    bn_param_adapter_->pre_op(beta, &bn_beta);
+    bn_param_adapter_->tn2bn(beta, &bn_beta);
   if (gamma)
-    bn_param_adapter_->pre_op(gamma, &bn_gamma);
-  bn_param_adapter_->pre_op(&mean, &bn_in_mean);
-  bn_param_adapter_->pre_op(&variance, &bn_in_variance);
+    bn_param_adapter_->tn2bn(gamma, &bn_gamma);
+  bn_param_adapter_->tn2bn(&mean, &bn_in_mean);
+  bn_param_adapter_->tn2bn(&variance, &bn_in_variance);
 
-  nbla::execute(f_batch_norm_, bn_inputs, bn_outputs);
+  // We can skip following forward calculation since batch_norm outputs can be
+  // restored from tensor_norm outputs.
 
-  bn_in_adapter_->post_op(&bn_y, outputs[0]);
+  // nbla::execute(f_batch_norm_, bn_inputs, bn_outputs);
+
+  // bn_in_adapter_->bn2tn(&bn_y, outputs[0]);
+  // if (output_stat_) {
+  //   bn_param_adapter_->bn2tn(&bn_out_mean, outputs[1]);
+  //   bn_param_adapter_->bn2tn(&bn_out_variance, outputs[2]);
+  // }
+
+  // Restore batch_norm outputs from tensor_norm outputs
+  bn_in_adapter_->tn2bn(outputs[0], &bn_y);
   if (output_stat_) {
-    bn_param_adapter_->post_op(&bn_out_mean, outputs[1]);
-    bn_param_adapter_->post_op(&bn_out_variance, outputs[2]);
+    bn_param_adapter_->tn2bn(outputs[1], &bn_out_mean);
+    bn_param_adapter_->tn2bn(outputs[2], &bn_out_variance);
   }
 
   // backward (out_adapter -> batch_norm -> in_adapter)
 
-  bn_in_adapter_->post_op_backward(&bn_y, outputs[0], true, false);
+  bn_in_adapter_->bn2tn_backward(&bn_y, outputs[0], true, false);
   if (output_stat_) {
-    bn_param_adapter_->post_op_backward(&bn_out_mean, outputs[1], true, false);
-    bn_param_adapter_->post_op_backward(&bn_out_variance, outputs[2], true,
-                                        false);
+    bn_param_adapter_->bn2tn_backward(&bn_out_mean, outputs[1], true, false);
+    bn_param_adapter_->bn2tn_backward(&bn_out_variance, outputs[2], true,
+                                      false);
   }
 
-  nbla::backward(f_batch_norm_, bn_inputs, bn_outputs, bn_pd, bn_accum);
+  f_batch_norm_->backward(bn_inputs, bn_outputs, bn_pd, bn_accum);
 
-  bn_in_adapter_->pre_op_backward(x, &bn_x, pd[0], accum[0]);
+  bn_in_adapter_->tn2bn_backward(x, &bn_x, pd[0], accum[0]);
   if (pd_beta) {
-    bn_param_adapter_->pre_op_backward(beta, &bn_beta, true, accum[beta_idx_]);
+    bn_param_adapter_->tn2bn_backward(beta, &bn_beta, true, accum[beta_idx_]);
   }
   if (pd_gamma) {
-    bn_param_adapter_->pre_op_backward(gamma, &bn_gamma, true,
-                                       accum[gamma_idx_]);
+    bn_param_adapter_->tn2bn_backward(gamma, &bn_gamma, true,
+                                      accum[gamma_idx_]);
+  }
+}
+
+template <typename T>
+void TensorNormalization<T>::backward_without_adapter(
+    const Variables &inputs, const Variables &outputs,
+    const vector<bool> &propagate_down, const vector<bool> &accum) {
+  if (!(propagate_down[0] || (inputs.size() > 1 && propagate_down[1]) ||
+        (inputs.size() > 2 && propagate_down[2]))) {
+    return;
+  }
+
+  // tensor norm variables
+  const auto x = inputs[0];
+  auto beta = no_bias_ ? nullptr : inputs[beta_idx_];
+  auto gamma = no_scale_ ? nullptr : inputs[gamma_idx_];
+
+  // batch norm variables
+  Variable mean(bn_param_shape_);     // dummy
+  Variable variance(bn_param_shape_); // dummy
+
+  // synonyms
+  Variables bn_inputs;
+  bn_inputs.push_back(x);
+  if (!no_bias_)
+    bn_inputs.push_back(beta);
+  if (!no_scale_)
+    bn_inputs.push_back(gamma);
+  bn_inputs.push_back(&mean);
+  bn_inputs.push_back(&variance);
+  const auto bn_outputs = outputs;
+  const auto pd = propagate_down;
+  const bool pd_beta = no_bias_ ? false : pd[beta_idx_];
+  const bool pd_gamma = no_scale_ ? false : pd[gamma_idx_];
+  vector<bool> bn_pd;
+  bn_pd.push_back(pd[0]); // x
+  if (!no_bias_)
+    bn_pd.push_back(pd_beta);
+  if (!no_scale_)
+    bn_pd.push_back(pd_gamma);
+  bn_pd.push_back(false); // mean
+  bn_pd.push_back(false); // variance
+  vector<bool> bn_accum = accum;
+  bn_accum.push_back(false); // mean
+  bn_accum.push_back(false); // variance
+
+  f_batch_norm_->backward(bn_inputs, bn_outputs, bn_pd, bn_accum);
+}
+
+template <typename T>
+void TensorNormalization<T>::backward_impl(const Variables &inputs,
+                                           const Variables &outputs,
+                                           const vector<bool> &propagate_down,
+                                           const vector<bool> &accum) {
+  if (need_adapter_) {
+    backward_with_adapter(inputs, outputs, propagate_down, accum);
+  } else {
+    backward_without_adapter(inputs, outputs, propagate_down, accum);
   }
 }
 }

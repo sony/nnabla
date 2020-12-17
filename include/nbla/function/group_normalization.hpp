@@ -47,7 +47,7 @@ protected:
   bool output_stat_;
   Shape_t instn_x_shape_, gn_x_shape_;
   shared_ptr<Function> f_instance_norm_;
-  shared_ptr<Function> f_mul2_, f_add2_;
+  shared_ptr<Function> f_mul2_, f_add2_, f_sub2_;
 
 public:
   GroupNormalization(const Context &ctx, int num_groups, int channel_axis,

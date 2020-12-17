@@ -47,6 +47,7 @@ protected:
   shared_ptr<Function> f_tensor_norm_;
   shared_ptr<Function> f_mul2_;
   shared_ptr<Function> f_add2_;
+  shared_ptr<Function> f_sub2_;
 
 public:
   LayerNormalization(const Context &ctx, const vector<int> &batch_axis,

@@ -19,6 +19,7 @@
 
 #include <nbla/function/add2.hpp>
 #include <nbla/function/mul2.hpp>
+#include <nbla/function/sub2.hpp>
 #include <nbla/function/tensor_normalization.hpp>
 #include <nbla/imperative.hpp>
 
@@ -98,10 +99,13 @@ void LayerNormalization<T>::setup_impl(const Variables &inputs,
   // functions
   f_tensor_norm_ = create_TensorNormalization(
       ctx_, tn_axes, eps_, true /* no_scale */, true /* no_bias */);
+  f_tensor_norm_->setup({inputs[0]}, outputs);
   if (!no_scale_)
     f_mul2_ = create_Mul2(ctx_, false);
   if (!no_bias_)
     f_add2_ = create_Add2(ctx_, false);
+  if (!no_bias_ && no_scale_)
+    f_sub2_ = create_Sub2(ctx_, false); // needed for backward
 }
 
 template <typename T>
@@ -113,7 +117,7 @@ void LayerNormalization<T>::forward_impl(const Variables &inputs,
 
   // tensor norm
   const auto tn_inputs = Variables{inputs[0]}; // no beta and gamma
-  nbla::execute(f_tensor_norm_, tn_inputs, outputs);
+  f_tensor_norm_->forward(tn_inputs, outputs);
 
   // apply affine
   auto y = outputs[0];
@@ -136,7 +140,7 @@ void LayerNormalization<T>::backward_impl(const Variables &inputs,
   }
 
   // tensor norm variables
-  Variable out_tn_y_buf;
+  Variable out_tn_y_buf(outputs[0]->shape());
   Variable *out_tn_y = no_scale_ && no_bias_ ? outputs[0] : &out_tn_y_buf;
   const auto tn_inputs = Variables{inputs[0]}; // no beta and gamma
   const auto tn_outputs = output_stat_
@@ -155,13 +159,23 @@ void LayerNormalization<T>::backward_impl(const Variables &inputs,
 
   // forward (tensor_norm -> affine)
 
-  nbla::execute(f_tensor_norm_, tn_inputs, tn_outputs);
+  // We need tensor_norm forward recalculation only when scale operation is
+  // enabled because Mul2 input cannot be restored from its output.
+  const bool need_tn_forward = !no_scale_;
+  if (need_tn_forward) {
+    f_tensor_norm_->forward(tn_inputs, tn_outputs);
 
-  if (scale) {
-    nbla::execute(f_mul2_, mul2_inputs, mul2_outputs);
-  }
-  if (bias) {
-    nbla::execute(f_add2_, add2_inputs, add2_outputs);
+    if (scale) {
+      nbla::execute(f_mul2_, mul2_inputs, mul2_outputs);
+    }
+    if (bias) {
+      nbla::execute(f_add2_, add2_inputs, add2_outputs);
+    }
+  } else { // no_scale == true
+    if (bias) {
+      // tensor_norm outputs are restored by layer_norm output - bias
+      nbla::execute(f_sub2_, {outputs[0], bias}, {out_tn_y});
+    }
   }
 
   // backward (affine -> tensor_norm)
@@ -178,7 +192,7 @@ void LayerNormalization<T>::backward_impl(const Variables &inputs,
   }
 
   if (propagate_down[0]) {
-    nbla::backward(f_tensor_norm_, tn_inputs, tn_outputs, {true}, {accum[0]});
+    f_tensor_norm_->backward(tn_inputs, tn_outputs, {true}, {accum[0]});
   }
 }
 }

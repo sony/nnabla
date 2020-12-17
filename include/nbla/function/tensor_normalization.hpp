@@ -29,9 +29,9 @@
 namespace nbla {
 
 class BatchNormalizationInOutAdapter {
-  vector<int> transpose_axes_, inv_transpose_axes_;
-  Shape_t transposed_shape_, bn_input_shape_;
-  shared_ptr<Function> pre_op_transpose_, post_op_transpose_;
+  vector<int> tn2bn_transpose_axes_, bn2tn_transpose_axes_;
+  Shape_t transposed_shape_, bn_shape;
+  shared_ptr<Function> tn2bn_transpose_, bn2tn_transpose_;
 
 public:
   BatchNormalizationInOutAdapter(const Context &ctx, int ndim,
@@ -50,69 +50,72 @@ public:
     std::sort(outer_axes.begin(), outer_axes.end());
 
     // transpose_axes = outer_axes + inner_axes
-    transpose_axes_.reserve(outer_axes.size() + inner_axes.size());
-    transpose_axes_.insert(transpose_axes_.end(), outer_axes.begin(),
-                           outer_axes.end());
-    transpose_axes_.insert(transpose_axes_.end(), inner_axes.begin(),
-                           inner_axes.end());
+    tn2bn_transpose_axes_.reserve(outer_axes.size() + inner_axes.size());
+    tn2bn_transpose_axes_.insert(tn2bn_transpose_axes_.end(),
+                                 outer_axes.begin(), outer_axes.end());
+    tn2bn_transpose_axes_.insert(tn2bn_transpose_axes_.end(),
+                                 inner_axes.begin(), inner_axes.end());
 
     // tranposed_shape
     for (int i = 0; i < ndim; i++) {
-      transposed_shape_.push_back(in_shape[transpose_axes_[i]]);
+      transposed_shape_.push_back(in_shape[tn2bn_transpose_axes_[i]]);
     }
 
-    // bn_input_shape
+    // bn_shape
     int64_t reduced_inner_size = 1;
     for (int i = outer_axes.size(); i < transposed_shape_.size(); i++) {
       reduced_inner_size *= transposed_shape_[i];
     }
     for (int i = 0; i < outer_axes.size(); i++) {
-      bn_input_shape_.push_back(transposed_shape_[i]);
+      bn_shape.push_back(transposed_shape_[i]);
     }
-    bn_input_shape_.push_back(reduced_inner_size);
+    bn_shape.push_back(reduced_inner_size);
     // ndim of batch_norm input x muse be greater than or equal to 2.
-    if (bn_input_shape_.size() == 1) {
-      bn_input_shape_ = {1, bn_input_shape_[0]};
+    if (bn_shape.size() == 1) {
+      bn_shape = {1, bn_shape[0]};
     }
 
     // inv_transpose_axes = argsort(transpose_axes)
-    vector<pair<int, int>> transpose_axes_with_index;
+    vector<pair<int, int>> tn2bn_transpose_axes_with_index;
     for (int i = 0; i < ndim; i++) {
-      transpose_axes_with_index.push_back({transpose_axes_[i], i});
+      tn2bn_transpose_axes_with_index.push_back({tn2bn_transpose_axes_[i], i});
     }
-    std::sort(transpose_axes_with_index.begin(),
-              transpose_axes_with_index.end());
+    std::sort(tn2bn_transpose_axes_with_index.begin(),
+              tn2bn_transpose_axes_with_index.end());
     for (int i = 0; i < ndim; i++) {
-      inv_transpose_axes_.push_back(transpose_axes_with_index[i].second);
+      bn2tn_transpose_axes_.push_back(
+          tn2bn_transpose_axes_with_index[i].second);
     }
 
     // functions
-    pre_op_transpose_ = create_Transpose(ctx, transpose_axes_);
-    post_op_transpose_ = create_Transpose(ctx, inv_transpose_axes_);
+    tn2bn_transpose_ = create_Transpose(ctx, tn2bn_transpose_axes_);
+    bn2tn_transpose_ = create_Transpose(ctx, bn2tn_transpose_axes_);
   }
 
-  // batch_norm inputs adapter
-  void pre_op(Variable *x, Variable *y) {
-    nbla::execute(pre_op_transpose_, {x}, {y});
-    y->reshape(bn_input_shape_, false);
+  // tensor_norm to batch_norm
+  void tn2bn(Variable *from, Variable *to) {
+    nbla::execute(tn2bn_transpose_, {from}, {to});
+    to->reshape(bn_shape, false);
   }
 
-  void pre_op_backward(Variable *x, Variable *y, bool propagate_down,
-                       bool accum) {
-    y->reshape(transposed_shape_, false);
-    nbla::backward(pre_op_transpose_, {x}, {y}, {propagate_down}, {accum});
+  void tn2bn_backward(Variable *from, Variable *to, bool propagate_down,
+                      bool accum) {
+    to->reshape(transposed_shape_, false);
+    nbla::backward(tn2bn_transpose_, {from}, {to}, {propagate_down}, {accum});
   }
 
-  // batch_norm outputs adapter
-  void post_op(Variable *x, Variable *y) {
-    x->reshape(transposed_shape_, false);
-    nbla::execute(post_op_transpose_, {x}, {y});
+  // batch_norm to tensor_norm adapter
+  void bn2tn(Variable *from, Variable *to) {
+    from->reshape(transposed_shape_, false);
+    nbla::execute(bn2tn_transpose_, {from}, {to});
   }
 
-  void post_op_backward(Variable *x, Variable *y, bool propagate_down,
-                        bool accum) {
-    nbla::backward(post_op_transpose_, {x}, {y}, {propagate_down}, {accum});
-    x->reshape(bn_input_shape_, false);
+  void bn2tn_backward(Variable *from, Variable *to, bool propagate_down,
+                      bool accum) {
+    // this reshape is needed because bn2tn is skipped in tensor_norm backward.
+    from->reshape(transposed_shape_, false);
+    nbla::backward(bn2tn_transpose_, {from}, {to}, {propagate_down}, {accum});
+    from->reshape(bn_shape, false);
   }
 };
 
@@ -138,6 +141,7 @@ protected:
 
   int beta_idx_, gamma_idx_;
   bool output_stat_;
+  bool need_adapter_;
   Shape_t bn_param_shape_;
   std::unique_ptr<BatchNormalizationInOutAdapter> bn_in_adapter_,
       bn_param_adapter_;
@@ -168,10 +172,24 @@ public:
   }
 
 protected:
+  NBLA_API virtual void setup_batch_norm(const Variables &inputs,
+                                         const Variables &outputs);
   NBLA_API virtual void setup_impl(const Variables &inputs,
                                    const Variables &outputs);
+  NBLA_API virtual void forward_with_adapter(const Variables &inputs,
+                                             const Variables &outputs);
+  NBLA_API virtual void forward_without_adapter(const Variables &inputs,
+                                                const Variables &outputs);
   NBLA_API virtual void forward_impl(const Variables &inputs,
                                      const Variables &outputs);
+  NBLA_API virtual void
+  backward_with_adapter(const Variables &inputs, const Variables &outputs,
+                        const vector<bool> &propagate_down,
+                        const vector<bool> &accum);
+  NBLA_API virtual void
+  backward_without_adapter(const Variables &inputs, const Variables &outputs,
+                           const vector<bool> &propagate_down,
+                           const vector<bool> &accum);
   NBLA_API virtual void backward_impl(const Variables &inputs,
                                       const Variables &outputs,
                                       const vector<bool> &propagate_down,
