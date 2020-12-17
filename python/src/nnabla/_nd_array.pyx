@@ -408,6 +408,12 @@ cdef class NdArray:
         type_num = <int > self.arrp.array().get().dtype()
         return np.dtype(np.PyArray_TypeObjectFromType(type_num))
 
+    @property
+    def modification_count(self):
+        '''Returns how many times modified after memory allocation or clearing buffer.
+        '''
+        return self.arrp.array().get().modification_count()
+
     def __pos__(self):
         return AOP.pos(self)
 

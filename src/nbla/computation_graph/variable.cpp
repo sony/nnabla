@@ -76,6 +76,8 @@ class ForwardCallback {
   function_hook_type function_pre_hook_;
   function_hook_type function_post_hook_;
   unordered_map<CgVariablePtr, int> vseen_;
+  unordered_set<CgVariablePtr> need_grad_variable_set_;
+  unordered_set<CgVariablePtr> inplace_variable_set_;
   vector<string> history_;
 
 public:
@@ -87,7 +89,8 @@ public:
         function_post_hook_(function_post_hook) {}
 
   bool check_last_visit(CgVariablePtr v) {
-    if (v->function_reference_count() < 2) {
+    size_t num_ref = v->function_reference_count();
+    if (num_ref < 2) {
       // A variable referenced by <2 is always visited last.
       return true;
     }
@@ -99,7 +102,7 @@ public:
       return false;
     }
     // Check
-    if (++(it->second) == v->function_reference_count()) {
+    if (++(it->second) == num_ref) {
       // For better search performance of another. (maybe not required)
       vseen_.erase(it);
       return true;
@@ -112,6 +115,18 @@ public:
     vector<bool> ret(inputs.size(), false);
     for (int i = 0; i < inputs.size(); ++i) {
       auto vi = inputs[i];
+      // Remember variables that should not be cleared during forward
+      if (func->need_grad() && !vi->need_grad()) {
+        // Any variable that is used to computate gradient shouldn't be cleared.
+        // TODO: Not optimal because the input may not be used in gradient
+        // computation of some function.
+        need_grad_variable_set_.insert(vi);
+      }
+      if (func->function()->inplace_data(i)) {
+        // Inplaced variable shouldn't be cleared during forward
+        inplace_variable_set_.insert(vi);
+      }
+
       // This comes first because check_last_visit must be called in order to
       // increment the visit count of vi.
       if (!check_last_visit(vi)) {
@@ -124,11 +139,19 @@ public:
           func->function()->inplace_data(i) || vi->prohibit_clear_data()) {
         continue;
       }
+      if (inplace_variable_set_.find(vi) != inplace_variable_set_.end()) {
+        continue;
+      }
       if (clear_buffer_) {
         ret[i] = true;
         continue;
       }
       if (clear_no_need_grad_ && !func->need_grad()) {
+        // Not clear if any function requiring gradient computation uses this
+        // variable.
+        if (need_grad_variable_set_.find(vi) != need_grad_variable_set_.end()) {
+          continue;
+        }
         ret[i] = true;
         continue;
       }
@@ -609,18 +632,28 @@ void CgVariable::backward(
 }
 
 vector<CgFunctionPtr> CgVariable::function_references() {
-  vector<CgFunctionPtr> ret(this->function_reference_count(), nullptr);
+  vector<CgFunctionPtr> ret;
   int i = 0;
   for (auto pair : function_references_) {
     if (auto shared = pair.second.first.lock())
-      ret[i++] = shared;
+      ret.push_back(shared);
   }
 
   return ret;
 }
 
+size_t CgVariable::function_reference_count() const {
+  return function_reference_count_;
+}
+
 void CgVariable::insert_function_reference(CgFunctionPtr func) {
   std::weak_ptr<CgFunction> wp(func);
+  function_reference_count_++;
+  auto it = function_references_.find(func.get());
+  if (it != function_references_.end()) {
+    it->second.second.count++;
+    return;
+  }
   function_references_.insert(
       {func.get(), {wp, CgVariable::FunctionReferenceInfo()}});
 }
@@ -630,6 +663,7 @@ void CgVariable::remove_function_reference(CgFunction *funcp) {
   if (it == function_references_.end())
     return;
   function_references_.erase(it);
+  function_reference_count_ -= it->second.second.count;
 }
 
 void CgVariable::mark_need_setup() {

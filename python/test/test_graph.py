@@ -328,3 +328,77 @@ def test_function_context(seed):
     with nn.context_scope(y.parent.context):
         z = F.relu(x)
     assert str(y.parent.context) == str(z.parent.context)
+
+
+def test_no_need_grad_backward():
+    '''
+    This tests a previously existing bug where an
+    intermediate variable with need_grad=False yet required
+    to compute a gradient in a function has been unexpectedly cleared.
+    '''
+    nn.prefer_cached_array(False)
+    x = nn.Variable(tuple(), need_grad=False)
+    y = nn.Variable(tuple(), need_grad=True)
+    z = nn.Variable(tuple(), need_grad=False)
+    xx = x * 1
+    yy = y * 1
+    zz = z * 1
+    a = xx * 3
+    b = xx * yy
+    c = xx * zz
+    d = a * b * c
+
+    x.data.fill(1)
+    y.data.fill(2)
+    z.data.fill(0.5)
+
+    hook = None  # lambda f: print(f, list(map(lambda x: x.d, f.inputs)))
+    d.forward(clear_no_need_grad=True, function_pre_hook=hook)
+    y.grad.zero()
+    d.backward(clear_buffer=True, function_pre_hook=hook)
+
+    assert np.isclose(y.g, 1.5)
+
+
+@pytest.mark.parametrize("clear_buffer", [False, True])
+def test_no_need_grad_forward(clear_buffer):
+    '''
+    This tests a previously existing bug where an intermediate variable
+    has been unexpectedly cleared before the end of life if
+    it is used in an in-place function and
+    another function at the same time.
+    '''
+    import nnabla as nn
+    import nnabla.functions as F
+    nn.prefer_cached_array(False)
+
+    x = nn.Variable(tuple(), need_grad=False)
+    xx = x * 1
+    a = xx.reshape(x.shape)
+    b = xx * 1
+    d = a * b
+
+    x.data.fill(1)
+
+    d.forward(clear_no_need_grad=True, clear_buffer=clear_buffer)
+    assert np.isclose(d.d, 1.0)
+
+
+def test_no_need_grad_forward_double():
+    '''
+    This tests a previously existing bug where a variable used
+    twice by a single function caused an unexpected clear due to
+    incorrect count of function references.
+    '''
+    import nnabla as nn
+    import nnabla.functions as F
+    nn.prefer_cached_array(False)
+
+    x = nn.Variable(tuple())
+    xx = x * 1
+    y = xx * xx
+    z = xx * 1
+    a = y * z
+    x.data.fill(1)
+    a.forward(clear_no_need_grad=True)
+    assert np.isclose(a.d, 1.0)

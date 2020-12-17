@@ -79,6 +79,7 @@ class CgVariable {
   enum NeedGrad { NG_NONE, NG_FALSE, NG_TRUE };
   struct FunctionReferenceInfo {
     bool need_setup{false};
+    size_t count{0};
   };
   NeedGrad need_grad_{NG_NONE}; ///< Whether the variable requires gradients.
   NeedGrad need_grad_state_{
@@ -91,8 +92,9 @@ class CgVariable {
   unordered_map<CgFunction *,
                 pair<std::weak_ptr<CgFunction>, FunctionReferenceInfo>>
       function_references_;
-  bool allow_modify_data_{true}; ///< Whether the data can be in-placed.
-  bool persistent_{false};       ///<Persistency flag against clearing.
+  size_t function_reference_count_{0}; ///< Number of function references
+  bool allow_modify_data_{true};       ///< Whether the data can be in-placed.
+  bool persistent_{false};             ///<Persistency flag against clearing.
   bool prohibit_clear_data_{false};
   string name_{""};
 
@@ -271,9 +273,7 @@ public:
 
   /**
    */
-  inline int function_reference_count() const {
-    return function_references_.size();
-  }
+  size_t function_reference_count() const;
 
   /**
    */

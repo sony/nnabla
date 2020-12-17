@@ -105,8 +105,12 @@ void Slice<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
       size_i =
           int((start_[0][i] - 1 - stop_[0][i]) / std::abs(step_[0][i])) + 1;
     } else if (step_[0][i] > 0 && start_[0][i] < stop_[0][i]) {
-      size_i =
-          int((stop_[0][i] - 1 - start_[0][i]) / std::abs(step_[0][i])) + 1;
+      if (stop_[0][i] <= shape_x[i])
+        size_i =
+            int((stop_[0][i] - 1 - start_[0][i]) / std::abs(step_[0][i])) + 1;
+      else
+        size_i =
+            int((shape_x[i] - 1 - start_[0][i]) / std::abs(step_[0][i])) + 1;
     } else {
       size_i = 0;
     }

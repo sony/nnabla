@@ -69,6 +69,9 @@ class RefineParser:
                          |     StopGradient
                          |     SquaredDifference
                          |     Rsqrt
+                         |     AddV2
+                         |     RealDiv
+                         |     Sum
          """
         p[0] = p[1]
 
@@ -87,16 +90,19 @@ class RefineParser:
     def p_rf_conv_transpose(self, p):
         """ rf_conv_transpose  :    Transpose rf_split_stmt Conv2DBackpropInput Slice Identity Add Transpose
                                |    Transpose rf_split_stmt Conv2DBackpropInput Slice Identity Transpose
+                               |    Transpose rf_split_stmt Conv2DBackpropInput Pad Slice Identity Add Transpose
         """
         p[0] = self.graph.conv_transpose(p[1:])
 
     def p_rf_p_relu(self, p):
         """ rf_p_relu  :    Relu Abs Sub Mul Mul Add
+                       |    Relu Abs Sub Mul Mul AddV2
         """
         p[0] = self.graph.p_relu(p[1:])
 
     def p_rf_conv_bn(self, p):
         """ rf_conv_bn  :    rf_conv_2d Mul Add
+                        |    rf_conv_2d Mul AddV2
         """
         p[0] = self.graph.conv_bn(p[1:])
 
@@ -105,6 +111,9 @@ class RefineParser:
                         |   Pad Transpose rf_split_stmt Conv2D Identity Transpose
                         |   Pad Transpose rf_split_stmt rf_conv2d_loop_stmt ConcatV2 Add Transpose
                         |   Pad Transpose rf_split_stmt rf_conv2d_loop_stmt ConcatV2 Transpose
+                        |   Transpose rf_split_stmt rf_conv2d_loop_stmt Identity Add Transpose
+                        |   Transpose rf_split_stmt rf_conv2d_loop_stmt Identity Transpose
+                        |   Transpose rf_split_stmt rf_conv2d_loop_stmt ConcatV2 Transpose
         """
         p[0] = self.graph.conv2d(p[1:])
 
@@ -123,6 +132,9 @@ class RefineParser:
     def p_rf_bn(self, p):
         """ rf_bn     :    Mul Add
                       |    Mean StopGradient SquaredDifference Mean Add Rsqrt Mul Mul Mul Sub Add
+                      |    Mean Sub Mul Sum RealDiv Reshape Reshape AddV2 Rsqrt Mul Mul Mul Sub AddV2
+                      |    Mean Sub Mul Sum RealDiv Reshape AddV2 Rsqrt Mul Mul Reshape Mul Sub AddV2
+                      |    Mul AddV2
         """
         p[0] = self.graph.bn(p[1:])
 
@@ -130,6 +142,7 @@ class RefineParser:
         """ rf_affine    :    Reshape Reshape MatMul Mul Add Reshape
                          |    Reshape Reshape MatMul Mul Add
                          |    Reshape Reshape MatMul Mul Add Reshape Reshape Mul Add
+                         |    Reshape Reshape MatMul Mul AddV2
         """
         p[0] = self.graph.affine(p[1:])
 

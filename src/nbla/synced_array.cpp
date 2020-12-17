@@ -181,6 +181,7 @@ void SyncedArray::copy_from(const SyncedArray *src) {
 void SyncedArray::clear() {
   array_.clear();
   this->clear_flags();
+  modification_count_ = 0;
 }
 
 // Reset head state
