@@ -19,23 +19,27 @@ import nnabla.functions as F
 from nbla_test_utils import list_context
 
 
-ctxs = list_context('BatchDet')
+ctxs = list_context('BatchLogdet')
 
 
-def ref_det(x):
+def ref_log_det(x):
+    # calculate determinant
     y = np.zeros(x.shape[0], dtype=np.float32)
     for i in range(x.shape[0]):
         y[i] = np.linalg.det(x[i])
+    # apply abs log
+    y = np.abs(y)
+    y = np.log(y)
     return y
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [314])
-def test_batch_det_forward_backward(seed, ctx, func_name):
+def test_batch_logdet_forward_backward(seed, ctx, func_name):
     from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
     # input must be batched square matrix
     inputs = [np.clip(rng.randn(2, 3, 3).astype(np.float32), -0.9, 0.9)]
-    function_tester(rng, F.batch_det, ref_det, inputs, ctx=ctx,
+    function_tester(rng, F.batch_logdet, ref_log_det, inputs, ctx=ctx,
                     func_name=func_name, atol_b=2e-2, dstep=1e-4,
                     disable_half_test=True)
