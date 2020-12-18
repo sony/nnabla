@@ -139,6 +139,8 @@ def _forward(args, index, config, data, variables, output_image=True):
         # Forward recursive
         sum = [np.zeros(o.shape, dtype=o.variable_instance.d.dtype)
                for o in e.output_assign.keys()]
+        sum_mux = [np.zeros(o.shape, dtype=o.variable_instance.d.dtype)
+                   for o in e.output_assign.keys()]
         for i in range(e.num_evaluations):
             e.network.forward(e.forward_sequence)
             if e.need_back_propagation:
@@ -149,8 +151,13 @@ def _forward(args, index, config, data, variables, output_image=True):
                     sum[o_index] = o.variable_instance.d
                 else:
                     sum[o_index] += o.variable_instance.d
+                    sum_mux[o_index] += (o.variable_instance.d)**2
         if e.repeat_evaluation_type == "last":
             avg = sum
+        elif e.repeat_evaluation_type == "std":
+            std_result = [np.nan_to_num(np.sqrt(
+                x / e.num_evaluations - (y / e.num_evaluations)**2)) for x, y in zip(sum_mux, sum)]
+            avg = std_result
         else:
             avg = [s / e.num_evaluations for s in sum]
 
@@ -283,6 +290,8 @@ def forward_command(args):
                 if index == 0:
                     for name, dim in zip(result.names, result.dims):
                         if dim == 1:
+                            if e.repeat_evaluation_type == "std":
+                                name = "Uncertainty(Std)"
                             row0.append(name)
                         else:
                             for d in range(dim):
