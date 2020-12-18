@@ -42,12 +42,13 @@ if __name__ == '__main__':
     # Package information
 
     pkg_name = "nnabla_converter"
-    src_dir = os.path.join(root_dir, 'tensorflow')
+    tensorflow_src_dir = os.path.join(root_dir, 'tensorflow')
+    onnx_src_dir = os.path.join(root_dir, 'onnx')
 
     # Setup
     setup(
         name=pkg_name,
-        description='Converter between NNabla and Tensorflow.',
+        description='NNabla Converter and Optimization Tools',
         version=__version__,
         author=__author__,
         author_email=__email__,
@@ -64,9 +65,11 @@ if __name__ == '__main__':
             'Programming Language :: Python :: 3.6',
             'Programming Language :: Python :: 3.7'
         ],
-        packages=['nnabla.utils.converter.tensorflow'],
-        package_dir={'nnabla.utils.converter.tensorflow': src_dir},
+        packages=['nnabla.utils.converter.tensorflow',
+                  'nnabla.utils.converter.onnx'],
+        package_dir={'nnabla.utils.converter.tensorflow': tensorflow_src_dir,
+                     'nnabla.utils.converter.onnx': onnx_src_dir},
         install_requires=install_requires,
-        keywords="Converter between NNabla and Tensorflow",
+        keywords="NNabla Converter and Optimization Tools",
         python_requires='>=3.6, <3.8',
     )

@@ -26,19 +26,6 @@ from .utils import func_set_import_nnp, \
 
 
 def _import_file(args, ifiles):
-    if len(ifiles) == 1:
-        ext = os.path.splitext(ifiles[0])[1]
-        if ext == '.nnp':
-            args.import_format = 'NNP'
-        elif ext == '.onnx':
-            args.import_format = 'ONNX'
-        elif ext == '.pb':
-            args.import_format = "TF_PB"
-        elif ext == '.ckpt':
-            args.import_format = "TF_CKPT_V1"
-        elif ext == '.meta':
-            args.import_format = "TF_CKPT_V2"
-
     if args.import_format == 'NNP':
         # Input file that has unsupported extension store into output nnp
         # archive or directory.
@@ -53,11 +40,7 @@ def _import_file(args, ifiles):
     elif args.import_format == 'TF_PB' or \
             args.import_format == 'TF_CKPT_V1' or \
             args.import_format == "TF_CKPT_V2":
-        try:
-            from .tensorflow import TensorflowImporter
-        except ImportError:
-            raise ImportError(
-                'nnabla-converter python package is not found, install nnabla-converter package with "pip install nnabla_converter"')
+        from .tensorflow import TensorflowImporter
         return TensorflowImporter(*ifiles, tf_format=args.import_format, outputs=args.outputs, inputs=args.inputs).execute()
     return None
 
@@ -181,19 +164,11 @@ def _export_from_nnp(args, nnp, output, output_ext):
         else:
             OnnxExporter(nnp, args.batch_size).execute(output)
     elif output_ext == '.pb':
-        try:
-            from .tensorflow import TensorflowExporter
-        except ImportError:
-            raise ImportError(
-                'nnabla-converter python package is not found, install nnabla-converter package with "pip install nnabla_converter"')
+        from .tensorflow import TensorflowExporter
         TensorflowExporter(
             nnp, args.batch_size, enable_optimize=args.enable_optimize_pb).execute(output)
     elif output_ext == '.tflite':
-        try:
-            from .tensorflow import TensorflowLiteExporter
-        except ImportError:
-            raise ImportError(
-                'nnabla-converter python package is not found, install nnabla-converter package with "pip install nnabla_converter"')
+        from .tensorflow import TensorflowLiteExporter
         TensorflowLiteExporter(
             nnp, args.batch_size, enable_optimize=args.enable_optimize_pb).execute(output)
     else:
