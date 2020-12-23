@@ -67,7 +67,7 @@ void PackPaddedSequence<U>::forward_impl(const Variables &inputs,
   auto packed_sequence = outputs[0];
   auto batch_sizes = outputs[1];
 
-  auto N = packed_sequence->shape()[0];
+  //   N = packed_sequence->shape()[0];
   auto T = batch_sizes->shape()[0];
   auto B = lengths->shape()[0];
   auto D = packed_sequence->ndim() == 1 ? 1 : packed_sequence->size(1);
@@ -107,7 +107,7 @@ void PackPaddedSequence<U>::backward_impl(const Variables &inputs,
   auto batch_sizes = outputs[1];
 
   // TODO: batch_first
-  auto N = packed_sequence->shape()[0];
+  //   N = packed_sequence->shape()[0];
   auto T = batch_sizes->shape()[0];
   auto B = lengths->shape()[0];
   auto D = packed_sequence->ndim() == 1 ? 1 : packed_sequence->size(1);

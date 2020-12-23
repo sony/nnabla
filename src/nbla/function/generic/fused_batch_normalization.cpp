@@ -40,7 +40,6 @@ void relu_backward(int size, T *dx, const T *dy, const T *y) {
 
 template <typename T>
 void add2_backward(int size, T *dx1, const T *dx, bool accum) {
-  bool accum_bn = false; // Whatever since it's inplaced.
   for (int i = 0; i < size; i++) {
     dx1[i] = accum ? dx1[i] + dx[i] : dx[i];
   }
