@@ -164,7 +164,7 @@ void Convolution<T>::forward_impl(const Variables &inputs,
   const T *w = inputs[1]->get_data_pointer<T>(this->ctx_);
   T *col = col_.cast_data_and_get_pointer<T>(this->ctx_, true);
   T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
-  const T *b;
+  const T *b = nullptr;
   if (inputs.size() == 3) {
     b = inputs[2]->get_data_pointer<T>(this->ctx_);
   }
@@ -206,9 +206,12 @@ void Convolution<T>::backward_impl(const Variables &inputs,
 
   using namespace ::nbla::eigen;
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
-  const T *x;
-  const T *w;
-  T *dx, *dw, *db, *col;
+  const T *x = nullptr;
+  const T *w = nullptr;
+  T *dx = nullptr;
+  T *dw = nullptr;
+  T *db = nullptr;
+  T *col = nullptr;
   std::unique_ptr<ColVectorMap<T>> mdb;
 
   if (propagate_down[0] || propagate_down[1]) {

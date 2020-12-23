@@ -213,8 +213,12 @@ void DepthwiseConvolution<T>::backward_impl(const Variables &inputs,
   Variable *const bias = (inputs.size() == 3) ? inputs[2] : nullptr;
 
   const T *outmap_grad = output->get_grad_pointer<T>(this->ctx_);
-  const T *sample_data, *weight_data;
-  T *sample_grad, *weight_grad, *bias_grad, *col;
+  const T *sample_data = nullptr;
+  const T *weight_data = nullptr;
+  T *sample_grad = nullptr;
+  T *weight_grad = nullptr;
+  T *bias_grad = nullptr;
+  T *col = nullptr;
 
   if (propagate_down[0] || propagate_down[1]) {
     col = col_.cast_data_and_get_pointer<T>(this->ctx_, true);
@@ -283,7 +287,7 @@ void DepthwiseConvolution<T>::backward_impl(const Variables &inputs,
       sample_data += sample_channels_ * sample_size_;
     }
 
-    if (bias_grad && propagate_down[2]) { // backprop to bias gradient
+    if (bias && propagate_down[2]) { // backprop to bias gradient
       ConstMatrixMap<T> outmap(outmap_grad, outmap_channels_, outmap_size_);
       ColVectorMap<T>(bias_grad, outmap_channels_) += outmap.rowwise().sum();
     }
