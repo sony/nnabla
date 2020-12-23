@@ -1057,9 +1057,9 @@ def istft(y_r, y_i, window_size, stride, fft_size, window_type='hanning', center
         mat_sin = mat_sin * window_func / inv_window_func
 
         conv_cos = get_parameter_or_create(
-            'conv_sin', initializer=mat_cos, need_grad=False)
+            'conv_cos', initializer=mat_cos, need_grad=False)
         conv_sin = get_parameter_or_create(
-            'conv_cos', initializer=mat_sin, need_grad=False)
+            'conv_sin', initializer=mat_sin, need_grad=False)
 
     # compute inverse STFT
     x_cos = deconvolution(y_r, conv_cos, stride=(stride,))
