@@ -64,8 +64,9 @@ The above command generates an executable `mnist_runtime` at the current directl
 The build file `GNUmakefile` is really simple. It links `libnnabla.so` and `libnnabla_utils.so` with the executable generated from `mnist_runtime.cpp`, and compiles with C++11 option `-std=c++11`.
 
 ```shell
-make cuda
+CUDA_VERSION_SUFFIX=-100_7 make cuda
 ```
+`CUDA_VERSION_SUFFIX` depends on the cuda library version you are using, you may check it in /usr/local/lib.
 
 You can also compile an executable `mnist_runtime_cuda` that runs computation on your CUDA device by the above command if you install `nnabla-ext-cuda` in a right path. See `GNUmakefile` for details.
 
