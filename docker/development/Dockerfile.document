@@ -76,6 +76,7 @@ RUN apt-get -yqq update \
     && pip3 install -U \
         Sphinx \
         pygments \
+        tensorboardX \
         recommonmark==0.4.0 \
         sphinx-rtd-theme \
         sphinxcontrib-actdiag \
