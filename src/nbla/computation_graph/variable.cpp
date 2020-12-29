@@ -107,7 +107,7 @@ class ForwardCallback {
   bool clear_no_need_grad_{false};
   function_hook_type function_pre_hook_;
   function_hook_type function_post_hook_;
-  unordered_map<CgVariablePtr, int> vseen_;
+  unordered_map<CgVariablePtr, unsigned int> vseen_;
   unordered_set<CgVariablePtr> need_grad_variable_set_;
   unordered_set<CgVariablePtr> inplace_variable_set_;
   vector<string> history_;
@@ -145,7 +145,7 @@ public:
   vector<bool> get_clear_flags(CgFunctionPtr func) {
     auto inputs = func->inputs();
     vector<bool> ret(inputs.size(), false);
-    for (int i = 0; i < inputs.size(); ++i) {
+    for (vector<CgVariablePtr>::size_type i = 0; i < inputs.size(); ++i) {
       auto vi = inputs[i];
       // Remember variables that should not be cleared during forward
       if (func->need_grad() && !vi->need_grad()) {
@@ -195,7 +195,7 @@ public:
                     const vector<bool> &clear_flags) {
     // std::cout << "Clear flags: " << string_join(clear_flags, ",") <<
     // std::endl;
-    for (int i = 0; i < inputs.size(); i++) {
+    for (vector<CgVariablePtr>::size_type i = 0; i < inputs.size(); i++) {
       if (clear_flags[i]) {
         inputs[i]->variable()->data()->array()->clear();
       }
@@ -297,7 +297,7 @@ class BackwardCallback {
   vector<bool> get_accum(const vector<CgVariablePtr> &inputs,
                          const vector<bool> &first_visit_flags) {
     vector<bool> accum(inputs.size(), false);
-    for (int i = 0; i < inputs.size(); i++) {
+    for (vector<CgVariablePtr>::size_type i = 0; i < inputs.size(); i++) {
       // No need grad.
       if (!inputs[i]->need_grad_state())
         continue;
@@ -307,7 +307,7 @@ class BackwardCallback {
       auto array = inputs[i]->variable()->grad()->array();
       if (array->zeroing()) {
         bool input_shared = false;
-        for (int j = 0; j < inputs.size(); j++) {
+        for (vector<CgVariablePtr>::size_type j = 0; j < inputs.size(); j++) {
           if (i == j) {
             continue;
           }
@@ -331,7 +331,7 @@ class BackwardCallback {
 
   void force_zero_grad_if_unseen(vector<CgVariablePtr> outputs,
                                  const vector<bool> &first_visit) {
-    for (int i = 0; i < outputs.size(); i++) {
+    for (vector<CgVariablePtr>::size_type i = 0; i < outputs.size(); i++) {
       auto o = outputs[i];
       if (first_visit[i]) {
         // The output variable has not been seen during this backprop, which
@@ -351,12 +351,12 @@ class BackwardCallback {
       auto inputs = func->inputs();
       auto outputs = func->outputs();
       vector<pair<bool, bool>> clear(outputs.size(), {true, true});
-      for (int i = 0; i < inputs.size(); i++) {
+      for (vector<CgVariablePtr>::size_type i = 0; i < inputs.size(); i++) {
         if (f->inplace_data(i)) {
           clear[f->inplace_data_with(i)].first = false;
         }
       }
-      for (int o = 0; o < outputs.size(); ++o) {
+      for (vector<CgVariablePtr>::size_type o = 0; o < outputs.size(); ++o) {
         if (prohibit_clear[o] || outputs[o]->persistent()) {
           continue;
         }
@@ -377,7 +377,7 @@ class BackwardCallback {
   query_outputs_flags(const vector<CgVariablePtr> &outputs) {
     vector<bool> first_visit(outputs.size());
     vector<bool> prohibit_clear(outputs.size());
-    for (int i = 0; i < outputs.size(); i++) {
+    for (vector<CgVariablePtr>::size_type i = 0; i < outputs.size(); i++) {
       auto v = outputs[i];
       auto it = vseen_.find(v);
       bool first = it == vseen_.end();
@@ -405,7 +405,7 @@ class BackwardCallback {
     vector<bool> ret(inputs.size());
     bool prohibit_clear = func->function()->prohibit_clear_input_buffers();
     auto outputs = func->outputs();
-    for (int i = 0; i < ret.size(); i++) {
+    for (vector<bool>::size_type i = 0; i < ret.size(); i++) {
       auto v = inputs[i];
       auto it = vseen_.find(v);
       bool first_visit = it == vseen_.end();
@@ -621,7 +621,7 @@ void CgVariable::visit_function_backward(
 
     // Propagate down.
     auto inputs = f->inputs();
-    for (int i = 0; i < f->num_inputs(); i++) {
+    for (size_t i = 0; i < f->num_inputs(); i++) {
       auto inp = inputs[i];
       if (!inp->need_grad_state())
         continue;
@@ -688,7 +688,6 @@ void CgVariable::backward(
 
 vector<CgFunctionPtr> CgVariable::function_references() {
   vector<CgFunctionPtr> ret;
-  int i = 0;
   for (auto pair : function_references_) {
     if (auto shared = pair.second.first.lock())
       ret.push_back(shared);

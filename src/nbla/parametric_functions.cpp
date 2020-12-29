@@ -355,7 +355,7 @@ vector<CgVariablePtr> affine(Context &ctx, CgVariablePtr x, int base_axis,
 
   Shape_t shape_x = x->variable()->shape();
   long int n_in = 1;
-  for (int i = base_axis; i < shape_x.size(); i++)
+  for (unsigned int i = base_axis; i < shape_x.size(); i++)
     n_in *= shape_x[i];
 
   if (w_init == nullptr) {
@@ -551,7 +551,7 @@ batch_normalization(Context &ctx, CgVariablePtr x, const vector<int> &axes,
 
   NBLA_CHECK(axes.size() == 1, error_code::value, "Size of axes should be 1");
   Shape_t shape_stat = x->variable()->shape();
-  for (int i = 0; i < shape_stat.size(); i++)
+  for (int i = 0; static_cast<unsigned>(i) < shape_stat.size(); i++)
     if (i != axes[0])
       shape_stat[i] = 1;
 

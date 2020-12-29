@@ -27,7 +27,7 @@ void Transpose<T>::setup_impl(const Variables &inputs,
   vector<int> axes = this->axes_;
   const int ndim = inputs[0]->ndim();
 
-  NBLA_CHECK(ndim == axes.size(), error_code::value,
+  NBLA_CHECK(static_cast<size_t>(ndim) == axes.size(), error_code::value,
              "Length of axes must be same as ndim of input. Given %d != %d.",
              ndim, axes.size());
 
@@ -52,7 +52,7 @@ void Transpose<T>::setup_impl(const Variables &inputs,
   // transposing shape (16, 3, 100, 100) by axes (0, 2, 3, 1) will be reduced
   // to transposing (16, 3, 10000) by axes (0, 2, 1).
   volatile auto axes_size = axes.size();
-  for (int i = 1; i < axes_size;) {
+  for (size_t i = 1; i < axes_size;) {
     auto this_axis = axes[i];
     auto prev_axis = axes[i - 1];
     if (this_axis == prev_axis + 1) {
@@ -60,7 +60,7 @@ void Transpose<T>::setup_impl(const Variables &inputs,
       ishape.erase(ishape.begin() + this_axis);
       axes.erase(axes.begin() + i);
       axes_size = axes.size();
-      for (int j = 0; j < axes_size; j++) {
+      for (size_t j = 0; j < axes_size; j++) {
         if (axes[j] > this_axis)
           axes[j] -= 1;
       }
@@ -73,14 +73,14 @@ void Transpose<T>::setup_impl(const Variables &inputs,
 
   this->x_shape_ = ishape;
   this->y_shape_.resize(axes.size());
-  for (int i = 0; i < axes.size(); i++) {
+  for (size_t i = 0; i < axes.size(); i++) {
     this->y_shape_[i] = this->x_shape_[axes[i]];
   }
   this->x_strides_ = ndi::strides(this->x_shape_);
   this->y_strides_ = ndi::strides(this->y_shape_);
   this->x_strides_transposed_.resize(axes.size());
   this->y_strides_transposed_.resize(axes.size());
-  for (int i = 0; i < axes.size(); i++) {
+  for (size_t i = 0; i < axes.size(); i++) {
     this->x_strides_transposed_[i] = this->x_strides_[axes[i]];
     this->y_strides_transposed_[axes[i]] = this->y_strides_[i];
   }

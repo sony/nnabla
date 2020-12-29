@@ -24,6 +24,7 @@ maybe because they are uncategorized.
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <numeric>
 #include <sstream>
 #include <string>
 #include <tuple>
@@ -51,15 +52,12 @@ enum AsyncFlag { NONE = 0b0, ASYNC = 0b1, UNSAFE = 0b10, OFFREC = 0b100 };
 */
 inline Size_t compute_size_by_shape(const Shape_t &shape, Size_t axis = 0) {
   axis = std::max(static_cast<Size_t>(0), axis);
-  NBLA_CHECK(axis <= shape.size(), error_code::value,
+  NBLA_CHECK(axis <= static_cast<Size_t>(shape.size()), error_code::value,
              "axis must be less than or equal to size of shape. "
              "axis: %ld > size of shape: %ld.",
              axis, shape.size());
-  Size_t ret = 1;
-  for (int i = axis; i < shape.size(); ++i) {
-    ret *= shape[i];
-  }
-  return ret;
+  return std::accumulate(shape.begin() + axis, shape.end(), 1,
+                         std::multiplies<int>());
 }
 
 /** Helper for getting strides of C contiguous memory arrangement.
@@ -83,7 +81,7 @@ inline string string_join(const vector<T> &vec, const string &delim) {
   if (vec.empty()) {
     return "";
   }
-  for (int i = 0; i < vec.size() - 1; ++i) {
+  for (typename vector<T>::size_type i = 0; i < vec.size() - 1; ++i) {
     oss << vec[i] << delim;
   }
   oss << vec[vec.size() - 1];
@@ -138,7 +136,7 @@ template <typename T> void hash_combine(size_t &seed, T const &v) {
 template <typename T>
 vector<T *> as_pointer_array(const vector<shared_ptr<T>> &vec) {
   vector<T *> ret(vec.size());
-  for (int i = 0; i < vec.size(); ++i) {
+  for (unsigned int i = 0; i < vec.size(); ++i) {
     ret[i] = vec[i].get();
   }
   return ret;

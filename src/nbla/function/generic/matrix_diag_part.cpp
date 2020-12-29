@@ -38,7 +38,7 @@ void MatrixDiagPart<T>::setup_impl(const Variables &inputs,
 
   // Create new shape and compute part size
   Shape_t shape_y;
-  for (int i = 0; i < shape_x.size() - 1; ++i) {
+  for (Shape_t::size_type i = 0; i < shape_x.size() - 1; ++i) {
     shape_y.push_back(shape_x[i]);
   }
 

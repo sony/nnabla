@@ -32,7 +32,8 @@ void VATNoise<T>::setup_impl(const Variables &inputs,
   NBLA_CHECK(0 < base_axis_, error_code::value,
              "base_axis_ must be grater than 0. base_axis: %d.", base_axis_);
 
-  NBLA_CHECK(base_axis_ < inputs[0]->shape().size(), error_code::value,
+  auto base_axis = static_cast<Shape_t::size_type>(base_axis_);
+  NBLA_CHECK(base_axis < inputs[0]->shape().size(), error_code::value,
              "base_axis must be less than ndim of inputs[0]. "
              "base_axis: %d >= ndim of inputs[0]: %d.",
              base_axis_, inputs[0]->shape().size());

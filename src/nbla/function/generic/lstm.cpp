@@ -263,7 +263,7 @@ vector<vector<CgVariablePtr>> LSTM<T>::create_fixed_length_lstm_graph(
           cg_utils::get_item_nd(this->ctx_, in_b, vector<int>{i, 0}); // b[i, 0]
     }
 
-    for (int k = 0; k < xs.size(); k++) {
+    for (vector<CgVariablePtr>::size_type k = 0; k < xs.size(); k++) {
       auto tmp = lstm_cell(xs[k], hf_var, cf_var, wf_var, bf_var);
       hf_var = (tmp[0])[0];
       cf_var = (tmp[1])[0];
@@ -290,7 +290,7 @@ vector<vector<CgVariablePtr>> LSTM<T>::create_fixed_length_lstm_graph(
     if (xs.size() > 1) {
       std::reverse(std::begin(xs), std::end(xs));
     }
-    for (int k = 0; k < xs.size(); k++) {
+    for (vector<CgVariablePtr>::size_type k = 0; k < xs.size(); k++) {
       int j = xs.size() - 1 - k;
       auto tmp = lstm_cell(xs[k], hb_var, cb_var, wb_var, bb_var);
       hb_var = (tmp[0])[0];

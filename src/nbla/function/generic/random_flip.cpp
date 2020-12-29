@@ -46,7 +46,7 @@ void RandomFlip<T>::flip_recursive(const Variable *inp, const T *x, T *y,
     current_x_offset += x_stride * (size - 1);
     x_stride = -x_stride;
   }
-  if (dim == inp->shape().size() - 1) {
+  if (static_cast<Shape_t::size_type>(dim) == inp->shape().size() - 1) {
     const T *current_x = x + current_x_offset;
     const T *end_x = current_x + size * x_stride;
     T *current_y = y + current_y_offset;
@@ -83,9 +83,10 @@ template <typename T>
 void RandomFlip<T>::forward_impl(const Variables &inputs,
                                  const Variables &outputs) {
   flip_.resize(size_);
+  auto input0_shape_size = inputs[0]->shape().size();
   for (int i = 0; i < size_; i++) {
-    flip_[i].resize(inputs[0]->shape().size());
-    for (int id = 0; id < inputs[0]->shape().size(); id++) {
+    flip_[i].resize(input0_shape_size);
+    for (int id = 0; static_cast<size_t>(id) < input0_shape_size; id++) {
       auto itr = std::find(axes_.begin(), axes_.end(), id);
       flip_[i][id] = (rgen_() % 2) && (itr != axes_.end());
     }

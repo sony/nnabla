@@ -35,16 +35,20 @@ void KLMultinomial<T>::setup_impl(const Variables &inputs,
              string_join(inputs[1]->shape(), string(", ")).c_str());
 
   Shape_t inshape = inputs[0]->shape();
-  NBLA_CHECK(base_axis_ < inshape.size(), error_code::value,
+
+  NBLA_CHECK(base_axis_ >= 0, error_code::value,
+             "base_axis may not be less than zero, got %d", base_axis_);
+  auto base_axis = static_cast<Shape_t::size_type>(base_axis_);
+  NBLA_CHECK(base_axis < inshape.size(), error_code::value,
              "base_axis must be less than ndim of inputs[0]. "
              "base_axis: %d >= ndim of inputs[0]: %d.",
              base_axis_, inshape.size());
 
-  Shape_t outshape(base_axis_ + 1);
-  for (int i = 0; i < base_axis_; i++) {
+  Shape_t outshape(base_axis + 1);
+  for (Shape_t::size_type i = 0; i < base_axis; i++) {
     outshape[i] = inshape[i];
   }
-  outshape[base_axis_] = 1;
+  outshape[base_axis] = 1;
 
   outputs[0]->reshape(outshape, true);
 }

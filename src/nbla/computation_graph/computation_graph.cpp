@@ -75,7 +75,7 @@ vector<CgVariablePtr> connect(CgFunctionPtr cg_f,
 
   // check if data can be cleared or not.
   bool persistent = false, inplace = false, prohibit_clear = false;
-  for (int i = 0; i < inputs.size(); ++i) {
+  for (vector<CgVariablePtr>::size_type i = 0; i < inputs.size(); ++i) {
     auto inp = inputs[i];
     persistent |= inp->rank() == 0 || inp->persistent();
     prohibit_clear |= inp->prohibit_clear_data();
@@ -96,15 +96,15 @@ vector<CgVariablePtr> connect(CgFunctionPtr cg_f,
   // Function inputs and outputs must be Variables.
   vector<Variable *> finputs(inputs.size());
   vector<Variable *> foutputs(outputs.size());
-  for (int i = 0; i < inputs.size(); ++i) {
+  for (vector<CgVariablePtr>::size_type i = 0; i < inputs.size(); ++i) {
     finputs[i] = inputs[i]->variable().get();
   }
-  for (int i = 0; i < outputs.size(); ++i) {
+  for (vector<CgVariablePtr>::size_type i = 0; i < outputs.size(); ++i) {
     foutputs[i] = outputs[i]->variable().get();
   }
 
   // Set array reference to function output buffer if size matches.
-  for (int i = 0; i < outputs.size(); ++i) {
+  for (vector<CgVariablePtr>::size_type i = 0; i < outputs.size(); ++i) {
     if (i >= inplace_outputs.size() || !inplace_outputs[i])
       continue;
     NBLA_CHECK(inplace_outputs[i]->size() == foutputs[i]->size(),
@@ -174,13 +174,13 @@ void forward_all(const vector<CgVariablePtr> variables, bool clear_buffer,
 
   // Revert persistent flags after the end of forward_all
   DestructorCallback persistent_flag_restorer([&]() -> void {
-    for (int i = 0; i < variables.size(); ++i) {
+    for (vector<CgVariablePtr>::size_type i = 0; i < variables.size(); ++i) {
       variables[i]->set_persistent(orig_persistent_flags[i]);
     }
   });
 
   unordered_set<CgFunctionPtr> fclosed;
-  for (int i = 0; i < variables.size(); ++i) {
+  for (vector<CgVariablePtr>::size_type i = 0; i < variables.size(); ++i) {
     variables[i]->forward(clear_buffer, clear_no_need_grad, &fclosed,
                           function_pre_hook, function_post_hook);
   }

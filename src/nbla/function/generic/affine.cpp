@@ -31,7 +31,10 @@ void Affine<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   Shape_t shape_weights = inputs[1]->shape();
   NBLA_CHECK(shape_weights.size() >= 2, error_code::value,
              "Weights(inputs[1]) must be matrix or tensor.");
-  NBLA_CHECK(base_axis_ < shape_data.size(), error_code::value,
+  NBLA_CHECK(base_axis_ >= 0, error_code::value,
+             "base_axis must be a positive number, got %d", base_axis_);
+  auto base_axis = static_cast<Shape_t::size_type>(this->base_axis_);
+  NBLA_CHECK(base_axis < shape_data.size(), error_code::value,
              "Base_axis must be less than ndim of input data(inputs[0]). "
              "base_axis: %d >= ndim of input: %d.",
              base_axis_, shape_data.size());
@@ -49,7 +52,7 @@ void Affine<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   for (int i = 0; i < base_axis_; ++i) {
     shape_out.push_back(shape_data[i]);
   }
-  for (int i = 1; i < shape_weights.size(); ++i) {
+  for (Shape_t::size_type i = 1; i < shape_weights.size(); ++i) {
     shape_out.push_back(shape_weights[i]);
   }
   outputs[0]->reshape(shape_out, true);
@@ -63,7 +66,7 @@ void Affine<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
                "Length of bias(inputs[2]) and weights(inputs[1]) mismatch. "
                "bias length: %d != weights length-1: %d.",
                shape_bias.size(), shape_weights.size() - 1);
-    for (int i = 0; i < shape_bias.size(); ++i) {
+    for (Shape_t::size_type i = 0; i < shape_bias.size(); ++i) {
       NBLA_CHECK(shape_bias[i] == shape_weights[i + 1], error_code::value,
                  "Shape of bias(inputs[2]) and weights(inputs[1]) mismatch. "
                  "shape_bias[%d]: %d != shape_weights[%d + 1]: %d.",

@@ -37,7 +37,7 @@ void INQAffine<T, T1>::setup_impl(const Variables &inputs,
              "Indicators and weights must have same size. "
              "Ndim of weights: %d != ndim of indicators: %d.",
              inputs[1]->shape().size(), inputs[2]->shape().size());
-  for (int i = 0; i < inputs[1]->shape().size(); ++i) {
+  for (Shape_t::size_type i = 0; i < inputs[1]->shape().size(); ++i) {
     NBLA_CHECK(inputs[1]->shape()[i] == inputs[2]->shape()[i],
                error_code::value,
                "Indicators and weights must have same size. "

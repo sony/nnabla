@@ -30,7 +30,7 @@ void ScatterAdd<T>::setup_impl(const Variables &inputs,
   auto axis = (axis_ < 0) ? inputs.at(0)->ndim() + axis_ : axis_;
   NBLA_CHECK(axis <= inputs.at(0)->ndim(), error_code::value,
              "Shape error, input dimension must be greater than axis");
-  for (int i = 1; i < inputs.size(); ++i) {
+  for (Variables::size_type i = 1; i < inputs.size(); ++i) {
     NBLA_CHECK(inputs.at(0)->ndim() == inputs.at(i)->ndim(), error_code::value,
                "Shape error. all inputs must have same dimension");
   }
@@ -38,7 +38,7 @@ void ScatterAdd<T>::setup_impl(const Variables &inputs,
   auto x0_shape = inputs.at(0)->shape();
   auto indices_shape = inputs.at(1)->shape();
   auto x1_shape = inputs.at(2)->shape();
-  for (int i = 0; i < indices_shape.size(); ++i) {
+  for (int i = 0; static_cast<size_t>(i) < indices_shape.size(); ++i) {
     if (i != axis) {
       NBLA_CHECK(indices_shape[i] <= x0_shape[i], error_code::value,
                  "Shape error. indices size: %d at axis %d is greater than x0 "

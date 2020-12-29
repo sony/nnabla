@@ -27,7 +27,8 @@ NBLA_REGISTER_FUNCTION_SOURCE(Sort, int, bool, bool, bool);
 template <typename T>
 void Sort<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   if (this->axis > 0) {
-    NBLA_CHECK(this->axis < inputs[0]->shape().size(), error_code::value,
+    NBLA_CHECK(static_cast<unsigned>(this->axis) < inputs[0]->shape().size(),
+               error_code::value,
                "Sort axis must be less than the number of input dimensions "
                "but axis %d >= ndim of x %d.",
                this->axis, inputs[0]->shape().size());
@@ -92,7 +93,7 @@ void Sort<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
                   [&](size_t i1, size_t i2) { return x[i1 * s] < x[i2 * s]; });
       }
 
-      for (size_t i = 0; i < shape[this->axis]; i++) {
+      for (size_t i = 0; i < static_cast<size_t>(shape[this->axis]); i++) {
         inner_i_ptr[i * stride] = temp_index_ptr[i];
       }
       inner_x_ptr++;
@@ -115,7 +116,7 @@ void Sort<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
       auto inner_i_ptr = outer_i_ptr;
 
       while (inner_x_ptr < outer_x_ptr + this->inner_size) {
-        for (size_t i = 0; i < shape[this->axis]; i++) {
+        for (size_t i = 0; i < static_cast<size_t>(shape[this->axis]); i++) {
           const auto sort_index = inner_i_ptr[i * stride];
           inner_y_ptr[i * stride] = inner_x_ptr[sort_index * stride];
         }
@@ -162,12 +163,12 @@ void Sort<T>::backward_impl(const Variables &inputs, const Variables &outputs,
 
     while (inner_y_ptr < outer_y_ptr + this->inner_size) {
       if (accum[0]) {
-        for (size_t i = 0; i < shape[this->axis]; i++) {
+        for (size_t i = 0; i < static_cast<size_t>(shape[this->axis]); i++) {
           const auto sort_index = inner_i_ptr[i * stride];
           inner_x_ptr[i * stride] += inner_y_ptr[sort_index * stride];
         }
       } else {
-        for (size_t i = 0; i < shape[this->axis]; i++) {
+        for (size_t i = 0; i < static_cast<size_t>(shape[this->axis]); i++) {
           const auto sort_index = inner_i_ptr[i * stride];
           inner_x_ptr[i * stride] = inner_y_ptr[sort_index * stride];
         }

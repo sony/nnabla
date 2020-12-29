@@ -73,7 +73,7 @@ void RandomShift<T>::shift_recursive(const Variable *inp, const T *x, T *y,
   const int stride = inp->strides()[dim];
   const int size = inp->shape()[dim];
   const std::vector<int> &table = addr_table_[shift_index][dim];
-  if (dim == inp->shape().size() - 1) {
+  if (static_cast<Shape_t::size_type>(dim) == inp->shape().size() - 1) {
     for (int i = 0; i < size; ++i) {
       y[current_y_offset] = x[x_offset + table[i]];
       current_y_offset += stride;
@@ -98,7 +98,7 @@ void RandomShift<T>::shift_backward_recursive(const Variable *inp, const T *dy,
   const int stride = inp->strides()[dim];
   const int size = inp->shape()[dim];
   const std::vector<int> &table = addr_table_[shift_index][dim];
-  if (dim == inp->shape().size() - 1) {
+  if (static_cast<Shape_t::size_type>(dim) == inp->shape().size() - 1) {
     for (int i = 0; i < size; ++i) {
       dx[x_offset + table[i]] += dy[current_y_offset];
       current_y_offset += stride;
@@ -121,7 +121,7 @@ void RandomShift<T>::forward_impl(const Variables &inputs,
   addr_table_.resize(size_);
   for (int i = 0; i < size_; i++) {
     vector<int> shifts;
-    for (int id = 0; id < shifts_.size(); id++) {
+    for (Shape_t::size_type id = 0; id < shifts_.size(); id++) {
       shifts.push_back(rgen_() % (shifts_[id] * 2 + 1) - shifts_[id]);
     }
     addr_table_[i] = prepare_addr_table(inputs, shifts);

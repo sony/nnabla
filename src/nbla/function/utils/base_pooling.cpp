@@ -38,7 +38,7 @@ get_pooling_output_shape(const vector<int> &inshape, const vector<int> &kernel,
   size_t end_spatial_axis = first_spatial_axis + kernel.size();
 
   vector<int> shape(kernel.size());
-  for (int i = 0; i < kernel.size(); i++) {
+  for (unsigned int i = 0; i < kernel.size(); i++) {
     int w_i = static_cast<int>(inshape[i + first_spatial_axis]);
     int k_i = kernel[i];
     int s_i = stride[i];
@@ -47,7 +47,7 @@ get_pooling_output_shape(const vector<int> &inshape, const vector<int> &kernel,
   }
 
   vector<int> outshape(inshape.size());
-  for (int i = 0; i < inshape.size(); i++) {
+  for (unsigned int i = 0; i < inshape.size(); i++) {
     if ((i < first_spatial_axis) || (i >= end_spatial_axis)) {
       outshape[i] = static_cast<int>(inshape[i]);
     } else {

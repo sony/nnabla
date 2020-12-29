@@ -42,13 +42,17 @@ void Convolution<T>::setup_impl(const Variables &inputs,
   // Shape check
   Shape_t shape_data = inputs[0]->shape();
   Shape_t shape_weights = inputs[1]->shape();
-  NBLA_CHECK(base_axis_ < shape_data.size() - 1, error_code::unclassified,
+  NBLA_CHECK(base_axis_ >= 0, error_code::value,
+             "base_axis may not be less than zero, got %d", base_axis_);
+  auto base_axis = static_cast<Shape_t::size_type>(base_axis_);
+  NBLA_CHECK(base_axis < shape_data.size() - 1, error_code::unclassified,
              "base_axis must be less than ndim - 1 of inputs[0]. "
              "base_axis: %d >= ndim of inputs[0] - 1: %d.",
              base_axis_, shape_data.size() - 1);
-  spatial_dims_ = shape_data.size() - base_axis_ - 1;
-  NBLA_CHECK(shape_weights.size() == 2 + spatial_dims_, error_code::value,
+  size_t spatial_dims = shape_data.size() - base_axis - 1;
+  NBLA_CHECK(shape_weights.size() == 2 + spatial_dims, error_code::value,
              "Weights must be a tensor more than 3D.");
+  this->spatial_dims_ = spatial_dims;
   // Storing shape variables
   size_t channel_axis = base_axis_ + (channel_last_ ? spatial_dims_ : 0);
   size_t first_spatial_axis = base_axis_ + (channel_last_ ? 0 : 1);
@@ -72,13 +76,13 @@ void Convolution<T>::setup_impl(const Variables &inputs,
              "Number of grouped channel mismatch. "
              "Input: %d != Weights[%zu]: %d.",
              channels_i_ / group_, weight_channel_axis, channels_g_);
-  NBLA_CHECK(pad_.size() == spatial_dims_, error_code::value,
+  NBLA_CHECK(pad_.size() == spatial_dims, error_code::value,
              "pad size mismatch. pad size: %d != spatial dims: %d.",
              pad_.size(), spatial_dims_);
-  NBLA_CHECK(stride_.size() == spatial_dims_, error_code::value,
+  NBLA_CHECK(stride_.size() == spatial_dims, error_code::value,
              "stride size mismatch. stride size: %d != spatial dims: %d.",
              stride_.size(), spatial_dims_);
-  NBLA_CHECK(dilation_.size() == spatial_dims_, error_code::value,
+  NBLA_CHECK(dilation_.size() == spatial_dims, error_code::value,
              "dilation size mismatch. dilation size: %d != spatial dims: %d.",
              dilation_.size(), spatial_dims_);
   kernel_.clear();

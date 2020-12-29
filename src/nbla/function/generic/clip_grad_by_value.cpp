@@ -37,7 +37,7 @@ void ClipGradByValue<T>::setup_impl(const Variables &inputs,
              shape2.size());
 
   // Shape check
-  for (int i = 0; i < shape0.size(); i++) {
+  for (Shape_t::size_type i = 0; i < shape0.size(); i++) {
     NBLA_CHECK(shape0[i] && shape1[i] && shape2[i], error_code::value,
                "Size at shape[%d] differs %d, %d, and %d", i, shape0[i],
                shape1[i], shape2[i])

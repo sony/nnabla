@@ -31,7 +31,7 @@ void Where<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   NBLA_CHECK(cshape.size() <= tshape.size(), error_code::value,
              "Rank of condition must be less than or equal to that of x_true "
              "or x_false.");
-  for (int d = 0; d < cshape.size(); d++) {
+  for (Shape_t::size_type d = 0; d < cshape.size(); d++) {
     NBLA_CHECK(cshape[d] == tshape[d], error_code::value,
                "The first dimensions of x_true and x_false must be the same as "
                "the shape of condition.");
@@ -49,8 +49,8 @@ void Where<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
   size_t csize = inputs[0]->size();
   size_t xsize = inputs[1]->size();
   size_t inner_size = xsize / csize;
-  for (int s = 0; s < xsize; s++) {
-    const int c = s / inner_size;
+  for (auto s = decltype(xsize){0}; s < xsize; s++) {
+    auto c = s / inner_size;
     y[s] = condition[c] ? x_true[s] : x_false[s];
   }
 }
@@ -78,7 +78,7 @@ void Where<T>::backward_impl(const Variables &inputs, const Variables &outputs,
   size_t xsize = inputs[1]->size();
   size_t inner_size = xsize / csize;
 
-  for (int s = 0; s < xsize; s++) {
+  for (auto s = decltype(xsize){0}; s < xsize; s++) {
     const bool cond = condition[s / inner_size];
     if (g_x_true) {
       g_x_true[s] = (accum[1] ? g_x_true[s] : (T)0) + (cond ? g_y[s] : (T)0);
