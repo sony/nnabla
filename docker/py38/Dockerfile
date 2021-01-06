@@ -37,5 +37,6 @@ RUN umask 0 \
 
 ENV PATH /opt/miniconda3/bin:$PATH
 
-RUN pip install nnabla
+ARG NNABLA_VER
+RUN pip install nnabla==${NNABLA_VER}
 
