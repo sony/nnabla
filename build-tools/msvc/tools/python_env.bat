@@ -51,3 +51,5 @@ CALL conda install -y --update-deps ^
            tqdm ^
            virtualenv ^
            wheel
+
+CALL conda install -y -c conda-forge pynvml
