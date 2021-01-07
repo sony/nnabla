@@ -36,7 +36,9 @@ void Rand<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
                                                                       high_);
   T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   for (int s = 0; s < outputs[0]->size(); s++) {
-    y[s] = rdist(rgen_);
+    y[s] = rdist(
+        seed_ == -1 ? SingletonManage::<RandomManager>()->get_random_generator()
+                    : rgen_);
   }
 }
 
