@@ -127,6 +127,9 @@ void RandomCrop<T>::slice_backward_recursive(Variable *outp,
 template <typename T>
 void RandomCrop<T>::forward_impl(const Variables &inputs,
                                  const Variables &outputs) {
+  std::mt19937 rgen =
+      seed_ == -1 ? SingletonManager::<RandomManager>()->get_rand_generator()
+                  : rgen_;
   start_.resize(size_);
   stop_.resize(size_);
   step_.resize(size_);
@@ -137,7 +140,7 @@ void RandomCrop<T>::forward_impl(const Variables &inputs,
     for (int i = 0; i < static_cast<int>(inputs[0]->shape().size()); i++) {
       const int left =
           i >= dim_offset_
-              ? rgen_() % (inputs[0]->shape()[i] - shape_[i - dim_offset_] + 1)
+              ? rgen() % (inputs[0]->shape()[i] - shape_[i - dim_offset_] + 1)
               : 0;
 
       start_[id].push_back(left);

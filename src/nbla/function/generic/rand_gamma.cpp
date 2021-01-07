@@ -35,9 +35,12 @@ template <typename T>
 void RandGamma<T>::forward_impl(const Variables &inputs,
                                 const Variables &outputs) {
   std::gamma_distribution<typename force_float<T>::type> rdist(k_, theta_);
+  std::mt19937 rgen =
+      seed_ == -1 ? SingletonManager::<RandomManager>()->get_rand_generator()
+                  : rgen_;
   T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   for (int s = 0; s < outputs[0]->size(); s++) {
-    y[s] = (T)rdist(rgen_);
+    y[s] = (T)rdist(rgen);
   }
 }
 

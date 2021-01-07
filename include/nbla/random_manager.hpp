@@ -32,7 +32,7 @@ public:
   ~RandomManager();
   /** Get random generator.
    */
-  std::mt19937 get_random_generator() const;
+  std::mt19937 get_rand_generator() const;
 
   /** Get seed value.
    */

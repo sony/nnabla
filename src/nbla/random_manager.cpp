@@ -16,13 +16,13 @@
 #include <nbla/singleton_manager-internal.hpp>
 
 namespace nbla {
-RandomManager::RandomManager() : seed_(std::random_device()()), count_(0) {
+RandomManager::RandomManager() : seed_(313), count_(0) {
   rgen_ = std::mt19937(seed_);
 }
 
 RandomManager::~RandomManager() {}
 
-std::mt19937 RandomManager::get_random_generator() const { return rgen_; }
+std::mt19937 RandomManager::get_rand_generator() const { return rgen_; }
 
 int RandomManager::get_seed() const { return seed_; }
 

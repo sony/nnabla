@@ -63,6 +63,7 @@ void RandomChoice<T>::forward_impl(const Variables &inputs,
   using std::partial_sum;
   using std::count_if;
   using std::vector;
+  using std::mt19937;
 
   auto x_data = inputs[0]->get_data_pointer<T>(this->ctx_);
   auto w_data = inputs[1]->get_data_pointer<T>(this->ctx_);
@@ -70,6 +71,9 @@ void RandomChoice<T>::forward_impl(const Variables &inputs,
   auto idxbuf = idxbuf_.cast_data_and_get_pointer<int>(this->ctx_, true);
   auto w_size = inputs[0]->shape().back(); // size of each weight vector
   auto less_0 = std::bind(std::less<T>(), std::placeholders::_1, (T)0);
+  auto rgen = seed_ == -1
+                  ? SingletonManager::<RandomManager>()->get_rand_generator()
+                  : rgen_;
 
   if (replace_ == true) {
     vector<T> w_sum(w_size);
@@ -81,7 +85,7 @@ void RandomChoice<T>::forward_impl(const Variables &inputs,
                  "At least one weight must be greater zero.")
       uniform_real_distribution<> uniform(0, w_sum.back());
       for (int i = 0; i < this->inner_loop_; i++) {
-        T u = uniform(this->rgen_);
+        T u = uniform(rgen);
         auto index = w_size - 1;
         for (int i = 0; i < w_size; i++) {
           if (u < w_sum[i]) {
@@ -108,7 +112,7 @@ void RandomChoice<T>::forward_impl(const Variables &inputs,
         partial_sum(w_vec.begin(), w_vec.end(), w_sum.begin());
         uniform_real_distribution<> uniform(0, w_sum.back());
         while (need--) {
-          T u = uniform(this->rgen_);
+          T u = uniform(rgen);
           for (int i = 0; i < w_size; i++) {
             if (u < w_sum[i]) {
               if (w_vec[i] > 0) {

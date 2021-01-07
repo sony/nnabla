@@ -38,14 +38,17 @@ void RandBeta<T>::forward_impl(const Variables &inputs,
   std::uniform_real_distribution<typename force_float<T>::type> rdist(0.0, 1.0);
   std::gamma_distribution<typename force_float<T>::type> gdist1(alpha_, 1);
   std::gamma_distribution<typename force_float<T>::type> gdist2(beta_, 1);
+  std::mt19937 rgen =
+      seed_ == -1 ? SingletonManager::<RandomManager>()->get_rand_generator()
+                  : rgen_;
 
   T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   if ((alpha_ <= 1.0) && (beta_ <= 1.0)) {
     int s = 0;
     while (s < outputs[0]->size()) {
       float U, V, X, Y, XpY;
-      U = (T)rdist(rgen_);
-      V = (T)rdist(rgen_);
+      U = (T)rdist(rgen);
+      V = (T)rdist(rgen);
       X = std::pow(U, 1 / alpha_);
       Y = std::pow(V, 1 / beta_);
       XpY = X + Y;
@@ -68,8 +71,8 @@ void RandBeta<T>::forward_impl(const Variables &inputs,
   } else {
     for (int s = 0; s < outputs[0]->size(); s++) {
       float Ga, Gb;
-      Ga = (T)gdist1(rgen_);
-      Gb = (T)gdist2(rgen_);
+      Ga = (T)gdist1(rgen);
+      Gb = (T)gdist2(rgen);
       y[s] = Ga / (Ga + Gb);
     }
   }
