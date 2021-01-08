@@ -54,5 +54,7 @@ from .core.module import Module
 from .core import graph_def
 from .core.graph_def import ProtoVariable
 
+from .random import seed
+
 # Prefer cached array by default for performance.
 prefer_cached_array(True)

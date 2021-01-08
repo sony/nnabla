@@ -178,6 +178,7 @@ if __name__ == '__main__':
         'solver',
         'communicator',
         'callback',
+        'random',
         '_init',
         '_nd_array',
         '_computation_graph',
