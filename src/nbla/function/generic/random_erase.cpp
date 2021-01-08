@@ -232,7 +232,7 @@ void RandomErase<T>::forward_impl(const Variables &inputs,
   auto W = shape[base_axis_ + 2];
   auto Bs = C * H * W;
   auto rgen = seed_ == -1
-                  ? SingletonManager::<RandomManager>()->get_rand_generator()
+                  ? SingletonManager::get<RandomManager>()->get_rand_generator()
                   : rgen_;
 
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);

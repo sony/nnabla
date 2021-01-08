@@ -40,7 +40,7 @@ template <class T>
 void Dropout<T>::forward_impl(const Variables &inputs,
                               const Variables &outputs) {
   std::mt19937 rgen =
-      seed_ == -1 ? SingletonManager::<RandomManager>()->get_rand_generator()
+      seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
                   : rgen_;
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
   T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);

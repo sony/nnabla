@@ -72,7 +72,7 @@ void RandomChoice<T>::forward_impl(const Variables &inputs,
   auto w_size = inputs[0]->shape().back(); // size of each weight vector
   auto less_0 = std::bind(std::less<T>(), std::placeholders::_1, (T)0);
   auto rgen = seed_ == -1
-                  ? SingletonManager::<RandomManager>()->get_rand_generator()
+                  ? SingletonManager::get<RandomManager>()->get_rand_generator()
                   : rgen_;
 
   if (replace_ == true) {

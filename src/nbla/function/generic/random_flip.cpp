@@ -83,7 +83,7 @@ template <typename T>
 void RandomFlip<T>::forward_impl(const Variables &inputs,
                                  const Variables &outputs) {
   std::mt19937 rgen =
-      seed_ == -1 ? SingletonManager::<RandomManager>()->get_rand_generator()
+      seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
                   : rgen_;
   flip_.resize(size_);
   auto input0_shape_size = inputs[0]->shape().size();

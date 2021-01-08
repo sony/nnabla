@@ -79,7 +79,7 @@ template <typename T, typename T1>
 void INQAffine<T, T1>::forward_impl(const Variables &inputs,
                                     const Variables &outputs) {
   std::mt19937 rgen =
-      seed_ == -1 ? SingletonManager::<RandomManager>()->get_rand_generator()
+      seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
                   : rgen_;
 
   T *weights = inputs[1]->cast_data_and_get_pointer<T>(this->ctx_);

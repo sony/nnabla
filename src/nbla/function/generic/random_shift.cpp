@@ -119,7 +119,7 @@ template <typename T>
 void RandomShift<T>::forward_impl(const Variables &inputs,
                                   const Variables &outputs) {
   std::mt19937 rgen =
-      seed_ == -1 ? SingletonManager::<RandomManager>()->get_rand_generator()
+      seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
                   : rgen_;
   addr_table_.resize(size_);
   for (int i = 0; i < size_; i++) {

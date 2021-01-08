@@ -18,6 +18,7 @@
 #define __NBLA_FUNCTION_HPP__
 #include <nbla/array.hpp>
 #include <nbla/context.hpp>
+#include <nbla/random_manager.hpp>
 #include <nbla/variable.hpp>
 
 #include <memory>

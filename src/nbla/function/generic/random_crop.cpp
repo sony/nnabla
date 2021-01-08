@@ -128,7 +128,7 @@ template <typename T>
 void RandomCrop<T>::forward_impl(const Variables &inputs,
                                  const Variables &outputs) {
   std::mt19937 rgen =
-      seed_ == -1 ? SingletonManager::<RandomManager>()->get_rand_generator()
+      seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
                   : rgen_;
   start_.resize(size_);
   stop_.resize(size_);
