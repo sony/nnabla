@@ -4951,12 +4951,17 @@ Stochasticity:
         doc: 'Specify how to process the ends of arrays whose values will be undetermined
           as a result of shifting. nearest: The data at the ends of the   original
           array is copied and used. reflect: Original data reflected at   the ends
-          of the original array is used.'
+          of the original array is used. constant: Constant value is used.'
         type: string
         available_values:
         - nearest
         - reflect
+        - constant
         default: '''nearest'''
+      constant_value:
+        doc: Value used for outside of the original array if border_mode='constant'.
+        type: float
+        default: '0'
       base_axis:
         doc: No Description
         type: int64
@@ -4970,6 +4975,7 @@ Stochasticity:
         doc: N-D array.
     function_ids:
       iIiii: 94
+      iIifii: 320
     c_runtime: not support
   RandomErase:
     snake_name: random_erase
