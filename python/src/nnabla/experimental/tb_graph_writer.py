@@ -25,10 +25,108 @@ from nnabla.parameter import get_parameters
 
 
 class TBGraphWriter(SummaryWriter):
+    """This class is a wrapper of tensorboardX summary writer,
+    which enable nn.Variable can be visualized as a graph by tensorboard.
+
+    Prerequisite:
+       Install tensorflow and tensorboardX, simply by the following commands:
+
+       .. code-block:: plaintext
+
+           pip install tensorflow
+           pip install tensorboardX
+
+    Please refer to the following example to use this class:
+
+    Example:
+
+    .. code-block:: python
+
+        import numpy as np
+        import nnabla as nn
+        import nnabla.functions as F
+        import nnabla.parametric_functions as PF
+
+        def show_a_graph():
+            try:
+                from nnabla.experimental.tb_graph_writer import TBGraphWriter
+            except Exception as e:
+                print("please install tensorflow and tensorboardX at first.")
+                raise e
+
+            nn.clear_parameters()
+            x = nn.Variable((2, 3, 4, 4))
+            with nn.parameter_scope('c1'):
+                h = PF.convolution(x, 8, (3, 3), pad=(1, 1))
+                h = F.relu(PF.batch_normalization(h))
+            with nn.parameter_scope('f1'):
+                y = PF.affine(h, 10)
+
+            with TBGraphWriter(log_dir='log_out') as tb:
+                tb.from_variable(y, output_name="y")
+
+    The corresponding graph can be visualized as the following:
+
+    .. image:: ./tb_graph_writer_files/graph.PNG
+       :height: 561px
+       :width: 233px
+       :scale: 50%
+
+    Or, you may show scalar value or histogram of values along the increasing of iteration number
+    as the following:
+
+    .. code-block:: python
+
+        with TBGraphWriter(log_dir='log_out') as tb:
+            values = []
+            for i in range(360):
+                s = np.sin(i / 180.0 * np.pi)
+                tb.add_scalar("show_curve/sin", s, i)
+                values.append(s)
+
+            nd_values = np.array(values)
+            for i in range(10):
+                tb.add_histogram("histogram", nd_values, i)
+                nd_values += 0.05
+
+    It looks like:
+
+    .. image:: ./tb_graph_writer_files/scalar.PNG
+       :height: 418px
+       :width: 522px
+       :scale: 50%
+
+d
+    .. image:: ./tb_graph_writer_files/histogram.PNG
+       :height: 328px
+       :width: 387px
+       :scale: 50%
+
+
+    This class writes a protobuf file to `log_dir` specified folder, thus, user should launch tensorboard
+    to specify this folder:
+
+    .. code-block:: plaintext
+
+       tensorboard --logdir=log_out
+
+    Then, user may check graph in a web browser, by typing the address:
+       http://localhost:6006
+
+    See Also:
+        https://tensorboardx.readthedocs.io/en/latest/tensorboard.html
+
+    """
+
     def __init__(self, log_dir="log_out", comment='', **kwargs):
         super(TBGraphWriter, self).__init__(log_dir, comment, **kwargs)
 
     def from_variable(self, leaf, output_name="output"):
+        """
+        Args:
+          leaf (`nn.Variable`): Leaf node of graph, normally, the output variable of a network
+          output_name ('str'): A given name of output variable of graph
+        """
         def parse_variable(v, var_num):
             def add_variable(v, v_idx):
                 v_name = parameters.get(v.data, None)
@@ -57,10 +155,10 @@ class TBGraphWriter(SummaryWriter):
 
             def get_unique_variable_name(v_name_base):
                 v_num = 0
-                v_name = v_name_base + str(v_num)
+                v_name = v_name_base + '_' + str(v_num)
                 while v_name in unique_var_names:
                     v_num += 1
-                    v_name = v_name_base + str(v_num)
+                    v_name = v_name_base + '_' + str(v_num)
                 unique_var_names.add(v_name)
                 return v_name
 
@@ -78,7 +176,7 @@ class TBGraphWriter(SummaryWriter):
                         f_name_sections = get_func_name(v.parent).split("/")
                         f_name = f_name_sections[-1]
                         f_scope = f_name_sections[:-1]
-                        base_name = "variable<-{}".format(f_name)
+                        base_name = "v_{}".format(f_name)
                         v_name_base = "/".join(f_scope + [base_name])
                         v_name = get_unique_variable_name(v_name_base)
 
@@ -91,7 +189,7 @@ class TBGraphWriter(SummaryWriter):
                     return func_name
                 name_scope = loc_var['name_scope']
                 for v in func.inputs:
-                    v_name = self.parameters.get(v.data, None)
+                    v_name = parameters.get(v.data, None)
                     if v_name:
                         name_scope = '/'.join(v_name.split('/')[:-1])
                         break
@@ -103,7 +201,7 @@ class TBGraphWriter(SummaryWriter):
                 func_name = func_name_base + str(func_num)
                 while func_name in unique_func_names:
                     func_num += 1
-                    func_name = func_name_base + str(func_num)
+                    func_name = func_name_base + '_' + str(func_num)
                 unique_func_names.add(func_name)
                 func_names[func] = func_name
                 return func_name
