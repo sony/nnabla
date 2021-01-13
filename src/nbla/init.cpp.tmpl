@@ -38,9 +38,12 @@
 
 namespace nbla {
 void init_cpu() {
-  static bool is_initialized = false;
+  static volatile bool is_initialized = false;
   if (is_initialized)
     return;
+  // No branch after this, hence, we should
+  // put it here to prevent re-enter.
+  is_initialized = true;
 
   // Array registration
   NBLA_REGISTER_ARRAY_CREATOR(CpuArray);
@@ -95,7 +98,6 @@ void init_cpu() {
   %endfor  
 % endfor
 
-  is_initialized = true;
 }
 
 void clear_cpu_memory_cache() {
