@@ -61,9 +61,9 @@ def resolve_file_format(args, import_files, export_file=None):
     if export_file and not os.path.isdir(export_file):
         output_ext = os.path.splitext(export_file)[1]
         if output_ext == '.nnp':
-            args.export_format == 'NNP'
+            args.export_format = 'NNP'
         elif output_ext == '.nnb':
-            args.export_format == 'NNB'
+            args.export_format = 'NNB'
         elif output_ext == '.onnx':
             args.export_format = 'ONNX'
         elif output_ext == '.pb':
