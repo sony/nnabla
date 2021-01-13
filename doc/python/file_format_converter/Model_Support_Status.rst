@@ -50,7 +50,7 @@ Export
 - ✓: Support to convert
 - X: Not support
 
-Total: 59/65
+Total: 58/65
 
 ONNX Export Sample Test(nnp --> onnx)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -104,7 +104,7 @@ Count 34/37
 ONNX Export Pretrained Model Test(nnp --> onnx)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Count 18/18
+Count 17/18
  
 
     ======================  =======  ====
@@ -126,7 +126,7 @@ Count 18/18
     VGG-13_                    ✓         
     Resnet-152_4_518_          ✓         
     VGG-11_                    ✓         
-    SqueezeNet-1.1_2_70_       ✓         
+    SqueezeNet-1.1_2_70_       X         
     VGG-16_                    ✓         
     ======================  =======  ====
 
@@ -414,12 +414,12 @@ Export
 - ✓: Support to convert
 - X: Not support
 
-Total: 18/130
+Total: 19/130
 
 Tensorflow Lite Export Sample Test(Disable optimization)(nnp --> tflite)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Count 9/37
+Count 10/37
  
 
     ================================  =======  ====
@@ -458,7 +458,7 @@ Count 9/37
     elman_net_with_attention_33_         X         
     mnist_dcgan_with_label_2_            X         
     gated_recurrent_unitGRU_32_          X         
-    12_residual_learning_19_             X         
+    12_residual_learning_19_             ✓         
     12_residual_learning_20_             ✓         
     bidirectional_elman_net_26_          X         
     11_deconvolution_11_                 X         
