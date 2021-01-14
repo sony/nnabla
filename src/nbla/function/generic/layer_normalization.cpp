@@ -168,9 +168,10 @@ void LayerNormalization<T>::backward_impl(const Variables &inputs,
     if (scale) {
       nbla::execute(f_mul2_, mul2_inputs, mul2_outputs);
     }
-    if (bias) {
-      nbla::execute(f_add2_, add2_inputs, add2_outputs);
-    }
+    // add2 is skipped since its output is already in data region of outputs[0]
+    // if (bias) {
+    //   nbla::execute(f_add2_, add2_inputs, add2_outputs);
+    // }
   } else { // no_scale == true
     if (bias) {
       // tensor_norm outputs are restored by layer_norm output - bias
