@@ -104,6 +104,50 @@ class Grad(object):
 
         return grad_outputs
 
+    def _get_corresponding_vars_on_graph(self, inputs, output):
+        ret = [None for _ in range(len(inputs))]
+        inp2id = {x: i for i, x in enumerate(inputs)}
+
+        open = set()
+
+        def dfs(node):
+            if node in open or not node.parent:
+                return
+
+            for par_var in node.parent.inputs:
+                if node in open:
+                    continue
+
+                id = inp2id.get(par_var, None)
+                if id is not None:
+                    ret[id] = par_var
+
+                dfs(par_var)
+                open.add(par_var)
+
+        dfs(output)
+
+        return ret
+
+    def _get_children(self, wrt_inputs):
+        children = set()
+
+        def dfs(node):
+            if node in children:
+                return
+
+            for f in node.function_references:
+                for o in f.outputs:
+                    if o in children:
+                        continue
+                    dfs(o)
+                    children.add(o)
+
+        for inp in wrt_inputs:
+            dfs(inp)
+
+        return children
+
     def __call__(self, outputs, inputs, grad_outputs=None,
                  persistent_outputs=[], bind_grad_output=False):
         """
@@ -200,8 +244,11 @@ class Grad(object):
         grad_vars[func] = OrderedDict({output: [grad_output]})
 
         # Return grads
-        wrt_inputs = inputs
+        # replace inputs params with the vars connected with given graph
+        wrt_inputs = self._get_corresponding_vars_on_graph(inputs, output)
         grads = [None] * len(wrt_inputs)
+
+        child_nodes = self._get_children(wrt_inputs)
 
         # Expand the forward graph to the backward graph
         while len(open) != 0:
@@ -228,8 +275,9 @@ class Grad(object):
 
             # Propagate down
             for inp in f.inputs:
-                if not inp.need_grad:
+                if inp not in child_nodes or not inp.need_grad:
                     continue
+
                 p_i = inp.parent
                 if not p_i:
                     continue
