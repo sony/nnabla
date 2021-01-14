@@ -22,7 +22,7 @@ RandomManager::RandomManager() : seed_(313), count_(0) {
 
 RandomManager::~RandomManager() {}
 
-std::mt19937 RandomManager::get_rand_generator() const { return rgen_; }
+std::mt19937 &RandomManager::get_rand_generator() { return rgen_; }
 
 int RandomManager::get_seed() const { return seed_; }
 

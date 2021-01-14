@@ -17,6 +17,7 @@
 #include <nbla/array.hpp>
 #include <nbla/common.hpp>
 #include <nbla/function/rand_beta.hpp>
+#include <nbla/random_manager.hpp>
 #include <nbla/variable.hpp>
 
 #include <random>
@@ -38,7 +39,7 @@ void RandBeta<T>::forward_impl(const Variables &inputs,
   std::uniform_real_distribution<typename force_float<T>::type> rdist(0.0, 1.0);
   std::gamma_distribution<typename force_float<T>::type> gdist1(alpha_, 1);
   std::gamma_distribution<typename force_float<T>::type> gdist2(beta_, 1);
-  std::mt19937 rgen =
+  std::mt19937 &rgen =
       seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
                   : rgen_;
 

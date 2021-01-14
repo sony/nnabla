@@ -15,6 +15,7 @@
 #include <nbla/array.hpp>
 #include <nbla/common.hpp>
 #include <nbla/function/random_choice.hpp>
+#include <nbla/random_manager.hpp>
 #include <nbla/utils/nd_index.hpp>
 #include <nbla/variable.hpp>
 #include <numeric>
@@ -63,7 +64,6 @@ void RandomChoice<T>::forward_impl(const Variables &inputs,
   using std::partial_sum;
   using std::count_if;
   using std::vector;
-  using std::mt19937;
 
   auto x_data = inputs[0]->get_data_pointer<T>(this->ctx_);
   auto w_data = inputs[1]->get_data_pointer<T>(this->ctx_);
@@ -71,8 +71,8 @@ void RandomChoice<T>::forward_impl(const Variables &inputs,
   auto idxbuf = idxbuf_.cast_data_and_get_pointer<int>(this->ctx_, true);
   auto w_size = inputs[0]->shape().back(); // size of each weight vector
   auto less_0 = std::bind(std::less<T>(), std::placeholders::_1, (T)0);
-  auto rgen = seed_ == -1
-                  ? SingletonManager::get<RandomManager>()->get_rand_generator()
+  std::mt19937 &rgen =
+      seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
                   : rgen_;
 
   if (replace_ == true) {

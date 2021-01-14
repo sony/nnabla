@@ -15,6 +15,7 @@
 #include <nbla/array.hpp>
 #include <nbla/common.hpp>
 #include <nbla/function/random_erase.hpp>
+#include <nbla/random_manager.hpp>
 #include <nbla/variable.hpp>
 
 namespace nbla {
@@ -231,8 +232,8 @@ void RandomErase<T>::forward_impl(const Variables &inputs,
   auto H = shape[base_axis_ + 1];
   auto W = shape[base_axis_ + 2];
   auto Bs = C * H * W;
-  auto rgen = seed_ == -1
-                  ? SingletonManager::get<RandomManager>()->get_rand_generator()
+  std::mt19937 &rgen =
+      seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
                   : rgen_;
 
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);

@@ -16,6 +16,7 @@
  */
 #include <nbla/array.hpp>
 #include <nbla/function/random_flip.hpp>
+#include <nbla/random_manager.hpp>
 #include <nbla/variable.hpp>
 
 #include <algorithm>
@@ -82,7 +83,7 @@ void RandomFlip<T>::flip_recursive(const Variable *inp, const T *x, T *y,
 template <typename T>
 void RandomFlip<T>::forward_impl(const Variables &inputs,
                                  const Variables &outputs) {
-  std::mt19937 rgen =
+  std::mt19937 &rgen =
       seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
                   : rgen_;
   flip_.resize(size_);

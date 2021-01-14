@@ -16,6 +16,7 @@
  */
 #include <nbla/array.hpp>
 #include <nbla/function/rand.hpp>
+#include <nbla/random_manager.hpp>
 #include <nbla/variable.hpp>
 
 #include <random>
@@ -34,7 +35,7 @@ template <typename T>
 void Rand<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
   std::uniform_real_distribution<typename force_float<T>::type> rdist(low_,
                                                                       high_);
-  std::mt19937 rgen =
+  std::mt19937 &rgen =
       seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
                   : rgen_;
   T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);

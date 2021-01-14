@@ -16,6 +16,7 @@
 
 #include <nbla/array.hpp>
 #include <nbla/function/dropout.hpp>
+#include <nbla/random_manager.hpp>
 #include <nbla/variable.hpp>
 
 #include <algorithm>
@@ -39,7 +40,7 @@ void Dropout<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
 template <class T>
 void Dropout<T>::forward_impl(const Variables &inputs,
                               const Variables &outputs) {
-  std::mt19937 rgen =
+  std::mt19937 &rgen =
       seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
                   : rgen_;
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);

@@ -16,6 +16,7 @@
  */
 #include <nbla/array.hpp>
 #include <nbla/function/random_crop.hpp>
+#include <nbla/random_manager.hpp>
 #include <nbla/variable.hpp>
 
 #include <algorithm>
@@ -127,7 +128,7 @@ void RandomCrop<T>::slice_backward_recursive(Variable *outp,
 template <typename T>
 void RandomCrop<T>::forward_impl(const Variables &inputs,
                                  const Variables &outputs) {
-  std::mt19937 rgen =
+  std::mt19937 &rgen =
       seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
                   : rgen_;
   start_.resize(size_);
