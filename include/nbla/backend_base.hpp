@@ -12,68 +12,69 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __NBLA_CPU_HPP__
-#define __NBLA_CPU_HPP__
-#include <nbla/backend_base.hpp>
-#include <nbla/defs.hpp>
+#ifndef __NBLA_BACKEND_BASE_HPP__
+#define __NBLA_BACKEND_BASE_HPP__
+
+#include <nbla/common.hpp>
 #include <nbla/memory/allocator.hpp>
 #include <nbla/singleton_manager.hpp>
 
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace nbla {
 
 using std::vector;
 using std::string;
-using std::unique_ptr;
+using std::shared_ptr;
 
 /**
-Singleton class for storing some handles or configs for CPU Computation.
+Base class of singleton classes for storing some handles or
+configs for computation on a backend.
 */
-class NBLA_API Cpu : public BackendBase {
+class NBLA_API BackendBase {
 
 public:
-  ~Cpu();
+  virtual ~BackendBase() {}
 
   /** Available array class list used in CPU Function implementations.
    */
-  vector<string> array_classes() const;
+  virtual vector<string> array_classes() const = 0;
 
   /** Set array class list.
 
       @note Dangerous to call. End users shouldn't call.
    */
-  void _set_array_classes(const vector<string> &a);
+  virtual void _set_array_classes(const vector<string> &a) = 0;
 
   /** Register array class to available list by name.
    */
-  void register_array_class(const string &name);
+  virtual void register_array_class(const string &name) = 0;
 
   /** Get a caching allocator.
    */
-  shared_ptr<Allocator> caching_allocator();
+  virtual shared_ptr<Allocator> caching_allocator() = 0;
 
   /** Get a no-cache allocator.
    */
-  shared_ptr<Allocator> naive_allocator();
+  virtual shared_ptr<Allocator> naive_allocator() = 0;
 
   /** Free all unused host memory caches
    */
-  void free_unused_host_caches();
+  virtual void free_unused_host_caches() = 0;
 
   /** Synchronize host to device.
    */
-  void device_synchronize(const string &device);
+  virtual void device_synchronize(const string &device) = 0;
 
   /** Synchronize host to default stream of device.
    */
-  void default_stream_synchronize(const string &device);
+  virtual void default_stream_synchronize(const string &device) = 0;
 
-  /** Create non blockuing streams for data transfer.
-      Noting to do in CPU backend.
+  /** Create non blockuing streams for data transfer
    */
-  void create_lms_streams(int device = -1) {}
+  virtual void create_lms_streams(int device = -1) = 0;
 
 protected:
   vector<string> array_classes_; ///< Available array classes
@@ -86,11 +87,11 @@ protected:
   shared_ptr<Allocator> naive_allocator_;
   shared_ptr<Allocator> caching_allocator_;
 
+  BackendBase() {} // Never called by users.
+
 private:
   friend SingletonManager;
-  // Never called by users.
-  Cpu();
-  DISABLE_COPY_AND_ASSIGN(Cpu);
+  DISABLE_COPY_AND_ASSIGN(BackendBase);
 };
 }
 

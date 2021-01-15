@@ -13,17 +13,71 @@
 // limitations under the License.
 
 #include <nbla/cpu.hpp>
+#include <nbla/global_solver_callback.hpp>
 #include <nbla/singleton_manager.hpp>
 #include <nbla/solver.hpp>
 
 #include <algorithm>
 #include <memory>
 
+// Should be false, unless you want to executing larger model than allotted
+// memory with compromising computational accuracy.
+#define CLEAR_MEMORY false
+
 namespace nbla {
+
+#if CLEAR_MEMORY
+void clear_param(pair<string, Params> &kv) {
+  // For reusing memory with comprimising computational accuracy (mainly for
+  // executing larger model than alloted memory).
+  kv.second.p->data()->array()->clear();
+  kv.second.p->grad()->array()->clear();
+  clear_state(kv.first);
+}
+#endif
 
 using std::make_shared;
 using std::make_pair;
 
+/** UpdateHookWithObject Implementation **/
+UpdateHookWithObject::UpdateHookWithObject() {}
+
+UpdateHookWithObject::UpdateHookWithObject(const UpdateHookWithObject &from)
+    : obj_(from.obj_), callback_(from.callback_),
+      setup_callback_(from.setup_callback_),
+      cleanup_callback_(from.cleanup_callback_) {
+  setup_callback_(obj_);
+}
+
+UpdateHookWithObject::UpdateHookWithObject(void *obj, callback_type cb,
+                                           setup_callback_type setup_cb,
+                                           cleanup_callback_type cleanup_cb)
+    : obj_(obj), callback_(cb), setup_callback_(setup_cb),
+      cleanup_callback_(cleanup_cb) {
+  setup_callback_(obj_);
+}
+
+UpdateHookWithObject::~UpdateHookWithObject() { cleanup_callback_(obj_); }
+
+UpdateHookWithObject &UpdateHookWithObject::
+operator=(const UpdateHookWithObject &rhs) {
+  // check self-assignment
+  if (&rhs == this)
+    return *this;
+
+  obj_ = rhs.obj_;
+  callback_ = rhs.callback_;
+  setup_callback_ = rhs.setup_callback_;
+  cleanup_callback_ = rhs.cleanup_callback_;
+
+  setup_callback_(obj_);
+
+  return *this;
+}
+
+void UpdateHookWithObject::operator()() { callback_(obj_); }
+
+/** Solver Implementation**/
 Solver::Solver(const Context &ctx) : ctx_(ctx), setup_called_(false) {}
 
 Solver::~Solver() {}
@@ -121,18 +175,49 @@ void Solver::zero_grad() {
   }
 }
 
-void Solver::update() {
+namespace {
+
+struct ScopedCallback {
+  update_hook_type post_;
+  ScopedCallback(update_hook_type &pre, update_hook_type &post) : post_(post) {
+    // Call global pre_hooks first
+    SingletonManager::get<GlobalSolverCallback>()->call_pre_hooks();
+
+    if (pre) {
+      pre();
+    }
+  }
+  ~ScopedCallback() {
+    if (post_) {
+      post_();
+    }
+
+    // Call global post_hooks last
+    SingletonManager::get<GlobalSolverCallback>()->call_post_hooks();
+  }
+};
+}
+
+void Solver::update(update_hook_type pre_callback,
+                    update_hook_type post_callback) {
+
   for (auto &kv : params_) {
     SyncedArrayPtr g = kv.second.p->grad()->array();
     if (g->zeroing()) {
       // The gradient is not computed. Skip.
       continue;
     }
+    ScopedCallback(pre_callback, post_callback);
     update_impl(kv.first, kv.second.p);
+
+#if CLEAR_MEMORY
+    clear_param(kv);
+#endif
   }
 }
 
-void Solver::weight_decay(float decay_rate) {
+void Solver::weight_decay(float decay_rate, update_hook_type pre_callback,
+                          update_hook_type post_callback) {
   if (decay_rate == 0)
     return;
   for (auto &kv : params_) {
@@ -141,11 +226,17 @@ void Solver::weight_decay(float decay_rate) {
       // The gradient is not computed. Skip.
       continue;
     }
+    ScopedCallback(pre_callback, post_callback);
     weight_decay_impl(kv.first, kv.second.p, decay_rate);
+
+#if CLEAR_MEMORY
+    clear_param(kv);
+#endif
   }
 }
 
-void Solver::clip_grad_by_norm(float norm) {
+void Solver::clip_grad_by_norm(float norm, update_hook_type pre_callback,
+                               update_hook_type post_callback) {
   if (norm == 0)
     return;
   for (auto &kv : params_) {
@@ -154,17 +245,24 @@ void Solver::clip_grad_by_norm(float norm) {
       // The gradient is not computed. Skip.
       continue;
     }
+    ScopedCallback(pre_callback, post_callback);
     clip_grad_by_norm_impl(kv.first, kv.second.p, norm);
+
+#if CLEAR_MEMORY
+    clear_param(kv);
+#endif
   }
 }
 
-bool Solver::check_inf_grad() {
+bool Solver::check_inf_grad(update_hook_type pre_callback,
+                            update_hook_type post_callback) {
   for (auto &kv : params_) {
     SyncedArrayPtr g = kv.second.p->grad()->array();
     if (g->zeroing()) {
       // The gradient is not computed. Skip.
       continue;
     }
+    ScopedCallback(pre_callback, post_callback);
     if (check_inf_grad_impl(kv.first, kv.second.p)) {
       return true;
     }
@@ -173,13 +271,15 @@ bool Solver::check_inf_grad() {
 }
 
 // TODO: potential to speed-up
-bool Solver::check_nan_grad() {
+bool Solver::check_nan_grad(update_hook_type pre_callback,
+                            update_hook_type post_callback) {
   for (auto &kv : params_) {
     SyncedArrayPtr g = kv.second.p->grad()->array();
     if (g->zeroing()) {
       // The gradient is not computed. Skip.
       continue;
     }
+    ScopedCallback(pre_callback, post_callback);
     if (check_nan_grad_impl(kv.first, kv.second.p)) {
       return true;
     }
@@ -188,13 +288,15 @@ bool Solver::check_nan_grad() {
 }
 
 // TODO: potential to speed-up
-bool Solver::check_inf_or_nan_grad() {
+bool Solver::check_inf_or_nan_grad(update_hook_type pre_callback,
+                                   update_hook_type post_callback) {
   for (auto &kv : params_) {
     SyncedArrayPtr g = kv.second.p->grad()->array();
     if (g->zeroing()) {
       // The gradient is not computed. Skip.
       continue;
     }
+    ScopedCallback(pre_callback, post_callback);
     if (check_inf_or_nan_grad_impl(kv.first, kv.second.p)) {
       return true;
     }
@@ -203,14 +305,20 @@ bool Solver::check_inf_or_nan_grad() {
 }
 
 // Methods for the mixed-precision training
-void Solver::scale_grad(float scale) {
+void Solver::scale_grad(float scale, update_hook_type pre_callback,
+                        update_hook_type post_callback) {
   for (auto &kv : params_) {
     SyncedArrayPtr g = kv.second.p->grad()->array();
     if (g->zeroing()) {
       // The gradient is not computed. Skip.
       continue;
     }
+    ScopedCallback(pre_callback, post_callback);
     scale_grad_impl(kv.first, kv.second.p, scale);
+
+#if CLEAR_MEMORY
+    clear_param(kv);
+#endif
   }
 }
 

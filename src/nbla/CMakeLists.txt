@@ -24,7 +24,8 @@ file(GLOB SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
   function/*.cpp
   function/utils/*.cpp
   function/nontemplate/*.cpp
-  computation_graph/*.cpp)
+  computation_graph/*.cpp
+  lms/*.cpp)
 
 # add version info into DLL
 if (WIN32)

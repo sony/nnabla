@@ -175,13 +175,15 @@ if __name__ == '__main__':
         'function',
         'solver',
         'communicator',
+        'callback',
         '_init',
         '_nd_array',
         '_computation_graph',
         '_array',
         '_arithmetic_ops',
         '_indexing',
-        'utils/dlpack']
+        'utils/dlpack',
+        'lms']
 
     ext_modules = [Extension('nnabla.{}'.format(mname.replace('/', '.')),
                              [os.path.join(path_pkg,

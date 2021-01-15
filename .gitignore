@@ -57,6 +57,8 @@
 /python/src/nnabla/solver.cpp
 /python/src/nnabla/solver.pxd
 /python/src/nnabla/solver.pyx
+/python/src/nnabla/lms.cpp
+/python/src/nnabla/callback.cpp
 /python/src/nnabla/utils/converter/functions.pkl
 /python/src/nnabla/utils/load_function.py
 /python/src/nnabla/utils/nnabla_pb2.py

@@ -30,6 +30,7 @@ from libcpp.string cimport string
 from libcpp.memory cimport shared_ptr
 from libcpp cimport bool as cpp_bool
 from libc.stdint cimport int64_t
+from cpython cimport Py_INCREF, Py_DECREF
 
 cimport solver
 from solver cimport CSolver, CSolverState
@@ -45,6 +46,22 @@ np.import_array()
 
 import nnabla.utils.nnabla_pb2 as nnabla_pb2
 import google.protobuf.text_format as text_format
+
+cdef void callback_incref(void *obj) with gil:
+    Py_INCREF(<object>obj)
+
+cdef void callback_decref(void *obj) with gil:
+    Py_DECREF(<object>obj)
+
+cdef void callback_call_callable(void *obj) except+ with gil:
+    cdef object cbl = <object>obj
+    cbl()
+
+cdef UpdateHookWithObject create_update_hook_with_object(object callback):
+    return UpdateHookWithObject(<void*>callback,
+                                <std_function[void(void*)]>callback_call_callable,
+                                <std_function[void(void*)]>callback_incref,
+                                <std_function[void(void*)]>callback_decref)
 
 
 class SolverState(object):
@@ -330,18 +347,34 @@ cdef class Solver:
         with nogil:
             self.solverp.zero_grad()
 
-    def update(self):
+    def update(self, object update_pre_hook=None, object update_post_hook=None):
         """
         When this function is called, parameter values are updated using the gradients accumulated in backpropagation,
         stored in the ``grad`` field of the parameter ``Variable`` s.
         Update rules are implemented in the C++ core,
         in derived classes of Solver. The updated parameter values will be stored into the data field of
         the parameter ``Variable`` s.
-        """
-        with nogil:
-            self.solverp.update()
 
-    def weight_decay(self, float decay_rate):
+        Args:
+            update_pre_hook(callable):
+                This callable object is called immediately before each update of parameters.
+                The default is None.
+            update_post_hook(callable):
+                This callable object is called immediately after each update of parameters.
+                The default is None.
+        """
+        cdef update_hook_type update_pre_hook_c
+        cdef update_hook_type update_post_hook_c
+
+        if update_pre_hook is not None:
+            update_pre_hook_c = create_update_hook_with_object(update_pre_hook)
+        if update_post_hook is not None:
+            update_post_hook_c = create_update_hook_with_object(update_post_hook)
+
+        with nogil:
+            self.solverp.update(update_pre_hook_c, update_post_hook_c)
+
+    def weight_decay(self, float decay_rate, object pre_hook=None, object post_hook=None):
         """
         Apply weight decay to gradients.
         When called, the gradient weight will be decayed by a rate of the
@@ -350,11 +383,18 @@ cdef class Solver:
         Args:
             decay_rate (float): The coefficient of weight decay.
         """
+        cdef update_hook_type pre_hook_c
+        cdef update_hook_type post_hook_c
+
+        if pre_hook is not None:
+            pre_hook_c = create_update_hook_with_object(pre_hook)
+        if post_hook is not None:
+            post_hook_c = create_update_hook_with_object(post_hook)
 
         with nogil:
-            self.solverp.weight_decay(decay_rate)
+            self.solverp.weight_decay(decay_rate, pre_hook_c, post_hook_c)
 
-    def clip_grad_by_norm(self, float clip_norm):
+    def clip_grad_by_norm(self, float clip_norm, object pre_hook=None, object post_hook=None):
         """
         Clip gradients by norm.
         When called, the gradient will be clipped by the given norm.
@@ -362,48 +402,83 @@ cdef class Solver:
         Args:
             clip_norm (float): The value of clipping norm.
         """
+        cdef update_hook_type pre_hook_c
+        cdef update_hook_type post_hook_c
+
+        if pre_hook is not None:
+            pre_hook_c = create_update_hook_with_object(pre_hook)
+        if post_hook is not None:
+            post_hook_c = create_update_hook_with_object(post_hook)
 
         with nogil:
-            self.solverp.clip_grad_by_norm(clip_norm)
+            self.solverp.clip_grad_by_norm(clip_norm, pre_hook_c, post_hook_c)
 
-    def check_inf_grad(self, ):
+    def check_inf_grad(self, object pre_hook=None, object post_hook=None):
         """
         Check if there is any inf on the gradients which were setup.
 
         """
         cdef cpp_bool flag;
+        cdef update_hook_type pre_hook_c
+        cdef update_hook_type post_hook_c
+
+        if pre_hook is not None:
+            pre_hook_c = create_update_hook_with_object(pre_hook)
+        if post_hook is not None:
+            post_hook_c = create_update_hook_with_object(post_hook)
         with nogil:
-            flag = self.solverp.check_inf_grad()
+            flag = self.solverp.check_inf_grad(pre_hook_c, post_hook_c)
         return flag
 
-    def check_nan_grad(self, ):
+    def check_nan_grad(self, object pre_hook=None, object post_hook=None):
         """
         Check if there is any nan on the gradients which were setup.
 
         """
         cdef cpp_bool flag;
+        cdef update_hook_type pre_hook_c
+        cdef update_hook_type post_hook_c
+
+        if pre_hook is not None:
+            pre_hook_c = create_update_hook_with_object(pre_hook)
+        if post_hook is not None:
+            post_hook_c = create_update_hook_with_object(post_hook)
         with nogil:
-            flag = self.solverp.check_nan_grad()
+            flag = self.solverp.check_nan_grad(pre_hook_c, post_hook_c)
         return flag
 
-    def check_inf_or_nan_grad(self, ):
+    def check_inf_or_nan_grad(self, object pre_hook=None, object post_hook=None):
         """
         Check if there is any inf or nan on the gradients which were setup.
 
         """
         cdef cpp_bool flag;
+        cdef update_hook_type pre_hook_c
+        cdef update_hook_type post_hook_c
+
+        if pre_hook is not None:
+            pre_hook_c = create_update_hook_with_object(pre_hook)
+        if post_hook is not None:
+            post_hook_c = create_update_hook_with_object(post_hook)
         with nogil:
-            flag = self.solverp.check_inf_or_nan_grad()
+            flag = self.solverp.check_inf_or_nan_grad(pre_hook_c, post_hook_c)
         return flag
 
-    def scale_grad(self, scale):
+    def scale_grad(self, scale, object pre_hook=None, object post_hook=None):
         """
         Rescale gradient
 
         """
         cdef float _scale = scale;
+        cdef update_hook_type pre_hook_c
+        cdef update_hook_type post_hook_c
+
+        if pre_hook is not None:
+            pre_hook_c = create_update_hook_with_object(pre_hook)
+        if post_hook is not None:
+            post_hook_c = create_update_hook_with_object(post_hook)
         with nogil:
-            self.solverp.scale_grad(_scale)
+            self.solverp.scale_grad(_scale, pre_hook_c, post_hook_c)
             
     @property
     def name(self):

@@ -38,6 +38,12 @@ NBLA_API void init_cpu();
  */
 NBLA_API void clear_cpu_memory_cache();
 
+/**
+ * Print CPU memory cache map.
+ */
+
+NBLA_API void print_cpu_memory_cache_map();
+
 /** Get CPU array classes.
 */
 NBLA_API vector<string> cpu_array_classes();

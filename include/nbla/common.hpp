@@ -42,6 +42,9 @@ using std::shared_ptr;
 typedef vector<int64_t> Shape_t; ///< Type of array shape and strides etc.
 typedef int64_t Size_t;          ///< Type of size of array
 
+// Flags for SyncedArray and data transfer
+enum AsyncFlag { NONE = 0b0, ASYNC = 0b1, UNSAFE = 0b10, OFFREC = 0b100 };
+
 /** Compute array size by shape
 
 @param[in] axis size under given axis will be computed
@@ -85,6 +88,31 @@ inline string string_join(const vector<T> &vec, const string &delim) {
   }
   oss << vec[vec.size() - 1];
   return oss.str();
+}
+
+/** size_t to byte strings that is readable by human.
+ */
+inline string byte_to_human_readable(long double byte) {
+  vector<string> units = {"B", "KB", "MB", "GB"};
+
+  bool neg = byte < 0;
+  if (neg)
+    byte = -byte;
+
+  string unit;
+  double div = 1 << 10;
+  for (auto &u : units) {
+    unit = u;
+    if (byte < div)
+      break;
+    byte /= div;
+  }
+
+  std::ostringstream out;
+  out.precision(2);
+  out << std::fixed << byte;
+
+  return (neg ? "-" : "") + out.str() + unit;
 }
 
 /** Scoped callback

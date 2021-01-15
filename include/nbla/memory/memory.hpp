@@ -26,6 +26,45 @@ using std::string;
 using std::size_t;
 using std::shared_ptr;
 
+/** Memory status on the device.
+ */
+
+enum DeviceMemoryState {
+  Locked =
+      0, ///< This memory will be used on device in future. Cannot clear it.
+  Unlocked = 1, ///< This memory is no longer used on device. Can clear it.
+};
+
+/** Physical memory interface class
+ */
+
+class PhysicalMemory {
+protected:
+  bool allocated_;
+  size_t bytes_;
+  string device_id_;
+
+public:
+  explicit PhysicalMemory(size_t bytes, const string &device_id)
+      : allocated_(false), bytes_{bytes}, device_id_{device_id} {};
+
+  ~PhysicalMemory() = default;
+
+  /** Allocate physical memory at least larger than bytes_.
+   *  This method must be implemented in derived class.
+   * @return Size of allocated bytes. (Requested bytes and actual allocated
+   * bytes would be different.)
+   */
+  virtual size_t alloc() = 0;
+
+  inline size_t bytes() { return bytes_; };
+
+  inline bool allocated() { return allocated_; };
+};
+
+typedef shared_ptr<PhysicalMemory> PhysicalMemoryPtr;
+typedef std::vector<PhysicalMemoryPtr> VecPhysicalMemoryPtr;
+
 /** \addtogroup NNablaCoreGrp */
 /*@{*/
 /** Memory interface class.
@@ -36,14 +75,24 @@ allocating/freeing a device memory block, and splitting into/merging blocks.
  */
 class Memory {
 private:
-  size_t bytes_{0};
   string device_id_;
   bool locked_{false};
   Memory *next_{nullptr};
   Memory *prev_{nullptr};
 
 protected:
+  /** Type of Memory Flags.
+  */
+  enum MemoryType {
+    Normal = 0,  ///< Default memory type.
+    Virtual = 1, ///< Virtual memory having physical memories internally.
+  };
+
+  size_t bytes_{0};
+  long long requested_bytes_{-1};
   void *ptr_{nullptr};
+  MemoryType memory_type_{MemoryType::Normal};
+  VecPhysicalMemoryPtr p_memories_;
 
 private:
   inline void disable() { ptr_ = nullptr; }
@@ -75,6 +124,12 @@ public:
   /** Get memory block size in bytes.
    */
   inline size_t bytes() const { return bytes_; }
+
+  /** Get requested allocation memory size in bytes.
+   */
+  inline size_t requested_bytes() const {
+    return requested_bytes_ < 0 ? bytes_ : requested_bytes_;
+  }
 
   /** Get device id as a string.
    */
@@ -128,11 +183,23 @@ public:
    */
   inline void lock() { locked_ = true; }
 
-  /** Relase a lock when it's not used.
+  /** Release a lock when it's not used.
 
       The lock is released by AllocatorMemory in its destructor.
    */
   inline void release() { locked_ = false; }
+
+  /** Get physical memory as reference. **/
+  inline VecPhysicalMemoryPtr &get_physical_memory() { return p_memories_; }
+
+  /** Append physical memories **/
+  inline void append_physical_memories(VecPhysicalMemoryPtr &p_mems) {
+    for (auto &m : p_mems)
+      p_memories_.emplace_back(m);
+  }
+
+  /** Clear physical memory. **/
+  inline void clear_physical_memory() { p_memories_.clear(); }
 
   // Logic
   /** Allocate memory by Memory::alloc_impl implemented in an implementation
@@ -172,6 +239,37 @@ public:
       connected.
    */
   static void associate_consecutive(Memory *left, Memory *right);
+
+  /** Bind physical memories on virtual address.
+   *  This method can be executed only if memory_type_ == MemType::Virtual.
+   */
+  void bind();
+
+  /** Unbind physical memories from corresponding virtual address, and return
+   * physical memory list as vector.
+   *  This method can be executed only if memory_type_ == MemType::Virtual.
+   */
+  void unbind();
+
+  /** Glow virtual memory from already allocated virtual address.
+   */
+  bool grow(VecPhysicalMemoryPtr &p_mems);
+
+  /** Get device memory state.
+   *  In default this function does noting and return
+   * DeviceMemoryState::Unlocked.
+   */
+  virtual DeviceMemoryState get_device_memory_state() {
+    return DeviceMemoryState::Unlocked;
+  }
+
+  /** Request device memory state to `request`.
+   * `request` must be DeviceMemoryState.
+   * In default this function does nothing.
+   */
+  virtual void lock_device_memory(){};
+
+  inline void set_requested_bytes(size_t bytes) { requested_bytes_ = bytes; }
 
   // Virtual functions
 protected:
@@ -214,6 +312,40 @@ protected:
       @see Memory::merge_next_impl
    */
   virtual void merge_prev_impl(Memory *from) = 0;
+
+  /** Implementation must perform following things:
+   * - Make sure physical memory is already allocated. (and alloc physical
+   * memory if needed.)
+   * - Reserve virtual address whose bytes size is larger than bytes_.
+   * - Map physical memory to virtual address and set virtual address to ptr_ as
+   * void*.
+   * In default, this function raises not implemented error.
+   */
+  virtual void bind_impl() {
+    NBLA_ERROR(error_code::not_implemented, "bind_impl() is not implemented.");
+  };
+
+  /** Implementation must perform following things:
+   * - Unmap virtual address from physical memory.
+   * - Release virtual address.
+   * In default, this function raises not implemented error.
+   */
+  virtual void unbind_impl() {
+    NBLA_ERROR(error_code::not_implemented,
+               "unbind_impl() is not implemented.");
+  };
+
+  /** Implementation must perform following things:
+   * - Grow virtual memory to match its physical memory size.
+   *  (If the size of virtual memory is alredy the same as physical, do nothing)
+   * - If fail to allocate virtual address aligned with current virtual address,
+   * fall back to slower implementation. (Simply retry unbind->bind)
+   * - Return false if failed to grow.
+   * In default, this function raises not implemented error.
+   */
+  virtual bool grow_impl(VecPhysicalMemoryPtr &p_mems) {
+    NBLA_ERROR(error_code::not_implemented, "grow_impl() is not implemented.");
+  };
 };
 /*@}*/
 /** \defgroup MemoryImplGrp Memory list */

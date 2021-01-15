@@ -34,6 +34,7 @@ cdef extern from "nbla/synced_array.hpp" namespace "nbla":
         void copy_from(const CSyncedArray *src) except+
         size_t modification_count() except+
         cpp_bool zeroing() const
+        void clear() except+
 
     ctypedef shared_ptr[CSyncedArray] SyncedArrayPtr
 

@@ -17,6 +17,7 @@
 #ifndef __NBLA_ARRAY_REGISTRY_HPP__
 #define __NBLA_ARRAY_REGISTRY_HPP__
 #include <nbla/array.hpp>
+#include <nbla/synced_array.hpp>
 
 #include <functional>
 #include <map>
@@ -84,13 +85,14 @@ private:
 */
 class NBLA_API ArraySynchronizer {
 public:
-  typedef std::function<void(Array *, Array *)> Synchronizer;
+  typedef std::function<void(Array *, Array *, const int)> Synchronizer;
   typedef map<pair<string, string>, Synchronizer> Registry_t;
 
   /** Synchronize array
   */
   static void synchronize(const string &src_class, Array *src_array,
-                          const string &dst_class, Array *dst_array);
+                          const string &dst_class, Array *dst_array,
+                          const int async_flags = AsyncFlag::NONE);
 
   /** Register new synchronizer
   */
@@ -110,8 +112,11 @@ private:
 
     This should be used as a synchronizer between classes that are using the
    same device class like CpuArray-CpuCachedArray.
+
+   async_flags are not used in synchronizer_default.
  */
-NBLA_API void synchronizer_default(Array *src, Array *dst);
+NBLA_API void synchronizer_default(Array *src, Array *dst,
+                                   const int async_flags = AsyncFlag::NONE);
 
 #define NBLA_REGISTER_ARRAY_GROUP(CLASS, GROUP)                                \
   { ArrayGroup::add_group(#CLASS, #GROUP); }

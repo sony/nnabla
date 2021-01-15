@@ -390,6 +390,13 @@ cdef class NdArray:
         """
         self.arrp.fill(value)
 
+    def clear(self):
+        """
+        Clear memories which this NdArray has and return them to allocator.
+        """
+
+        self.arrp.array().get().clear()
+
     @property
     def zeroing(self):
         '''Checking if the array is not modified after calling `zero()`.'''

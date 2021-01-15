@@ -38,5 +38,16 @@ void Cpu::register_array_class(const string &name) {
 shared_ptr<Allocator> Cpu::caching_allocator() { return caching_allocator_; }
 shared_ptr<Allocator> Cpu::naive_allocator() { return naive_allocator_; }
 
+void Cpu::free_unused_host_caches() {
+  caching_allocator_->free_unused_caches();
+  naive_allocator_->free_unused_caches();
+}
+
+void Cpu::device_synchronize(const string &device) {
+  cpu_device_synchronize(device);
+}
+
+void Cpu::default_stream_synchronize(const string &device) {}
+
 NBLA_INSTANTIATE_SINGLETON(NBLA_API, Cpu);
 }

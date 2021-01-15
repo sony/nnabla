@@ -40,6 +40,10 @@ def clear_memory_cache():
     """
     clear_cpu_memory_cache()
 
+def print_memory_cache_map():
+    """Print CPU memory cache map."""
+    print_cpu_memory_cache_map()
+
 
 cdef public void call_gc() with gil:
     """
