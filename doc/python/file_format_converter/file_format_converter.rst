@@ -51,8 +51,8 @@ File format converter has following functions.
 - Convert ONNX to NNP
 - Convert NNP to ONNX
 - Convert NNP to NNB(Binary format for NNabla C Runtime)
-- Convert NNP to Tensorflow frozen graph
-- Convert Tensorflow checkpoint or frozen graph to NNP
+- Convert NNP to Tensorflow saved_model
+- Convert Tensorflow checkpoint, frozen graph or saved_model to NNP
 - Experimental: Convert NNP to C Source code for NNabla C Runtime
 
 **IMPORTANT NOTICE**: This file format converter still has some known problems.
@@ -120,11 +120,12 @@ Limitation
 ++++++++++
 
 - Training is not supported.
-- Support operator set 6,7,9,10,11.
+- Support operator set 7,9,10,11.
 - Not all functions are supported. See :any:`Function-Level_Support_Status`.
 - Only limited Neural Network Console projects supported.  See :any:`Model_Support_Status`.
-- In some case you must install onnx package by hand. For example you can install with command `pip install onnx==1.6.0` or if you want to install system wide, you can install with command `sudo -HE pip install onnx==1.6.0`.
-  
+- In some case you must install onnx package by hand. For example you can install with command `pip install onnx` or if you want to install system wide, you can install with command `sudo -HE pip install onnx`.
+- Before using this converter, please use command `pip install nnabla_converter` to install nnabla_converter.
+
 NNB
 ^^^
 
@@ -156,19 +157,17 @@ Tensorflow
 Limitation
 ++++++++++
 
-- Currently python3.8 is not supported.
-- Tensorflow version is required to be 1.15.
-- ONNX version is 1.6.0.
 
 Bridged by onnx, tensorflow import and export is supported with some limitations.
 
-As for the importer, 3 formats tends to be supported:
+As for the importer, 4 formats tends to be supported:
    - .pb, tensorflow frozen graph format
    - .ckpt, tensorflow check point format version 1
    - .ckpt.*, tensorflow check point format version 2
+   - saved_model, tensorflow saved_model format
 
 As for the exporter, some of Neural Network Console projects are supported. See :any:`Model_Support_Status`.
-The output of converter is tensorflow frozen graph format(e.g. *.pb)
+The output of converter is tensorflow saved_model format.
 
 Before using this converter, please use command `pip install nnabla_converter` to install nnabla_converter.
 
@@ -279,7 +278,7 @@ Convert ONNX to NNP
 
    $ nnabla_cli convert input.onnx output.nnp
 
-Currently, opset 6,7,9,10,11 are supported to import.
+Currently, opset 7,9,10,11 are supported to import.
 
 C Runtime Operation
 +++++++++++++++++++
@@ -314,12 +313,12 @@ to quantize your model.
 Tensorflow Operation
 ++++++++++++++++++++
 
-Convert NNP to Tensorflow frozen graph
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Convert NNP to Tensorflow saved_model
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: none
 
-   $ nnabla_cli convert input.nnp output.pb
+   $ nnabla_cli convert input.nnp output_saved_model --export-format SAVED_MODEL
 
 
 Convert Tensorflow frozen graph to NNP
@@ -352,6 +351,14 @@ For checkpoint version 2:
 
 In the same directory of input.ckpt.meta, the related files, such as checkpoint, *.ckpt.index, ... and
 so on are required to exist.
+
+
+Convert Tensorflow saved_model to NNP
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: none
+
+   $ nnabla_cli convert input_saved_model output.nnp
 
 
 Convert NNP to Tensorflow Lite

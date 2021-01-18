@@ -23,7 +23,7 @@ try:
     from onnx import (ModelProto, TensorProto, TensorShapeProto)
 except:
     print('ONNX export support disabled because onnx python package is not found.')
-    print(' You may install onnx package with "pip install onnx==1.6.0".')
+    print(' You may install onnx package with "pip install onnx".')
 
 TENSOR_TYPE_TO_DTYPE = {
     TensorProto.FLOAT: np.float32,
@@ -72,12 +72,6 @@ def add_param(graph, param_name, dtype, shape, raw_data):
     init.dims.extend(shape)
     init.raw_data = raw_data
 
-    i = graph.input.add()
-    i.name = param_name
-    i.type.tensor_type.elem_type = dtype
-    dims = [create_dim(d) for d in shape]
-    i.type.tensor_type.shape.dim.extend(dims)
-
 
 def generate_reshape(graph, input_name, output_name, shape):
     input_reshape_name = fork_name("reshape")
@@ -103,7 +97,7 @@ def generate_pad(input_name, output_name, pad_mode, pads, value, opset):
 
         value_name = fork_name(input_name)
         c = generate_constant(value_name, fork_name(input_name),
-                              TensorProto.FLOAT, [1],
+                              TensorProto.FLOAT, (),
                               [value])
         nl.append(c)
 
@@ -230,8 +224,8 @@ class OnnxExporter:
             "LeakyReLU": "LeakyRelu",
             "Concatenate": self.Concatenate,
             "GlobalAveragePooling": "GlobalAveragePool",
-            "MaxPooling": partial(self.BasePooling, 'MaxPool'),
-            "AveragePooling": partial(self.BasePooling, 'AveragePool'),
+            "MaxPooling": partial(self.BasePooling, 'MaxPool', "6"),
+            "AveragePooling": partial(self.BasePooling, 'AveragePool', "6"),
             "Add2": partial(self.BinaryOperator, "Add", "6"),
             "BatchMatmul": self.BatchMatmul,
             "LogicalNot": "Not",
@@ -331,7 +325,7 @@ class OnnxExporter:
             "Minimum2": partial(self.ElementWiseCmp, "Minimum2", '7'),
             "MinimumScalar": partial(self.ElementWiseCmp, "MinimumScalar", '7'),
             "MaximumScalar": partial(self.ElementWiseCmp, "MaximumScalar", '7'),
-            "SumPooling": self.SumPooling,
+            "SumPooling": partial(self.SumPooling, '7'),
             "Unpooling": self.Unpooling_7,
             "BinaryConnectAffine": partial(self.BaseAffine, "BinaryConnectAffine", '7'),
             "BinaryWeightAffine": partial(self.BinaryWeightAffine, '7'),
@@ -398,6 +392,9 @@ class OnnxExporter:
             "Interpolate": self.Interpolate_11,
             "Pad": partial(self.Pad, "11"),
             "Unpooling": self.Unpooling_11,
+            "SumPooling": partial(self.SumPooling, '11'),
+            "MaxPooling": partial(self.BasePooling, 'MaxPool', '11'),
+            "AveragePooling": partial(self.BasePooling, 'AveragePool', '11'),
         }
         table_op_set_11 = dict(table_op_set_10, **table_op_set_11)
 
@@ -820,12 +817,11 @@ class OnnxExporter:
 
         return nl
 
-    def BasePooling(self, onnx_func, func):
+    def BasePooling(self, onnx_func, opset, func):
         nl = []
         input = func.input[0]
         output = func.output[0]
         input_shape = self._var_dict[input].dim
-        output_shape = self._var_dict[func.output[0]].dim
         pad_mode = "constant"
         value = 0.0
 
@@ -871,16 +867,9 @@ class OnnxExporter:
 
         if any(pads):
             pad_out = fork_name(input) + "_pad"
-            n = onnx.helper.make_node(
-                'Pad',
-                [input],
-                [pad_out],
-                mode=pad_mode,
-                value=value,
-                pads=pads
-            )
+            padf = generate_pad(input, pad_out, pad_mode, pads, value, opset)
             input = pad_out
-            nl.append(n)
+            nl.extend(padf)
 
         n = onnx.helper.make_node(
             onnx_func,
@@ -1013,7 +1002,17 @@ class OnnxExporter:
                 keepdims=True
             )
             nl.append(n)
-            inputs[3] = mean_out
+
+            # Squeeze
+            squeeze_out = fork_name(func.input[3]) + "_squeeze"
+            n = onnx.helper.make_node(
+                'Squeeze',
+                [mean_out],
+                [squeeze_out],
+                axes=reduc_axes,
+            )
+            nl.append(n)
+            inputs[3] = squeeze_out
 
             # Sub
             sout = fork_name(func.input[4]) + "_sub"
@@ -1040,7 +1039,7 @@ class OnnxExporter:
                 [mul_out],
                 [sum_out],
                 axes=reduc_axes,
-                keepdims=True
+                keepdims=False
             )
             nl.append(n)
 
@@ -1778,7 +1777,7 @@ class OnnxExporter:
 
         return nl
 
-    def SumPooling(self, func):
+    def SumPooling(self, opset, func):
         # SumPooling gets converted to AveragePooling+Mul.
         # Mul is used to counter the division in AveragePooling
         # since SumPooling is just summing the values in each kernel.
@@ -1814,17 +1813,11 @@ class OnnxExporter:
                     for kk, ss, i in zip(k, s, new_input_shape)]
             pads = [0, 0] + pads + [0, 0] + subs
 
-        pad_out = fork_name(input) + "_pad"
-        n = onnx.helper.make_node(
-            'Pad',
-            [input],
-            [pad_out],
-            mode='constant',
-            value=0.0,
-            pads=pads
-        )
-        input = pad_out
-        nl.append(n)
+        if any(pads):
+            pad_out = fork_name(input) + "_pad"
+            padf = generate_pad(input, pad_out, 'constant', pads, 0.0, opset)
+            input = pad_out
+            nl.extend(padf)
 
         apout = fork_name(input) + "_ap"
         n = onnx.helper.make_node(
@@ -3384,15 +3377,6 @@ class OnnxExporter:
                 init.data_type = t
                 init.raw_data = np.array(
                     param.data, dtype=TENSOR_TYPE_TO_DTYPE[t]).tostring()
-
-                p = graph.input.add()
-                p.name = param.variable_name
-                p.type.tensor_type.elem_type = get_tensor_type(
-                    param.variable_name, self._input_types)
-                dims = [create_dim(d)
-                        for d in self._var_dict[param.variable_name].dim]
-                p.type.tensor_type.shape.dim.extend(dims)
-
             else:
                 print("Not in: {}".format(param.variable_name))
 
@@ -3424,12 +3408,6 @@ class OnnxExporter:
             init.dims.extend(dims)
             init.raw_data = generate_value(
                 gv.type, dims, init.data_type, gv.multiplier)
-            i = graph.input.add()
-            i.name = gv.variable_name
-            i.type.tensor_type.elem_type = init.data_type
-            dims = [create_dim(d)
-                    for d in self._var_dict[gv.variable_name].dim]
-            i.type.tensor_type.shape.dim.extend(dims)
 
     def set_nodes(self, func):
         """Convert a function to a node or a group of nodes"""

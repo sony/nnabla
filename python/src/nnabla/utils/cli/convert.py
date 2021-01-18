@@ -15,6 +15,7 @@
 
 import nnabla.utils.converter
 import os
+import nnabla.logger as logger
 
 
 def dump_command(args):
@@ -57,6 +58,8 @@ def resolve_file_format(args, import_files, export_file=None):
             args.import_format = "TF_CKPT_V1"
         elif input_ext == '.meta':
             args.import_format = "TF_CKPT_V2"
+        elif input_ext == '' and os.path.isdir(import_files[0]):
+            args.import_format = "SAVED_MODEL"
 
     if export_file and not os.path.isdir(export_file):
         output_ext = os.path.splitext(export_file)[1]
@@ -71,8 +74,11 @@ def resolve_file_format(args, import_files, export_file=None):
         elif output_ext == '.tflite':
             args.export_format = 'TFLITE'
 
-    if args.import_format in ['ONNX', 'TF_CKPT_V1', 'TF_CKPT_V2', 'TF_PB'] or \
-            args.export_format in ['ONNX', 'TF_PB', 'TFLITE']:
+    logger.warning(
+        "The export file format is 'CSRC' or 'SAVED_MODEL' that argument '--export-format' will have to be set!!!")
+
+    if args.import_format in ['ONNX', 'TF_CKPT_V1', 'TF_CKPT_V2', 'TF_PB', 'SAVED_MODEL'] or \
+            args.export_format in ['ONNX', 'TFLITE', 'SAVED_MODEL']:
         try:
             import nnabla.utils.converter.onnx
             import nnabla.utils.converter.tensorflow
@@ -175,7 +181,9 @@ def add_convert_command(subparsers):
     export_formats_string = ','.join(
         nnabla.utils.converter.formats.export_name)
     subparser.add_argument('-O', '--export-format', type=str, default='NNP',
-                           help='[export] export format. (one of [{}])'.format(export_formats_string))
+                           help='[export] export format. (one of [{}]), \
+                                the export file format is \'CSRC\' or \'SAVED_MODEL\' that \
+                                argument \'--export-format\' will have to be set!!!'.format(export_formats_string))
     subparser.add_argument('-f', '--force', action='store_true',
                            help='[export] overwrite output file.')
     subparser.add_argument('-b', '--batch-size', type=int, default=-1,
