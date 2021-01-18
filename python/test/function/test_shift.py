@@ -25,7 +25,7 @@ ctxs = list_context('Shift')
 def ref_shift(x, shifts, border_mode):
     if shifts is None:
         shifts = (0,) * len(x.shape)
-    return scipy_shift(x, shifts, mode=border_mode)
+    return scipy_shift(x, shifts, mode=border_mode, order=1)
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
