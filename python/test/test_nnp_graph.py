@@ -21,8 +21,28 @@ import nnabla.parametric_functions as PF
 from nnabla.testing import assert_allclose
 
 
+def get_nnp(contents, tmpdir, need_file_object, file_type):
+    import io
+    from nnabla.utils.save import save
+    from nnabla.utils import nnp_graph
+
+    if need_file_object:
+        nnp_object = io.BytesIO() if file_type == '.nnp' else io.StringIO()
+        save(nnp_object, contents, extension=file_type)
+        nnp_object.seek(0)
+        nnp = nnp_graph.NnpLoader(nnp_object, extension=file_type)
+    else:
+        tmpdir.ensure(dir=True)
+        nnp_file = tmpdir.join('tmp'+file_type).strpath
+        save(nnp_file, contents)
+        nnp = nnp_graph.NnpLoader(nnp_file)
+    return nnp
+
+
 @pytest.mark.parametrize("seed", [313])
-def test_nnp_graph(seed, tmpdir):
+@pytest.mark.parametrize("need_file_object", [True, False])
+@pytest.mark.parametrize("file_type", ['.nnp', '.nntxt', '.prototxt'])
+def test_nnp_graph(seed, tmpdir, need_file_object, file_type):
 
     rng = np.random.RandomState(seed)
 
@@ -44,13 +64,7 @@ def test_nnp_graph(seed, tmpdir):
              'outputs': {'y': y},
              'names': {'x': x}}],
     }
-    tmpdir.ensure(dir=True)
-    nnp_file = tmpdir.join('tmp.nnp').strpath
-
-    from nnabla.utils.save import save
-    save(nnp_file, runtime_contents)
-    from nnabla.utils import nnp_graph
-    nnp = nnp_graph.NnpLoader(nnp_file)
+    nnp = get_nnp(runtime_contents, tmpdir, need_file_object, file_type)
 
     graph = nnp.get_network('graph')
     x2 = graph.inputs['x']

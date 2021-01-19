@@ -61,9 +61,12 @@ def _load_nnp_to_proto(nnp_path):
 def _load_nntxt_to_proto(nntxt_path):
     import google.protobuf.text_format as text_format
     proto = nnabla_pb2.NNablaProtoBuf()
-
-    with open(nntxt_path, "rt") as f:
-        text_format.Merge(f.read(), proto)
+    if hasattr(nntxt_path, 'read'):
+        nntxt = nntxt_path.read()
+    else:
+        with open(nntxt_path, "rt") as f:
+            nntxt = f.read()
+    text_format.Merge(nntxt, proto)
 
     return proto
 
@@ -427,6 +430,10 @@ class NnpNetwork(object):
 class NnpLoader(object):
     '''An NNP file loader.
 
+    Args:
+        filepath : file-like object or filepath.
+        extension: if filepath is file-like object, extension is one of ".nnp", ".nntxt", ".prototxt".
+
     Example:
 
         .. code-block:: python
@@ -448,7 +455,7 @@ class NnpLoader(object):
 
     '''
 
-    def __init__(self, filepath, scope=None):
+    def __init__(self, filepath, scope=None, extension=".nntxt"):
         # OrderedDict maintains loaded parameters from nnp files.
         # The loaded parameters will be copied to the current
         # scope when get_network is called.
@@ -456,7 +463,10 @@ class NnpLoader(object):
             scope = OrderedDict()
         self._params = scope
 
-        _, ext = os.path.splitext(filepath)
+        if isinstance(filepath, str):
+            _, ext = os.path.splitext(filepath)
+        else:
+            ext = extension
 
         if ext == ".nnp":
             # Load parameters to self._params rather than
