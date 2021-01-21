@@ -231,7 +231,7 @@ class DataIterator(object):
 
     def slice(self, rng, num_of_slices=None, slice_pos=None,
               slice_start=None, slice_end=None,
-              cache_dir=None):
+              cache_dir=None, use_cache=False):
         '''
         Slices the data iterator so that newly generated data iterator has access to limited portion of the original data.
 
@@ -241,7 +241,8 @@ class DataIterator(object):
             slice_pos(int): Position of the slice to be assigned to the new data iterator. Must be used together with `num_of_slices`.
             slice_start(int): Starting position of the range to be sliced into new data iterator. Must be used together with `slice_end`.
             slice_end(int) : End position of the range to be sliced into new data iterator. Must be used together with `slice_start`.
-            cache_dir(str) : Directory to save cache files
+            cache_dir(str) : Directory to save cache files. if cache_dir is None and use_cache is True, will used memory cache.
+            use_cache(bool): Whether use cache for data_source.
 
         Example:
 
@@ -291,34 +292,43 @@ class DataIterator(object):
                     cache_dir = ds._cache_dir
                 ds = ds._data_source
 
-        if cache_dir is None:
-            return DataIterator(
-                DataSourceWithMemoryCache(
-                    SlicedDataSource(
-                        self._data_source,
-                        self._data_source.shuffle,
-                        slice_start=slice_start,
-                        slice_end=slice_end),
-                    shuffle=self._shuffle,
-                    rng=rng),
-                self._batch_size)
-        else:
-            return DataIterator(
-                DataSourceWithMemoryCache(
-                    DataSourceWithFileCache(
+        if use_cache:
+            if cache_dir is None:
+                return DataIterator(
+                    DataSourceWithMemoryCache(
                         SlicedDataSource(
                             self._data_source,
                             self._data_source.shuffle,
                             slice_start=slice_start,
                             slice_end=slice_end),
-                        cache_dir=cache_dir,
-                        cache_file_name_prefix='cache_sliced_{:08d}_{:08d}'.format(
-                            slice_start,
-                            slice_end),
                         shuffle=self._shuffle,
                         rng=rng),
-                    shuffle=self._shuffle,
-                    rng=rng),
+                    self._batch_size)
+            else:
+                return DataIterator(
+                    DataSourceWithMemoryCache(
+                        DataSourceWithFileCache(
+                            SlicedDataSource(
+                                self._data_source,
+                                self._data_source.shuffle,
+                                slice_start=slice_start,
+                                slice_end=slice_end),
+                            cache_dir=cache_dir,
+                            cache_file_name_prefix='cache_sliced_{:08d}_{:08d}'.format(
+                                slice_start,
+                                slice_end),
+                            shuffle=self._shuffle,
+                            rng=rng),
+                        shuffle=self._shuffle,
+                        rng=rng),
+                    self._batch_size)
+        else:
+            return DataIterator(
+                SlicedDataSource(
+                    self._data_source,
+                    self._data_source.shuffle,
+                    slice_start=slice_start,
+                    slice_end=slice_end),
                 self._batch_size)
 
     def _callback_epoch_end(self):
