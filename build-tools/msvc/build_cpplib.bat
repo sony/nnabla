@@ -67,6 +67,7 @@ cmake -G "%generate_target%" ^
 
 cmake --build . --config %build_type% || GOTO :error
 cmake --build . --config %build_type% --target test_nbla_utils || GOTO :error
+SET PATH="%ProgramFiles%\Cmake\bin";%PATH%
 cpack -G ZIP -C %build_type%
 
 GOTO :end
