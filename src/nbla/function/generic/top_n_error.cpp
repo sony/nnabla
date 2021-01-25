@@ -30,9 +30,8 @@ void TopNError<T, T1>::setup_impl(const Variables &inputs,
   NBLA_CHECK(axis_ >= 0, error_code::value,
              "axis must not be less than zero, got %d", axis_);
   NBLA_CHECK(static_cast<Shape_t::size_type>(axis_) < in_shape.size(),
-             error_code::value,
-             "axis must be less than ndim of inputs[0]. "
-             "axis: %d >= ndim of inputs[0]: %d.",
+             error_code::value, "axis must be less than ndim of inputs[0]. "
+                                "axis: %d >= ndim of inputs[0]: %d.",
              axis_, in_shape.size());
   NBLA_CHECK(label_shape.size() == in_shape.size(), error_code::value,
              "The length of each input dimension must match. "

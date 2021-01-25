@@ -31,7 +31,8 @@ void ScatterNd<T>::setup_impl(const Variables &inputs,
   NBLA_CHECK(indices->ndim() >= 2, error_code::value,
              "scatter_nd requires indices to have at least 2 dimensions");
 
-  NBLA_CHECK(static_cast<Shape_t::size_type>(indices->shape().at(0)) <= shape_.size(),
+  NBLA_CHECK(static_cast<Shape_t::size_type>(indices->shape().at(0)) <=
+                 shape_.size(),
              error_code::value, "Number of indices exceeds output dimension");
 
   auto N = data->ndim();

@@ -28,9 +28,8 @@ void Split<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   NBLA_CHECK(axis_ >= 0, error_code::value,
              "axis must not be less than zero, got %d", axis_);
   NBLA_CHECK(static_cast<Shape_t::size_type>(axis_) < in_shape.size(),
-             error_code::value,
-             "axis must be less than ndim of inputs[0]. "
-             "axis: %d >= ndim of inputs[0]: %d.",
+             error_code::value, "axis must be less than ndim of inputs[0]. "
+                                "axis: %d >= ndim of inputs[0]: %d.",
              axis_, in_shape.size());
   num_outputs_ = in_shape[axis_];
   NBLA_CHECK(static_cast<Shape_t::size_type>(num_outputs_) == outputs.size(),

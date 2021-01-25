@@ -56,8 +56,9 @@ void Unpooling<T>::unpooling_forward_recursive(const Variable *inp,
   auto kdim = this->kernel_.size();
   const int x_stride = inp->strides()[dim];
   const int y_stride = outp->strides()[dim];
-  const int kernel =
-      (static_cast<unsigned>(dim) < (ndim - kdim)) ? 1 : this->kernel_[dim - (ndim - kdim)];
+  const int kernel = (static_cast<unsigned>(dim) < (ndim - kdim))
+                         ? 1
+                         : this->kernel_[dim - (ndim - kdim)];
   const int size = outp->shape()[dim];
 
   if (static_cast<unsigned>(dim) == inp->shape().size() - 1) {
@@ -114,8 +115,9 @@ void Unpooling<T>::unpooling_backward_recursive(Variable *outp,
   auto kdim = this->kernel_.size();
   const int x_stride = outp->strides()[dim];
   const int y_stride = inp->strides()[dim];
-  const int kernel =
-      (static_cast<unsigned>(dim) < (ndim - kdim)) ? 1 : this->kernel_[dim - (ndim - kdim)];
+  const int kernel = (static_cast<unsigned>(dim) < (ndim - kdim))
+                         ? 1
+                         : this->kernel_[dim - (ndim - kdim)];
   const int size = inp->shape()[dim];
 
   if (static_cast<unsigned>(dim) == inp->shape().size() - 1) {
