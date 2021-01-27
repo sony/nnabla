@@ -155,7 +155,23 @@ cdef class NdArray:
         a.data = nparr
         return a
 
-    def __init__(self, shape=tuple()):
+    def __init__(self, *args, **kwargs):
+        arg_n = len(args)
+        err_msg = "Input argument should be a tuple or a tuple-like dimension define."
+        if arg_n == 0:
+            shape=tuple()
+        elif arg_n == 1:
+            if type(args[0]) == int:
+                shape = (args[0], )
+            elif type(args[0]) in [tuple, list]:
+                shape = tuple(args[0])
+            else:
+                raise ValueError(err_msg)
+        elif arg_n > 1:
+            if all([type(x) == int for x in args]):
+                shape = tuple(args)
+            else:
+                raise ValueError(err_msg)
         cdef int i
         cdef Shape_t cshape
         cdef int size = len(shape)
