@@ -24,9 +24,9 @@ RandomManager::~RandomManager() {}
 
 std::mt19937 &RandomManager::get_rand_generator() { return rgen_; }
 
-int RandomManager::get_seed() const { return seed_; }
+unsigned int RandomManager::get_seed() const { return seed_; }
 
-void RandomManager::set_seed(int seed) {
+void RandomManager::set_seed(unsigned int seed) {
   seed_ = seed;
   rgen_ = std::mt19937(seed);
   ++count_;

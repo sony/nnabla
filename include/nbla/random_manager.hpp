@@ -25,7 +25,7 @@ Singleton class for storing global context.
 */
 class NBLA_API RandomManager {
   std::mt19937 rgen_;
-  int seed_;
+  unsigned int seed_;
   int count_;
 
 public:
@@ -36,11 +36,11 @@ public:
 
   /** Get seed value.
    */
-  int get_seed() const;
+  unsigned int get_seed() const;
 
   /** Set seed and recreate random generator.
    */
-  void set_seed(int seed);
+  void set_seed(unsigned int seed);
 
   /** Get count of seed sets used for extensions to track seed update.
    */
