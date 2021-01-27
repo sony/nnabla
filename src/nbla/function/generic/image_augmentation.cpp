@@ -16,6 +16,7 @@
  */
 #include <nbla/array.hpp>
 #include <nbla/function/image_augmentation.hpp>
+#include <nbla/random_manager.hpp>
 #include <nbla/variable.hpp>
 
 #include <algorithm>
@@ -88,6 +89,9 @@ void ImageAugmentation<T>::forward_impl(const Variables &inputs,
   const int ch_size_in = h_in * w_in;
   const int ch_size_out = h_out * w_out;
 
+  std::mt19937 &rgen =
+      seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
+                  : rgen_;
   std::normal_distribution<> norm(0.0, 1.0);
 
   const float w_out_half = w_out * 0.5f;
@@ -113,11 +117,11 @@ void ImageAugmentation<T>::forward_impl(const Variables &inputs,
 
     const float scale =
         min_scale_ *
-        std::exp((rgen_() % 1001) * 0.001f *
+        std::exp((rgen() % 1001) * 0.001f *
                  std::log(max_scale_ / min_scale_)); // [min_scale_, max_scale_]
     const float scale_x =
         std::exp(-std::log(this->aspect_ratio_) * 0.5 +
-                 (rgen_() % 1001) * 0.001f * std::log(this->aspect_ratio_));
+                 (rgen() % 1001) * 0.001f * std::log(this->aspect_ratio_));
     const float scale_y = 1.0 / scale_x;
     const float i_scale_x = 1.0f / (scale * scale_x);
     const float i_scale_y = 1.0f / (scale * scale_y);
@@ -125,7 +129,7 @@ void ImageAugmentation<T>::forward_impl(const Variables &inputs,
     // v=" << scale << ", inv=" << i_scale << "\n";
 
     const float angle =
-        -angle_ + ((rgen_() % 1001) * 0.001f) * angle_ * 2; // [-angle_, angle_]
+        -angle_ + ((rgen() % 1001) * 0.001f) * angle_ * 2; // [-angle_, angle_]
     // std::cout << "angle : " << angle << "\n";
 
     // Preparation
@@ -139,19 +143,19 @@ void ImageAugmentation<T>::forward_impl(const Variables &inputs,
     // std::cout << "center : x=" << cx << ", y=" << cy << "\n";
 
     const float cx_scaled =
-        ((rgen_() % 1001) * 0.001f) * (w_scaled - w_out) + cx;
+        ((rgen() % 1001) * 0.001f) * (w_scaled - w_out) + cx;
     const float cy_scaled =
-        ((rgen_() % 1001) * 0.001f) * (h_scaled - h_out) + cy;
+        ((rgen() % 1001) * 0.001f) * (h_scaled - h_out) + cy;
     // std::cout << "center_scaled : x=" << cx_scaled << ", y=" << cy_scaled <<
     // "\n";
 
-    const bool flip_lr = flip_lr_ & (rgen_() % 2);
-    const bool flip_ud = flip_ud_ & (rgen_() % 2);
+    const bool flip_lr = flip_lr_ & (rgen() % 2);
+    const bool flip_ud = flip_ud_ & (rgen() % 2);
     const float global_brightness =
-        ((rgen_() % 1001) * 0.001f * brightness_ * 2.0f) - brightness_;
+        ((rgen() % 1001) * 0.001f * brightness_ * 2.0f) - brightness_;
     // std::cout << "global_brightness : " << global_brightness << "\n";
     const float global_contrast =
-        std::exp((rgen_() % 1001) * 0.001f * std::log(contrast_) * 2.0f) /
+        std::exp((rgen() % 1001) * 0.001f * std::log(contrast_) * 2.0f) /
         contrast_;
     // std::cout << "global_contrast : " << global_contrast << "\n";
 
@@ -160,7 +164,7 @@ void ImageAugmentation<T>::forward_impl(const Variables &inputs,
     for (int ic = 0; ic < num_ch; ++ic) {
       const float ch_brightness =
           brightness_each_
-              ? ((rgen_() % 1001) * 0.001f * brightness_ * 2.0f) - brightness_
+              ? ((rgen() % 1001) * 0.001f * brightness_ * 2.0f) - brightness_
               : global_brightness;
       channel_brightness[ic] = ch_brightness - contrast_center_;
       // std::cout << "channel_brightness - contrast_center_ : " <<
@@ -168,7 +172,7 @@ void ImageAugmentation<T>::forward_impl(const Variables &inputs,
       // "\n";
 
       const float ch_contrast = contrast_each_
-                                    ? std::exp((rgen_() % 1001) * 0.001f *
+                                    ? std::exp((rgen() % 1001) * 0.001f *
                                                std::log(contrast_) * 2.0f) /
                                           contrast_
                                     : global_contrast;
@@ -177,11 +181,11 @@ void ImageAugmentation<T>::forward_impl(const Variables &inputs,
     }
 
     const float distortion =
-        std::exp(((rgen_() % 1001) * 0.001f * 2.0f * distortion_) -
+        std::exp(((rgen() % 1001) * 0.001f * 2.0f * distortion_) -
                  distortion_) -
         1.0f;
     // std::cout << "distortion : " << distortion << "\n";
-    const float noise = (this->rgen_() % 1001) * 0.001f * noise_;
+    const float noise = (rgen() % 1001) * 0.001f * noise_;
 
     // Pixel loop
     const float cos_theta = std::cos(angle);
@@ -262,7 +266,7 @@ void ImageAugmentation<T>::forward_impl(const Variables &inputs,
           result = (result + channel_brightness[ic]) * channel_contrast[ic] +
                    contrast_center_;
           if (noise > 0.0f) {
-            result += norm(rgen_) * noise;
+            result += norm(rgen) * noise;
           }
           y_im[ic * ch_size_out] = result;
         }
