@@ -3,7 +3,6 @@ boto3
 h5py
 imageio
 numpy
-onnx<1.9.0
 pillow
 protobuf
 pyyaml
@@ -12,4 +11,3 @@ requests
 scipy
 six
 tqdm
-ply

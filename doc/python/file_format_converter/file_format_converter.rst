@@ -123,7 +123,6 @@ Limitation
 - Support operator set 7,9,10,11.
 - Not all functions are supported. See :any:`Function-Level_Support_Status`.
 - Only limited Neural Network Console projects supported.  See :any:`Model_Support_Status`.
-- In some case you must install onnx package by hand. For example you can install with command `pip install onnx` or if you want to install system wide, you can install with command `sudo -HE pip install onnx`.
 - Before using this converter, please use command `pip install nnabla_converter` to install nnabla_converter.
 
 NNB
@@ -151,8 +150,6 @@ File format converter supports C source code output for `nnabla-c-runtime`_.
 
 Tensorflow
 ^^^^^^^^^^
-
-.. _Dockerfile: https://github.com/sony/nnabla/blob/master/docker/development/Dockerfile.tf-test
 
 Limitation
 ++++++++++

@@ -30,8 +30,7 @@ DOCKER_IMAGE_AUTO_FORMAT ?= $(DOCKER_IMAGE_NAME_BASE)-auto-format$(ARCH_SUFFIX):
 DOCKER_IMAGE_DOC ?= $(DOCKER_IMAGE_NAME_BASE)-doc$(ARCH_SUFFIX):$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.document |cut -d \  -f 1)
 DOCKER_IMAGE_BUILD ?= $(DOCKER_IMAGE_NAME_BASE)-build$(ARCH_SUFFIX):$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.build$(ARCH_SUFFIX) |cut -d \  -f 1)
 DOCKER_IMAGE_NNABLA ?= $(DOCKER_IMAGE_NAME_BASE)-nnabla$(ARCH_SUFFIX):$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.build |cut -d \  -f 1)
-DOCKER_IMAGE_ONNX_TEST ?= $(DOCKER_IMAGE_NAME_BASE)-onnx-test$(ARCH_SUFFIX):$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.onnx-test$(ARCH_SUFFIX) |cut -d \  -f 1)
-DOCKER_IMAGE_TF_TEST ?= $(DOCKER_IMAGE_NAME_BASE)-tf-test$(ARCH_SUFFIX):$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.tf-test |cut -d \  -f 1)
+DOCKER_IMAGE_NNABLA_TEST ?= $(DOCKER_IMAGE_NAME_BASE)-nnabla-test$(ARCH_SUFFIX):$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.nnabla-test$(ARCH_SUFFIX) |cut -d \  -f 1)
 
 ########################################################################################################################
 # Docker images
@@ -57,20 +56,12 @@ docker_image_build:
 		(cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_BUILD) -f docker/development/Dockerfile.build$(ARCH_SUFFIX) .) \
 	fi
 
-.PHONY: docker_image_onnx_test
-docker_image_onnx_test:
-	if ! docker image inspect $(DOCKER_IMAGE_ONNX_TEST) >/dev/null 2>/dev/null; then \
-		docker pull $(shell cat $(NNABLA_DIRECTORY)/docker/development/Dockerfile.onnx-test$(ARCH_SUFFIX) |grep ^FROM |awk '{print $$2}') && \
-		(cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_ONNX_TEST) -f docker/development/Dockerfile.onnx-test$(ARCH_SUFFIX) .) \
+.PHONY: docker_image_nnabla_test
+docker_image_nnabla_test:
+	if ! docker image inspect $(DOCKER_IMAGE_NNABLA_TEST) >/dev/null 2>/dev/null; then \
+		docker pull $(shell cat $(NNABLA_DIRECTORY)/docker/development/Dockerfile.nnabla-test$(ARCH_SUFFIX) |grep ^FROM |awk '{print $$2}') && \
+		(cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_NNABLA_TEST) -f docker/development/Dockerfile.nnabla-test$(ARCH_SUFFIX) .) \
 	fi
-
-.PHONY: docker_image_tf_test
-docker_image_tf_test:
-	if ! docker image inspect $(DOCKER_IMAGE_TF_TEST) >/dev/null 2>/dev/null; then \
-		docker pull $(shell cat $(NNABLA_DIRECTORY)/docker/development/Dockerfile.tf-test$(ARCH_SUFFIX) |grep ^FROM |awk '{print $$2}') && \
-		(cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_TF_TEST) -f docker/development/Dockerfile.tf-test$(ARCH_SUFFIX) .) \
-	fi
-
 
 # for Android
 # Compiler for diffrent ARCHITECTURE and ABI:
@@ -148,9 +139,9 @@ bwd-nnabla-wheel: docker_image_build
 	&& docker run $(DOCKER_RUN_OPTS) $(DOCKER_IMAGE_BUILD) make -f build-tools/make/build.mk MAKE_MANYLINUX_WHEEL=$(MAKE_MANYLINUX_WHEEL) nnabla-wheel
 
 .PHONY: bwd-nnabla-test
-bwd-nnabla-test: docker_image_onnx_test
+bwd-nnabla-test: docker_image_nnabla_test
 	cd $(NNABLA_DIRECTORY) \
-	&& docker run $(DOCKER_RUN_OPTS) $(DOCKER_IMAGE_ONNX_TEST) make -f build-tools/make/build.mk nnabla-test
+	&& docker run $(DOCKER_RUN_OPTS) $(DOCKER_IMAGE_NNABLA_TEST) make -f build-tools/make/build.mk nnabla-test
 
 .PHONY: bwd-nnabla-shell
 bwd-nnabla-shell: docker_image_build
