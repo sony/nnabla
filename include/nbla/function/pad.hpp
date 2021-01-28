@@ -60,7 +60,7 @@ protected:
   const string mode_string_;
   const T constant_value_;
 
-  enum { PAD_CONSTANT, PAD_REFLECT } pad_mode_;
+  enum { PAD_CONSTANT, PAD_REFLECT, PAD_REPEAT } pad_mode_;
   Variable index_map_;
   PadList padding_;
   Shape_t x_stride_;
