@@ -152,6 +152,8 @@ void Pad<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
     this->pad_mode_ = PAD_CONSTANT;
   } else if (this->mode_string_ == "reflect") {
     this->pad_mode_ = PAD_REFLECT;
+  } else if (this->mode_string_ == "repeat") {
+    this->pad_mode_ = PAD_REPEAT;
   } else {
     NBLA_ERROR(error_code::value, "Unsupported pad mode '%s'.",
                mode_string_.c_str());
