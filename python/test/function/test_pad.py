@@ -124,3 +124,53 @@ def test_pad_reflect_double_backward(seed, ctx, func_name, inshape,
     backward_function_tester(rng, F.pad, ref_pad_reflect, inputs, ctx=ctx,
                              dstep=1e-3, atol_b=5e-2, atol_accum=5e-2,
                              func_name=func_name, func_args=func_args)
+
+def ref_pad_repeat(x, pad_width, mode):
+    pad_width = list(zip(pad_width[::2], pad_width[1::2]))
+    pad_width = (x.ndim - len(pad_width)) * [(0, 0)] + pad_width
+    return np.pad(x, pad_width, "edge")
+
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("inshape, pad_width", [
+    ((4,), (2, 9)),
+    ((5,), (4, 3)),
+    ((4, 5), (5, 4)),
+    ((3, 6), (1, 2, 3, 4)),
+    ((3, 5, 7), (2, 3)),
+    ((5, 4, 6), (2, 3, 1, 4)),
+    ((2, 3, 5), (1, 2, 3, 4, 5, 6)),
+    ((1, 2, 3, 4), (2, 3, 4, 5)),
+    ((2, 2, 3, 3), (2, 2, 2, 2, 2, 2, 2, 2)),
+])
+def test_pad_repeat_forward_backward(seed, ctx, func_name, inshape,
+                                      pad_width):
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*inshape).astype(np.float32)]
+    func_args = [pad_width, "repeat"]
+    function_tester(rng, F.pad, ref_pad_repeat, inputs, ctx=ctx, dstep=1e-1,
+                    func_name=func_name, func_args=func_args)
+
+
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("inshape, pad_width", [
+    ((4,), (2, 9)),
+    ((5,), (4, 3)),
+    ((4, 5), (5, 4)),
+    ((3, 6), (1, 2, 3, 4)),
+    ((3, 5, 7), (2, 3)),
+    ((5, 4, 6), (2, 3, 1, 4)),
+    ((2, 3, 5), (1, 2, 3, 4, 5, 6)),
+    ((1, 2, 3, 4), (2, 3, 4, 5)),
+    ((2, 2, 3, 3), (2, 2, 2, 2, 2, 2, 2, 2)),
+])
+def test_pad_repeat_double_backward(seed, ctx, func_name, inshape,
+                                     pad_width):
+    from nbla_test_utils import backward_function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*inshape).astype(np.float32)]
+    func_args = [pad_width, "repeat"]
+    backward_function_tester(rng, F.pad, ref_pad_repeat, inputs, ctx=ctx,
+                             dstep=1e-3, atol_b=5e-2, atol_accum=5e-2,
+                             func_name=func_name, func_args=func_args)
