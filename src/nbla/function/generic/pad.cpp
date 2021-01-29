@@ -23,21 +23,6 @@ namespace nbla {
 
 NBLA_REGISTER_FUNCTION_SOURCE(Pad, const vector<int> &, const string &, float);
 
-inline void init_index_map(const Shape_t &dst_ndi, Size_t *idx_map,
-                           const Shape_t &src_stride, const Shape_t &dst_stride,
-                           const Shape_t &dst_shape, const PadList &padding) {
-  const auto dst_idx = ndi::nd2flat(dst_ndi, dst_stride);
-  Shape_t::value_type src_idx = 0;
-  for (Shape_t::size_type axis = 0; axis < dst_shape.size(); axis++) {
-    if ((dst_ndi[axis] < padding[axis].first) ||
-        (dst_ndi[axis] >= dst_shape[axis] - padding[axis].second)) {
-      return;
-    }
-    src_idx += (dst_ndi[axis] - padding[axis].first) * src_stride[axis];
-  }
-  idx_map[dst_idx] = src_idx;
-}
-
 namespace pad_constant_impl {
 
 template <typename T>
@@ -85,32 +70,36 @@ template <typename INT> inline INT reflect_index(INT idx, INT len) {
   return len > 0 ? std::abs(((idx / len) & 1) * len - (idx % len)) : 0;
 }
 
-inline void pad_index_map(const Shape_t &dst_ndi, const Shape_t &dst_stride,
-                          const Shape_t &dst_shape, const int axis,
-                          const PadList &padding, Size_t *idx_map) {
+template <typename T>
+inline void pad_reflect_forward(const Shape_t &dst_ndi, const T *src, T *dst,
+                        const Shape_t &src_stride, const Shape_t &dst_stride,
+                        const Shape_t &dst_shape, const PadList &padding) {
   const auto dst_idx = ndi::nd2flat(dst_ndi, dst_stride);
-  const auto pad_sum = padding.at(axis).first + padding.at(axis).second;
-  const auto src_len = dst_shape.at(axis) - pad_sum;
+  Shape_t::value_type src_idx = 0;
+  for (int axis = 0; axis < dst_shape.size(); axis++) {
+    const auto src_len = dst_shape[axis] - padding[axis].first - padding[axis].second;
+    Shape_t::value_type src_axis_idx = std::abs(dst_ndi[axis] - padding[axis].first);
+    const auto src_axis_reflect_idx = reflect_index(src_axis_idx, src_len - 1);
 
-  if (dst_ndi[axis] < padding[axis].first) {
-    const auto p = padding[axis].first;
-    const auto r = reflect_index(p - dst_ndi[axis], src_len - 1);
-    auto src_idx = ndi::nd2flat(dst_ndi, dst_stride, axis);
-    src_idx += (p + r) * dst_stride[axis];
-    src_idx += ndi::nd2flat(dst_ndi, dst_stride, {axis + 1, dst_shape.size()});
-    idx_map[dst_idx] = idx_map[src_idx];
-    return;
+    src_idx += src_axis_reflect_idx * src_stride[axis];
   }
+  dst[dst_idx] = src[src_idx];
+}
 
-  if (dst_ndi[axis] >= dst_shape[axis] - padding[axis].second) {
-    const auto p = padding[axis].first + src_len;
-    const auto r = reflect_index(dst_ndi[axis] - p + 1, src_len - 1);
-    auto src_idx = ndi::nd2flat(dst_ndi, dst_stride, axis);
-    src_idx += (p - r - 1) * dst_stride[axis];
-    src_idx += ndi::nd2flat(dst_ndi, dst_stride, {axis + 1, dst_shape.size()});
-    idx_map[dst_idx] = idx_map[src_idx];
-    return;
+template <typename T>
+inline void pad_reflect_backward(const Shape_t &src_ndi, const T *src, T *dst,
+                         const Shape_t &dst_stride, const Shape_t &src_stride,
+                         const Shape_t &src_shape, const PadList &padding) {
+  const auto src_idx = ndi::nd2flat(src_ndi, src_stride);
+  Shape_t::value_type dst_idx = 0;
+  for (int axis = 0; axis < src_shape.size(); axis++) {
+    const auto dst_len = src_shape[axis] - padding[axis].first - padding[axis].second;
+    Shape_t::value_type dst_axis_idx = std::abs(src_ndi[axis] - padding[axis].first);
+    const auto dst_axis_reflect_idx = reflect_index(dst_axis_idx, dst_len - 1);
+
+    dst_idx += dst_axis_reflect_idx * dst_stride[axis];
   }
+  dst[dst_idx] += src[src_idx];
 }
 
 } // namespace pad_reflect_impl
@@ -189,7 +178,6 @@ void Pad<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   }
 
   y.reshape(y_shape, true);
-  this->index_map_.reshape(y_shape, true);
 
   const auto ndim_pad = this->pad_width_.size() / 2 + 1;
   const auto ndim_out = y_shape.size();
@@ -236,19 +224,9 @@ void Pad<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
 
   else if (this->pad_mode_ == this->PAD_REFLECT) {
     using namespace pad_reflect_impl;
-    Variable &index_map = this->index_map_;
-    auto idx = index_map.cast_data_and_get_pointer<Size_t>(this->ctx_, false);
     do {
-      init_index_map(y_ndi, idx, x_stride, y_stride, y_shape, padding);
+      pad_reflect_forward<T>(y_ndi, x, y, x_stride, y_stride, y_shape, padding);
     } while (ndi::increment(y_ndi, y_shape));
-    for (int axis = y_ndi.size() - 1; axis >= 0; --axis) {
-      do {
-        pad_index_map(y_ndi, y_stride, y_shape, axis, padding, idx);
-      } while (ndi::increment(y_ndi, y_shape));
-    }
-    for (Size_t i = 0; i < y_var.size(); i++) {
-      y[i] = x[idx[i]];
-    }
   }
   else if (this->pad_mode_ == this->PAD_REPEAT) {
     using namespace pad_repeat_impl;
@@ -288,12 +266,10 @@ void Pad<T>::backward_impl(const Variables &inputs, const Variables &outputs,
       if (!accum[0]) {
         x_var.grad()->zero();
       }
-      Variable &index_map = this->index_map_;
-      auto idx = index_map.get_data_pointer<Size_t>(this->ctx_);
-      auto dx = x_var.cast_grad_and_get_pointer<T>(this->ctx_, false);
-      for (Size_t i = 0; i < y_var.size(); i++) {
-        dx[idx[i]] += dy[i];
-      }
+      auto dx = x_var.cast_grad_and_get_pointer<T>(this->ctx_);
+      do {
+        pad_reflect_backward<T>(y_ndi, dy, dx, x_stride, y_stride, y_shape, padding);
+      } while (ndi::increment(y_ndi, y_shape));
     }
     else if (this->pad_mode_ == this->PAD_REPEAT) {
       using namespace pad_repeat_impl;
