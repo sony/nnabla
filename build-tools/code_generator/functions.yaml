@@ -3617,6 +3617,16 @@ Array Manipulation:
           y = F.pad(x, (3, 3), 'reflect')
           y.forward()
           assert np.all(y.d == np.array([4, 3, 2, 1, 2, 3, 4, 3, 2, 1]))
+
+      repeat
+        Pads with the edge value of the vector along each axis.
+
+        .. code-block:: python
+
+          x = nn.Variable.from_numpy_array(np.array([1, 2, 3, 4], dtype=np.int))
+          y = F.pad(x, (3, 3), 'repeat')
+          y.forward()
+          assert np.all(y.d == np.array([1, 1, 1, 1, 2, 3, 4, 4, 4, 4]))
     inputs:
       x:
         doc: N-D array
