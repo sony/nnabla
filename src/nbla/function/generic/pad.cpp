@@ -71,14 +71,17 @@ template <typename INT> inline INT reflect_index(INT idx, INT len) {
 }
 
 template <typename T>
-inline void pad_reflect_forward(const Shape_t &dst_ndi, const T *src, T *dst,
-                        const Shape_t &src_stride, const Shape_t &dst_stride,
-                        const Shape_t &dst_shape, const PadList &padding) {
+inline void
+pad_reflect_forward(const Shape_t &dst_ndi, const T *src, T *dst,
+                    const Shape_t &src_stride, const Shape_t &dst_stride,
+                    const Shape_t &dst_shape, const PadList &padding) {
   const auto dst_idx = ndi::nd2flat(dst_ndi, dst_stride);
   Shape_t::value_type src_idx = 0;
   for (int axis = 0; axis < dst_shape.size(); axis++) {
-    const auto src_len = dst_shape[axis] - padding[axis].first - padding[axis].second;
-    Shape_t::value_type src_axis_idx = std::abs(dst_ndi[axis] - padding[axis].first);
+    const auto src_len =
+        dst_shape[axis] - padding[axis].first - padding[axis].second;
+    Shape_t::value_type src_axis_idx =
+        std::abs(dst_ndi[axis] - padding[axis].first);
     const auto src_axis_reflect_idx = reflect_index(src_axis_idx, src_len - 1);
 
     src_idx += src_axis_reflect_idx * src_stride[axis];
@@ -87,14 +90,17 @@ inline void pad_reflect_forward(const Shape_t &dst_ndi, const T *src, T *dst,
 }
 
 template <typename T>
-inline void pad_reflect_backward(const Shape_t &src_ndi, const T *src, T *dst,
-                         const Shape_t &dst_stride, const Shape_t &src_stride,
-                         const Shape_t &src_shape, const PadList &padding) {
+inline void
+pad_reflect_backward(const Shape_t &src_ndi, const T *src, T *dst,
+                     const Shape_t &dst_stride, const Shape_t &src_stride,
+                     const Shape_t &src_shape, const PadList &padding) {
   const auto src_idx = ndi::nd2flat(src_ndi, src_stride);
   Shape_t::value_type dst_idx = 0;
   for (int axis = 0; axis < src_shape.size(); axis++) {
-    const auto dst_len = src_shape[axis] - padding[axis].first - padding[axis].second;
-    Shape_t::value_type dst_axis_idx = std::abs(src_ndi[axis] - padding[axis].first);
+    const auto dst_len =
+        src_shape[axis] - padding[axis].first - padding[axis].second;
+    Shape_t::value_type dst_axis_idx =
+        std::abs(src_ndi[axis] - padding[axis].first);
     const auto dst_axis_reflect_idx = reflect_index(dst_axis_idx, dst_len - 1);
 
     dst_idx += dst_axis_reflect_idx * dst_stride[axis];
@@ -106,27 +112,37 @@ inline void pad_reflect_backward(const Shape_t &src_ndi, const T *src, T *dst,
 
 namespace pad_repeat_impl {
 template <typename T>
-inline void pad_repeat_forward(const Shape_t &dst_ndi, const T *src, T *dst,
-                        const Shape_t &src_stride, const Shape_t &dst_stride,
-                        const Shape_t &dst_shape, const PadList &padding) {
+inline void
+pad_repeat_forward(const Shape_t &dst_ndi, const T *src, T *dst,
+                   const Shape_t &src_stride, const Shape_t &dst_stride,
+                   const Shape_t &dst_shape, const PadList &padding) {
   const auto dst_idx = ndi::nd2flat(dst_ndi, dst_stride);
   Shape_t::value_type src_idx = 0;
   for (int axis = 0; axis < dst_shape.size(); axis++) {
-    int src_max_idx = dst_shape[axis] - padding[axis].first - padding[axis].second - 1;
-    src_idx += std::min(src_max_idx , std::max(0, static_cast<int>(dst_ndi[axis] - padding[axis].first))) * src_stride[axis];
+    int src_max_idx =
+        dst_shape[axis] - padding[axis].first - padding[axis].second - 1;
+    src_idx += std::min(src_max_idx,
+                        std::max(0, static_cast<int>(dst_ndi[axis] -
+                                                     padding[axis].first))) *
+               src_stride[axis];
   }
   dst[dst_idx] = src[src_idx];
 }
 
 template <typename T>
-inline void pad_repeat_backward(const Shape_t &src_ndi, const T *src, T *dst,
-                         const Shape_t &dst_stride, const Shape_t &src_stride,
-                         const Shape_t &src_shape, const PadList &padding) {
+inline void
+pad_repeat_backward(const Shape_t &src_ndi, const T *src, T *dst,
+                    const Shape_t &dst_stride, const Shape_t &src_stride,
+                    const Shape_t &src_shape, const PadList &padding) {
   const auto src_idx = ndi::nd2flat(src_ndi, src_stride);
   Shape_t::value_type dst_idx = 0;
   for (int axis = 0; axis < src_shape.size(); axis++) {
-    int dst_max_idx = src_shape[axis] - padding[axis].first - padding[axis].second - 1;
-    dst_idx += std::min(dst_max_idx , std::max(0, static_cast<int>(src_ndi[axis] - padding[axis].first))) * dst_stride[axis];
+    int dst_max_idx =
+        src_shape[axis] - padding[axis].first - padding[axis].second - 1;
+    dst_idx += std::min(dst_max_idx,
+                        std::max(0, static_cast<int>(src_ndi[axis] -
+                                                     padding[axis].first))) *
+               dst_stride[axis];
   }
   dst[dst_idx] += src[src_idx];
 }
@@ -227,8 +243,7 @@ void Pad<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
     do {
       pad_reflect_forward<T>(y_ndi, x, y, x_stride, y_stride, y_shape, padding);
     } while (ndi::increment(y_ndi, y_shape));
-  }
-  else if (this->pad_mode_ == this->PAD_REPEAT) {
+  } else if (this->pad_mode_ == this->PAD_REPEAT) {
     using namespace pad_repeat_impl;
     do {
       pad_repeat_forward<T>(y_ndi, x, y, x_stride, y_stride, y_shape, padding);
@@ -268,17 +283,18 @@ void Pad<T>::backward_impl(const Variables &inputs, const Variables &outputs,
       }
       auto dx = x_var.cast_grad_and_get_pointer<T>(this->ctx_);
       do {
-        pad_reflect_backward<T>(y_ndi, dy, dx, x_stride, y_stride, y_shape, padding);
+        pad_reflect_backward<T>(y_ndi, dy, dx, x_stride, y_stride, y_shape,
+                                padding);
       } while (ndi::increment(y_ndi, y_shape));
-    }
-    else if (this->pad_mode_ == this->PAD_REPEAT) {
+    } else if (this->pad_mode_ == this->PAD_REPEAT) {
       using namespace pad_repeat_impl;
       if (!accum[0]) {
         x_var.grad()->zero();
       }
       auto dx = x_var.cast_grad_and_get_pointer<T>(this->ctx_);
       do {
-        pad_repeat_backward<T>(y_ndi, dy, dx, x_stride, y_stride, y_shape, padding);
+        pad_repeat_backward<T>(y_ndi, dy, dx, x_stride, y_stride, y_shape,
+                               padding);
       } while (ndi::increment(y_ndi, y_shape));
     }
   }
