@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# for nnabla>=1.5.0
-
-FROM multiarch/ubuntu-core:armhf-xenial
+FROM multiarch/debian-debootstrap:armhf-buster
 
 ENV LC_ALL C
 ENV LANG C
@@ -24,14 +22,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     bzip2 \
     ca-certificates \
     ccache \
-    clang-format-3.8 \
     cmake \
     curl \
     g++ \
     git \
     libarchive-dev \
-    libatlas-dev \
+    libatlas-base-dev \
     libhdf5-dev \
+    libopenblas-dev \
     liblapack-dev \
     make \
     pkg-config \
@@ -57,16 +55,17 @@ RUN mkdir /tmp/deps \
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
         -Dprotobuf_BUILD_TESTS=OFF \
         ../cmake \
-    && make \
+    && make -j8 \
     && make install \
     && cd / \
     && rm -rf /tmp/*
 
-################################################## libarchive
+############################################################ libarchive
+ARG LIBARCHIVEVER=3.4.3
 RUN mkdir /tmp/deps \
     && cd /tmp/deps \
-    && curl -L https://www.libarchive.org/downloads/libarchive-3.3.2.tar.gz -o libarchive-3.3.2.tar.gz \
-    && tar xfa libarchive-3.3.2.tar.gz \
+    && curl -L https://github.com/libarchive/libarchive/archive/v${LIBARCHIVEVER}.tar.gz -o libarchive-${LIBARCHIVEVER}.tar.gz \
+    && tar xfa libarchive-${LIBARCHIVEVER}.tar.gz \
     && mkdir libarchive-build \
     && cd libarchive-build \
     && cmake \
@@ -76,16 +75,17 @@ RUN mkdir /tmp/deps \
         -DENABLE_CNG=FALSE -DENABLE_TAR=FALSE -DENABLE_TAR_SHARED=FALSE -DENABLE_CPIO=FALSE \
         -DENABLE_CPIO_SHARED=FALSE -DENABLE_CAT=FALSE -DENABLE_CAT_SHARED=FALSE -DENABLE_XATTR=FALSE \
         -DENABLE_ACL=FALSE -DENABLE_ICONV=FALSE -DENABLE_TEST=FALSE \
-        ../libarchive-3.3.2 \
-    && make \
+        ../libarchive-${LIBARCHIVEVER} \
+    && make -j8 \
     && make install \
     && cd / \
     && rm -rf /tmp/*
 
 RUN python3 -m pip install --upgrade pip
+RUN echo "[global]" >/etc/pip.conf
+RUN echo "extra-index-url=https://www.piwheels.org/simple" >> /etc/pip.conf
 RUN python3 -m pip install --no-cache-dir numpy
 RUN python3 -m pip install --no-cache-dir scipy\<1.4
-RUN python3 -m pip install --no-cache-dir onnx\<1.6
 RUN python3 -m pip install --no-cache-dir \
     autopep8 \
     boto3 \

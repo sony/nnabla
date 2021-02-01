@@ -17,6 +17,7 @@ from __future__ import print_function
 from setuptools import setup
 from distutils.extension import Extension
 import os
+import platform
 import shutil
 import sys
 from collections import namedtuple
@@ -45,7 +46,8 @@ install_requires = setup_requires + [
 if sys.platform == 'win32':
     install_requires.append('pywin32')
 else:
-    install_requires.append('onnx<1.9.0')
+    if not (platform.machine().startswith('arm') or platform.machine().startswith('aarch')):
+        install_requires.append('onnx<1.9.0')
 
 
 def extopts(library_name, library_dir):
