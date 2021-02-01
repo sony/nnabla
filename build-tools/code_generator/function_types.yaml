@@ -554,6 +554,12 @@ FFT:
 IFFT:
   float: [float]
 #  half: [Half]
+STFT:
+  float: [float]
+  half: [Half]
+ISTFT:
+  float: [float]
+  half: [Half]
 Prune:
   float: [float]
   Half: [Half]

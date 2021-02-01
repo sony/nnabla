@@ -259,3 +259,6 @@
   WeightStandardization_if: 325
 28:
   BatchNormalization_iIffBBB: 326
+29:
+  ISTFT_iiiiB: 328
+  STFT_iiiiBi: 327
