@@ -249,7 +249,7 @@ cdef class Function:
 
     @property
     def arguments(self):
-        info = eval(self.funp.info())
+        info = eval(self.funp.info().replace("inf", "float('inf')").replace("-inf", "float('-inf')"))
         return info['args']
 
     def _proto_call(self, inputs, int n_outputs, outputs):

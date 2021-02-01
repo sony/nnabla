@@ -19,6 +19,7 @@ from contextlib2 import ExitStack  # Backport from python3
 import numpy as np
 import os
 import time
+from functools import partial
 
 import nnabla.function as F
 from nnabla.ext_utils import import_extension_module
@@ -27,7 +28,6 @@ from nnabla.parameter import save_parameters
 from nnabla.utils.progress import configure_progress, progress
 from nnabla.utils.cli.utility import let_data_to_variable
 import nnabla.utils.load as load
-
 import nnabla.utils.callback as callback
 
 
@@ -113,7 +113,8 @@ def profile_optimizer(config, result_array, synchronize):
         for v, generator in o.generator_assign.items():
             def generate_data():
                 let_data_to_variable(v.variable_instance,
-                                     data=generator(v.shape),
+                                     data=generator(
+                                         v.variable_instance.d.shape),
                                      variable_name=v.name)
             profile(config, 'generate_data (%s)' %
                     v.name, generate_data, result_dict, synchronize)
@@ -127,46 +128,60 @@ def profile_optimizer(config, result_array, synchronize):
                 func.name, func.function_instance.name), setup, result_dict, synchronize)
         '''
         # Warm-up
-        o.network.forward(o.forward_sequence)
-        o.network.prepare_backward(o.backward_sequence)
-        o.network.backward(o.backward_sequence)
+        # o.network.forward(o.forward_sequence)
+        # o.network.prepare_backward(o.backward_sequence)
+        # o.network.backward(o.backward_sequence)
+        o.forward_sequence = []
+        o.backward_sequence = []
+        o.target.forward(clear_no_need_grad=True,
+                         function_pre_hook=lambda f: o.forward_sequence.append(f))
+        o.target.backward(
+            clear_buffer=True, function_pre_hook=lambda f: o.backward_sequence.append(f))
 
         # Forward (detail)
         for func in o.forward_sequence:
-            def forward():
-                o.network.forward_function(func)
-            in_place_str = ' : in_place' if func.function_instance.inplace_data(
+            if func.name == 'Sink':
+                continue
+            in_place_str = ' : in_place' if func.inplace_data(
                 0) > 0 else ''
-            profile(config, 'forward_function (%s : %s%s)' % (
-                func.name, func.function_instance.name, in_place_str), forward, result_dict, synchronize)
+            profile(config, 'forward_function (%s : %s%s)' % (func.name, func.name, in_place_str),
+                    partial(func.forward, inputs=func.inputs,
+                            outputs=func.outputs),
+                    result_dict, synchronize)
 
         # Backward (detail)
-        def prepare_backward():
-            o.network.prepare_backward(o.backward_sequence)
+        def empty_func():
+            pass   # keep this for backward compatible
         profile(config, 'prepare_backward',
-                prepare_backward, result_dict, synchronize)
-        for seq in o.backward_sequence.sequence:
-            o.network.prepare_backward(o.backward_sequence)
+                empty_func, result_dict, synchronize)
 
-            def backward():
-                o.network.backward_function(seq)
-            in_place_str = ''
-            profile(config, 'backward_function (%s : %s%s)' % (
-                seq.func.name, seq.func.function_instance.name, in_place_str), backward, result_dict, synchronize)
+        for func in o.backward_sequence:
+            if func.name == 'Sink':
+                continue
+            in_place_str = ' : in_place' if func.inplace_grad(
+                0) > 0 else ''
+            profile(config, 'backward_function (%s : %s%s)' % (func.name, func.name, in_place_str),
+                    partial(func.backward, inputs=func.inputs,
+                            outputs=func.outputs),
+                    result_dict, synchronize)
 
         # Forward (all)
         def forward_all():
-            o.network.forward(o.forward_sequence)
+            o.target.forward(clear_no_need_grad=True)
         profile(config, 'forward_all', forward_all, result_dict, synchronize)
 
         # Backward (all)
         def backward_all():
-            o.network.backward(o.backward_sequence)
+            o.target.backward(clear_buffer=True)
         profile(config, 'backward_all', backward_all, result_dict, synchronize)
 
+        # Backward (wo param zero_grad)
         # Backward (all)
         def backward_all_wo_zero_grad():
-            o.network.backward(o.backward_sequence, parameter_zero_grad=False)
+            for name, p in o.parameters.items():
+                if name[-2:] in ('/W', '/b'):
+                    p.grad.zero()
+            o.target.backward(clear_buffer=True)
         profile(config, 'backward_all(wo param zero_grad)',
                 backward_all_wo_zero_grad, result_dict, synchronize)
 
@@ -198,13 +213,11 @@ def profile_command(args):
     callback.update_status(args)
 
     configure_progress(os.path.join(args.outdir, 'progress.txt'))
-    files = []
-    files.append(args.config)
 
     class TrainConfig:
         pass
     config = TrainConfig()
-    info = load.load(files)
+    info = load.load(args.config)
 
     config.global_config = info.global_config
     config.training_config = info.training_config

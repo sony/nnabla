@@ -134,17 +134,17 @@ def _forward(args, index, config, data, variables, output_image=True):
 
         # Generate data
         for v, generator in e.generator_assign.items():
-            v.variable_instance.d = generator(v.shape)
+            v.variable_instance.d = generator(v.variable_instance.d.shape)
 
         # Forward recursive
-        sum = [np.zeros(o.shape, dtype=o.variable_instance.d.dtype)
+        sum = [np.zeros(o.variable_instance.d.shape, dtype=o.variable_instance.d.dtype)
                for o in e.output_assign.keys()]
-        sum_mux = [np.zeros(o.shape, dtype=o.variable_instance.d.dtype)
+        sum_mux = [np.zeros(o.variable_instance.d.shape, dtype=o.variable_instance.d.dtype)
                    for o in e.output_assign.keys()]
         for i in range(e.num_evaluations):
-            e.network.forward(e.forward_sequence)
+            e.forward_target.forward(clear_buffer=True)
             if e.need_back_propagation:
-                e.network.backward(e.backward_sequence)
+                e.backward_target.backward(clear_buffer=True)
 
             for o_index, o in enumerate(e.output_assign.keys()):
                 if e.repeat_evaluation_type == "last":

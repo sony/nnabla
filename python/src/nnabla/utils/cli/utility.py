@@ -23,7 +23,7 @@ import nnabla as nn
 import nnabla.utils.callback as callback
 from nnabla.utils.communicator_util import current_communicator
 from nnabla.utils import nnabla_pb2
-from nnabla.utils.get_file_handle import get_file_handle_save
+from nnabla.utils.get_file_handle import get_file_handle_save, get_decorated_file_loader, load_files
 from nnabla.logger import logger
 from nnabla.config import nnabla_config
 
@@ -322,3 +322,12 @@ class NodeTimeInfoCollector:
                     result, self._warning_threshold)
                 if warning_str:
                     logger.warning(warning_str)
+
+
+def load_train_state(filename, info):
+    info.exclude_parameter = False
+    info.parameter_only = False
+    file_loaders = get_decorated_file_loader()
+    info.parameter_scope = nn.parameter.get_current_parameter_scope()
+    load_files(info, file_loaders, filename)
+    logger.info("Load training resume states: {}".format(filename))

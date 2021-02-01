@@ -30,7 +30,7 @@ from nnabla.parameter import save_parameters
 from nnabla.utils.progress import configure_progress, progress
 import nnabla.utils.callback as callback
 
-from nnabla.utils.cli.utility import let_data_to_variable, measure_cpu_gpu_instant_load, get_cpu_gpu_average_load, save_optimizer_states, NodeTimeInfoCollector
+from nnabla.utils.cli.utility import let_data_to_variable, measure_cpu_gpu_instant_load, get_cpu_gpu_average_load, save_optimizer_states, NodeTimeInfoCollector, load_train_state
 from nnabla.utils.nnp_format import nnp_version
 from nnabla.utils.communicator_util import current_communicator, single_or_rankzero
 
@@ -165,8 +165,10 @@ def _update(iter, config, cost):
                     loaded_data[di] = di.next()
                 data.update(zip(di.variables, loaded_data[di]))
             for v, d in o.dataset_assign.items():
-                dest_context = config.global_config.default_context if not o.forward_sequence or v not in o.forward_sequence[
-                    0].inputs else None
+                # TODO: here we consume a bit more memory for loading all edge nodes to cuda
+                # dest_context = config.global_config.default_context if not o.forward_sequence or v not in o.forward_sequence[
+                #     0].inputs else None
+                dest_context = config.global_config.default_context
                 if d not in data and d[0] == "%":
                     value = _get_reserved_variable(
                         v.variable_instance.shape, d, iter, config.training_config.iter_per_epoch, config.training_config.max_epoch)
@@ -181,10 +183,12 @@ def _update(iter, config, cost):
 
             # Generate data
             for v, generator in o.generator_assign.items():
-                dest_context = config.global_config.default_context if not o.forward_sequence or v not in o.forward_sequence[
-                    0].inputs else None
+                # TODO: here we consume a bit more memory for loading all edge nodes to cuda
+                # dest_context = config.global_config.default_context if not o.forward_sequence or v not in o.forward_sequence[
+                #     0].inputs else None
+                dest_context = config.global_config.default_context
                 let_data_to_variable(v.variable_instance,
-                                     data=generator(v.shape), ctx=dest_context,
+                                     data=generator(v.variable_instance.d.shape), ctx=dest_context,
                                      variable_name=v.name)
 
             # Monitor loss before forward to prepare input data while processing on
@@ -203,25 +207,30 @@ def _update(iter, config, cost):
 
             with nodeTimeCollector.collect_cost_time(comm, iter):
                 # Forward
-                o.network.forward(o.forward_sequence)
+                o.target.forward(clear_no_need_grad=True)
+
+                # Equivalency with previous version
+                if iter % o.update_interval == 0:
+                    o.solver.zero_grad()
 
                 # Backward
-                o.network.backward(o.backward_sequence, iter %
-                                   o.update_interval == 0)
+                if o.comm and iter % o.update_interval == o.update_interval - 1:
+                    params = [x.grad for x in o.parameters.values()]
+                    o.target.backward(
+                        clear_buffer=True, communicator_callbacks=comm.all_reduce_callback(params, 2 << 10))
+                else:
+                    o.target.backward(clear_buffer=True)
 
             # Update
             if iter % o.update_interval == o.update_interval - 1:
                 if o.weight_decay > 0:
                     o.solver.weight_decay(o.weight_decay)
 
-                if o.comm:  # Updated param with communicator
-                    params = [x.grad for x in o.parameters.values()]
-                    _all_reduce(o.comm, params, division=True, inplace=True)
-
                 if o.scheduler is not None:
                     o.solver.set_learning_rate(
                         o.scheduler.get_learning_rate(iter))
                 o.solver.update()
+
             # Sync w sometimes
             if iter % 10 == 9:  # TODO: change the interval
                 if o.comm:
@@ -275,18 +284,18 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
 
             # Set data to variable
             for v, d in m.dataset_assign.items():
-                dest_context = config.global_config.default_context if not m.forward_sequence or v not in m.forward_sequence[
-                    0].inputs else None
+                # NOTICE: trivially increase cuda memory usage for loading all edge nodes
+                dest_context = config.global_config.default_context
                 let_data_to_variable(v.variable_instance, data[
                                      d], ctx=dest_context,
                                      data_name=d, variable_name=v.name)
 
             # Generate data
             for v, generator in m.generator_assign.items():
-                dest_context = config.global_config.default_context if not m.forward_sequence or v not in m.forward_sequence[
-                    0].inputs else None
+                # NOTICE: trivially increase cuda memory usage for loading all edge nodes
+                dest_context = config.global_config.default_context
                 let_data_to_variable(v.variable_instance,
-                                     data=generator(v.shape), ctx=dest_context,
+                                     data=generator(v.variable_instance.d.shape), ctx=dest_context,
                                      variable_name=v.name)
 
             # Sum error before forward to prepare input data while processing
@@ -305,7 +314,7 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
             error_count += comm.size if comm else 1
 
             # Forward recursive
-            m.network.forward(m.forward_sequence)
+            m.target.forward(clear_no_need_grad=True)
 
         # Sum error at the end of dataset
         error_sum = 0.0
@@ -352,7 +361,15 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
     return best_error, error_str
 
 
-def _get_current_parameter(args):
+def _get_current_parameter(args, config):
+    def convert_to_info(config):
+        class Info:
+            pass
+        ret = Info()
+        ret.optimizers = OrderedDict()
+        for name, opt in config.optimizers.items():
+            ret.optimizers[name] = opt.optimizer
+        return ret
 
     best_error, best_epoch = callback.get_best_from_status(args)
 
@@ -362,6 +379,7 @@ def _get_current_parameter(args):
     if len(exists) > 0:
         ex_list = {}
 
+        info = convert_to_info(config)
         for ex in exists:
             n = int(ex.rsplit('_', 1)[1].rsplit('.', 1)[0])
             ex_list[n] = ex
@@ -370,7 +388,8 @@ def _get_current_parameter(args):
         last_parameter = ex_list[last_epoch]
         logger.log(99, "Load parameter from [{}]".format(
             os.path.basename(last_parameter)))
-        load.load([last_parameter], parameter_only=True)
+        #load.load([last_parameter], parameter_only=True)
+        load_train_state(last_parameter, info)
         return last_epoch, best_epoch, best_error
 
     return 0, best_epoch, best_error
@@ -412,7 +431,8 @@ def _train(args, config):
     best_error = None
     last_epoch = 0
     if args.resume:
-        last_epoch, best_epoch, best_error = _get_current_parameter(args)
+        last_epoch, best_epoch, best_error = _get_current_parameter(
+            args, config)
         if best_epoch is not None:
             logger.log(
                 99, "Best error {} recorded at epoch {} in previous training.".format(best_error,
@@ -564,7 +584,10 @@ def train_command(args):
     config = TrainConfig()
     config.timelimit = -1
     if args.param:
-        load.load([args.param], parameter_only=True)
+        # If this parameter file contains optimizer information
+        # we need to info to recovery.
+        #load.load([args.param], parameter_only=True)
+        load_train_state(args.param, info)
 
     config.timelimit = callback.get_timelimit(args)
 

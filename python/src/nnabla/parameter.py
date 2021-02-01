@@ -26,8 +26,8 @@ import zipfile
 import nnabla as nn
 from nnabla.logger import logger
 import nnabla.utils.nnabla_pb2 as nnabla_pb2
-from nnabla.utils.get_file_handle import get_file_handle_load
-from nnabla.utils.get_file_handle import get_file_handle_save
+from nnabla.utils.get_file_handle import get_parameter_file_loader, load_files, FileHandlerContext
+from nnabla.utils.get_file_handle import get_file_handle_save, get_parameter_file_savers, save_files
 
 # TODO temporary work around to suppress FutureWarning message.
 import warnings
@@ -347,70 +347,16 @@ def load_parameters(path, proto=None, needs_proto=False, extension=".nntxt"):
     else:
         ext = extension
 
-    if ext == '.h5':
-        # TODO temporary work around to suppress FutureWarning message.
-        import warnings
-        warnings.simplefilter('ignore', category=FutureWarning)
-        import h5py
-        with get_file_handle_load(path, ext) as hd:
-            keys = []
-
-            def _get_keys(name):
-                ds = hd[name]
-                if not isinstance(ds, h5py.Dataset):
-                    # Group
-                    return
-                # To preserve order of parameters
-                keys.append((ds.attrs.get('index', None), name))
-            hd.visit(_get_keys)
-            for _, key in sorted(keys):
-                ds = hd[key]
-
-                var = get_parameter_or_create(
-                    key, ds.shape, need_grad=ds.attrs['need_grad'])
-                var.data.cast(ds.dtype)[...] = ds[...]
-
-                if needs_proto:
-                    if proto is None:
-                        proto = nnabla_pb2.NNablaProtoBuf()
-                    parameter = proto.parameter.add()
-                    parameter.variable_name = key
-                    parameter.shape.dim.extend(ds.shape)
-                    parameter.data.extend(
-                        numpy.array(ds[...]).flatten().tolist())
-                    parameter.need_grad = False
-                    if ds.attrs['need_grad']:
-                        parameter.need_grad = True
-
+    ctx = FileHandlerContext()
+    if proto is None:
+        ctx.proto = nnabla_pb2.NNablaProtoBuf()
     else:
-        if proto is None:
-            proto = nnabla_pb2.NNablaProtoBuf()
-
-        if ext == '.protobuf':
-            with get_file_handle_load(path, ext) as f:
-                proto.MergeFromString(f.read())
-                set_parameter_from_proto(proto)
-        elif ext == '.nntxt' or ext == '.prototxt':
-            with get_file_handle_load(path, ext) as f:
-                text_format.Merge(f.read(), proto)
-                set_parameter_from_proto(proto)
-
-        elif ext == '.nnp':
-            try:
-                tmpdir = tempfile.mkdtemp()
-                with get_file_handle_load(path, ext) as nnp:
-                    for name in nnp.namelist():
-                        nnp.extract(name, tmpdir)
-                        _, ext = os.path.splitext(name)
-                        if ext in ['.protobuf', '.h5']:
-                            proto = load_parameters(os.path.join(
-                                tmpdir, name), proto, needs_proto)
-            finally:
-                shutil.rmtree(tmpdir)
-                logger.info("Parameter load ({}): {}".format(format, path))
-        else:
-            logger.error("Invalid parameter file '{}'".format(path))
-    return proto
+        ctx.proto = proto
+    ctx.needs_proto = needs_proto
+    # Get parameter file loaders
+    file_loaders = get_parameter_file_loader()
+    load_files(ctx, file_loaders, path, ext)
+    return ctx.proto
 
 
 def save_parameters(path, params=None, extension=None):
@@ -426,30 +372,11 @@ def save_parameters(path, params=None, extension=None):
         _, ext = os.path.splitext(path)
     else:
         ext = extension
-    params = get_parameters(grad_only=False) if params is None else params
-    if ext == '.h5':
-        # TODO temporary work around to suppress FutureWarning message.
-        import warnings
-        warnings.simplefilter('ignore', category=FutureWarning)
-        import h5py
-        with get_file_handle_save(path, ext) as hd:
-            for i, (k, v) in enumerate(iteritems(params)):
-                hd[k] = v.d
-                hd[k].attrs['need_grad'] = v.need_grad
-                # To preserve order of parameters
-                hd[k].attrs['index'] = i
-    elif ext == '.protobuf':
-        proto = nnabla_pb2.NNablaProtoBuf()
-        for variable_name, variable in params.items():
-            parameter = proto.parameter.add()
-            parameter.variable_name = variable_name
-            parameter.shape.dim.extend(variable.shape)
-            parameter.data.extend(numpy.array(variable.d).flatten().tolist())
-            parameter.need_grad = variable.need_grad
-
-        with get_file_handle_save(path, ext) as f:
-            f.write(proto.SerializeToString())
-    else:
-        logger.critical('Only supported hdf5 or protobuf.')
-        assert False
+    ctx = FileHandlerContext()
+    ctx.parameters = get_parameters(
+        grad_only=False) if params is None else params
+    file_savers = get_parameter_file_savers()
+    supported = save_files(ctx, file_savers, path, ext)
+    assert supported, 'Only supported {}.'.format(
+        ','.join(list(file_savers.keys())))
     logger.info("Parameter save ({}): {}".format(ext, path))

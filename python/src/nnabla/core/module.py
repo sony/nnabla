@@ -15,6 +15,7 @@
 import re
 import nnabla as nn
 from collections import OrderedDict
+from functools import wraps
 from nnabla.core.graph_def import ProtoVariable, module_scope, current_graph_builder
 
 # TODO:
@@ -48,16 +49,49 @@ class ParamMemo(object):
         return ret
 
 
-class Module(object):
-    """Module is a construction block of a computation model.
+__module_built_in_functions__ = {}
+
+
+class MetaClass(type):
+    @staticmethod
+    def method_wrapper(method):
+        @wraps(method)
+        def wrapped(self, *args, **kwargs):
+            with module_scope(current_graph_builder(), self):
+                with nn.parameter_scope('', self.parameter_scope):
+                    return method(self, *args, **kwargs)
+        return wrapped
+
+    def __new__(meta, classname, bases, class_dict):
+        global __module_built_in_functions__
+        new_class_dict = {}
+        for attributeName, attribute in class_dict.items():
+            if classname == 'Module':
+                __module_built_in_functions__ = set(class_dict.keys())
+                __module_built_in_functions__ -= {'__call__', 'call'}
+            else:
+                if callable(attribute) and attributeName not in __module_built_in_functions__:
+                    attribute = MetaClass.method_wrapper(attribute)
+            new_class_dict[attributeName] = attribute
+        return type.__new__(meta, classname, bases, new_class_dict)
+
+
+class Module(metaclass=MetaClass):
+    """Module is a construction block of a computation model. Modules normally
+    are constructed by lower level operators or other Modules, thus, nesting
+    them in a tree-like structure may construct a more complex computation
+    model.
 
     Example:
         User may construct his model by derived from this class. Like:
+
         .. code-block:: python
 
             import nnabla as nn
+            import nnabla.parametric_functions as PF
+            import nnabla.functions as F
 
-            class ConvBn(Module):
+            class ConvBn(nn.Module):
                 def __init__(self, outmaps, kernel=1, stride=1, act=None):
                     self.outmaps = outmaps
                     self.kernel = kernel
@@ -65,9 +99,9 @@ class Module(object):
                     self.act = act
 
                 def call(self, x, training=True):
-                    kernel = complete_dims(self.kernel, 2)
-                    pad = get_conv_same_pad(kernel)
-                    stride = complete_dims(self.stride, 2)
+                    kernel = (self.kernel, self.kernel)
+                    pad = (self.kernel // 2, self.kernel // 2)
+                    stride = (self.stride, self.stride)
                     h = PF.convolution(x, self.outmaps, kernel,
                                        pad, stride, with_bias=False)
                     h = PF.batch_normalization(h, batch_stat=training)
@@ -75,7 +109,8 @@ class Module(object):
                         return h
                     return self.act(h)
 
-            class ResUnit(Module):
+
+            class ResUnit(nn.Module):
                 def __init__(self, channels, stride=1, skip_by_conv=True):
                     self.conv1 = ConvBn(channels // 4, 1, 1,
                                         act=lambda x: F.relu(x, inplace=True))
@@ -86,7 +121,6 @@ class Module(object):
                     self.skip = ConvBn(channels, 1, stride)
 
                 def call(self, x, training=True):
-
                     h = self.conv1(x)
                     h = self.conv2(h)
                     h = self.conv3(h)
@@ -98,7 +132,7 @@ class Module(object):
                     return h
 
 
-        To use this model, user may use the following code:
+        To use this model, user may do like the following code:
 
         .. code-block:: python
 
@@ -108,6 +142,46 @@ class Module(object):
             y = res_unit(x)
             y.forward(clear_buffer=True)
 
+
+        For working with dynamic network, user may do like the following:
+
+        .. code-block:: python
+
+            res_unit = ResUnit(1024)
+            with nn.auto_forward():
+                x = nn.Variable.from_numpy_array(np.random.random((1, 3, 32, 32)))
+                y = res_unit(x)
+                print(y.d)
+
+
+        For training, please set the parameters in module scope to optimizer. For example,
+
+        .. code-block:: python
+
+           import nnabla.solvers as S
+
+           resnet = ResNet(18)
+           loss = resnet(x, y_)
+
+           solver = S.Sgd(lr=1e-3)
+           solver.set_parameters(resnet.get_parameters())
+
+           for _ in range(max_iter):
+               x.d, y_.d = data.next()
+               loss.forward()
+               solver.zero_grad()
+               loss.backward()
+               solver.weight_decay(1e-5)
+               solver.update()
+
+        In this example, we supposed ResNet is a derived class of Module, x, y_ is :class:`~nn.Variable`,
+        ``data`` is an instance of :class:`~DataIterator`, supposed it has already been attached to a DataSet.
+
+        Note:
+            From this example, we knew that model parameters are owned by model. Here it is variable `resnet`. These
+            parameters will be referred when network is forward or backward or solve.update(). Hence, it is necessary
+            to keep this module instance from being unexpectedly released, to ensure forward() or backward() can refer
+            to these variables.
     """
 
     def __repr__(self):
@@ -115,19 +189,79 @@ class Module(object):
 
     @property
     def training(self):
-        if '_training' in self.__dict__:
-            return self._training
-        self.__dict__['_training'] = None
-        return self._training
+        """Return a bool value which indicates whether current Module is in
+        training state or not. A module may be set to training state or not,
+        so that the computation graph created from this module can be changed
+        according to this state. For example,
+
+        .. code-block:: python
+
+            class ConvBN(Module):
+                ...
+                def call(self, x):
+                    h = self.conv1(x)
+                    if self.training:
+                        h = self.drop_out(h)
+                    h = F.relu(h, inplace=True)
+                    return h
+
+            conv_bn = ConvBN()
+            conv_bn.training = True
+            train_y = conv_bn(x)
+
+            conv_bn.training = False
+            eval_y = conv_bn(x)
+
+        Returns:
+            bool:
+               which indicates whether current Module is in training state.
+
+        """
+        if 'training' in self.__dict__:
+            return self.__dict__['training']
+        self.__dict__['training'] = None
+        return self.training
 
     @training.setter
     def training(self, b):
-        self.__dict__['_training'] = b
+        """Set current Module whether is in training state or not.
+
+        .. code-block:: python
+
+            class ConvBN(Module):
+                ...
+                def call(self, x):
+                    h = self.conv1(x)
+                    if self.training:
+                        h = self.drop_out(h)
+                    h = F.relu(h, inplace=True)
+                    return h
+
+            conv_bn = ConvBN()
+            conv_bn.training = True
+            train_y = conv_bn(x)
+
+            conv_bn.training = False
+            eval_y = conv_bn(x)
+
+        Returns:
+            bool:
+               which indicates whether current Module is in training state.
+
+        """
+        self.__dict__['training'] = b
         for name, module in self.submodules.items():
             module.training = b
 
     @property
     def parameter_scope(self):
+        """ A module has its owned parameter_scope, which can avoid to pollute global parameter name space.
+        User may obtain the parameter_scope of a module by this property.
+
+        Returns:
+            OrderedDict:
+                The parameter scope of current Module.
+        """
         if '_parameter_scope' in self.__dict__:
             return self._parameter_scope
         self.__dict__['_parameter_scope'] = OrderedDict()
@@ -147,21 +281,44 @@ class Module(object):
         self.__dict__['_submodules'] = OrderedDict()
         return self._submodules
 
-    def get_functions(self, recursive=True):
-        def _get_recursive(values, recursive):
-            for name, module in self.submodules.items():
-                values.update(
-                    insert_parent_name(
-                        name,
-                        module.get_functions(recursive=recursive)))
-        functions = OrderedDict(self.functions)
-        if recursive:
-            _get_recursive(functions, recursive)
-        return functions
-
     def get_parameters(self, recursive=True, grad_only=False, memo=None):
-        '''
-        '''
+        """Obtain an OrderedDict object of all parameters in current Module.
+
+        For example,
+
+        .. code-block:: python
+
+            x = nn.Variable.from_numpy_array((np.random.random((8, 32, 256, 256))))
+            conv_bn = ConvBn(2)
+            y = conv_bn(x)
+
+            params = conv_bn.get_parameters()
+            for parameter_name, parameter_value in params.items():
+                print("{}:{}".format(parameter_name, parameter_value.shape))
+
+        The output looks like:
+
+        .. code-block:: none
+
+            conv/W:(2, 32, 1, 1)
+            bn/beta:(1, 2, 1, 1)
+            bn/gamma:(1, 2, 1, 1)
+            bn/mean:(1, 2, 1, 1)
+            bn/var:(1, 2, 1, 1)
+
+        Notice that the parameter name looks like a filepath, with splash separated
+        nested scope name. In addition, module name default is used with a prefix ``@``.
+
+        Args:
+            recursive (bool, optional, default=True):
+                Whether obtain the parameters of current module's submodules. Default is True.
+            grad_only (bool, optional, default=False):
+                Whether only obtain the grad. Default is False.
+
+        Returns:
+            OrderedDict:
+                Flattened parameter's name-value pairs of current Module.
+        """
         params = OrderedDict()
         if memo is None:
             memo = ParamMemo()
@@ -204,6 +361,10 @@ class Module(object):
         for key, param in params.items():
             self.set_parameter(key, param, raise_if_missing=raise_if_missing)
 
+    def update_parameter(self):
+        params = self.get_parameters()
+        self.set_parameters(params)
+
     def __len__(self):
         return len(self.submodules)
 
@@ -218,7 +379,8 @@ class Module(object):
     def __getattr__(self, name):
         if name in self.submodules:
             return self.submodules[name]
-        return self.__dict__[name]
+        attr = self.__dict__[name]
+        return attr
 
     @property
     def name(self):
@@ -246,15 +408,60 @@ class Module(object):
                 return '@' + self.name
 
     def __call__(self, *args, **kwargs):
-        for i in args:
-            if isinstance(i, ProtoVariable):
-                with module_scope(current_graph_builder(), self):
-                    with nn.parameter_scope('', self.parameter_scope):
-                        ret = self.call(*args, **kwargs)
-                        return ret
-        with nn.parameter_scope('', self.parameter_scope):
-            ret = self.call(*args, **kwargs)
-            return ret
+        return self.call(*args, **kwargs)
 
     def call(self, *args, **kwargs):
+        """User needs implement this function to construct their neural network.
+        In the implementation, user may instantiate existing predefined Modules
+        as its members, then use it. For example:
+
+        .. code-block:: python
+
+            class AModule(nn.Module):
+               def __init__(...):
+                  ...
+                  self.cnb = ConvBN(128) # A submodule is instantiated here.
+
+               def call(...):
+                  h = self.cnb(x) # Using beforehand instantiated submodule.
+
+        or directly use parametric functions or functions:
+
+        .. code-block:: python
+
+            class AModule(nn.Module):
+                ...
+                def call(...):
+                    ...
+                    h = PF.convolution(x, self.outmaps, ...)
+                    return h
+
+        Note:
+              The following usage is currently not supported, it might be supported in future version:
+
+              .. code-block:: python
+
+                    class AModule(nn.Module):
+                       def __init__(...):
+                          ...
+                          self.cnb = [ConvBN(k) for k in [8, 16, 32]] # using an array to hold module instances.
+                          self.cnb = {f'name_{k}': ConvBN(k) for k in [8, 16, 32]} # using a dict to hold module instances.
+
+
+        Note:
+             The following method to temporarily instantiate a module is also not allowed:
+
+             .. code-block:: python
+
+                    class AModule(nn.Module):
+                       def call(...):
+                          ...
+                          cnb = ConvBN(k) # Instantiate a temporary instance of Module is not allowed
+                          y = cnb(x)
+                          return y
+
+             Because when leave this scope, the parameters registered to `cnb` module will be released, which cause
+             unexpected result.
+
+        """
         raise NotImplementedError('call(*av, **kw) must be implemented.')
