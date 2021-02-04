@@ -166,7 +166,7 @@ public:
 };
 
 template <class PhysicalMemoryType, class VirtualMemoryType>
-class NBLA_API VirtualCachingAllocator : public VirtualCachingAllocatorBase {
+class VirtualCachingAllocator : public VirtualCachingAllocatorBase {
   typedef PhysicalMemoryType p_memory_type;
   typedef VirtualMemoryType v_memory_type;
 
