@@ -295,7 +295,7 @@ vector<vector<CgVariablePtr>> GRU<T>::create_fixed_length_gru_graph(
           cg_utils::get_item_nd(this->ctx_, in_b, vector<int>{i, 0}); // b[i, 0]
     }
 
-    for (int k = 0; k < xs.size(); k++) {
+    for (vector<CgVariablePtr>::size_type k = 0; k < xs.size(); k++) {
       hf_var = gru_cell(xs[k], hf_var, wf_var, bf_var);
       hs.push_back(hf_var);
     }
@@ -317,7 +317,7 @@ vector<vector<CgVariablePtr>> GRU<T>::create_fixed_length_gru_graph(
       std::reverse(std::begin(xs), std::end(xs));
     }
 
-    for (int k = 0; k < xs.size(); k++) {
+    for (vector<CgVariablePtr>::size_type k = 0; k < xs.size(); k++) {
       int j = xs.size() - 1 - k;
       hb_var = gru_cell(xs[k], hb_var, wb_var, bb_var);
       auto concatenate =

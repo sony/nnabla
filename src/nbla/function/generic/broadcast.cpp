@@ -30,9 +30,9 @@ template <typename T>
 void Broadcast<T>::setup_impl(const Variables &inputs,
                               const Variables &outputs) {
   auto inshape = inputs[0]->shape();
-  int ndim = inputs[0]->ndim();
+  auto ndim = inputs[0]->ndim();
   if (ndim > 0) {
-    NBLA_CHECK(shape_.size() == ndim, error_code::value,
+    NBLA_CHECK(shape_.size() == static_cast<unsigned>(ndim), error_code::value,
                "Number of dimension must match. Shape: %d != input: %d.",
                shape_.size(), ndim);
   }
@@ -96,7 +96,7 @@ template <> struct strided_index<0> {
 template <int Ndim, typename T>
 void broadcast(size_t size, const T *x, const int *stride_x, const int *shape_y,
                T *y) {
-  for (int i = 0; i < size; ++i) {
+  for (size_t i = 0; i < size; ++i) {
     int j = strided_index<Ndim>::get(i, stride_x, shape_y);
     y[i] = x[j];
   }
@@ -129,7 +129,7 @@ template <typename T> struct switch_broadcast<-1, T> {
 template <int Ndim, typename T>
 void broadcast_backward(size_t size, const T *dy, const int *stride_x,
                         const int *shape_y, T *g) {
-  for (int i = 0; i < size; ++i) {
+  for (size_t i = 0; i < size; ++i) {
     int j = strided_index<Ndim>::get(i, stride_x, shape_y);
     g[j] += dy[i];
   }

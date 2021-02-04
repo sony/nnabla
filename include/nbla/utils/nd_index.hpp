@@ -198,11 +198,11 @@ inline std::vector<Ta> multiply(const std::vector<Ta> &a,
   std::vector<Ta> r(std::max(a.size(), b.size()), 1);
   if (a.size() < b.size()) {
     std::copy_backward(a.begin(), a.end(), r.end());
-    for (int i = 0; i < r.size(); i++)
+    for (typename std::vector<Ta>::size_type i = 0; i < r.size(); i++)
       r.at(i) *= b.at(i);
   } else {
     std::copy_backward(b.begin(), b.end(), r.end());
-    for (int i = 0; i < r.size(); i++)
+    for (typename std::vector<Ta>::size_type i = 0; i < r.size(); i++)
       r.at(i) *= a.at(i);
   }
   return r;

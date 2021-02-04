@@ -28,7 +28,7 @@ NBLA_REGISTER_FUNCTION_SOURCE(Softmax, int);
 template <typename T>
 void Softmax<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   Shape_t in_shape = inputs[0]->shape();
-  NBLA_CHECK(axis_ < in_shape.size(), error_code::value,
+  NBLA_CHECK(static_cast<unsigned>(axis_) < in_shape.size(), error_code::value,
              "axis must be less than ndim of inputs[0]. "
              "axis: %d >= ndim of inputs[0]: %d.",
              axis_, in_shape.size());

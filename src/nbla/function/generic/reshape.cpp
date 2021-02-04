@@ -31,7 +31,7 @@ void Reshape<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   int tsize = inputs[0]->size();
   int rest_size = 1;
   int shape_infer_index = -1;
-  for (int s = 0; s < shape_.size(); s++) {
+  for (int s = 0; static_cast<Shape_t::size_type>(s) < shape_.size(); s++) {
     if (shape_[s] < 0) {
       NBLA_CHECK(shape_infer_index < 0, error_code::value,
                  "The shape option in Reshape function can take negative size "

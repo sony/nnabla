@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cassert>
 #include <nbla/array.hpp>
 #include <nbla/common.hpp>
 #include <nbla/function/gather_nd.hpp>
@@ -35,7 +36,9 @@ void GatherNd<T>::setup_impl(const Variables &inputs,
   NBLA_CHECK(indices_shape.size() >= 2, error_code::value,
              "gather_nd requires the map to have at least 2 dimensions");
 
-  NBLA_CHECK(indices_shape.at(0) <= srcdata_shape.size(), error_code::value,
+  assert(indices_shape.at(0) >= 0);
+  auto indices_at_zero = static_cast<Shape_t::size_type>(indices_shape.at(0));
+  NBLA_CHECK(indices_at_zero <= srcdata_shape.size(), error_code::value,
              "Number of indices exceeds data dimension");
 
   Shape_t outdata_shape(indices_shape.size() - 1 + srcdata_shape.size() -

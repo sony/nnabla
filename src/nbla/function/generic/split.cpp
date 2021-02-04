@@ -25,12 +25,15 @@ NBLA_REGISTER_FUNCTION_SOURCE(Split, int);
 template <typename T>
 void Split<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   const Shape_t in_shape = inputs[0]->shape();
-  NBLA_CHECK(axis_ < in_shape.size() && axis_ >= 0, error_code::value,
-             "axis must be less than ndim of inputs[0]. "
-             "axis: %d >= ndim of inputs[0]: %d.",
+  NBLA_CHECK(axis_ >= 0, error_code::value,
+             "axis must not be less than zero, got %d", axis_);
+  NBLA_CHECK(static_cast<Shape_t::size_type>(axis_) < in_shape.size(),
+             error_code::value, "axis must be less than ndim of inputs[0]. "
+                                "axis: %d >= ndim of inputs[0]: %d.",
              axis_, in_shape.size());
   num_outputs_ = in_shape[axis_];
-  NBLA_CHECK(num_outputs_ == outputs.size(), error_code::value,
+  NBLA_CHECK(static_cast<Shape_t::size_type>(num_outputs_) == outputs.size(),
+             error_code::value,
              "inputs[0].shape[axis] must be the same number as the outputs. "
              "inputs[0].shape[axis]: %d, outputs: %d.",
              num_outputs_, outputs.size());

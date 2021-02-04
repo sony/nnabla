@@ -28,7 +28,7 @@ inline void init_index_map(const Shape_t &dst_ndi, Size_t *idx_map,
                            const Shape_t &dst_shape, const PadList &padding) {
   const auto dst_idx = ndi::nd2flat(dst_ndi, dst_stride);
   Shape_t::value_type src_idx = 0;
-  for (int axis = 0; axis < dst_shape.size(); axis++) {
+  for (Shape_t::size_type axis = 0; axis < dst_shape.size(); axis++) {
     if ((dst_ndi[axis] < padding[axis].first) ||
         (dst_ndi[axis] >= dst_shape[axis] - padding[axis].second)) {
       return;
@@ -47,7 +47,7 @@ inline void pad_forward(const Shape_t &dst_ndi, const T *src, T *dst,
                         const T constant_value) {
   const auto dst_idx = ndi::nd2flat(dst_ndi, dst_stride);
   Shape_t::value_type src_idx = 0;
-  for (int axis = 0; axis < dst_shape.size(); axis++) {
+  for (Shape_t::size_type axis = 0; axis < dst_shape.size(); axis++) {
     if ((dst_ndi[axis] < padding[axis].first) ||
         (dst_ndi[axis] >= dst_shape[axis] - padding[axis].second)) {
       dst[dst_idx] = constant_value;
@@ -64,7 +64,7 @@ inline void pad_backward(const Shape_t &src_ndi, const T *src, T *dst,
                          const Shape_t &src_shape, const PadList &padding) {
   const auto src_idx = ndi::nd2flat(src_ndi, src_stride);
   Shape_t::value_type dst_idx = 0;
-  for (int axis = 0; axis < src_shape.size(); axis++) {
+  for (Shape_t::size_type axis = 0; axis < src_shape.size(); axis++) {
     if ((src_ndi[axis] < padding[axis].first) ||
         (src_ndi[axis] >= src_shape[axis] - padding[axis].second)) {
       return;

@@ -31,7 +31,10 @@ void TopKData<T>::setup_impl(const Variables &inputs,
   const auto base_axis = base_axis_;
   Shape_t x_shape = x->shape();
 
-  NBLA_CHECK(base_axis < x_shape.size(), error_code::value,
+  NBLA_CHECK(base_axis_ >= 0, error_code::value,
+             "base_axis must not be less than zero, got %d", base_axis_);
+  NBLA_CHECK(static_cast<Shape_t::size_type>(base_axis_) < x_shape.size(),
+             error_code::value,
              "base_axis must be less than dimensions of x, but "
              "base_axis %d >= dimensions of x %d",
              base_axis, x_shape.size());
@@ -112,7 +115,7 @@ void TopKData<T>::backward_impl(const Variables &inputs,
   auto tk_idx = top_k_idx_.get_data_pointer<size_t>(ctx_);
 
   if (!reduce_) {
-    for (size_t i = 0; i < x->size(); i++) {
+    for (Size_t i = 0; i < x->size(); i++) {
       x_grad[i] += y_grad[i];
     }
   } else {

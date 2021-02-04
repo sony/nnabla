@@ -89,7 +89,7 @@ void Solver::setup() {
   // classes.
   int array_class_index =
       0; // Default array is 0-th array_class in allowed_array_classes().
-  for (int i = 0; i < this->allowed_array_classes().size(); ++i) {
+  for (unsigned int i = 0; i < this->allowed_array_classes().size(); ++i) {
     if (ctx_.array_class == this->allowed_array_classes()[i]) {
       array_class_index = i;
     }

@@ -26,7 +26,7 @@ template <typename T>
 void MulN<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   NBLA_CHECK(inputs.size() >= 2, error_code::value,
              "minimum 2 inputs must be given");
-  for (int i = 1; i < inputs.size(); i++) {
+  for (Variables::size_type i = 1; i < inputs.size(); i++) {
     NBLA_CHECK(inputs[0]->shape() == inputs[i]->shape(), error_code::value,
                "shape of all inputs must be shame");
   }
@@ -37,12 +37,12 @@ template <typename T>
 void MulN<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
   T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   std::unique_ptr<const T *[]> xs(new const T *[inputs.size()]);
-  for (int i = 0; i < inputs.size(); i++) {
+  for (Variables::size_type i = 0; i < inputs.size(); i++) {
     xs[i] = inputs[i]->get_data_pointer<T>(this->ctx_);
   }
   for (int j = 0; j < inputs[0]->size(); j++) {
     T val = (T)(1);
-    for (int i = 0; i < inputs.size(); ++i) {
+    for (Variables::size_type i = 0; i < inputs.size(); ++i) {
       val *= xs[i][j];
     }
     y[j] = val;
@@ -69,7 +69,7 @@ void MulN<T>::backward_impl(const Variables &inputs, const Variables &outputs,
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
   const T *y = outputs[0]->get_data_pointer<T>(this->ctx_);
   Size_t size = inputs[0]->size();
-  for (int i = 0; i < inputs.size(); ++i) {
+  for (Variables::size_type i = 0; i < inputs.size(); ++i) {
     if (propagate_down[i]) {
       T *dx = inputs[i]->cast_grad_and_get_pointer<T>(this->ctx_, !(accum[i]));
       const T *x = inputs[i]->get_data_pointer<T>(this->ctx_);

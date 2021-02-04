@@ -26,12 +26,15 @@ template <typename T>
 void Concatenate<T>::setup_impl(const Variables &inputs,
                                 const Variables &outputs) {
   Shape_t shape = inputs[0]->shape();
-  NBLA_CHECK(axis_ <= shape.size() && axis_ >= 0, error_code::value,
+  NBLA_CHECK(axis_ >= 0, error_code::value,
+             "axis must not be less than zero, got %d", axis_);
+  auto axis = static_cast<Shape_t::size_type>(this->axis_);
+  NBLA_CHECK(axis <= shape.size(), error_code::value,
              "axis must be less than or equal to ndim of input. "
              "axis: %d > ndim of input: %d.",
              axis_, shape.size());
   inner_total_size_ = 0;
-  for (int i = 0; i < inputs.size(); i++) {
+  for (Variables::size_type i = 0; i < inputs.size(); i++) {
     NBLA_CHECK(inputs[i]->shape().size() != 0, error_code::value,
                "input value(inputs[%d]) does not exist. "
                "inputs[%d]->shape().size(): %d.",
@@ -40,8 +43,8 @@ void Concatenate<T>::setup_impl(const Variables &inputs,
     inner_total_size_ += inner_size;
     if (i >= 1) {
       shape[axis_] += inputs[i]->shape()[axis_]; // Accumulate size along axis
-      for (int j = 0; j < shape.size(); j++) {
-        if (j != axis_) {
+      for (Shape_t::size_type j = 0; j < shape.size(); j++) {
+        if (j != axis) {
           NBLA_CHECK(inputs[i]->shape()[j] == shape[j], error_code::value,
                      "Dimensions of inputs must match. "
                      "inputs[%d]->shape()[%d]: %d != "
@@ -60,7 +63,7 @@ void Concatenate<T>::forward_impl(const Variables &inputs,
                                   const Variables &outputs) {
   T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   int inner_offset = 0;
-  for (int c = 0; c < inputs.size(); ++c) {
+  for (Variables::size_type c = 0; c < inputs.size(); ++c) {
     const T *x = inputs[c]->get_data_pointer<T>(this->ctx_);
     const int inner_size = inputs[c]->size(this->axis_);
     for (int o = 0; o < outer_size_; ++o) {
@@ -80,7 +83,7 @@ void Concatenate<T>::backward_impl(const Variables &inputs,
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
   int inner_offset = 0;
 
-  for (int c = 0; c < inputs.size(); ++c) {
+  for (Variables::size_type c = 0; c < inputs.size(); ++c) {
     const int inner_size = inputs[c]->size(this->axis_);
     if (propagate_down[c]) {
       T *dx = inputs[c]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[c]);

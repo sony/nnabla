@@ -55,7 +55,7 @@ void Shift<T>::shift_recursive(Variable *inp, const T *src, T *dst,
     }
 
     // Copy src values to dst with shifted index recursively.
-    if (dim == inp->shape().size() - 1) {
+    if (static_cast<Shape_t::size_type>(dim) == inp->shape().size() - 1) {
       if (is_backward) {
         // In backward, dy is accumulated to dx.
         dst[x_offset + j] += src[current_y_offset];

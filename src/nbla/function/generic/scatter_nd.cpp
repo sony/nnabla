@@ -31,14 +31,16 @@ void ScatterNd<T>::setup_impl(const Variables &inputs,
   NBLA_CHECK(indices->ndim() >= 2, error_code::value,
              "scatter_nd requires indices to have at least 2 dimensions");
 
-  NBLA_CHECK(indices->shape().at(0) <= shape_.size(), error_code::value,
-             "Number of indices exceeds output dimension");
+  NBLA_CHECK(static_cast<Shape_t::size_type>(indices->shape().at(0)) <=
+                 shape_.size(),
+             error_code::value, "Number of indices exceeds output dimension");
 
   auto N = data->ndim();
   auto M = indices->shape().at(0);
   auto K = indices->ndim() - 1;
 
-  NBLA_CHECK(shape_.size() == N + M - K, error_code::value,
+  NBLA_CHECK(shape_.size() == static_cast<Shape_t::size_type>(N + M - K),
+             error_code::value,
              "Output shape size does not match input data and indices.");
 
   for (int i = 0; i < K; i++) {
@@ -48,7 +50,7 @@ void ScatterNd<T>::setup_impl(const Variables &inputs,
                data->shape()[i], i + 1, indices->shape()[i + 1]);
   }
 
-  for (int i = 0; i < shape_.size() - M; i++) {
+  for (int i = 0; static_cast<Shape_t::size_type>(i) < shape_.size() - M; i++) {
     NBLA_CHECK(data->shape().at(K + i) == shape_.at(M + i), error_code::value,
                "Shape error: data shape[%d] %d != output shape[%d] %d", K + i,
                data->shape()[K + i], M + i, indices->shape()[M + i]);

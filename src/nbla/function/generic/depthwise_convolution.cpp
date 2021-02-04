@@ -60,12 +60,15 @@ void DepthwiseConvolution<T>::setup_impl(const Variables &inputs,
   Shape_t input_shape = input->shape();
   Shape_t weight_shape = weights->shape();
 
-  NBLA_CHECK(base_axis_ < input_shape.size() - 1, error_code::unclassified,
+  NBLA_CHECK(base_axis_ >= 0, error_code::value,
+             "base_axis may not be less than zero, got %d", base_axis_);
+  auto base_axis = static_cast<Shape_t::size_type>(base_axis_);
+  NBLA_CHECK(base_axis < input_shape.size() - 1, error_code::value,
              "base_axis must be less than ndim - 1 of inputs[0]. "
              "base_axis: %d >= ndim of inputs[0] - 1: %d.",
              base_axis_, input_shape.size() - 1);
 
-  auto kernel_dims = input_shape.size() - base_axis_ - 1;
+  auto kernel_dims = input_shape.size() - base_axis - 1;
 
   NBLA_CHECK(kernel_dims <= 2, error_code::unclassified,
              "Depthwise convolution requires 1D or 2D image shape.");
@@ -119,7 +122,7 @@ void DepthwiseConvolution<T>::setup_impl(const Variables &inputs,
 
   outmap_shape_.clear();
   outmap_shape_.reserve(kernel_shape_.size());
-  for (int i = 0; i < kernel_shape_.size(); i++) {
+  for (vector<int>::size_type i = 0; i < kernel_shape_.size(); i++) {
     auto kernel = dilation_[i] * (kernel_shape_[i] - 1) + 1; // dilated kernel
     auto padded = sample_shape_[i] + 2 * padding_[i];        // padded sample
     outmap_shape_.push_back(1 + (padded - kernel) / stride_[i]);
@@ -213,8 +216,12 @@ void DepthwiseConvolution<T>::backward_impl(const Variables &inputs,
   Variable *const bias = (inputs.size() == 3) ? inputs[2] : nullptr;
 
   const T *outmap_grad = output->get_grad_pointer<T>(this->ctx_);
-  const T *sample_data, *weight_data;
-  T *sample_grad, *weight_grad, *bias_grad, *col;
+  const T *sample_data = nullptr;
+  const T *weight_data = nullptr;
+  T *sample_grad = nullptr;
+  T *weight_grad = nullptr;
+  T *bias_grad = nullptr;
+  T *col = nullptr;
 
   if (propagate_down[0] || propagate_down[1]) {
     col = col_.cast_data_and_get_pointer<T>(this->ctx_, true);
@@ -283,7 +290,7 @@ void DepthwiseConvolution<T>::backward_impl(const Variables &inputs,
       sample_data += sample_channels_ * sample_size_;
     }
 
-    if (bias_grad && propagate_down[2]) { // backprop to bias gradient
+    if (bias && propagate_down[2]) { // backprop to bias gradient
       ConstMatrixMap<T> outmap(outmap_grad, outmap_channels_, outmap_size_);
       ColVectorMap<T>(bias_grad, outmap_channels_) += outmap.rowwise().sum();
     }

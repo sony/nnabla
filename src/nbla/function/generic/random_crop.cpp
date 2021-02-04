@@ -28,18 +28,21 @@ NBLA_REGISTER_FUNCTION_SOURCE(RandomCrop, const vector<int> &, int, int);
 template <typename T>
 void RandomCrop<T>::setup_impl(const Variables &inputs,
                                const Variables &outputs) {
-  NBLA_CHECK(base_axis_ < inputs[0]->shape().size(), error_code::value,
+  NBLA_CHECK(base_axis_ >= 0, error_code::value,
+             "base_axis may not be less than zero, got %d", base_axis_);
+  auto base_axis = static_cast<Shape_t::size_type>(base_axis_);
+  NBLA_CHECK(base_axis < inputs[0]->shape().size(), error_code::value,
              "base_axis must be less than ndim of inputs[0]. "
              "base_axis: %d >= ndim of inputs[0]: %d.",
              base_axis_, inputs[0]->shape().size());
 
   std::random_device rdev_;
   rgen_ = std::mt19937((seed_ == -1 ? rdev_() : seed_));
-  size_ = inputs[0]->size() / inputs[0]->size(base_axis_);
+  size_ = inputs[0]->size() / inputs[0]->size(base_axis);
 
   Shape_t shape_y = inputs[0]->shape();
   dim_offset_ = shape_y.size() - shape_.size();
-  for (int i = 0; i < shape_.size(); i++) {
+  for (Shape_t::size_type i = 0; i < shape_.size(); i++) {
     NBLA_CHECK(shape_[i] <= shape_y[i + dim_offset_], error_code::value,
                "Shape must be smaller than input shape. "
                "Shape[%id]: %d > Input shape[%d]: %d",
@@ -61,7 +64,7 @@ void RandomCrop<T>::slice_forward_recursive(const Variable *inp, Variable *outp,
   current_x_offset += inp->strides()[dim] * start_[slice_index][dim];
   const int size = outp->shape()[dim];
 
-  if (dim == inp->shape().size() - 1) {
+  if (static_cast<Shape_t::size_type>(dim) == inp->shape().size() - 1) {
     const T *current_x = x + current_x_offset;
     T *current_y = y + current_y_offset;
     if (x_stride == 1) {
@@ -99,7 +102,7 @@ void RandomCrop<T>::slice_backward_recursive(Variable *outp,
   current_x_offset += outp->strides()[dim] * start_[slice_index][dim];
   const int size = inp->shape()[dim];
 
-  if (dim == outp->shape().size() - 1) {
+  if (dim == static_cast<int>(outp->shape().size()) - 1) {
     T *current_dx = dx + current_x_offset;
     const T *current_dy = dy + current_y_offset;
     T *end_dx = current_dx + size * x_stride;
@@ -131,7 +134,7 @@ void RandomCrop<T>::forward_impl(const Variables &inputs,
     start_[id].clear();
     stop_[id].clear();
     step_[id].clear();
-    for (int i = 0; i < inputs[0]->shape().size(); i++) {
+    for (int i = 0; i < static_cast<int>(inputs[0]->shape().size()); i++) {
       const int left =
           i >= dim_offset_
               ? rgen_() % (inputs[0]->shape()[i] - shape_[i - dim_offset_] + 1)

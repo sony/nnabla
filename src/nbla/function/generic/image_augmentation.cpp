@@ -43,7 +43,7 @@ void ImageAugmentation<T>::setup_impl(const Variables &inputs,
 
   Shape_t shape_y = inputs[0]->shape();
   int dim_offset = shape_y.size() - shape_.size();
-  for (int i = 0; i < shape_.size(); i++) {
+  for (Shape_t::size_type i = 0; i < shape_.size(); i++) {
     shape_y[i + dim_offset] = shape_[i];
   }
 

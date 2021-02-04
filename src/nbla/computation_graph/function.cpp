@@ -66,7 +66,7 @@ void CgFunction::check_data_inplace(int i, CgVariablePtr input,
   auto f = this->function();
   // Always not allow modifying data if grad depends the output data.
   if (input->need_grad_state()) {
-    for (int o = 0; o < outputs.size(); ++o) {
+    for (vector<CgVariablePtr>::size_type o = 0; o < outputs.size(); ++o) {
       // If function gradient computation at i-th variable depends on o-th
       // output data, inplacing o-th variable data is prohibited.
       if (f->grad_depends_output_data(i, o)) {
@@ -100,14 +100,14 @@ void CgFunction::verify_during_forward() {
   }
   auto inputs = this->inputs();
   auto outputs = this->outputs();
-  for (int i = 0; i < inputs.size(); ++i) {
+  for (vector<CgVariablePtr>::size_type i = 0; i < inputs.size(); ++i) {
     this->check_data_inplace(i, inputs[i], outputs);
   }
 }
 
 void CgFunction::set_outputs(const vector<CgVariablePtr> &outputs) {
   outputs_.resize(outputs.size());
-  for (int i = 0; i < outputs.size(); ++i) {
+  for (vector<CgVariablePtr>::size_type i = 0; i < outputs.size(); ++i) {
     outputs[i]->set_rank_(rank_ + 1);
     outputs_[i].set(outputs[i]);
   }
@@ -115,7 +115,7 @@ void CgFunction::set_outputs(const vector<CgVariablePtr> &outputs) {
 
 vector<CgVariablePtr> CgFunction::outputs() {
   vector<CgVariablePtr> outputs(outputs_.size());
-  for (int i = 0; i < outputs_.size(); ++i) {
+  for (vector<CgVariablePtr>::size_type i = 0; i < outputs_.size(); ++i) {
     outputs[i] = outputs_[i].get();
   }
   return outputs;
@@ -123,7 +123,7 @@ vector<CgVariablePtr> CgFunction::outputs() {
 
 vector<Variable *> CgFunction::function_inputs() {
   vector<Variable *> ret(inputs_.size());
-  for (int i = 0; i < inputs_.size(); ++i) {
+  for (vector<CgVariablePtr>::size_type i = 0; i < inputs_.size(); ++i) {
     ret[i] = inputs_[i]->variable().get();
   }
   return ret;

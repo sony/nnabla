@@ -202,7 +202,7 @@ if(BUILD_CPP_LIB)
     endif(CCACHE_FOUND)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall")
   endif()
-  nbla_warnings_disable(CMAKE_CXX_FLAGS -Wno-sign-compare -Wno-uninitialized /wd4099)
+  nbla_warnings_disable(CMAKE_CXX_FLAGS /wd4099)
 
   # Setting output directory naively
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)

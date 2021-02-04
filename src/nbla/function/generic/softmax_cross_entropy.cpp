@@ -35,7 +35,7 @@ void SoftmaxCrossEntropy<T, Tl>::setup_impl(const Variables &inputs,
 
   Shape_t in_shape = inputs[0]->shape();
   Shape_t label_shape = inputs[1]->shape();
-  NBLA_CHECK(axis_ < in_shape.size(), error_code::value,
+  NBLA_CHECK(static_cast<unsigned>(axis_) < in_shape.size(), error_code::value,
              "axis must be less than ndim of inputs[0]. "
              "axis: %d >= ndim of inputs[0]: %d.",
              axis_, in_shape.size());
@@ -43,7 +43,7 @@ void SoftmaxCrossEntropy<T, Tl>::setup_impl(const Variables &inputs,
              "The length of each input dimension must match. "
              "inputs[1] length: %d != inputs[0] length: %d.",
              label_shape.size(), in_shape.size());
-  for (int axis = 0; axis < label_shape.size(); ++axis) {
+  for (int axis = 0; static_cast<unsigned>(axis) < label_shape.size(); ++axis) {
     if (axis == axis_) {
       NBLA_CHECK(label_shape[axis] == 1, error_code::value,
                  "Dimensions of axis of inputs[1] must be 1. %d != 1.",

@@ -19,6 +19,7 @@
 #include <nbla/variable.hpp>
 
 #include <algorithm>
+#include <cassert>
 
 namespace nbla {
 
@@ -28,8 +29,9 @@ template <typename T, typename T1>
 void OneHot<T, T1>::setup_impl(const Variables &inputs,
                                const Variables &outputs) {
   Shape_t shape_x = inputs[0]->shape();
+  assert(shape_x.size() >= 1);
   dim_ = shape_x[shape_x.size() - 1];
-  NBLA_CHECK(shape_.size() == dim_, error_code::value,
+  NBLA_CHECK(shape_.size() == static_cast<size_t>(dim_), error_code::value,
              "Shape size does not match last dimension of inputs[0]."
              "shape size: %d != input dim: %d.",
              shape_.size(), dim_);
@@ -37,7 +39,7 @@ void OneHot<T, T1>::setup_impl(const Variables &inputs,
   Shape_t shape_y = shape_x;
   shape_y.erase(shape_y.begin() + shape_y.size() - 1);
   size_ = 1;
-  for (int i = 0; i < shape_.size(); ++i) {
+  for (Shape_t::size_type i = 0; i < shape_.size(); ++i) {
     size_ *= shape_[i];
     shape_y.push_back(shape_[i]);
   }

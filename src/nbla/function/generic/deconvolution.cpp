@@ -45,19 +45,23 @@ void Deconvolution<T>::setup_impl(const Variables &inputs,
   // Shape check
   Shape_t shape_out = inputs[0]->shape();
   Shape_t shape_weights = inputs[1]->shape();
-  NBLA_CHECK(base_axis_ < shape_out.size() - 1, error_code::unclassified,
+  NBLA_CHECK(base_axis_ >= 0, error_code::value,
+             "base_axis may not be less than zero, got %d", base_axis_);
+  auto base_axis = static_cast<Shape_t::size_type>(base_axis_);
+  NBLA_CHECK(base_axis + 1 < shape_out.size(), error_code::value,
              "base_axis must be less than ndim - 1 of inputs[0]. "
              "base_axis: %d >= ndim of inputs[0] - 1: %d.",
              base_axis_, shape_out.size() - 1);
 
-  spatial_dims_ = shape_out.size() - base_axis_ - 1;
-  NBLA_CHECK(shape_weights.size() == 2 + spatial_dims_, error_code::value,
+  size_t spatial_dims = shape_out.size() - base_axis - 1;
+  NBLA_CHECK(shape_weights.size() == 2 + spatial_dims, error_code::value,
              "Weights must be a tensor more than 3D.");
+  this->spatial_dims_ = static_cast<int>(spatial_dims);
 
-  auto channel_axis = base_axis_ + (channel_last_ ? spatial_dims_ : 0);
-  auto first_spatial_axis = base_axis_ + (channel_last_ ? 0 : 1);
-  auto weight_channel_axis = 1 + (channel_last_ ? spatial_dims_ : 0);
-  auto weight_first_spatial_axis = channel_last_ ? 1 : 2;
+  size_t channel_axis = base_axis + (channel_last_ ? spatial_dims : 0);
+  size_t first_spatial_axis = base_axis + (channel_last_ ? 0 : 1);
+  size_t weight_channel_axis = 1 + (channel_last_ ? spatial_dims : 0);
+  size_t weight_first_spatial_axis = channel_last_ ? 1 : 2;
 
   // Storing shape variables
   channels_i_ = shape_weights[weight_channel_axis] * group_;
@@ -84,16 +88,16 @@ void Deconvolution<T>::setup_impl(const Variables &inputs,
              "Number of grouped channel mismatch."
              "Input: %d != Weights[%d]: %d",
              channels_i_ / group_, weight_channel_axis, channels_g_);
-  NBLA_CHECK(pad_.size() == spatial_dims_, error_code::value,
+  NBLA_CHECK(pad_.size() == spatial_dims, error_code::value,
              "pad size mismatch. pad size: %d != spatial dims: %d.",
              pad_.size(), spatial_dims_);
-  NBLA_CHECK(stride_.size() == spatial_dims_, error_code::value,
+  NBLA_CHECK(stride_.size() == spatial_dims, error_code::value,
              "stride size mismatch. stride size: %d != spatial dims: %d.",
              stride_.size(), spatial_dims_);
-  NBLA_CHECK(dilation_.size() == spatial_dims_, error_code::value,
+  NBLA_CHECK(dilation_.size() == spatial_dims, error_code::value,
              "dilation size mismatch. dilation size: %d != spatial dims: %d.",
              dilation_.size(), spatial_dims_);
-  NBLA_CHECK(output_padding_.size() == spatial_dims_, error_code::value,
+  NBLA_CHECK(output_padding_.size() == spatial_dims, error_code::value,
              "output_padding size mismatch: %d != spatial dims: %d.",
              output_padding_.size(), spatial_dims_);
 
@@ -185,7 +189,7 @@ void Deconvolution<T>::forward_impl(const Variables &inputs,
   const T *w = inputs[1]->get_data_pointer<T>(this->ctx_);
   T *col = col_.cast_data_and_get_pointer<T>(this->ctx_, true);
   T *x = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
-  const T *b;
+  const T *b = nullptr;
   if (inputs.size() == 3) {
     b = inputs[2]->get_data_pointer<T>(this->ctx_);
   }
@@ -234,9 +238,12 @@ void Deconvolution<T>::backward_impl(const Variables &inputs,
 
   using namespace ::nbla::eigen;
   const T *dx = outputs[0]->get_grad_pointer<T>(this->ctx_);
-  const T *y;
-  const T *w;
-  T *dy, *dw, *db, *col;
+  const T *y = nullptr;
+  const T *w = nullptr;
+  T *dy = nullptr;
+  T *dw = nullptr;
+  T *db = nullptr;
+  T *col = nullptr;
   std::unique_ptr<ColVectorMap<T>> mdb;
 
   if (propagate_down[0] || propagate_down[1]) {

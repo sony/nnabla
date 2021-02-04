@@ -59,11 +59,11 @@ Shape_t get_shape_with_contiguous_memory(DLManagedTensor *dlp) {
   const auto shape = dlp->dl_tensor.shape;
   const auto strides = dlp->dl_tensor.strides;
   Shape_t ret_shape(ndim);
-  size_t contig_stride = 1;
+  Size_t contig_stride = 1;
 
   for (int i = ndim - 1; i >= 0; i--) {
     NBLA_CHECK(strides[i] == contig_stride, error_code::value,
-               "The array elements must be contiguous in memery for NNabla. "
+               "The array elements must be contiguous in memory for NNabla. "
                "Check strides in DLPack DLTensor.");
     contig_stride *= shape[i];
     ret_shape[i] = shape[i];

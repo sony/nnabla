@@ -70,15 +70,15 @@ void generate_random_coords(float *random_coords, const size_t N,
   };
 
   if (share) {
-    for (int n = 0; n < N; n++) {
-      for (int b = 0; b < B; b++) {
+    for (int n = 0; static_cast<size_t>(n) < N; n++) {
+      for (int b = 0; static_cast<size_t>(b) < B; b++) {
         random_coords = generate_coords_and_next(random_coords);
       }
     }
   } else {
-    for (int n = 0; n < N; n++) {
-      for (int b = 0; b < B; b++) {
-        for (size_t c = 0; c < C; c++) {
+    for (int n = 0; static_cast<size_t>(n) < N; n++) {
+      for (int b = 0; static_cast<size_t>(b) < B; b++) {
+        for (size_t c = 0; static_cast<size_t>(c) < C; c++) {
           random_coords = generate_coords_and_next(random_coords);
         }
       }
@@ -201,7 +201,7 @@ void RandomErase<T>::setup_impl(const Variables &inputs,
   NBLA_CHECK(n_ > 0, error_code::value, "n must be positive. n = %d.", n_);
   NBLA_CHECK(replacements_.size() == 2, error_code::value,
              "Length of replacements must be 2.");
-  NBLA_CHECK(base_axis_ < inputs[0]->shape().size(), error_code::value,
+  NBLA_CHECK((size_t)base_axis_ < inputs[0]->shape().size(), error_code::value,
              "base_axis must be less than ndim of inputs[0]. "
              "base_axis: %d >= ndim of inputs[0]: %d.",
              base_axis_, inputs[0]->shape().size());
@@ -325,8 +325,10 @@ void RandomErase<T>::backward_impl(const Variables &inputs,
             xe_start = random_coords[idx + 2];
             ye_end = random_coords[idx + 3];
             xe_end = random_coords[idx + 4];
-            if ((eprob <= prob_) && (ye_start <= h && h <= ye_end) &&
-                (xe_start <= w && w <= xe_end)) {
+            if ((eprob <= prob_) && (ye_start <= static_cast<size_t>(h) &&
+                                     static_cast<size_t>(h) <= ye_end) &&
+                (xe_start <= static_cast<size_t>(w) &&
+                 static_cast<size_t>(w) <= xe_end)) {
               fall = true;
               break;
             }

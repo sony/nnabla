@@ -342,7 +342,7 @@ void Interpolate<T>::setup_impl(const Variables &inputs,
   Shape_t out_shape(inputs[0]->shape());
   auto offset = channel_last_ ? out_shape.size() - output_size_.size() - 1
                               : out_shape.size() - output_size_.size();
-  for (int d = 0; d < output_size_.size(); d++) {
+  for (Shape_t::size_type d = 0; d < output_size_.size(); d++) {
     out_shape[d + offset] = output_size_[d];
   }
   outputs[0]->reshape(out_shape, true);

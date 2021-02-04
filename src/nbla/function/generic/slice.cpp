@@ -30,7 +30,7 @@ NBLA_REGISTER_FUNCTION_SOURCE(Slice, const vector<int> &, // start
 template <typename T>
 void Slice<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   Shape_t shape_x = inputs[0]->shape();
-  const int size = shape_x.size();
+  const auto size = shape_x.size();
 
   // Size check for start, stop, and step
   NBLA_CHECK(stop_[0].size() == start_[0].size(), error_code::value,
@@ -64,7 +64,7 @@ void Slice<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
 
   // Index range check, then convert negative start and stop
   Shape_t shape_y(size);
-  for (int i = 0; i < size; i++) {
+  for (auto i = decltype(size){0}; i < size; i++) {
     // Step 1: step 0 check
     NBLA_CHECK(step_[0][i] != 0, error_code::value,
                "slice step cannot be zero. "
@@ -131,7 +131,7 @@ void Slice<T>::slice_forward_recursive(const Variable *inp, Variable *outp,
   current_x_offset += inp->strides()[dim] * start_[slice_index][dim];
   const int size = outp->shape()[dim];
 
-  if (dim == inp->shape().size() - 1) {
+  if (static_cast<Shape_t::size_type>(dim) == inp->shape().size() - 1) {
     const T *current_x = x + current_x_offset;
     T *current_y = y + current_y_offset;
     if (x_stride == 1) {
@@ -168,7 +168,7 @@ void Slice<T>::slice_backward_recursive(Variable *outp, const Variable *inp,
   current_x_offset += outp->strides()[dim] * start_[slice_index][dim];
   const int size = inp->shape()[dim];
 
-  if (dim == outp->shape().size() - 1) {
+  if (static_cast<Shape_t::size_type>(dim) == outp->shape().size() - 1) {
     T *current_dx = dx + current_x_offset;
     const T *current_dy = dy + current_y_offset;
     T *end_dx = current_dx + size * x_stride;

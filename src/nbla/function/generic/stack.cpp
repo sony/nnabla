@@ -25,7 +25,10 @@ NBLA_REGISTER_FUNCTION_SOURCE(Stack, int);
 template <typename T>
 void Stack<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   const Shape_t in_shape = inputs[0]->shape();
-  NBLA_CHECK(axis_ <= in_shape.size() && axis_ >= 0, error_code::value,
+  NBLA_CHECK(axis_ >= 0, error_code::value,
+             "axis must not be less than zero, got %d", axis_);
+  NBLA_CHECK(static_cast<Shape_t::size_type>(axis_) <= in_shape.size(),
+             error_code::value,
              "axis must be less than or equal to ndim of input. "
              "axis: %d > ndim of inputs[0]: %d.",
              axis_, in_shape.size());
