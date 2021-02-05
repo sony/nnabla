@@ -249,3 +249,5 @@
   Norm_fiIB: 318
 25:
   BatchLogdet_Empty: 319
+26:
+  RandomShift_iIifii: 320

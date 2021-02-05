@@ -23,7 +23,7 @@
 namespace nbla {
 
 NBLA_REGISTER_FUNCTION_SOURCE(RandomShift, const vector<int> &, const string &,
-                              int, int);
+                              float, int, int);
 
 template <typename T>
 void RandomShift<T>::setup_impl(const Variables &inputs,
@@ -56,9 +56,16 @@ RandomShift<T>::prepare_addr_table(const Variables &inputs,
             size > 1 ? (std::abs(i + size * 2 + shift) % (size * 2)) : 0;
         table[i] = (a >= size ? (size * 2) - 1 - a : a) * stride;
       }
-    } else { // if (border_mode_ == "nearest") {
+    } else if (border_mode_ == "nearest") {
       for (int i = 0; i < size; i++) {
         table[i] = std::min(std::max(i + shift, 0), size - 1) * stride;
+      }
+    } else { // if (border_mode_ == "constant") {
+      for (int i = 0; i < size; i++) {
+        if ((i + shift < 0) || (i + shift >= size))
+          table[i] = CVAL_INDEX;
+        else
+          table[i] = (i + shift) * stride;
       }
     }
   }
@@ -75,13 +82,21 @@ void RandomShift<T>::shift_recursive(const Variable *inp, const T *x, T *y,
   const std::vector<int> &table = addr_table_[shift_index][dim];
   if (static_cast<Shape_t::size_type>(dim) == inp->shape().size() - 1) {
     for (int i = 0; i < size; ++i) {
-      y[current_y_offset] = x[x_offset + table[i]];
+      if (x_offset == CVAL_INDEX || table[i] == CVAL_INDEX)
+        y[current_y_offset] = constant_value_;
+      else
+        y[current_y_offset] = x[x_offset + table[i]];
       current_y_offset += stride;
     }
   } else {
     for (int i = 0; i < size; ++i) {
-      shift_recursive(inp, x, y, x_offset + table[i], current_y_offset, dim + 1,
-                      shift_index);
+      if (x_offset == CVAL_INDEX || table[i] == CVAL_INDEX) {
+        shift_recursive(inp, x, y, CVAL_INDEX, current_y_offset, dim + 1,
+                        shift_index);
+      } else {
+        shift_recursive(inp, x, y, x_offset + table[i], current_y_offset,
+                        dim + 1, shift_index);
+      }
       current_y_offset += stride;
       if (dim < base_axis_) {
         shift_index = (shift_index + 1) % addr_table_.size();
@@ -100,13 +115,20 @@ void RandomShift<T>::shift_backward_recursive(const Variable *inp, const T *dy,
   const std::vector<int> &table = addr_table_[shift_index][dim];
   if (static_cast<Shape_t::size_type>(dim) == inp->shape().size() - 1) {
     for (int i = 0; i < size; ++i) {
-      dx[x_offset + table[i]] += dy[current_y_offset];
+      if ((x_offset != CVAL_INDEX) && (table[i] != CVAL_INDEX)) {
+        dx[x_offset + table[i]] += dy[current_y_offset];
+      }
       current_y_offset += stride;
     }
   } else {
     for (int i = 0; i < size; ++i) {
-      shift_backward_recursive(inp, dy, dx, x_offset + table[i],
-                               current_y_offset, dim + 1, shift_index);
+      if (x_offset == CVAL_INDEX || table[i] == CVAL_INDEX) {
+        shift_backward_recursive(inp, dy, dx, CVAL_INDEX, current_y_offset,
+                                 dim + 1, shift_index);
+      } else {
+        shift_backward_recursive(inp, dy, dx, x_offset + table[i],
+                                 current_y_offset, dim + 1, shift_index);
+      }
       current_y_offset += stride;
       if (dim < base_axis_) {
         shift_index = (shift_index + 1) % addr_table_.size();

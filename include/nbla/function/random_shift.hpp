@@ -26,7 +26,7 @@
 namespace nbla {
 
 NBLA_REGISTER_FUNCTION_HEADER(RandomShift, const vector<int> &, const string &,
-                              int, int);
+                              float, int, int);
 
 /** RandomShift randomly shifts the array elements within the specified range.
 
@@ -47,14 +47,17 @@ of the original array is used.
 */
 
 template <typename T>
-class RandomShift
-    : public BaseFunction<const vector<int> &, const string &, int, int> {
+class RandomShift : public BaseFunction<const vector<int> &, const string &,
+                                        float, int, int> {
 protected:
   vector<int> shifts_;
   string border_mode_;
   int base_axis_;
 
   int size_;
+
+  const T constant_value_;
+  const int CVAL_INDEX = -1;
 
   // This variable is an array to realize different shift amount for each data.
   vector<vector<vector<int>>> addr_table_;
@@ -64,13 +67,15 @@ protected:
 
 public:
   RandomShift(const Context &ctx, const vector<int> &shifts,
-              const string &border_mode, int base_axis, int seed)
-      : BaseFunction(ctx, shifts, border_mode, base_axis, seed),
-        shifts_(shifts), border_mode_(border_mode), base_axis_(base_axis),
-        seed_(seed) {}
+              const string &border_mode, float constant_value, int base_axis,
+              int seed)
+      : BaseFunction(ctx, shifts, border_mode, constant_value, base_axis, seed),
+        shifts_(shifts), border_mode_(border_mode),
+        constant_value_(constant_value), base_axis_(base_axis), seed_(seed) {}
   virtual ~RandomShift() {}
   virtual shared_ptr<Function> copy() const {
-    return create_RandomShift(ctx_, shifts_, border_mode_, base_axis_, seed_);
+    return create_RandomShift(ctx_, shifts_, border_mode_, constant_value_,
+                              base_axis_, seed_);
   }
   virtual vector<dtypes> in_types() { return vector<dtypes>{get_dtype<T>()}; }
   virtual vector<dtypes> out_types() { return vector<dtypes>{get_dtype<T>()}; }
