@@ -149,6 +149,8 @@ class Grad(object):
                     children.add(o)
 
         for inp in wrt_inputs:
+            if inp is None:
+                continue
             dfs(inp)
 
         return children
@@ -249,6 +251,7 @@ class Grad(object):
         wrt_inputs = self._get_corresponding_vars_on_graph(inputs, outputs)
         grads = [None] * len(wrt_inputs)
         child_nodes = self._get_children(wrt_inputs)
+        wrt_inputs = [nn.Variable() if x is None else x for x in wrt_inputs]
 
         # Expand the graph to its gradient graph
         while len(open) != 0:
