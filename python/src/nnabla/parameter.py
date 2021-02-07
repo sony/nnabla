@@ -277,15 +277,15 @@ def get_parameter_or_create(name, shape=None, initializer=None, need_grad=True,
             set_parameter(name, param)
         return param.get_unlinked_variable(need_grad=as_need_grad)
 
-    # TODO: Initializer info must be stored in Variable?
-    # class VariableInfo:
-    #     pass
-    # info = VariableInfo()
-    # info.initializer = initializer
+    class VariableInfo:
+        pass
+    info = VariableInfo()
+    info.initializer = initializer
 
     # Create a new parameter using specified configuration,
     # and write it to current scope..
     param = _create_parameter_by_initializer(initializer, shape, need_grad)
+    param.info = info
     set_parameter(name, param)
     return param.get_unlinked_variable(need_grad=as_need_grad)
 

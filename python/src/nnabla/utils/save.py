@@ -87,7 +87,7 @@ def _get_variable_name_or_register(var, variables, names, params, prefix):
     if var not in variables.values():
         vname = prefix
         if var.data in params:
-            vname = params[var.data]
+            vname = params[var.data][0]
         elif var in names:
             vname = names[var]
         vname = _get_unique_variable_name(vname, variables)
@@ -174,7 +174,8 @@ def _create_network(net, variable_batch_size):
     # Create table: NdArray -> str
     # (Use Ndarray instead of Variable because parameter variable might be
     # unlinked)
-    params = {v.data: k for k, v in get_parameters(grad_only=False).items()}
+    params = {v.data: (k, v.info)
+              for k, v in get_parameters(grad_only=False).items()}
 
     # ----------------------------------------------------------------------
     # Parse graph to get variables and functions
@@ -216,8 +217,10 @@ def _create_network(net, variable_batch_size):
         v = n.variable.add()
         v.name = name
         shape = list(numpy.array(variable.d).shape)
+        variable_info = None
         if variable.data in params:
             v.type = 'Parameter'
+            variable_info = params[variable.data][1]
         else:
             v.type = 'Buffer'
             if variable_batch_size:
@@ -235,18 +238,17 @@ def _create_network(net, variable_batch_size):
         # ----------------------------------------------------------------------
         # Add info to variable
         # ----------------------------------------------------------------------
-        # TODO: Only required for Parameter variables?
-        if variable.info:
+        if variable_info:
             i = v.initializer
-            i.type = variable.info.initializer.__class__.__name__.replace(
+            i.type = variable_info.initializer.__class__.__name__.replace(
                 'Initializer', '')
             i.multiplier = 0.0
             if i.type == 'Constant':
-                i.multiplier = variable.info.initializer.value
+                i.multiplier = variable_info.initializer.value
             elif i.type == 'Uniform':
-                i.multiplier = -variable.info.initializer.lim[0]
+                i.multiplier = -variable_info.initializer.lim[0]
             elif i.type == 'Normal':
-                i.multiplier = variable.info.initializer.sigma
+                i.multiplier = variable_info.initializer.sigma
             else:
                 pass  # TODO Error
 
