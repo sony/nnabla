@@ -18,12 +18,35 @@ CUDA vs cuDNN Compatibility
 Package name       CUDA version cuDNN version
 ================== ============ =====================
 nnabla-ext-cuda100 10.0         7.6(Linux & Win)
-nnabla-ext-cuda102 10.2         7.6(Win)
-nnabla-ext-cuda102 10.2         8.0(Linux)
-nnabla-ext-cuda110 11.0         8.0(Linux)
+nnabla-ext-cuda102 10.2         8.0(Linux & Win)
+nnabla-ext-cuda110 11.0         8.0(Linux & Win)
 ================== ============ =====================
 
 The latest CUDA version is always preferred if your GPU accepts.
+
+Currently, for each NNabla CUDA extension package, it may be not compatible with some specific GPUs.
+
+After nnabla-ext-cuda package is installed, you can manually check whether your GPU is usable.
+For example, you can check GPU with device_id 0 by:
+
+.. code-block:: python
+
+   import nnabla_ext.cudnn
+   device_id = '0'
+   nnabla_ext.cudnn.check_gpu(device_id)
+
+Above code will run successfully if your GPU is usable, otherwise, an error will be reported.
+
+nnabla-ext-cuda package will also try to check the compatibility of your GPUs automatically when you use 'cuda' or 'cudnn' extension.
+By default, it will list and check all gpus in your machine. Error will be reported if there is incompatible card.
+
+You can set environment variable 'AVAILABLE_GPU_NAMES' to tell it which GPU is usable, 'AVAILABLE_GPU_NAMES' is a white list, GPU in 'AVAILABLE_GPU_NAMES' will not cause error.
+For example, if you think GeForce RTX 3070 and GeForce RTX 3090 are usable, you can set environment variable as following:
+
+.. code-block:: bash
+
+	export AVAILABLE_GPU_NAMES="GeForce RTX 3070,GeForce RTX 3090"
+
 
 Installation
 ------------
