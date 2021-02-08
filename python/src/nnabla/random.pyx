@@ -14,6 +14,16 @@
 
 import numpy as np
 
+from random cimport _set_seed
+
 # Parameter random number generator
 pseed = 313
 prng = np.random.RandomState(pseed)
+
+def seed(seed_value):
+    assert isinstance(seed_value, int)
+    global pseed
+    global prng
+    pseed = seed_value
+    prng = np.random.RandomState(seed_value)
+    _set_seed(seed_value)

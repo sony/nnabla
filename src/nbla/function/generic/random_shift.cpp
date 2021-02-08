@@ -16,6 +16,7 @@
  */
 #include <nbla/array.hpp>
 #include <nbla/function/random_shift.hpp>
+#include <nbla/random_manager.hpp>
 #include <nbla/variable.hpp>
 
 #include <algorithm>
@@ -140,11 +141,14 @@ void RandomShift<T>::shift_backward_recursive(const Variable *inp, const T *dy,
 template <typename T>
 void RandomShift<T>::forward_impl(const Variables &inputs,
                                   const Variables &outputs) {
+  std::mt19937 &rgen =
+      seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
+                  : rgen_;
   addr_table_.resize(size_);
   for (int i = 0; i < size_; i++) {
     vector<int> shifts;
     for (Shape_t::size_type id = 0; id < shifts_.size(); id++) {
-      shifts.push_back(rgen_() % (shifts_[id] * 2 + 1) - shifts_[id]);
+      shifts.push_back(rgen() % (shifts_[id] * 2 + 1) - shifts_[id]);
     }
     addr_table_[i] = prepare_addr_table(inputs, shifts);
   }

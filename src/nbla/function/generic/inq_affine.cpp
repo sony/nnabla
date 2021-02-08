@@ -16,6 +16,7 @@
  */
 #include <nbla/array.hpp>
 #include <nbla/function/inq_affine.hpp>
+#include <nbla/random_manager.hpp>
 #include <nbla/variable.hpp>
 
 #include <algorithm>
@@ -78,6 +79,10 @@ void INQAffine<T, T1>::setup_impl(const Variables &inputs,
 template <typename T, typename T1>
 void INQAffine<T, T1>::forward_impl(const Variables &inputs,
                                     const Variables &outputs) {
+  std::mt19937 &rgen =
+      seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
+                  : rgen_;
+
   T *weights = inputs[1]->cast_data_and_get_pointer<T>(this->ctx_);
   T *old_weights = old_weights_.cast_data_and_get_pointer<T>(this->ctx_);
 
@@ -136,7 +141,7 @@ void INQAffine<T, T1>::forward_impl(const Variables &inputs,
         // random selection
         for (int i = 0; i < inputs[1]->size(); ++i) {
           if (indicators[i] == 0) {
-            indicators[i] = rdist_(rgen_);
+            indicators[i] = rdist_(rgen);
           }
         }
       }

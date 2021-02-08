@@ -16,6 +16,7 @@
  */
 #include <nbla/array.hpp>
 #include <nbla/function/inq_convolution.hpp>
+#include <nbla/random_manager.hpp>
 #include <nbla/variable.hpp>
 
 #include <algorithm>
@@ -137,9 +138,13 @@ void INQConvolution<T, T1>::forward_impl(const Variables &inputs,
         }
       } else {
         // random selection
+        std::mt19937 &rgen =
+            seed_ == -1
+                ? SingletonManager::get<RandomManager>()->get_rand_generator()
+                : rgen_;
         for (int i = 0; i < inputs[1]->size(); ++i) {
           if (indicators[i] == 0) {
-            indicators[i] = rdist_(rgen_);
+            indicators[i] = rdist_(rgen);
           }
         }
       }

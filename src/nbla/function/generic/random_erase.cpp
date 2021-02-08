@@ -15,6 +15,7 @@
 #include <nbla/array.hpp>
 #include <nbla/common.hpp>
 #include <nbla/function/random_erase.hpp>
+#include <nbla/random_manager.hpp>
 #include <nbla/variable.hpp>
 
 namespace nbla {
@@ -231,6 +232,9 @@ void RandomErase<T>::forward_impl(const Variables &inputs,
   auto H = shape[base_axis_ + 1];
   auto W = shape[base_axis_ + 2];
   auto Bs = C * H * W;
+  std::mt19937 &rgen =
+      seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
+                  : rgen_;
 
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
   T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, !inplace_);
@@ -243,7 +247,7 @@ void RandomErase<T>::forward_impl(const Variables &inputs,
       this->random_coordinates_->cast(get_dtype<float>(), this->ctx_)
           ->template pointer<float>();
   generate_random_coords<T>(random_coords, N, B, C, H, W, area_ratios_,
-                            aspect_ratios_, share_, rgen_);
+                            aspect_ratios_, share_, rgen);
 
   // Copy once
   auto size = inputs[0]->size();
@@ -255,8 +259,7 @@ void RandomErase<T>::forward_impl(const Variables &inputs,
   for (decltype(n_) n = 0; n < n_; n++) {
     for (decltype(B) b = 0; b < B; b++) {
       auto out = y + (b * Bs);
-      erase_2d(out, random_coords, C, H, W, prob_, replacements_, share_,
-               rgen_);
+      erase_2d(out, random_coords, C, H, W, prob_, replacements_, share_, rgen);
       if (share_) {
         random_coords = random_coords + 5;
       } else {
