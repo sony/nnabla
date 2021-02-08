@@ -35,6 +35,8 @@ void SoftmaxCrossEntropy<T, Tl>::setup_impl(const Variables &inputs,
 
   Shape_t in_shape = inputs[0]->shape();
   Shape_t label_shape = inputs[1]->shape();
+  if (axis_ < 0)
+    axis_ += in_shape.size();
   NBLA_CHECK(static_cast<unsigned>(axis_) < in_shape.size(), error_code::value,
              "axis must be less than ndim of inputs[0]. "
              "axis: %d >= ndim of inputs[0]: %d.",

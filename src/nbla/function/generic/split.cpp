@@ -25,6 +25,9 @@ NBLA_REGISTER_FUNCTION_SOURCE(Split, int);
 template <typename T>
 void Split<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   const Shape_t in_shape = inputs[0]->shape();
+  if (axis_ < 0)
+    axis_ += in_shape.size();
+
   NBLA_CHECK(axis_ >= 0, error_code::value,
              "axis must not be less than zero, got %d", axis_);
   NBLA_CHECK(static_cast<Shape_t::size_type>(axis_) < in_shape.size(),

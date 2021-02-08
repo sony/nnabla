@@ -27,6 +27,8 @@ void TopNError<T, T1>::setup_impl(const Variables &inputs,
                                   const Variables &outputs) {
   Shape_t in_shape = inputs[0]->shape();
   Shape_t label_shape = inputs[1]->shape();
+  if (axis_ < 0)
+    axis_ += in_shape.size();
   NBLA_CHECK(axis_ >= 0, error_code::value,
              "axis must not be less than zero, got %d", axis_);
   NBLA_CHECK(static_cast<Shape_t::size_type>(axis_) < in_shape.size(),

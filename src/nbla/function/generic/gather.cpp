@@ -40,6 +40,8 @@ void Gather<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   auto indices = inputs[1];
   auto xshape = x->shape();
   auto ishape = indices->shape();
+  if (axis_ < 0)
+    axis_ += xshape.size();
 
   NBLA_CHECK(axis_ >= batch_dims_, error_code::value,
              "axis (%d) must be greater than or equal to batch_dims_ (%d).",

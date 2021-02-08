@@ -29,7 +29,7 @@ def ref_celu(x, alpha, axis):
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("alpha", [1.0, 0.5, 0.0])
-@pytest.mark.parametrize("axis", [0, 1, 2])
+@pytest.mark.parametrize("axis", [0, 1, 2, -1, -2, -3])
 @pytest.mark.parametrize("seed", [313])
 def test_celu_forward_backward(seed, alpha, axis, ctx, func_name):
     from nbla_test_utils import function_tester

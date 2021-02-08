@@ -29,6 +29,8 @@ template <typename T>
 void LogSoftmax<T>::setup_impl(const Variables &inputs,
                                const Variables &outputs) {
   Shape_t in_shape = inputs[0]->shape();
+  if (axis_ < 0)
+    axis_ += in_shape.size();
 
   NBLA_CHECK(axis_ >= 0, error_code::value,
              "axis may not be less than zero, got %d", axis_);

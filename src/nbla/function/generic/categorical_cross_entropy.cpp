@@ -33,6 +33,8 @@ void CategoricalCrossEntropy<T, Tl>::setup_impl(const Variables &inputs,
 
   Shape_t in_shape = inputs[0]->shape();
   Shape_t label_shape = inputs[1]->shape();
+  if (axis_ < 0)
+    axis_ += in_shape.size();
   auto axis = static_cast<Shape_t::size_type>(this->axis_);
   NBLA_CHECK(axis < in_shape.size(), error_code::value,
              "axis must be less than ndim of inputs[0]. "

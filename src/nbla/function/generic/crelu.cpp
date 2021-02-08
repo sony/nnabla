@@ -27,6 +27,8 @@ NBLA_REGISTER_FUNCTION_SOURCE(CReLU, int);
 template <typename T>
 void CReLU<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   Shape_t in_shape = inputs[0]->shape();
+  if (axis_ < 0)
+    axis_ += in_shape.size();
   NBLA_CHECK(axis_ >= 0, error_code::value,
              "axis may not be less than zero, got %d", axis_);
   auto axis = static_cast<Shape_t::size_type>(axis_);
