@@ -52,7 +52,7 @@ def test_no_value():
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
-@pytest.mark.parametrize("axis", [0, 1, 2])
+@pytest.mark.parametrize("axis", [0, 1, 2, -1, -2, -3])
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize('different_size', [False, True])
 @pytest.mark.parametrize('num_inputs', [2, 3])

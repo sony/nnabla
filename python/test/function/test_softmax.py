@@ -36,7 +36,7 @@ def test_softmax_forward_backward(seed, axis, ctx, func_name):
 
 
 @pytest.mark.parametrize("seed", [313])
-@pytest.mark.parametrize("axis", [0, 1, 2])
+@pytest.mark.parametrize("axis", [0, 1, 2, -1, -2, -3])
 @pytest.mark.parametrize("ctx, func_name", list_context('Softmax'))
 def test_softmax_double_backward(seed, axis, ctx, func_name):
     from nbla_test_utils import backward_function_tester

@@ -39,7 +39,7 @@ def test_crelu_forward_backward(seed, axis, ctx, func_name):
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
-@pytest.mark.parametrize("axis", [0, 1, 2])
+@pytest.mark.parametrize("axis", [0, 1, 2, -1, -2, -3])
 @pytest.mark.parametrize("seed", [313])
 def test_crelu_double_backward(seed, axis, ctx, func_name):
     from nbla_test_utils import cap_ignore_region, backward_function_tester
