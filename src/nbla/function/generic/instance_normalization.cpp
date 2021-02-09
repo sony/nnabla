@@ -50,7 +50,7 @@ void InstanceNormalization<T>::setup_impl(const Variables &inputs,
              "%d, ndim: {}.",
              channel_axis_, ndim);
   // check batch_axis
-  for (int i = 0; i < batch_axis_.size(); i++) {
+  for (size_t i = 0; i < batch_axis_.size(); i++) {
     const auto ba = batch_axis_[i];
     NBLA_CHECK(0 <= ba && ba < ndim, error_code::value,
                "each element of batch_axis must be in the range of [0, ndim). "
@@ -75,7 +75,7 @@ void InstanceNormalization<T>::setup_impl(const Variables &inputs,
   need_beta_broadcast_ = false;
   if (beta) {
     const auto beta_shape = beta->shape();
-    for (int i = 0; i < beta_shape.size(); i++) {
+    for (size_t i = 0; i < beta_shape.size(); i++) {
       if (beta_shape[i] != adapt_shape[i]) {
         need_beta_broadcast_ = true;
         NBLA_CHECK(beta_shape[channel_axis_] == adapt_shape[channel_axis_],
@@ -90,7 +90,7 @@ void InstanceNormalization<T>::setup_impl(const Variables &inputs,
   need_gamma_broadcast_ = false;
   if (gamma) {
     const auto gamma_shape = gamma->shape();
-    for (int i = 0; i < gamma_shape.size(); i++) {
+    for (size_t i = 0; i < gamma_shape.size(); i++) {
       if (gamma_shape[i] != adapt_shape[i]) {
         need_gamma_broadcast_ = true;
         NBLA_CHECK(gamma_shape[channel_axis_] == adapt_shape[channel_axis_],

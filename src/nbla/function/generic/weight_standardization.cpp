@@ -28,7 +28,7 @@ template <typename T>
 void WeightStandardization<T>::setup_impl(const Variables &inputs,
                                           const Variables &outputs) {
   const auto w_shape = inputs[0]->shape();
-  const auto ndim = w_shape.size();
+  const int ndim = w_shape.size();
 
   // check chennel_axis
   NBLA_CHECK(0 <= channel_axis_ && channel_axis_ < ndim, error_code::value,

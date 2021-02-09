@@ -63,10 +63,10 @@ public:
 
     // bn_shape
     int64_t reduced_inner_size = 1;
-    for (int i = outer_axes.size(); i < transposed_shape_.size(); i++) {
+    for (size_t i = outer_axes.size(); i < transposed_shape_.size(); i++) {
       reduced_inner_size *= transposed_shape_[i];
     }
-    for (int i = 0; i < outer_axes.size(); i++) {
+    for (size_t i = 0; i < outer_axes.size(); i++) {
       bn_shape.push_back(transposed_shape_[i]);
     }
     bn_shape.push_back(reduced_inner_size);

@@ -35,7 +35,7 @@ void TensorNormalization<T>::setup_impl(const Variables &inputs,
   }
 
   // check inputs size
-  int n_inputs_expect = 1;
+  size_t n_inputs_expect = 1;
   if (!no_scale_)
     n_inputs_expect++;
   if (!no_bias_)
