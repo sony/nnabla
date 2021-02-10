@@ -61,7 +61,7 @@ def resolve_file_format(args, import_files, export_file=None):
         elif input_ext == '' and os.path.isdir(import_files[0]):
             args.import_format = "SAVED_MODEL"
 
-    if export_file and not os.path.isdir(export_file):
+    if export_file:
         output_ext = os.path.splitext(export_file)[1]
         if output_ext == '.nnp':
             args.export_format = 'NNP'
@@ -73,9 +73,13 @@ def resolve_file_format(args, import_files, export_file=None):
             args.export_format = 'TF_PB'
         elif output_ext == '.tflite':
             args.export_format = 'TFLITE'
-
-    logger.warning(
-        "The export file format is 'CSRC' or 'SAVED_MODEL' that argument '--export-format' will have to be set!!!")
+        elif output_ext == '':
+            logger.warning(
+                "The export file format is 'CSRC' or 'SAVED_MODEL' that argument '--export-format' will have to be set!!!")
+            assert(args.export_format ==
+                   'CSRC' or args.export_format == 'SAVED_MODEL')
+    else:
+        args.export_format = ''
 
     if args.import_format in ['ONNX', 'TF_CKPT_V1', 'TF_CKPT_V2', 'TF_PB', 'SAVED_MODEL'] or \
             args.export_format in ['ONNX', 'TFLITE', 'SAVED_MODEL']:
