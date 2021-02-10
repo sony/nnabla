@@ -48,7 +48,7 @@ def nnb_template_command(args):
 def resolve_file_format(args, import_files, export_file=None):
     if len(import_files) == 1:
         input_ext = os.path.splitext(import_files[0])[1]
-        if input_ext == '.nnp':
+        if input_ext == '.nnp' or input_ext == '.nntxt':
             args.import_format = 'NNP'
         elif input_ext == '.onnx':
             args.import_format = 'ONNX'
