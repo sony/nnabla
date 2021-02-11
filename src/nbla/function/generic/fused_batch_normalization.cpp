@@ -53,7 +53,8 @@ void FusedBatchNormalization<T>::setup_impl(const Variables &inputs,
              "Currently \"relu\" is only supported as a nonlinearity.");
   Variables inputs_bn(inputs.begin(), inputs.begin() + 5);
   bn_ = create_BatchNormalization(this->ctx_, axes_, decay_rate_, eps_,
-                                  batch_stat_);
+                                  batch_stat_, false /* no_scale */,
+                                  false /* no_bias */);
   bn_->setup(inputs_bn, outputs);
 }
 

@@ -64,30 +64,35 @@ class BatchNormalizationBackward(BackwardFunction):
         axes = self.forward_func.info.args["axes"]
         decay_rate = self.forward_func.info.args["decay_rate"]
         eps = self.forward_func.info.args["eps"]
+        no_scale = self.forward_func.info.args["no_scale"]
+        no_bias = self.forward_func.info.args["no_bias"]
+
+        beta_idx = -1 if no_bias else 1
+        gamma_idx = -1 if no_scale else 1 if no_bias else 2
 
         # TODO: factorize more
         # Inputs
         x0 = inputs[0].data  # input
-        b0 = inputs[1].data  # beta
-        g0 = inputs[2].data  # gamma
-        rm = inputs[3].data  # running mean
-        rv = inputs[4].data  # running variance
-        dy = inputs[5].data  # grad input
+        b0 = 0 if no_bias else inputs[beta_idx].data  # beta
+        g0 = 1 if no_scale else inputs[gamma_idx].data  # gamma
+        rm = inputs[-3].data  # running mean
+        rv = inputs[-2].data  # running variance
+        dy = inputs[-1].data  # grad input
         # Outputs
         dx0 = outputs[0].data
-        db0 = outputs[1].data
-        dg0 = outputs[2].data
+        db0 = 0 if no_bias else outputs[beta_idx].data
+        dg0 = 0 if no_scale else outputs[gamma_idx].data
         # Grads of inputs
         g_x0 = inputs[0].grad
-        g_b0 = inputs[1].grad
-        g_g0 = inputs[2].grad
-        g_rm = inputs[3].grad
-        g_rv = inputs[4].grad
-        g_dy = inputs[5].grad
+        g_b0 = None if no_bias else inputs[beta_idx].grad
+        g_g0 = None if no_scale else inputs[gamma_idx].grad
+        g_rm = inputs[-3].grad
+        g_rv = inputs[-2].grad
+        g_dy = inputs[-1].grad
         # Grads of outputs
         g_dx0 = outputs[0].grad
-        g_db0 = outputs[1].grad
-        g_dg0 = outputs[2].grad
+        g_db0 = 0 if no_bias else outputs[beta_idx].grad
+        g_dg0 = 0 if no_scale else outputs[gamma_idx].grad
 
         # Prerequisite
         # axes reduced and denominator
@@ -108,9 +113,9 @@ class BatchNormalizationBackward(BackwardFunction):
         # zero, do nothing
 
         # w.r.t. gamma
-        if prop_down[2]:
+        if not no_scale and prop_down[gamma_idx]:
             g_g0_ = F.sum(g_dx0 * dy * v_eps_rsqrt1, axes, True)
-            if accum[2]:
+            if accum[gamma_idx]:
                 g_g0 += g_g0_
             else:
                 g_g0.copy_from(g_g0_)
@@ -118,10 +123,10 @@ class BatchNormalizationBackward(BackwardFunction):
         # no backward w.r.t. rm and rv
 
         # w.r.t. dy
-        if prop_down[5]:
+        if prop_down[-1]:
             g_dy_ = g_dx0 * g0 * v_eps_rsqrt1 + \
                 g_dg0 * (x0 - rm) * v_eps_rsqrt1 + g_db0
-            if accum[5]:
+            if accum[-1]:
                 g_dy += g_dy_
             else:
                 g_dy.copy_from(g_dy_)
@@ -134,30 +139,35 @@ class BatchNormalizationBackward(BackwardFunction):
         axes = self.forward_func.info.args["axes"]
         decay_rate = self.forward_func.info.args["decay_rate"]
         eps = self.forward_func.info.args["eps"]
+        no_scale = self.forward_func.info.args["no_scale"]
+        no_bias = self.forward_func.info.args["no_bias"]
+
+        beta_idx = -1 if no_bias else 1
+        gamma_idx = -1 if no_scale else 1 if no_bias else 2
 
         # TODO: factorize more
         # Inputs
         x0 = inputs[0].data  # input
-        b0 = inputs[1].data  # beta
-        g0 = inputs[2].data  # gamma
-        rm = inputs[3].data  # running mean
-        rv = inputs[4].data  # running variance
-        dy = inputs[5].data  # grad input
+        b0 = 0 if no_bias else inputs[beta_idx].data  # beta
+        g0 = 1 if no_scale else inputs[gamma_idx].data  # gamma
+        rm = inputs[-3].data  # running mean
+        rv = inputs[-2].data  # running variance
+        dy = inputs[-1].data  # grad input
         # Outputs
         dx0 = outputs[0].data
-        db0 = outputs[1].data
-        dg0 = outputs[2].data
+        db0 = 0 if no_bias else outputs[beta_idx].data
+        dg0 = 0 if no_scale else outputs[gamma_idx].data
         # Grads of inputs
         g_x0 = inputs[0].grad
-        g_b0 = inputs[1].grad
-        g_g0 = inputs[2].grad
-        g_rm = inputs[3].grad
-        g_rv = inputs[4].grad
-        g_dy = inputs[5].grad
+        g_b0 = None if no_bias else inputs[beta_idx].grad
+        g_g0 = None if no_scale else inputs[gamma_idx].grad
+        g_rm = inputs[-3].grad
+        g_rv = inputs[-2].grad
+        g_dy = inputs[-1].grad
         # Grads of outputs
         g_dx0 = outputs[0].grad
-        g_db0 = outputs[1].grad
-        g_dg0 = outputs[2].grad
+        g_db0 = 0 if no_bias else outputs[beta_idx].grad
+        g_dg0 = 0 if no_scale else outputs[gamma_idx].grad
 
         # Prerequisite
         # axes reduced and denominator
@@ -175,10 +185,10 @@ class BatchNormalizationBackward(BackwardFunction):
         v_eps_rsqrt3 = v_eps_rsqrt1 ** 3.0
 
         # common factors
-        if prop_down[0] or prop_down[2]:
+        if prop_down[0] or (not no_scale and prop_down[gamma_idx]):
             dy_x0_bm_sum = F.sum(dy * x0_bm, axes, True)
             dy_sum = F.sum(dy, axes, True)
-        if prop_down[0] or prop_down[5]:
+        if prop_down[0] or prop_down[-1]:
             g_dx0_x0_bm_sum = F.sum(g_dx0 * x0_bm, axes, True)
             g_dx0_sum = F.sum(g_dx0, axes, True)
 
@@ -212,12 +222,12 @@ class BatchNormalizationBackward(BackwardFunction):
         # zero, do nothing
 
         # w.r.t. gamma
-        if prop_down[2]:
+        if not no_scale and prop_down[gamma_idx]:
             t1 = dy * v_eps_rsqrt1
             t2 = (- 1.0 / de) * dy_x0_bm_sum * v_eps_rsqrt3 * x0_bm
             t3 = (- 1.0 / de) * dy_sum * v_eps_rsqrt1
             g_g0_ = F.sum(g_dx0 * (t1 + t2 + t3), axes, True)
-            if accum[2]:
+            if accum[gamma_idx]:
                 g_g0 += g_g0_
             else:
                 g_g0.copy_from(g_g0_)
@@ -225,13 +235,13 @@ class BatchNormalizationBackward(BackwardFunction):
         # no backward w.r.t. rm and rv
 
         # w.r.t. dy
-        if prop_down[5]:
+        if prop_down[-1]:
             t1 = g_dx0 * g0 * v_eps_rsqrt1
             t2 = - (1.0 / de) * g0 * v_eps_rsqrt3 * g_dx0_x0_bm_sum * x0_bm
             t3 = - (1.0 / de) * g0 * v_eps_rsqrt1 * g_dx0_sum
             x0_hat = x0_bm * v_eps_rsqrt1
             g_dy_ = (t1 + t2 + t3) + g_dg0 * x0_hat + g_db0
-            if accum[5]:
+            if accum[-1]:
                 g_dy += g_dy_
             else:
                 g_dy.copy_from(g_dy_)

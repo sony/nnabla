@@ -572,7 +572,8 @@ batch_normalization(Context &ctx, CgVariablePtr x, const vector<int> &axes,
   bool execute_forward =
       SingletonManager::get<AutoForward>()->get_auto_forward();
   return connect(make_shared<CgFunction>(create_BatchNormalization(
-                     ctx, axes, decay_rate, eps, batch_stat)),
+                     ctx, axes, decay_rate, eps, batch_stat,
+                     false /* no_scale */, false /* no_bias */)),
                  {x, beta, gamma, mean, variance}, 1, {}, execute_forward);
 }
 

@@ -29,11 +29,11 @@ int main() {
   Context ctx; // ("cpu", "CpuArray", "0", "default");
   auto affine1 = make_shared<CgFunction>(create_Affine(ctx, 1));
   auto bn1 = make_shared<CgFunction>(
-      create_BatchNormalization(ctx, {1}, 0, 0.0, false));
+      create_BatchNormalization(ctx, {1}, 0, 0.0, false, false, false));
   auto relu1 = make_shared<CgFunction>(create_ReLU(ctx, true));
   auto affine2 = make_shared<CgFunction>(create_Affine(ctx, 1));
   auto bn2 = make_shared<CgFunction>(
-      create_BatchNormalization(ctx, {1}, 0, 0.0, false));
+      create_BatchNormalization(ctx, {1}, 0, 0.0, false, false, false));
   auto relu2 = make_shared<CgFunction>(create_ReLU(ctx, true));
   auto affine3 = make_shared<CgFunction>(create_Affine(ctx, 1));
 

@@ -517,7 +517,8 @@ def check_normalization_params(f_name, p_shape, gamma_ref, beta_ref, no_scale, n
 @pytest.mark.parametrize('output_stat', [False, True])
 @pytest.mark.parametrize("fix_parameters", [False, True])
 @pytest.mark.parametrize('param_init', [None, True])
-@pytest.mark.parametrize('no_scale, no_bias', [(False, False), (True, True)])
+@pytest.mark.parametrize('no_scale', [False, True])
+@pytest.mark.parametrize('no_bias', [False, True])
 def test_pf_layer_normalization(g_rng, inshape, batch_axis, output_stat, fix_parameters, param_init, no_scale, no_bias):
     from nnabla.normalization_functions import _force_list, _get_axes_excluding, _apply_affine
 
@@ -600,7 +601,8 @@ def test_pf_layer_normalization(g_rng, inshape, batch_axis, output_stat, fix_par
 @pytest.mark.parametrize('output_stat', [False, True])
 @pytest.mark.parametrize("fix_parameters", [False, True])
 @pytest.mark.parametrize('param_init', [None, True])
-@pytest.mark.parametrize('no_scale, no_bias', [(False, False), (True, True)])
+@pytest.mark.parametrize('no_scale', [False, True])
+@pytest.mark.parametrize('no_bias', [False, True])
 def test_pf_instance_normalization(g_rng, inshape, batch_axis, channel_axis, output_stat,
                                    fix_parameters, param_init, no_scale, no_bias):
     from nnabla.normalization_functions import _force_list, _get_axes_excluding, _apply_affine
@@ -686,7 +688,8 @@ def test_pf_instance_normalization(g_rng, inshape, batch_axis, channel_axis, out
 @pytest.mark.parametrize('output_stat', [False, True])
 @pytest.mark.parametrize("fix_parameters", [False, True])
 @pytest.mark.parametrize('param_init', [None, True])
-@pytest.mark.parametrize('no_scale, no_bias', [(False, False), (True, True)])
+@pytest.mark.parametrize('no_scale', [False, True])
+@pytest.mark.parametrize('no_bias', [False, True])
 def test_pf_group_normalization(g_rng, num_groups, inshape, batch_axis, channel_axis, output_stat,
                                 fix_parameters, param_init, no_scale, no_bias):
     from nnabla.normalization_functions import _force_list, _get_axes_excluding, _apply_affine

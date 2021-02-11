@@ -54,6 +54,12 @@ class BatchNormBatchStatModifier(FunctionModifier):
     def connect(self, fname, inputs, args):
         fct = self._fct_set[fname]
         args['batch_stat'] = False
+
+        if 'no_scale' in args:
+            del args['no_scale']
+        if 'no_bias' in args:
+            del args['no_bias']
+
         h = fct(*inputs, **args)
         return h
 

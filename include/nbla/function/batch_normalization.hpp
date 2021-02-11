@@ -37,7 +37,7 @@ using std::vector;
 namespace nbla {
 
 NBLA_REGISTER_FUNCTION_HEADER(BatchNormalization, const vector<int> &, float,
-                              float, bool);
+                              float, bool, bool, bool);
 
 /** Batch normalization at training time defined as
 @f[
@@ -77,12 +77,16 @@ by Reducing Internal Covariate Shift. https://arxiv.org/abs/1502.03167
  */
 template <typename T>
 class BatchNormalization
-    : public BaseFunction<const vector<int> &, float, float, bool> {
+    : public BaseFunction<const vector<int> &, float, float, bool, bool, bool> {
 protected:
   vector<int> axes_;
   float decay_rate_;
   float eps_;
   bool batch_stat_;
+  bool no_scale_;
+  bool no_bias_;
+  // beta, gamma, mean, variance index
+  int b_idx_, g_idx_, m_idx_, v_idx_;
   Variable mean_;
   Variable var_;
   Size_t size0_, size1_, size2_, size02_, size12_;
@@ -96,13 +100,15 @@ protected:
 
 public:
   BatchNormalization(const Context &ctx, const vector<int> axes,
-                     float decay_rate, float eps, bool batch_stat)
-      : BaseFunction(ctx, axes, decay_rate, eps, batch_stat), axes_(axes),
-        decay_rate_(decay_rate), eps_(eps), batch_stat_(batch_stat) {}
+                     float decay_rate, float eps, bool batch_stat,
+                     bool no_scale, bool no_bias)
+      : BaseFunction(ctx, axes, decay_rate, eps, batch_stat, no_scale, no_bias),
+        axes_(axes), decay_rate_(decay_rate), eps_(eps),
+        batch_stat_(batch_stat), no_scale_(no_scale), no_bias_(no_bias) {}
   virtual ~BatchNormalization() {}
   virtual shared_ptr<Function> copy() const {
     return create_BatchNormalization(ctx_, axes_, decay_rate_, eps_,
-                                     batch_stat_);
+                                     batch_stat_, no_scale_, no_bias_);
   }
   virtual vector<dtypes> in_types() {
     return vector<dtypes>{get_dtype<T>(), get_dtype<T>(), get_dtype<T>(),
@@ -111,7 +117,7 @@ public:
   virtual vector<dtypes> out_types() {
     return vector<dtypes>{get_dtype<T>(), get_dtype<T>(), get_dtype<T>()};
   }
-  virtual int min_inputs() { return 5; }
+  virtual int min_inputs() { return 3; }
   virtual int min_outputs() { return 1; }
   virtual string name() { return "BatchNormalization"; }
   virtual vector<string> allowed_array_classes() {

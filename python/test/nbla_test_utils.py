@@ -129,6 +129,7 @@ def compute_analytical_and_numerical_grad(f, inputs, outputs, inputs0,
         vinputs = []
         for i, i0 in zip(inputs, inputs0):
             if i is None:  # Optional argument
+                backups.append(None)
                 continue
             vinputs += [i]
             if i0 is not None:  # Not need backward

@@ -174,7 +174,8 @@ void FusedConvolution<T>::setup_impl(const Variables &inputs,
     vector<int> axes{channel_last_ ? (int)(inputs[0]->ndim() - 1) : base_axis_};
     last_out = functions::batch_normalization(
         ctx_, last_out, cg_beta, cg_gamma, cg_mean, cg_variance, axes,
-        decay_rate_, eps_, batch_stat_)[0];
+        decay_rate_, eps_, batch_stat_, false /* no_scale */,
+        false /* no_bias */)[0];
   }
 
   // ----------------------------------------------------------------

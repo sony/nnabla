@@ -2,9 +2,11 @@ import pytest
 import numpy as np
 import nnabla as nn
 import nnabla.functions as F
-from nnabla.testing import assert_allclose
+from nbla_test_utils import list_context
 
 from nnabla.normalization_functions import _force_list, _get_axes_excluding
+
+ctxs = list_context('LayerNormalization')
 
 
 def ref_layer_normalization(x, beta, gamma, batch_axis, eps, output_stat):
@@ -17,12 +19,32 @@ def ref_layer_normalization(x, beta, gamma, batch_axis, eps, output_stat):
 
     norm = (x - x_mean) / (x_var + eps) ** 0.5
 
+    if gamma is not None:
+        norm *= gamma
+
+    if beta is not None:
+        norm += beta
+
     if output_stat:
-        return norm * gamma + beta, x_mean, x_var
+        return norm, x_mean, x_var
 
-    return norm * gamma + beta
+    return norm
 
 
+def create_inputs(rng, x_shape, batch_axis, no_scale, no_bias):
+    x = rng.randn(*x_shape).astype(np.float32)
+
+    stat_shape = list(x_shape)
+    for baxis in _force_list(batch_axis):
+        stat_shape[baxis] = 1
+
+    beta = None if no_bias else rng.randn(*stat_shape).astype(np.float32)
+    gamma = None if no_scale else rng.randn(*stat_shape).astype(np.float32)
+
+    return x, beta, gamma
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("x_shape , batch_axis", [((4, 3, 8, 8), 0),
                                                   ((4, 16, 16, 8), 0),
@@ -31,39 +53,38 @@ def ref_layer_normalization(x, beta, gamma, batch_axis, eps, output_stat):
                                                   # time-series (T, B, C) or (B, T, C)
                                                   ((10, 4, 16), [0, 1])
                                                   ])
+@pytest.mark.parametrize("eps", [1e-05])
 @pytest.mark.parametrize("output_stat", [False, True])
-def test_layer_normalization_forward_backward(seed, x_shape, batch_axis, output_stat):
+@pytest.mark.parametrize("no_scale", [False, True])
+@pytest.mark.parametrize("no_bias", [False, True])
+def test_layer_normalization_forward(ctx, func_name, seed, x_shape, batch_axis, eps, output_stat, no_scale, no_bias):
+    from nbla_test_utils import function_tester
+
     rng = np.random.RandomState(seed)
-    input = rng.randn(*x_shape).astype(np.float32)
+    x, beta, gamma = create_inputs(rng, x_shape, batch_axis, no_scale, no_bias)
 
-    stat_shape = list(x_shape)
-    for baxis in _force_list(batch_axis):
-        stat_shape[baxis] = 1
+    function_tester(rng, F.layer_normalization, ref_layer_normalization, [x, beta, gamma], [batch_axis, eps, output_stat], ctx=ctx,
+                    func_name=func_name, dstep=1e-2, atol_b=1e-2, backward=[False, False, False], disable_half_test=True)
 
-    beta = rng.randn(*stat_shape).astype(np.float32)
-    gamma = rng.randn(*stat_shape).astype(np.float32)
-    eps = 1e-05
 
-    x = nn.Variable.from_numpy_array(input)
-    v_beta = nn.Variable.from_numpy_array(beta)
-    v_gamma = nn.Variable.from_numpy_array(gamma)
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("x_shape , batch_axis", [((2, 3, 4, 4), 0),
+                                                  ((2, 4, 4, 3), 0),
+                                                  ((16, 1), 0),
+                                                  ((2, 4, 3), 0),
+                                                  # time-series (T, B, C) or (B, T, C)
+                                                  ((3, 2, 5), [0, 1])
+                                                  ])
+@pytest.mark.parametrize("eps", [1e-05])
+@pytest.mark.parametrize("output_stat", [False, True])
+@pytest.mark.parametrize("no_scale", [False, True])
+@pytest.mark.parametrize("no_bias", [False, True])
+def test_layer_normalization_forward_backward(ctx, func_name, seed, x_shape, batch_axis, eps, output_stat, no_scale, no_bias):
+    from nbla_test_utils import function_tester
 
-    output = F.layer_normalization(
-        x, v_beta, v_gamma, batch_axis, eps, output_stat)
-    ref = ref_layer_normalization(
-        input, beta, gamma, batch_axis, eps, output_stat)
+    rng = np.random.RandomState(seed)
+    x, beta, gamma = create_inputs(rng, x_shape, batch_axis, no_scale, no_bias)
 
-    if output_stat:
-        tmp = F.sink(*output)
-        tmp.forward()
-        tmp.backward()
-
-        for o, r in zip(output, ref):
-            assert o.shape == r.shape
-            assert_allclose(o.d, r, atol=1e-2, rtol=1e-5)
-
-    else:
-        output.forward()
-        output.backward()
-
-        assert_allclose(output.d, ref, atol=1e-2, rtol=1e-5)
+    function_tester(rng, F.layer_normalization, ref_layer_normalization, [x, beta, gamma], [batch_axis, eps, output_stat], ctx=ctx,
+                    func_name=func_name, dstep=1e-2, atol_b=1e-2, backward=[True, not no_bias, not no_scale], disable_half_test=True)
