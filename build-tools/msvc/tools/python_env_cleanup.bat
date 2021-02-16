@@ -38,5 +38,5 @@ IF [%ENVNAME%] == [%CONDAENV%] (
    RMDIR /s /q %ENVDIR%
 )
 
-# Ignore error.
+REM Ignore error.
 EXIT /b 0
