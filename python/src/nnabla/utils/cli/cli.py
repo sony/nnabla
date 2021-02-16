@@ -39,21 +39,6 @@ return_value = None
 
 
 def main():
-    global return_value
-    import six.moves._thread as thread
-    import threading
-    thread.stack_size(8 * 1024 * 1024)
-    sys.setrecursionlimit(1024 * 1024)
-    main_thread = threading.Thread(target=cli_main)
-    main_thread.start()
-    main_thread.join()
-    if not return_value:
-        sys.exit(-1)
-
-
-def cli_main():
-    global return_value
-    return_value = False
 
     parser = argparse.ArgumentParser(description='Command line interface ' +
                                      'for NNabla({})'.format(_nnabla_version()))
@@ -119,6 +104,27 @@ def cli_main():
     print('NNabla command line interface ({})'.format(_nnabla_version()))
 
     args = parser.parse_args()
+
+    import nnabla.utils.callback as callback
+    r = callback.alternative_cli(args)
+    if r is not None:
+        return r
+
+    global return_value
+    import six.moves._thread as thread
+    import threading
+    thread.stack_size(8 * 1024 * 1024)
+    sys.setrecursionlimit(1024 * 1024)
+    main_thread = threading.Thread(target=cli_main, args=(parser, args))
+    main_thread.start()
+    main_thread.join()
+    if not return_value:
+        sys.exit(-1)
+
+
+def cli_main(parser, args):
+    global return_value
+    return_value = False
 
     if 'func' not in args:
         parser.print_help(sys.stderr)
