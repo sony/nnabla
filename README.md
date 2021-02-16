@@ -1,6 +1,6 @@
 # Neural Network Libraries
 
-Neural Network Libraries is a deep learning framework that is intended to be used for research,
+[Neural Network Libraries](https://arxiv.org/abs/2102.06725) is a deep learning framework that is intended to be used for research,
 development and production. We aim to have it running everywhere: desktop PCs, HPC
 clusters, embedded devices and production servers.
 
@@ -173,3 +173,16 @@ See the following link for details.
 Neural Network Libraries is provided under the [Apache License Version 2.0](LICENSE) license.
 
 It also depends on some open source software packages. For more information, see [LICENSES](third_party/LICENSES.md).
+
+## Citation
+
+```
+@misc{hayakawa2021neural,
+      title={Neural Network Libraries: A Deep Learning Framework Designed from Engineers' Perspectives}, 
+      author={Akio Hayakawa and Masato Ishii and Yoshiyuki Kobayashi and Akira Nakamura and Takuya Narihira and Yukio Obuchi and Andrew Shin and Takuya Yashima and Kazuki Yoshiyama},
+      year={2021},
+      eprint={2102.06725},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG}
+}
+```
