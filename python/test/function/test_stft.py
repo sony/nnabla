@@ -44,18 +44,18 @@ def test_istft(ctx, window_size, stride, fft_size, window_type, center):
 
     nx = nn.Variable.from_numpy_array(x)
     with nn.context_scope(ctx):
-        nyr, nyi = F.stft(nx,
-                          window_size=window_size,
-                          stride=stride,
-                          fft_size=fft_size,
-                          window_type=window_type,
-                          center=center)
-        nz = F.istft(nyr, nyi,
-                     window_size=window_size,
-                     stride=stride,
-                     fft_size=fft_size,
-                     window_type=window_type,
-                     center=center)
+        nyr, nyi = F._stft_v1(nx,
+                              window_size=window_size,
+                              stride=stride,
+                              fft_size=fft_size,
+                              window_type=window_type,
+                              center=center)
+        nz = F._istft_v1(nyr, nyi,
+                         window_size=window_size,
+                         stride=stride,
+                         fft_size=fft_size,
+                         window_type=window_type,
+                         center=center)
     nz.forward()
 
     invalid = window_size - stride
@@ -82,12 +82,12 @@ def test_stft(ctx, window_size, stride, fft_size, window_type):
     nx = nn.Variable.from_numpy_array(x)
 
     with nn.context_scope(ctx):
-        nyr, nyi = F.stft(nx,
-                          window_size=window_size,
-                          stride=stride,
-                          fft_size=fft_size,
-                          window_type=window_type,
-                          center=False)
+        nyr, nyi = F._stft_v1(nx,
+                              window_size=window_size,
+                              stride=stride,
+                              fft_size=fft_size,
+                              window_type=window_type,
+                              center=False)
     nn.forward_all([nyr, nyi])
 
     stft_nnabla = nyr.d + 1j * nyi.d
@@ -110,3 +110,76 @@ def test_stft(ctx, window_size, stride, fft_size, window_type):
     assert(np.allclose(stft_nnabla,
                        stft_scipy,
                        atol=1e-5, rtol=1e-5))
+
+
+def ref_stft(x, window_size, stride, fft_size, window_type, center, pad_mode):
+    x = nn.Variable.from_numpy_array(x)
+    y_r, y_i = F._stft_v1(x, window_size, stride, fft_size,
+                          window_type, center, pad_mode)
+    y_r.forward()
+    y_i.forward()
+
+    return y_r.d, y_i.d
+
+
+@pytest.mark.parametrize("ctx", ctx_list)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("window_size, stride, fft_size", [
+    (16, 8, 16), (16, 8, 32),
+])
+@pytest.mark.parametrize("window_type", ["hanning", "hamming", "rectangular"])
+@pytest.mark.parametrize("center", [True, False])
+@pytest.mark.parametrize("pad_mode", ["reflect", "constant"])
+def test_stft_forward_backward(ctx, seed, window_size, stride, fft_size, window_type, center, pad_mode):
+    backend = ctx.backend[0].split(":")[0]
+    if backend == 'cuda':
+        pytest.skip('CUDA Convolution N-D is only supported in CUDNN extension')
+
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+
+    x_shape = (2, window_size * 10)
+    inputs = [rng.randn(*x_shape).astype(np.float32)]
+
+    func_name = "STFTCuda" if backend == 'cudnn' else "STFT"
+
+    function_tester(rng, F.stft, ref_stft, inputs, func_args=[
+                    window_size, stride, fft_size, window_type, center, pad_mode], ctx=ctx, func_name=func_name, atol_f=2e-6, atol_b=2e-2, dstep=1e-2)
+
+
+def ref_istft(y_r, y_i, window_size, stride, fft_size, window_type, center):
+    y_r = nn.Variable.from_numpy_array(y_r)
+    y_i = nn.Variable.from_numpy_array(y_i)
+    x = F._istft_v1(y_r, y_i, window_size, stride,
+                    fft_size, window_type, center)
+    x.forward()
+
+    return np.array(x.d)
+
+
+@pytest.mark.parametrize("ctx", ctx_list)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("window_size, stride, fft_size", [
+    (16, 8, 16), (16, 8, 32),
+])
+@pytest.mark.parametrize("window_type", ["hanning", "hamming", "rectangular"])
+@pytest.mark.parametrize("center", [True, False])
+def test_istft_forward_backward(ctx, seed, window_size, stride, fft_size, window_type, center):
+    backend = ctx.backend[0].split(":")[0]
+    if backend == 'cuda':
+        pytest.skip('CUDA Convolution N-D is only supported in CUDNN extension')
+
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+
+    # generate istft inputs by calling stft
+    x_shape = (2, window_size * 10)
+    stft_input = rng.randn(*x_shape).astype(np.float32)
+    y_r, y_i = ref_stft(stft_input, window_size, stride,
+                        fft_size, window_type, center, pad_mode='reflect')
+    istft_inputs = [y_r, y_i]
+
+    func_name = "ISTFTCuda" if backend == 'cudnn' else "ISTFT"
+
+    function_tester(rng, F.istft, ref_istft, istft_inputs, func_args=[
+                    window_size, stride, fft_size, window_type, center], ctx=ctx, func_name=func_name, atol_f=2e-6, atol_b=2e-2, dstep=1e-2)

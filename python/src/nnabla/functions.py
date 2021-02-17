@@ -938,6 +938,31 @@ def stft(x, window_size, stride, fft_size, window_type='hanning', center=True, p
         * :obj:`~nnabla.Variable`: Real part of STFT of size `batch_size x fft_size//2 + 1 x frame_size`.
         * :obj:`~nnabla.Variable`: Imaginary part of STFT of size `batch x fft_size//2 + 1 x frame_size`.
     """
+    from .function_bases import stft as stft_base
+    if window_type is None:
+        window_type = "rectangular"
+    return stft_base(x, window_size, stride, fft_size, window_type, center, pad_mode)
+
+
+def _stft_v1(x, window_size, stride, fft_size, window_type='hanning', center=True, pad_mode='reflect'):
+    """Computes the short-time Fourier transform
+
+    Args:
+        x (~nnabla.Variable): Time domain sequence of size `batch_size x sample_size`.
+        window_size (int): Size of STFT analysis window.
+        stride (int): Number of samples that we shift the window, also called `hop size`.
+        fft_size (int): Size of the FFT, the output will have `fft_size // 2+ 1` frequency bins.
+        window_type (str): Analysis window, can be either `hanning`, `hamming` or `rectangular`.
+            For convenience, also `window_type=None` is supported which is equivalent to `window_type='rectangular'`.
+        center (bool): If `True`, then the signal `x` is padded by half the FFT size using reflection padding.
+        pad_mode (str): Padding mode, which can be `'constant'` or `'reflect'`. `'constant'` pads with `0`.
+
+    Returns:
+        Returns real and imaginary parts of STFT result.
+
+        * :obj:`~nnabla.Variable`: Real part of STFT of size `batch_size x fft_size//2 + 1 x frame_size`.
+        * :obj:`~nnabla.Variable`: Imaginary part of STFT of size `batch x fft_size//2 + 1 x frame_size`.
+    """
     from nnabla.parameter import get_parameter, get_parameter_or_create
     conv_r = get_parameter('conv_r')
     conv_i = get_parameter('conv_i')
@@ -992,6 +1017,32 @@ def stft(x, window_size, stride, fft_size, window_type='hanning', center=True, p
 
 
 def istft(y_r, y_i, window_size, stride, fft_size, window_type='hanning', center=True):
+    """Computes the inverse shoft-time Fourier transform
+
+    Note: We use a constant square inverse window for the reconstruction
+    of the time-domain signal, therefore, the first and last
+    `window_size - stride` are not perfectly reconstructed.
+
+    Args:
+        y_r (~nnabla.Variable): Real part of STFT of size `batch_size x fft_size//2 + 1 x frame_size`.
+        y_i (~nnabla.Variable): Imaginary part of STFT of size `batch_size x fft_size//2 + 1 x frame_size`.
+        window_size (int): Size of STFT analysis window.
+        stride (int): Number of samples that we shift the window, also called `hop size`.
+        fft_size (int): Size of the FFT, (STFT has `fft_size // 2 + 1` frequency bins).
+        window_type (str): Analysis window, can be either `hanning`, `hamming` or `rectangular`.
+            For convenience, also `window_type=None` is supported which is equivalent to `window_type='rectangular'`.
+        center (bool): If `True`, then it is assumed that the time-domain signal has centered frames.
+
+    Returns:
+        ~nnabla.Variable: Time domain sequence of size `batch_size x sample_size`.
+    """
+    from .function_bases import istft as istft_base
+    if window_type is None:
+        window_type = "rectangular"
+    return istft_base(y_r, y_i, window_size, stride, fft_size, window_type, center)
+
+
+def _istft_v1(y_r, y_i, window_size, stride, fft_size, window_type='hanning', center=True):
     """Computes the inverse shoft-time Fourier transform
 
     Note: We use a constant square inverse window for the reconstruction

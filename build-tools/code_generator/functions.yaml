@@ -4777,6 +4777,97 @@ Signal Processing:
     function_ids:
       iB: 159
     c_runtime: not support
+  STFT:
+    snake_name: stft
+    doc: |2+
+
+      Short-time Fourier transform.
+
+    inputs:
+      x:
+        doc: Time domain sequence of size `batch_size x sample_size`.
+    arguments:
+      window_size:
+        doc: Size of STFT analysis window.
+        type: int64
+      stride:
+        doc: Number of samples that we shift the window, also called `hop size`.
+        type: int64
+      fft_size:
+        doc: Size of the FFT, the output will have `fft_size // 2+ 1` frequency bins.
+        type: int64
+      window_type:
+        doc: Analysis window, can be either `hanning`, `hamming` or `rectangular`.
+        type: string
+        available_values:
+        - hanning
+        - hamming
+        - rectangular
+        default: '''hanning'''
+      center:
+        doc: If `True`, then the signal `x` is padded by half the FFT size using reflection
+          padding.
+        type: bool
+        default: 'True'
+      pad_mode:
+        doc: Padding mode, which can be `'constant'` or `'reflect'`. `'constant'`
+          pads with `0`.
+        type: string
+        available_values:
+        - constant
+        - reflect
+        default: '''reflect'''
+    outputs:
+      y_r:
+        doc: Real part of STFT of size `batch_size x fft_size//2 + 1 x frame_size`.
+      y_i:
+        doc: Imaginary part of STFT of size `batch_size x fft_size//2 + 1 x frame_size`.
+    c_runtime: not support
+    function_ids:
+      iiiiBi: 327
+  ISTFT:
+    snake_name: istft
+    doc: |2+
+
+      Inverse short-time Fourier transform.
+
+      .. note::
+        We use a constant square inverse window for the reconstruction of the time-domain signal, therefore, the first and last `window_size - stride` are not perfectly reconstructed.
+
+    inputs:
+      y_r:
+        doc: Real part of STFT of size `batch_size x fft_size//2 + 1 x frame_size`.
+      y_i:
+        doc: Imaginary part of STFT of size `batch_size x fft_size//2 + 1 x frame_size`.
+    arguments:
+      window_size:
+        doc: Size of STFT analysis window.
+        type: int64
+      stride:
+        doc: Number of samples that we shift the window, also called `hop size`.
+        type: int64
+      fft_size:
+        doc: Size of the FFT, the output will have `fft_size // 2+ 1` frequency bins.
+        type: int64
+      window_type:
+        doc: Analysis window, can be either `hanning`, `hamming` or `rectangular`.
+        type: string
+        available_values:
+        - hanning
+        - hamming
+        - rectangular
+        default: '''hanning'''
+      center:
+        doc: If `True`, then the signal `x` is padded by half the FFT size using reflection
+          padding.
+        type: bool
+        default: 'True'
+    outputs:
+      x:
+        doc: Time domain sequence of size `batch_size x sample_size`.
+    c_runtime: not support
+    function_ids:
+      iiiiB: 328
 Stochasticity:
   Dropout:
     snake_name: dropout
