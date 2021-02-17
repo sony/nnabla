@@ -26,7 +26,7 @@ def ref_split(x, axis):
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
-@pytest.mark.parametrize("axis", [0, 1, 2])
+@pytest.mark.parametrize("axis", [0, 1, 2, -1, -2, -3])
 @pytest.mark.parametrize("seed", [313])
 def test_split_forward_backward(seed, axis, ctx, func_name):
     from nbla_test_utils import function_tester
@@ -46,7 +46,7 @@ def test_zero_value():
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
-@pytest.mark.parametrize("axis", [0, 1, 2])
+@pytest.mark.parametrize("axis", [0, 1, 2, -1, -2, -3])
 @pytest.mark.parametrize("seed", [313])
 def test_split_double_backward(seed, axis, ctx, func_name):
     from nbla_test_utils import backward_function_tester

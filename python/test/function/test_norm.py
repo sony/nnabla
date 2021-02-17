@@ -32,7 +32,7 @@ def ref_norm(x, p, axis, keepdims):
 
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("p", [None, 1.0, 1.3])  # None -> 2.0
-@pytest.mark.parametrize("axis", [None, 0, 1, 2, 3, (0, 2), (1, 2, 3)])
+@pytest.mark.parametrize("axis", [None, 0, 1, 2, 3, -1, -2, (0, 2), (1, 2, 3), (-1, -2)])
 @pytest.mark.parametrize("keepdims", [False, True])
 @pytest.mark.parametrize("inshape", [(2, 1, 4, 5), (3, 1, 4, 5)])
 @pytest.mark.parametrize("ctx, func_name", list_context('Norm'))

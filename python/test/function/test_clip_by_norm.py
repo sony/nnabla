@@ -32,7 +32,12 @@ def ref_clip_by_norm(x, clip_norm, axis):
 @pytest.mark.parametrize("clip_norm_value", [1.5, 0.5, 1e+5, -3.0, 0.0])
 @pytest.mark.parametrize("shape, axis", [((2, 8, 8, 8), (2, 3)),
                                          ((2, 8, 8, 8), (1, )),
+                                         ((2, 8, 8, 8), (-1, -2)),
+                                         ((2, 8, 8, 8), (-1, -2, -3)),
+                                         ((2, 8, 8, 8), (-2, -3)),
+                                         ((2, 8, 8, 8), (-1, )),
                                          ((2, 4), (1, )),
+                                         ((2, 4), (-2, )),
                                          ((2, 4, 4), None)])
 def test_clip_by_norm_forward(seed, shape, clip_norm_type, clip_norm_value, x_value, axis):
 

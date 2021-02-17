@@ -47,6 +47,9 @@ class SoftmaxBackward(BackwardFunction):
         # [inputs_fwd_graph] + [outputs_fwd_graph] + [inputs_bwd_graph]
 
         axis = self.forward_func.info.args["axis"]
+        # To deal with double_backward index error for cuda in windows
+        if axis < 0:
+            axis += inputs[0].ndim
 
         # Inputs
         x0 = inputs[0].data

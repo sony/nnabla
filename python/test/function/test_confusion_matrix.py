@@ -38,7 +38,7 @@ def ref_confusion_matrix(x, l, axis):
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
-@pytest.mark.parametrize("axis", [0, 1, 2])
+@pytest.mark.parametrize("axis", [0, 1, 2, -1, -2, -3])
 def test_confusion_matrix_forward(seed, ctx, axis, func_name):
     ishape = [5, 6, 7]
     rng = np.random.RandomState(seed)

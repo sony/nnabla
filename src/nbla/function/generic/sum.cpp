@@ -45,6 +45,8 @@ void Sum<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   reduction_size_ = 1;
   Shape_t outshape;
   for (int a : axes_) {
+    if (a < 0)
+      a += inshape.size();
     NBLA_CHECK(a < ndim && a >= 0, error_code::value,
                "Axes out of range. 0 <= %d < %d", a, ndim);
     for (int b = prev_a + 1; b < a; ++b) {

@@ -24,7 +24,8 @@ ctxs = list_context('MeanSubtraction')
 
 def ref_mean_subtraction(x, rmean, t, base_axis, batch_stat):
     if batch_stat:
-        mean = x.mean(tuple(range(0, base_axis)))
+        mean = x.mean(tuple(range(0, base_axis))) if base_axis >= 0 else x.mean(
+            tuple(range(0, len(x.shape)+base_axis)))
         rmean[...] = rmean + (mean - rmean) / (t + 1)
         t += 1
     return x - rmean
@@ -32,12 +33,13 @@ def ref_mean_subtraction(x, rmean, t, base_axis, batch_stat):
 
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("inshape", [(2, 3, 4)])
-@pytest.mark.parametrize("base_axis", [0, 1, 2])
+@pytest.mark.parametrize("base_axis", [0, 1, 2, -1, -2, -3])
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 def test_mean_subtraction_forward_backward(seed, inshape, base_axis, ctx, func_name):
     from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
-    mean_shape = inshape[base_axis:]
+    mean_shape = inshape[base_axis:
+                         ] if base_axis >= 0 else inshape[base_axis+len(inshape):]
     inputs = [np.array(rng.randn(*inshape).astype(np.float32)),
               np.zeros(mean_shape),
               np.array([1000])]

@@ -23,23 +23,23 @@ ctxs = list_context('Flip')
 def ref_flip(x, axes):
     if axes is None:
         axes = [len(x.shape) - 1]
-    x = x.copy()
-    for axis in axes:
-        if axis == 0:
-            x = x[::-1]
-        elif axis == 1:
-            x = x[::, ::-1]
-        elif axis == 2:
-            x = x[::, ::, ::-1]
-        else:
-            raise
-    return x
+    # x = x.copy()
+    # for axis in axes:
+    #     if axis == 0:
+    #         x = x[::-1]
+    #     elif axis == 1:
+    #         x = x[::, ::-1]
+    #     elif axis == 2:
+    #         x = x[::, ::, ::-1]
+    #     else:
+    #         raise
+    return np.flip(x, axes)
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("inshape", [(2, 3, 4)])
-@pytest.mark.parametrize("axes", [None, (0,), (0, 1), (2, 0)])
+@pytest.mark.parametrize("axes", [None, (0,), (0, 1), (2, 0), (-1, -2), (0, -1), (-1,)])
 def test_flip_forward_backward(seed, inshape, axes, ctx, func_name):
     from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)

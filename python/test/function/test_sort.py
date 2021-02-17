@@ -60,7 +60,7 @@ def ref_sort_bw(*args, **kwargs):
 @pytest.mark.parametrize("with_index", [False, True])
 @pytest.mark.parametrize("only_index", [False, True])
 @pytest.mark.parametrize("ishape, axis", [
-    ((2, 3, 4), -1), ((2, 3, 4), 0), ((2, 3, 4), 1), ((2, 3, 4), 2),
+    ((2, 3, 4), -1), ((2, 3, 4), -2), ((2, 3, 4), 0), ((2, 3, 4), 1), ((2, 3, 4), 2),
     ((100,), 0), ((1, 100), -1), ((1, 100), 0), ((2, 3, 4, 3, 2), 2),
 ])
 def test_forward_backward(seed, ishape, axis, reverse, with_index, only_index,

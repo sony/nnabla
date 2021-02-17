@@ -39,7 +39,7 @@ def ref_top_n_error(x, l, axis, n):
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
-@pytest.mark.parametrize("axis", [0, 1, 2])
+@pytest.mark.parametrize("axis", [0, 1, 2, -1, -2, -3])
 @pytest.mark.parametrize("n", [3, 5])
 def test_top_n_error_forward(seed, axis, n, ctx, func_name):
     ishape = [5, 6, 7]

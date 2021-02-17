@@ -27,6 +27,12 @@ NBLA_REGISTER_FUNCTION_SOURCE(Flip, const vector<int> &);
 
 template <typename T>
 void Flip<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
+
+  for (std::size_t i = 0; i < axes_.size(); ++i) {
+    if (axes_[i] < 0)
+      axes_[i] += inputs[0]->shape().size();
+  }
+
   outputs[0]->reshape(inputs[0]->shape(), true);
   flip_.resize(inputs[0]->ndim());
 }
