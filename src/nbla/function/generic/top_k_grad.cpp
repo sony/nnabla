@@ -28,8 +28,11 @@ void TopKGrad<T>::setup_impl(const Variables &inputs,
   const auto x = inputs[0];
   const auto y = outputs[0];
   const auto k = k_;
-  const auto base_axis = base_axis_;
   Shape_t x_shape = x->shape();
+
+  if (base_axis_ < 0)
+    base_axis_ += x_shape.size();
+  const auto base_axis = base_axis_;
 
   NBLA_CHECK(base_axis_ >= 0, error_code::value,
              "base_axis must not be less than zero, got %d", base_axis_);

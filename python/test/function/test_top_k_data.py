@@ -53,9 +53,10 @@ def ref_top_k_data_bw(x, g, k, abs, reduce, base_axis, **kw):
 @pytest.mark.parametrize("abs", [False, True])
 @pytest.mark.parametrize("reduce", [True, False])
 @pytest.mark.parametrize("ishape, k, base_axis", [
-    ((4, 5, 6), 1, 0), ((4, 5, 6), 1, 1), ((4, 5, 6), 1, 2),
-    ((4, 5, 6), 5, 0), ((4, 5, 6), 5, 1), ((4, 5, 6), 5, 2),
-    ((1, 1000), 10, 1), ((1, 100000), 1024, 1), ((1, 100000), 1025, 1)
+    ((4, 5, 6), 1, 0), ((4, 5, 6), 1, 1), ((4, 5, 6), 1, 2), ((4, 5, 6), 1, -2),
+    ((4, 5, 6), 5, 0), ((4, 5, 6), 5, 1), ((4, 5, 6), 5, 2), ((4, 5, 6), 5, -1),
+    ((1, 1000), 10, 1), ((1, 100000), 1024, 1), ((
+        1, 100000), 1025, 1), ((1, 100000), 1025, -2)
 ])
 def test_forward_backward(seed, ishape, k, abs, reduce, base_axis, ctx, fname):
     rng = np.random.RandomState(seed)

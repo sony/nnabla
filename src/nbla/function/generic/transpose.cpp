@@ -17,6 +17,8 @@
 #include <nbla/utils/nd_index.hpp>
 #include <nbla/variable.hpp>
 
+#include <cmath>
+
 namespace nbla {
 
 NBLA_REGISTER_FUNCTION_SOURCE(Transpose, const vector<int> &);
@@ -35,8 +37,14 @@ void Transpose<T>::setup_impl(const Variables &inputs,
   Shape_t oshape(ndim);
 
   for (int i = 0; i < ndim; i++) {
-    if (axes[i] < 0)
+    if (axes[i] < 0) {
       axes[i] += ishape.size();
+      NBLA_CHECK(axes[i] >= 0, error_code::value,
+                 "Absolute value of each element of axes must be less than "
+                 "that of input ndim. "
+                 "axes[%d]: %d >= ndim of input: %d.",
+                 i, abs(axes[i] - static_cast<int>(ishape.size())), ndim);
+    }
     NBLA_CHECK(axes[i] < ndim, error_code::value,
                "Each element of axes must be less than ndim of input. "
                "axes[%d]: %d >= ndim of input: %d.",
