@@ -22,6 +22,9 @@ DepthwiseConvolution:
 Deconvolution:
   float: [float]
   half: [Half]
+DeformableConvolution:
+  float: [float]
+  half: [Half]
 AdaptiveSeparableConvolution:
   float: [float]
   half: [Half]
