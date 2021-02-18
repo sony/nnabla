@@ -4005,6 +4005,7 @@ Array Manipulation:
         available_values:
         - constant
         - reflect
+        - repeat
         default: '''constant'''
       constant_value:
         doc: Fill value if mode is `constant`.
