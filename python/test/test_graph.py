@@ -402,3 +402,67 @@ def test_no_need_grad_forward_double():
     x.data.fill(1)
     a.forward(clear_no_need_grad=True)
     assert np.isclose(a.d, 1.0)
+
+def test_clear_input_if_no_need_grad():
+
+    x1 = nn.Variable([1, 5], need_grad=True)
+    x2 = nn.Variable([1, 5], need_grad=True)
+    xx1 = x1 + 1
+    xx2 = x2 + 2
+    y1 = F.add2(xx1, xx2)
+
+    y1.forward()
+    y1.backward()
+    assert xx1.data.cleared == False
+    assert xx2.data.cleared == False
+
+    y1.forward(clear_no_need_grad=True)
+    y1.backward()
+    assert xx1.data.cleared == True
+    assert xx2.data.cleared == True
+
+def test_clear_input_if_no_need_grad_inplace():
+
+    x1 = nn.Variable([1, 5], need_grad=True)
+    x2 = nn.Variable([1, 5], need_grad=True)
+    xx1 = x1 + 1
+    xx2 = x2 + 2
+    y1 = F.add2(xx1, xx2, inplace=True)
+
+    y1.forward()
+    y1.backward()
+    assert xx1.data.cleared == False
+    assert xx2.data.cleared == False
+
+    y1.forward(clear_no_need_grad=True)
+    y1.backward()
+    assert xx1.data.cleared == False
+    assert xx2.data.cleared == True
+
+def test_clear_input_if_no_need_grad_2layer():
+    x1 = nn.Variable([1, 5], need_grad=True)
+    x2 = nn.Variable([1, 5], need_grad=True)
+    x3 = nn.Variable([1, 5], need_grad=True)
+
+    xx1 = x1 + 1
+    xx2 = x2 + 1
+    xx3 = x3 + 1
+
+    y1 = F.add2(xx1, xx2)
+    y2 = F.add2( y1, xx3)
+
+    y1.forward(clear_no_need_grad=True)
+    assert xx1.data.cleared == True
+    assert xx2.data.cleared == True
+    assert y1.data.cleared == False
+
+    assert xx3.data.cleared == False
+    assert y2.data.cleared == False
+
+    y2.forward(clear_no_need_grad=True)
+    assert xx1.data.cleared == True
+    assert xx2.data.cleared == True
+    assert xx3.data.cleared == True
+    assert y1.data.cleared == True
+    assert y2.data.cleared == False
+
