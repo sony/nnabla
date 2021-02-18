@@ -45,6 +45,6 @@ NBLA_DEFINE_TRANSFORM_UNARY(Sinc, x == (T)0 ? (T)1 : std::sin(x) / x,
                             x == (T)0
                                 ? (T)0
                                 : dy * (std::cos(x) - std::sin(x) / x) / x,
-                            false);
+                            false, true);
 }
 #endif

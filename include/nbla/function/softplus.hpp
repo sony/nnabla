@@ -43,6 +43,6 @@ Outputs:
 NBLA_DEFINE_TRANSFORM_UNARY(SoftPlus,
                             x > (T)0 ? x + std::log(std::exp(-x) + (T)1)
                                      : std::log(std::exp(x) + (T)1),
-                            dy / ((T)1 + std::exp(-x)), false);
+                            dy / ((T)1 + std::exp(-x)), false, true);
 }
 #endif

@@ -38,6 +38,7 @@ Outputs:
 @tparam T Data type for computation.
 \ingroup FunctionImplGrp
  */
-NBLA_DEFINE_TRANSFORM_UNARY(Tanh, std::tanh(x), dy *((T)1 - y * y), true);
+NBLA_DEFINE_TRANSFORM_UNARY(Tanh, std::tanh(x), dy *((T)1 - y * y), true,
+                            false);
 }
 #endif
