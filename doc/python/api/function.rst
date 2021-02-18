@@ -45,6 +45,7 @@ Neural Network Layers
 .. autofunction:: depthwise_convolution
 .. autofunction:: deconvolution
 .. autofunction:: depthwise_deconvolution
+.. autofunction:: deformable_convolution
 .. autofunction:: adaptive_separable_convolution
 .. TODO: List fused_convolution once it becomes useful.
 .. autofunction:: max_pooling
