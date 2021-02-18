@@ -67,6 +67,8 @@ accumulated to the gradient of the input variable because we assume
 */
 class NBLA_API Function {
   bool used_{false};
+  // This flag turns true once Function::setup calls.
+  bool called_setup_{false};
 
 public:
   typedef shared_ptr<Function> Ptr;
@@ -183,14 +185,20 @@ public:
       If i=1 and j=0, checking checking if i-th input' gradient
      computation requires j-th input's data or not.
 
-      By default, always returns true. If override this in a sub-class, the
-      computation graph engine will optimize memory usage.
+      By default, always returns true. If override grad_depends_input_data_impl
+     in a sub-class, the computation graph engine will optimize memory usage.
 
       @param[in] i Input variable index.
       @param[in] j Input variable index.
 
    */
-  virtual bool grad_depends_input_data(int i, int j) const { return true; }
+  virtual bool grad_depends_input_data(int i, int j) const final {
+    // We don't know the order of optional arguments of inputs, therefore call
+    // setup.
+    NBLA_CHECK(called_setup_, error_code::runtime,
+               "Call setup before calling this function.");
+    return grad_depends_input_data_impl(i, j);
+  }
 
   /** Get in-place-level of i-th input variable's data (see below).
 
@@ -280,6 +288,15 @@ protected:
   virtual void backward_impl(const Variables &inputs, const Variables &outputs,
                              const vector<bool> &propagate_down,
                              const vector<bool> &accum) = 0;
+
+  /**
+    If any of inputs requires an input variable data when computing its
+    gradient, this function must be overridden to return appropriate boolean
+    value. Otherwise, backward computation will be incorrect.
+  */
+  virtual bool grad_depends_input_data_impl(int i, int j) const {
+    return false;
+  }
 
   DISABLE_COPY_AND_ASSIGN(Function);
 };

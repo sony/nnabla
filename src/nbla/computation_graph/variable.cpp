@@ -142,21 +142,54 @@ public:
     return false;
   }
 
-  vector<bool> get_clear_flags(CgFunctionPtr func) {
+  // Check if input/output[target_idx] are needed for backward calculation.
+  // Return true if needed and false otherwise.
+  template <bool INPUT>
+  bool check_grad_depends_data(CgFunctionPtr func,
+                               vector<CgVariablePtr>::size_type target_idx) {
+
     auto inputs = func->inputs();
+    for (vector<CgVariablePtr>::size_type i = 0; i < inputs.size(); i++) {
+      if (INPUT) {
+        if (func->function()->grad_depends_input_data(i, target_idx)) {
+          return true;
+        }
+      } else { // OUTPUT
+        if (func->function()->grad_depends_output_data(i, target_idx)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  vector<bool> get_clear_flags(CgFunctionPtr func) {
+    auto outputs = func->outputs();
+    auto inputs = func->inputs();
+
+    for (vector<CgVariablePtr>::size_type o = 0; o < outputs.size(); ++o) {
+      if (func->need_grad() && check_grad_depends_data<false>(func, o)) {
+        need_grad_variable_set_.insert(outputs[o]);
+      }
+    }
+
     vector<bool> ret(inputs.size(), false);
     for (vector<CgVariablePtr>::size_type i = 0; i < inputs.size(); ++i) {
       auto vi = inputs[i];
       // Remember variables that should not be cleared during forward
-      if (func->need_grad() && !vi->need_grad()) {
-        // Any variable that is used to computate gradient shouldn't be cleared.
-        // TODO: Not optimal because the input may not be used in gradient
-        // computation of some function.
+      if (func->need_grad() && check_grad_depends_data<true>(func, i)) {
         need_grad_variable_set_.insert(vi);
+      }
+      if (func->need_grad() &&
+          func->function()->update_input_data_in_forward(i)) {
+        update_variable_set_.insert(vi);
       }
       if (func->function()->inplace_data(i)) {
         // Inplaced variable shouldn't be cleared during forward
+        const auto inplaced_output_idx = func->function()->inplace_data_with(i);
         inplace_variable_set_.insert(vi);
+        inplace_variable_set_.insert(func->outputs()[inplaced_output_idx]);
       }
 
       // This comes first because check_last_visit must be called in order to
@@ -178,9 +211,8 @@ public:
         ret[i] = true;
         continue;
       }
-      if (clear_no_need_grad_ && !func->need_grad()) {
-        // Not clear if any function requiring gradient computation uses this
-        // variable.
+
+      if (clear_no_need_grad_) {
         if (need_grad_variable_set_.find(vi) != need_grad_variable_set_.end()) {
           continue;
         }
