@@ -1651,6 +1651,9 @@ def test_pf_weight_norm_execution(g_rng, func):
 @pytest.mark.parametrize("rng", [None, True])
 def test_pf_deformable_convolution_2d_execution(g_rng, inshape, kernel, out_channels, pad, stride, dilation, base_axis, w_init, b_init, group,
                                                 deformable_group, with_bias, fix_parameters, rng):
+    import platform
+    if platform.machine().startswith("arm"):
+        pytest.skip('Skip the arm platform temporarily.')
 
     w_shape = (out_channels, inshape[base_axis] // group,) + kernel
     b_shape = (out_channels,)

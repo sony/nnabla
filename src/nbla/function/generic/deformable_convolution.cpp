@@ -37,6 +37,11 @@ NBLA_REGISTER_FUNCTION_SOURCE(DeformableConvolution, int, // base_axis
 template <typename T>
 void DeformableConvolution<T>::setup_impl(const Variables &inputs,
                                           const Variables &outputs) {
+#if defined(__arm__) || defined(__arm64__)
+  NBLA_ERROR(error_code::target_specific,
+             "DeformableConvolution is not supported in arm.");
+#endif
+
   // Shape check
   Shape_t shape_data = inputs[0]->shape();
   Shape_t shape_weights = inputs[1]->shape();

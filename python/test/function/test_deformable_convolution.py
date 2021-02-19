@@ -69,6 +69,10 @@ def test_forward_backward_2d(inshape, kernel, out_channels, pad, stride, dilatio
         pytest.skip(
             'channel_last=True is not supported in any backends so far.')
 
+    import platform
+    if platform.machine().startswith("arm"):
+        pytest.skip('Skip the arm platform temporarily.')
+
     rng = np.random.RandomState(seed)
 
     # Create arguments
