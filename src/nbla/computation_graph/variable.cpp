@@ -16,6 +16,7 @@
 #include <nbla/computation_graph/function.hpp>
 #include <nbla/computation_graph/variable.hpp>
 #include <nbla/global_function_callback.hpp>
+#include <nbla/singleton_manager-internal.hpp>
 
 #include <cstdint>
 #include <iostream>
@@ -315,6 +316,13 @@ public:
     // Clear input buffers where possible.
     auto clear_flags = get_clear_flags(func);
     clear_inputs(func->inputs(), clear_flags);
+
+    // Record when inputs and outputs are cleared.
+    // It is possible to move clear_inputs above function_post_hook and record
+    // "clear" by using it. However, this change breaks backward compatibility.
+    if (SingletonManager::get<ClearCalledFlagRecorder>()->is_activated()) {
+      SingletonManager::get<ClearCalledFlagRecorder>()->record(func);
+    }
   }
 };
 
@@ -540,6 +548,12 @@ public:
 
     // Clear outputs buffer
     clear_output_buffers(f, output_prohibit_clear);
+
+    // Record when inputs and outputs are cleared.
+    // See the comment on ForwardCallback::operator().
+    if (SingletonManager::get<ClearCalledFlagRecorder>()->is_activated()) {
+      SingletonManager::get<ClearCalledFlagRecorder>()->record(f);
+    }
   }
 };
 
@@ -790,5 +804,75 @@ CgVariablePtr CgVariable::create_deep_copy(Context ctx, bool copy_grad) {
   }
 
   return ret;
+}
+
+ClearCalledFlagRecorder::ClearCalledFlagRecorder() {}
+
+ClearCalledFlagRecorder::~ClearCalledFlagRecorder() {}
+
+bool ClearCalledFlagRecorder::is_activated() { return is_activated_; }
+
+void ClearCalledFlagRecorder::activate() { is_activated_ = true; }
+
+void ClearCalledFlagRecorder::deactivate() {
+  is_activated_ = false;
+  recorded_input_clear_flags_.clear();
+  recorded_output_clear_flags_.clear();
+}
+
+std::vector<std::pair<bool, bool>>
+ClearCalledFlagRecorder::get_variable_clear_called_flag(
+    const std::vector<CgVariablePtr> &vars) {
+  std::vector<std::pair<bool, bool>> clear_called_flags;
+
+  for (const auto var : vars) {
+    bool data_flag = var->variable()->data()->array()->clear_called();
+    bool grad_flag = var->variable()->grad()->array()->clear_called();
+    clear_called_flags.push_back(std::make_pair(data_flag, grad_flag));
+  }
+
+  return clear_called_flags;
+}
+
+void ClearCalledFlagRecorder::record(const CgFunctionPtr func) {
+  if (!is_activated()) {
+    NBLA_ERROR(error_code::runtime, "Activate recorder before record.");
+  }
+
+  recorded_input_clear_flags_.push_back(
+      get_variable_clear_called_flag(func->inputs()));
+  recorded_output_clear_flags_.push_back(
+      get_variable_clear_called_flag(func->outputs()));
+}
+
+std::vector<std::vector<std::pair<bool, bool>>>
+ClearCalledFlagRecorder::get_recorded_input_clear_flags() const {
+  return recorded_input_clear_flags_;
+}
+
+std::vector<std::vector<std::pair<bool, bool>>>
+ClearCalledFlagRecorder::get_recorded_output_clear_flags() const {
+  return recorded_output_clear_flags_;
+}
+
+// Pasing empty arguments because this class is not defined by NBLA_API.
+NBLA_INSTANTIATE_SINGLETON(, ClearCalledFlagRecorder);
+
+void c_activate_clear_called_flag_recorder() {
+  SingletonManager::get<ClearCalledFlagRecorder>()->activate();
+}
+
+void c_deactivate_clear_called_flag_recorder() {
+  SingletonManager::get<ClearCalledFlagRecorder>()->deactivate();
+}
+
+vector<vector<pair<bool, bool>>> c_get_input_clear_called_flags() {
+  return SingletonManager::get<ClearCalledFlagRecorder>()
+      ->get_recorded_input_clear_flags();
+}
+
+vector<vector<pair<bool, bool>>> c_get_output_clear_called_flags() {
+  return SingletonManager::get<ClearCalledFlagRecorder>()
+      ->get_recorded_output_clear_flags();
 }
 }
