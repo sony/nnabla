@@ -14,6 +14,7 @@
 
 import os
 import re
+import sys
 import numpy as np
 import timeit
 from contextlib import contextmanager
@@ -36,6 +37,25 @@ except Exception:
 gpu_load_backend_ok = True
 try:
     import pynvml
+
+    def _load_nvml_for_win():
+        """
+        For the bug NVML Shared Library Not Found on windows, because the file nvml.dll maybe
+        in the `C:/Program Files/NVIDIA Corporation/NVSMI` or the `C:/Windows/System32`.
+        """
+        from pynvml import nvml
+        if not (nvml.nvml_lib == None and sys.platform[:3] == "win"):
+            return None
+
+        nvml.lib_load_lock.acquire()
+        nvml_path = os.path.join(os.getenv(
+            "ProgramFiles", "C:/Program Files"), "NVIDIA Corporation/NVSMI/nvml.dll")
+        if not os.path.exists(nvml_path):
+            nvml_path = os.path.join("C:/windows", "system32", "nvml.dll")
+        if os.path.exists(nvml_path):
+            nvml.nvml_lib = nvml.CDLL(nvml_path)
+        nvml.lib_load_lock.release()
+    _load_nvml_for_win()
     pynvml.nvmlInit()
 except Exception:
     # measure gpu load only if nvml installed
