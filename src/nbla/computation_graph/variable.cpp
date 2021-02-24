@@ -111,6 +111,7 @@ class ForwardCallback {
   unordered_map<CgVariablePtr, unsigned int> vseen_;
   unordered_set<CgVariablePtr> need_grad_variable_set_;
   unordered_set<CgVariablePtr> inplace_variable_set_;
+  unordered_set<CgVariablePtr> update_variable_set_;
   vector<string> history_;
 
 public:
@@ -215,6 +216,9 @@ public:
 
       if (clear_no_need_grad_) {
         if (need_grad_variable_set_.find(vi) != need_grad_variable_set_.end()) {
+          continue;
+        }
+        if (update_variable_set_.find(vi) != update_variable_set_.end()) {
           continue;
         }
         ret[i] = true;

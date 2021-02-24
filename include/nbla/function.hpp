@@ -200,6 +200,17 @@ public:
     return grad_depends_input_data_impl(i, j);
   }
 
+  /** Dependency flag for checking if update input in forward.
+
+      If i-th input data updated in forward, this function must be overridden to
+     return appropriate boolean value. Otherwise, computation result will be
+     incorrect.
+
+      @param[in] i Input variable index.
+
+   */
+  virtual bool update_input_data_in_forward(int i) const { return false; }
+
   /** Get in-place-level of i-th input variable's data (see below).
 
       * 0 (NOT_INPLACE): Not in-placed
