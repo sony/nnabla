@@ -265,6 +265,9 @@ LessEqual:
 Less:
   float: [float]
   half: [Half]
+SearchSorted:
+  float: [float]
+  half: [Half]
 LogicalAndScalar:
   float: [float]
   half: [Half]

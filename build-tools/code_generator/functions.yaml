@@ -3136,6 +3136,32 @@ Logical:
     function_ids:
       Empty: 56
     c_runtime: not support
+  SearchSorted:
+    snake_name: searchsorted
+    doc: |2+
+
+      Finds indices in the innermost dimension of a sorted sequance where values must be inserted in order to maintain value
+
+    inputs:
+      sorted_sequence:
+        doc: N-D array of sorted sequence where search is to be performed. Note that
+          this must be a sorted array
+      values:
+        doc: N-D array of Search values
+    arguments:
+      right:
+        doc: :If True, given a value v, the function returns index i such that sorted_sequence[i-1]
+          <= v < sorted_sequence[i] (index of closest upper bound of v). By default,
+          this is false so the function returns index i such that a[i-1] < v <= a[i]
+          (index of closest lower bound of v)
+        type: bool
+        default: false
+    outputs:
+      y:
+        doc: N-D array containing the required indices
+    c_runtime: not support
+    function_ids:
+      B: 333
   LogicalAndScalar:
     snake_name: logical_and_scalar
     doc: |2
