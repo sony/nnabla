@@ -262,3 +262,5 @@
 29:
   ISTFT_iiiiB: 328
   STFT_iiiiBi: 327
+30:
+  DeformableConvolution_iiIiIiIiiB: 329

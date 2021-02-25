@@ -70,6 +70,7 @@ Here is the list of parametric functions.
 .. autofunction:: depthwise_convolution
 .. autofunction:: deconvolution
 .. autofunction:: depthwise_deconvolution
+.. autofunction:: deformable_convolution
 .. autofunction:: batch_normalization
 .. autofunction:: fused_batch_normalization
 .. autofunction:: sync_batch_normalization
