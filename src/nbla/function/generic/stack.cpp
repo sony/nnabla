@@ -26,7 +26,7 @@ template <typename T>
 void Stack<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   const Shape_t in_shape = inputs[0]->shape();
   if (axis_ < 0)
-    axis_ += in_shape.size();
+    axis_ += in_shape.size() + 1;
 
   NBLA_CHECK(axis_ >= 0, error_code::value,
              "axis must not be less than zero, got %d", axis_);
