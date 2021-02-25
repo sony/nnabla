@@ -2,7 +2,7 @@ Cython
 boto3
 h5py
 imageio
-numpy
+numpy==1.19.5
 pillow
 protobuf
 pyyaml
