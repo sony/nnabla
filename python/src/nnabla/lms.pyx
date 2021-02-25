@@ -49,8 +49,8 @@ cdef class SwapInOutScheduler:
         
         scheduler = SwapInOutScheduler(host_ctx, device_ctx, size=max_gpu_memory_size)
 
-        # Make sure to call `set_default_cxt` after calling prefer_xxx_array() to activate a change of memory preference.
-        set_default_cxt(device_ctx)
+        # Make sure to call `nn.set_default_context` after calling prefer_xxx_array() to activate a change of memory preference.
+        nn.set_default_context(device_ctx)
 
         x = nn.Variable(...)
         loss = build_network(x)
@@ -89,7 +89,7 @@ cdef class SwapInOutScheduler:
         # 2. Set small size for a physical memory chunk allocated by virtual memory allocator
         # In default, the chunk size is set as 20MB (20 << 20).
         from nnabla_ext.cuda.init import set_cuda_virtual_memory_chunk_size
-        set_cuda_virtual_memory_chunk_size(2 << 20, 1)  # Set 2MB, for example.
+        set_cuda_virtual_memory_chunk_size(2 << 20)  # Set 2MB, for example.
     """
 
     def __cinit__(self, h_ctx, d_ctx, size, prefetch_size=None,
