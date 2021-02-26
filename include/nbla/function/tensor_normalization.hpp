@@ -194,6 +194,31 @@ protected:
                                       const Variables &outputs,
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
+  virtual bool grad_depends_input_data_impl(int i, int j) const {
+    if (need_adapter_) {
+      if (i == 0) {
+        return true;
+      }
+      if (j == 0) {
+        return true;
+      }
+      if (i == j) {
+        return true;
+      }
+    } else {
+      if (i == 0) {
+        if (j == 0 || j == gamma_idx_) {
+          return true;
+        }
+      }
+      if (i == gamma_idx_) {
+        if (j == 0) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
 };
 }
 #endif

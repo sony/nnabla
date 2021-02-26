@@ -109,6 +109,15 @@ protected:
                                       const Variables &outputs,
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
+  virtual bool grad_depends_input_data_impl(int i, int j) const {
+    if (i == X && j == WEIGHT) {
+      return true;
+    }
+    if (i == WEIGHT && j == X) {
+      return true;
+    }
+    return false;
+  }
 
   std::unordered_map<InName, std::pair<int, Variable *>> input_variables_;
 

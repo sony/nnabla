@@ -149,6 +149,30 @@ protected:
                                              const Variables &outputs,
                                              const vector<bool> &propagate_down,
                                              const vector<bool> &accum);
+  virtual bool grad_depends_input_data_impl(int i, int j) const {
+    if (batch_stat_) { // Training mode.
+      if (i == 0) {
+        if (j == 0 || j == g_idx_)
+          return true;
+      }
+      if (i == g_idx_) {
+        if (j == 0)
+          return true;
+      }
+      return false;
+
+    } else { // Testing mode.
+      if (i == 0) {
+        if (j == g_idx_ || j == v_idx_)
+          return true;
+      }
+      if (i == g_idx_) {
+        if (j == 0 || j == m_idx_ || j == v_idx_)
+          return true;
+      }
+    }
+    return false;
+  }
 };
 }
 #endif

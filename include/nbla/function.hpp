@@ -185,9 +185,6 @@ public:
       If i=1 and j=0, checking checking if i-th input' gradient
      computation requires j-th input's data or not.
 
-      By default, always returns true. If override grad_depends_input_data_impl
-     in a sub-class, the computation graph engine will optimize memory usage.
-
       @param[in] i Input variable index.
       @param[in] j Input variable index.
 

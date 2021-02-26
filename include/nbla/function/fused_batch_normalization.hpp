@@ -123,5 +123,29 @@ protected:
                                       const Variables &outputs,
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
+  virtual bool grad_depends_input_data_impl(int i, int j) const {
+    if (batch_stat_) { // Training mode.
+      if (i == 0) {
+        if (j == 0 || j == 2)
+          return true;
+      }
+      if (i == 2) {
+        if (j == 0)
+          return true;
+      }
+      return false;
+
+    } else { // Testing mode.
+      if (i == 0) {
+        if (j == 2 || j == 4)
+          return true;
+      }
+      if (i == 2) {
+        if (j == 0 || j == 3)
+          return true;
+      }
+    }
+    return false;
+  }
 };
 } // namespace nbla
