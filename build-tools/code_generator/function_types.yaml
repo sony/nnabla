@@ -142,6 +142,9 @@ WeightNormalization:
 WeightStandardization:
   float: [float]
   half: [Half]
+SpectralNorm:
+  float: [float]
+  half: [Half]
 MeanSubtraction:
   float: [float]
   half: [Half]

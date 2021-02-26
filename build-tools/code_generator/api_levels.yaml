@@ -264,3 +264,5 @@
   STFT_iiiiBi: 327
 30:
   DeformableConvolution_iiIiIiIiiB: 329
+31:
+  SpectralNorm_iifB: 330

@@ -436,9 +436,7 @@ def test_pf_fused_bn_no_scale_bias(no_scale, no_bias):
 @pytest.mark.parametrize("u_init", [None, True])
 def test_pf_spectral_norm_execution(g_rng, w_shape, dim, itr, test, u_init):
     # python implementation
-    def spectral_norm_numpy(w, dim=0, itr=1, eps=1e-12, test=False, u_init_d=None):
-        if test:
-            return w
+    def spectral_norm_numpy(w, dim=0, itr=1, eps=1e-12, u_init_d=None):
         w_shape = w.shape
         if dim != 0:
             dims_transpose = [dim] + \
@@ -470,23 +468,23 @@ def test_pf_spectral_norm_execution(g_rng, w_shape, dim, itr, test, u_init):
     w_sn = PF.spectral_norm(w, dim, itr, test=test, u_init=u_init)
     u_init_d = nn.get_parameters(grad_only=False)['spectral-norm/u'].d.copy() \
         if u_init is None else u_init
-    if not test:
-        w_sn.forward()
-        w_sn.backward()
-    else:
-        w_sn = w
+
+    w_sn.forward()
+    w_sn.backward()
 
     # Check values
     w_sn_numpy = spectral_norm_numpy(
-        w.d, dim, itr, test=test, u_init_d=u_init_d)
+        w.d, dim, itr, u_init_d=u_init_d)
     assert_allclose(w_sn_numpy, w_sn.d, atol=1e-2, rtol=1e-5)
+    if test:
+        u = nn.get_parameters(grad_only=False)['spectral-norm/u']
+        assert_allclose(u_init_d, u.d)
 
     # Check args (cannot since this is the functions composite)
 
     # Check created parameters
-    assert len(nn.get_parameters(grad_only=False)) == 2
-    w_sn, u = [nn.get_parameters(grad_only=False)['spectral-norm/' + name]
-               for name in ['W_sn', 'u']]
+    assert len(nn.get_parameters(grad_only=False)) == 1
+    u = nn.get_parameters(grad_only=False)['spectral-norm/u']
 
 
 # util. for normalization tests
