@@ -716,8 +716,8 @@ void CgVariable::remove_function_reference(CgFunction *funcp) {
   auto it = function_references_.find(funcp);
   if (it == function_references_.end())
     return;
-  function_references_.erase(it);
   function_reference_count_ -= it->second.second.count;
+  function_references_.erase(it);
 }
 
 void CgVariable::mark_need_setup() {
