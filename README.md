@@ -130,7 +130,7 @@ print(np.allclose(-np.sin(x.d), dnx.d))
 dnx.backward()
 print(np.allclose(-np.cos(x.d), x.g))
 
-# Show the supported status for each function
+# Show the registry status
 from nnabla.backward_functions import show_registry
 show_registry()
 ```
