@@ -1636,4 +1636,99 @@ def test_pf_weight_norm_execution(g_rng, func):
 
     assert_allclose(w.d, w_np, atol=1e-2, rtol=1e-5)
 
+
+@pytest.mark.parametrize("inshape, kernel, out_channels, pad, stride, dilation, group, deformable_group, base_axis", [
+    ((2, 4, 8, 8), (3, 2), 4, None, None, None, 1, 2, 1),
+    ((2, 4, 6, 6), (3, 2), 4, (0, 0), (1, 1), (1, 1), 2, 2, 1),
+    ((2, 2, 5, 7), (3, 3), 2, None, None, None, 1, 1, 1),
+    ((2, 2, 5, 7), (3, 3), 2, (1, 1), (1, 2), (2, 1), 1, 2, 1),
+    ((2, 2, 5, 7), (3, 3), 2, (1, 1), (1, 2), (2, 1), 2, 1, 1),
+ ])
+@pytest.mark.parametrize("w_init", [None, I.NormalInitializer(), True])
+@pytest.mark.parametrize("b_init", [None, I.ConstantInitializer(), True])
+@pytest.mark.parametrize("with_bias", [False, True])
+@pytest.mark.parametrize("fix_parameters", [False, True])
+@pytest.mark.parametrize("rng", [None, True])
+def test_pf_deformable_convolution_2d_execution(g_rng, inshape, kernel, out_channels, pad, stride, dilation, base_axis, w_init, b_init, group,
+                                                deformable_group, with_bias, fix_parameters, rng):
+    import platform
+    if platform.machine().startswith("arm"):
+        pytest.skip('Skip the arm platform temporarily.')
+
+    w_shape = (out_channels, inshape[base_axis] // group,) + kernel
+    b_shape = (out_channels,)
+    w_init = process_param_init(w_init, w_shape, g_rng)
+    b_init = process_param_init(b_init, b_shape, g_rng)
+    rng = process_rng(rng)
+
+    x = nn.Variable.from_numpy_array(np.random.rand(*inshape))
+
+    offset_channels = 2 * deformable_group * kernel[0] * kernel[1]
+    offset_shape = inshape[0:base_axis] + \
+        (offset_channels,) + inshape[base_axis + 1:]
+
+    rng_off_mask = np.random.RandomState(1223)
+    offset = (3.8 * rng_off_mask.rand(*offset_shape).astype(np.float32)) - 1.9
+    offset += np.logical_or(np.abs(offset - np.floor(offset)) < 0.1,
+                            np.abs(offset - np.ceil(offset)) < 0.1).astype(np.int)*0.5
+    offset = nn.Variable.from_numpy_array(offset)
+
+    mask_shape = inshape[0:base_axis] + \
+        (deformable_group * kernel[0] * kernel[1],) + inshape[base_axis + 1:]
+    mask = rng_off_mask.rand(*mask_shape).astype(np.float32)
+    mask = nn.Variable.from_numpy_array(mask)
+
+    kw = {}
+    insert_if_not_none(kw, 'pad', pad)
+    insert_if_not_none(kw, 'stride', stride)
+    insert_if_not_none(kw, 'dilation', dilation)
+    insert_if_not_none(kw, 'w_init', w_init)
+    insert_if_not_none(kw, 'b_init', b_init)
+    insert_if_not_none(kw, 'rng', rng)
+    insert_if_not_default(kw, 'group', group, 1)
+    insert_if_not_default(kw, 'deformable_group', deformable_group, 1)
+    insert_if_not_default(kw, 'base_axis', base_axis, 1)
+    insert_if_not_default(kw, 'fix_parameters', fix_parameters, False)
+    insert_if_not_default(kw, 'with_bias', with_bias, True)
+
+    # Check execution
+    y = PF.deformable_convolution(
+        x, out_channels, kernel, offset, mask, **kw)
+    y.forward()
+    y.backward()
+
+    # Check values
+    # Tested in test_forward_backward_2d in test_deformabl_convolution.py
+
+    # Check args
+    assert y.parent.info.type_name == 'DeformableConvolution'
+    args = y.parent.info.args
+    assert args['base_axis'] == base_axis
+    assert args['group'] == group
+    assert args['deformable_group'] == deformable_group
+    ndim = len(x.shape) - (base_axis + 1)
+    check_none_arg(tuple(args['pad']), pad, (0,) * ndim)
+    check_none_arg(tuple(args['stride']), stride, (1,) * ndim)
+    check_none_arg(tuple(args['dilation']), dilation, (1,) * ndim)
+
+    # Check created parameters
+    assert y.parent.inputs[0] == x
+    assert len(y.parent.inputs) == 4 + int(with_bias)
+    assert len(nn.get_parameters()) == 1 + int(with_bias)
+    w = nn.get_parameters()['deformable_conv/W']
+    assert w.shape == w_shape
+    assert w.need_grad
+    assert y.parent.inputs[1].need_grad == (not fix_parameters)
+    if isinstance(w_init, np.ndarray):
+        assert_allclose(w_init, w.d)
+    assert y.parent.inputs[2] == offset
+    assert y.parent.inputs[3] == mask
+    if with_bias:
+        b = nn.get_parameters()['deformable_conv/b']
+        assert b.shape == b_shape
+        assert b.need_grad
+        assert y.parent.inputs[4].need_grad == (not fix_parameters)
+        if isinstance(b_init, np.ndarray):
+            assert_allclose(b_init, b.d)
+
 # TODO: Test all parametric functions.

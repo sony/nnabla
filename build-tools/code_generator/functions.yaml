@@ -660,6 +660,96 @@ Neural Network Layer:
     function_ids:
       iiIiIiIi: 4
     c_runtime: not support
+  DeformableConvolution:
+    snake_name: deformable_convolution
+    doc: |2
+
+      2-D Deformable Convolution with bias.
+      Another convolution with fixed output channels must be passed externally to calculate the offsets and mask.
+      Mask should be normalized to :math:`[0,1]` interval.
+
+      .. math::
+        \begin{eqnarray}
+          y(p) = \sum_{k=1}^{K} w_k \cdot x(p + p_k + \Delta p_k) \cdot \Delta m_k,
+        \end{eqnarray}
+
+      where :math:`x` and :math:`y` are input and output, :math:`w_k` is the weight, :math:`p` is the pixel location of interest, :math:`p_k` is the fixed displacement e.g., :math:`p_k \in \{(-1, -1), (-1, 0), \ldots (1, 1)\}` for the 2D 3x3 receptive field, :math:`\Delta p_k` is the learnable displacement, and :math:`\Delta m_k` is the learnable scale normalized in :math:`[0, 1]` by a function like the sigmoid. Note that :math:`\Delta p_k` and :math:`\Delta m_k` are sample-dependent, location-dependent, and feature-independent.
+
+      References:
+
+          * `Dai et al., Deformable Convolutional Networks.
+            <https://arxiv.org/abs/1703.06211>`_
+
+          * `Zhu et al., Deformable ConvNets v2: More Deformable, Better Results.
+            <https://arxiv.org/abs/1811.11168>`_
+    inputs:
+      x:
+        doc: :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times
+          C \times L_1 \times ... \times L_N`).
+      weight:
+        doc: :math:`(2 + N)`-D array (:math:`C' \times C \times K_1 \times ... \times
+          K_N`).
+        parameter: true
+      offset:
+        doc: Offsets for deformable convolutions. Shape is fixed to :math:`(N, deformable_group
+          \times 2 \times Kh \times Kw, H, W)`. Offsets must be calculated externally
+          through a separate convolution layer.
+      mask:
+        doc: Normalized mask for deformable convolutions v2. Shape is fixed to :math:`(N,
+          deformable_group \times 2 \times Kh \times Kw, H, W)`. Masks must be calculated
+          externally together with the offsets through a separate convolution layer.
+        optional: true
+      bias:
+        doc: Bias vector (:math:`C'`).
+        optional: true
+        parameter: true
+    arguments:
+      base_axis:
+        doc: base axis :math:`B`.
+        type: int64
+        default: '1'
+      pad:
+        doc: Padding sizes for dimensions.
+        type: Shape
+        default: (0,) * (len(x.shape) - (base_axis+1))
+      stride:
+        doc: Stride sizes for dimensions.
+        type: Shape
+        default: (1,) * (len(x.shape) - (base_axis+1))
+      dilation:
+        doc: Dilation sizes for dimensions.
+        type: Shape
+        default: (1,) * (len(x.shape) - (base_axis+1))
+      group:
+        doc: Number of groups of channels. This makes the connection across channels
+          sparser, by grouping connections along the mapping direction.
+        type: int64
+        default: '1'
+      deformable_group:
+        doc: Number of deformable groups of channels.
+        type: int64
+        default: '1'
+      channel_last:
+        doc: If True, the last dimension is considered as channel dimension, a.k.a
+          NHWC order.
+        type: bool
+        default: 'False'
+    outputs:
+      y:
+        doc: |2
+
+          :math:`(B + 1 + N)`-D array (:math:`M_1 \times ... \times M_B \times C' \times L'_1 \times ... \times L'_N`).
+
+          A spatial size of the output is calculated as
+
+          .. math::
+
+            L'_i = \frac{L_i + 2 p_i - d_i (k_i - 1) - 1}{s_i} + 1,
+
+          where :math:`L_i` is the spatial size, :math:`p_i` is the padding, :math:`d_i` is the dilation, :math:`k_i` is the kernel size, and :math:`s_i` is the stride for :math:`i`-th spatial dimension. The same calculation can also be applied to the other spatial dimensions.
+    c_runtime: not support
+    function_ids:
+      iiIiIiIiiB: 329
   AdaptiveSeparableConvolution:
     snake_name: adaptive_separable_convolution
     doc: |2
@@ -3915,6 +4005,7 @@ Array Manipulation:
         available_values:
         - constant
         - reflect
+        - repeat
         default: '''constant'''
       constant_value:
         doc: Fill value if mode is `constant`.

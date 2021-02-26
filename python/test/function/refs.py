@@ -176,6 +176,115 @@ def deconvolution_2d(x, w, b, pad, stride, dilation, group, dtype=np.float32,
     return x
 
 
+def deformable_convolution_2d(x, w, offset, mask, b, pad, stride,
+                              dilation, group, deformable_group,
+                              channel_last, dtype=np.float32):
+    """
+    Deformable convlution 2D for a single batch data
+    """
+    C, H, W = x.shape  # without batch dimension
+    K, Cg, M, N = w.shape
+
+    assert C == Cg * \
+        group, "Wrong shape, x: {}, w: {}".format(x.shape, w.shape)
+    assert offset.shape[0] == 2 * deformable_group * M * N, \
+        "Wrong shape offset: {}, 2 * deformable_group * Kw * Kh: {}".format(
+            offset.shape, 2 * deformable_group * M * N)
+    assert offset.shape[1:] == (
+        H, W), "Wrong shape, offset: {}, w: {}".format(offset.shape, w.shape)
+    assert mask.shape[0] == deformable_group * M * N, \
+        "Wrong shape mask: {}, deformable_group * Kw * Kh: {}".format(
+            mask.shape, deformable_group * M * N)
+    assert mask.shape[1:] == (
+        H, W), "Wrong shape, mask: {}, w: {}".format(mask.shape, w.shape)
+    assert pad[0] < (w.shape[2] + 1)//2 and pad[1] < (w.shape[3] +
+                                                      1)//2, "Wrong shape, kernel: {}, pad: {}".format(w.shape[2:], pad)
+
+    # Zero padding
+    x_pad = np.zeros((C, H + pad[0] * 2, W + pad[1] * 2), dtype=dtype)
+    x_pad[:, pad[0]:pad[0] + H, pad[1]:pad[1] + W] = x
+
+    # Create and initialize output variable
+    Ho = get_conv_out_size(H, M, pad[0], stride[0], dilation[0])
+    Wo = get_conv_out_size(W, N, pad[1], stride[1], dilation[1])
+    y = np.zeros((K, Ho, Wo), dtype=dtype)
+
+    _, Hp, Wp = x_pad.shape
+
+    # Deformable Convolution
+    for k in range(K):
+        for c in range(C//group):
+            g = k // (K//group)
+            ci = Cg * g + c
+            dg = ci // (C // deformable_group)
+
+            for ho in range(Ho):
+                for wo in range(Wo):
+                    # Get the input coordinates {(hi, wi)} which are
+                    # mapped to the output coordinate (ho, wo) by the kernel.
+                    hi = ho * stride[0] + np.arange(0, M) * dilation[0]
+                    wi = wo * stride[1] + np.arange(0, N) * dilation[1]
+
+                    # Apply the kernel
+                    modulated_x = np.zeros((M, N), dtype=dtype)
+
+                    for m in range(M):
+                        for n in range(N):
+                            # Shift (hi, wi) to (ph, pw) by using offset
+                            ph = hi[m] + offset[2*((dg*M*N) + (m * N) + n),
+                                                ho * stride[0], wo * stride[1]]
+                            pw = wi[n] + offset[2*((dg*M*N) + (m * N) + n) + 1,
+                                                ho * stride[0], wo * stride[1]]
+
+                            # Bilinear interpolation
+                            h_low = int(np.floor(ph))
+                            w_low = int(np.floor(pw))
+                            h_high = h_low + 1
+                            w_high = w_low + 1
+
+                            if h_low >= Hp or w_low >= Wp or \
+                                    h_high < 0 or w_high < 0:
+                                # Out of bounds.
+                                # Interpolation cannot be perform.
+                                val = 0
+                            else:
+                                v1 = 0  # (h_low, w_low)
+                                v2 = 0  # (h_low, w_high)
+                                v3 = 0  # (h_high, w_low)
+                                v4 = 0  # (h_high, w_high)
+                                if h_low >= 0 and w_low >= 0:
+                                    v1 = x_pad[ci, h_low, w_low]
+                                if h_low >= 0 and w_high < Wp:
+                                    v2 = x_pad[ci, h_low, w_high]
+                                if h_high < Hp and w_low >= 0:
+                                    v3 = x_pad[ci, h_high, w_low]
+                                if h_high < Hp and w_high < Wp:
+                                    v4 = x_pad[ci, h_high, w_high]
+
+                                lh = ph - h_low
+                                lw = pw - w_low
+                                hh = 1 - lh
+                                hw = 1 - lw
+                                w1 = hh * hw
+                                w2 = hh * lw
+                                w3 = lh * hw
+                                w4 = lh * lw
+                                val = w1 * v1 + w2 * v2 + w3 * v3 + w4 * v4
+
+                                # Apply mask
+                                val *= mask[(dg*M*N) + (m * N) + n,
+                                            ho * stride[0], wo * stride[1]]
+
+                                modulated_x[m, n] = val
+
+                    y[k, ho, wo] += (w[k, c] * modulated_x).sum()
+
+    if b is not None:
+        y += b[..., np.newaxis, np.newaxis]
+
+    return y
+
+
 def pooling_2d(x, mode, kernel, stride, pad, ignore_border=True,
                including_pad=True, dtype=np.float32):
     """
