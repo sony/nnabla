@@ -26,7 +26,7 @@ def ref_stack(*inputs, **params):
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
-@pytest.mark.parametrize("axis", [0, 1, 2])
+@pytest.mark.parametrize("axis", [0, 1, 2, -1, -2, -3])
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("num_inputs", [2, 3])
 def test_stack_forward_backward(seed, axis, num_inputs, ctx, func_name):
@@ -40,7 +40,7 @@ def test_stack_forward_backward(seed, axis, num_inputs, ctx, func_name):
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
-@pytest.mark.parametrize("axis", [0, 1, 2])
+@pytest.mark.parametrize("axis", [0, 1, 2, -1, -2, -3])
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("num_inputs", [2, 3])
 def test_stack_double_backward(seed, axis, num_inputs, ctx, func_name):
