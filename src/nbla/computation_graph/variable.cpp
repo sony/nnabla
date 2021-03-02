@@ -111,7 +111,7 @@ class ForwardCallback {
   unordered_map<CgVariablePtr, unsigned int> vseen_;
   unordered_set<CgVariablePtr> need_grad_variable_set_;
   unordered_set<CgVariablePtr> inplace_variable_set_;
-  unordered_set<CgVariablePtr> update_variable_set_;
+  unordered_set<CgVariablePtr> overwrite_variable_set_;
   vector<string> history_;
 
 public:
@@ -184,8 +184,8 @@ public:
         need_grad_variable_set_.insert(vi);
       }
       if (func->need_grad() &&
-          func->function()->update_input_data_in_forward(i)) {
-        update_variable_set_.insert(vi);
+          func->function()->overwrite_input_data_in_forward(i)) {
+        overwrite_variable_set_.insert(vi);
       }
       if (func->function()->inplace_data(i)) {
         // Inplaced variable shouldn't be cleared during forward
@@ -218,7 +218,7 @@ public:
         if (need_grad_variable_set_.find(vi) != need_grad_variable_set_.end()) {
           continue;
         }
-        if (update_variable_set_.find(vi) != update_variable_set_.end()) {
+        if (overwrite_variable_set_.find(vi) != overwrite_variable_set_.end()) {
           continue;
         }
         ret[i] = true;

@@ -147,5 +147,11 @@ protected:
     }
     return false;
   }
+  virtual bool overwrite_input_data_in_forward_impl(int i) const {
+    if (i == 3 || i == 4) {
+      return true;
+    }
+    return false;
+  }
 };
 } // namespace nbla

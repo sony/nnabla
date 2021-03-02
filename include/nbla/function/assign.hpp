@@ -64,6 +64,11 @@ protected:
                                       const Variables &outputs,
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
+  virtual bool overwrite_input_data_in_forward_impl(int i) const {
+    if (i == 0)
+      return true;
+    return false;
+  }
 };
 }
 #endif

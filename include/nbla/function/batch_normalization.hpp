@@ -173,6 +173,12 @@ protected:
     }
     return false;
   }
+  virtual bool overwrite_input_data_in_forward_impl(int i) const {
+    if (i == m_idx_ || i == v_idx_) {
+      return true;
+    }
+    return false;
+  }
 };
 }
 #endif

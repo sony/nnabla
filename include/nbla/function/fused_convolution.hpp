@@ -118,6 +118,12 @@ protected:
     }
     return false;
   }
+  virtual bool overwrite_input_data_in_forward_impl(int i) const {
+    if (i == MEAN || i == VARIANCE) {
+      return true;
+    }
+    return false;
+  }
 
   std::unordered_map<InName, std::pair<int, Variable *>> input_variables_;
 

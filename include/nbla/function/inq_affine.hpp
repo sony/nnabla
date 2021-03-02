@@ -134,6 +134,12 @@ protected:
     }
     return false;
   }
+  virtual bool overwrite_input_data_in_forward_impl(int i) const {
+    if (i == 1 || i == 2) {
+      return true;
+    }
+    return false;
+  }
 };
 }
 #endif
