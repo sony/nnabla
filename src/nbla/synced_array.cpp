@@ -161,9 +161,7 @@ SyncedArray::ArrayDesc SyncedArray::sync(dtypes dtype, const Context &ctx_orig,
         shared_ptr<Array>(ArrayCreator::create(size_, dtype, ctx)), false);
   } else {
     // Wait for the end of previous async_flags asynchronous memcpy
-    if (!(async_flags & AsyncFlag::ASYNC)) {
-      array_[desc.key].first->wait_event(ctx, async_flags);
-    }
+    array_[desc.key].first->wait_event(ctx, async_flags);
   }
 
   if (write_only) {
