@@ -3504,10 +3504,75 @@ class LSTMCell:
 
 
 @parametric_function_api("spectral-norm", [
-    ('W_sn', 'Spectral Normalized Weight matrix', 'w.shape', False),
     ('u', 'singular vector', '(w.shape[dim], )', False),
 ])
 def spectral_norm(w, dim=0, itr=1, eps=1e-12, test=False, u_init=None, fix_parameters=True):
+    """Spectral Normalization.
+
+    .. math::
+
+        W_{sn} = \\frac{W}{\\sigma(W)}.
+
+    where :math:`W` is the input matrix, and the :math:`\\sigma(W)` is the spectral norm of :math:`W`. The spectral norm is approximately computed by the power iteration.
+
+    References:
+
+        Takeru Miyato, Toshiki Kataoka, Masanori Koyama, Yuichi Yoshida, 
+        "Spectral Normalization for Generative Adversarial Networks", 
+        International Conference on Learning Representations. 2018.
+
+    Args:
+        W (~nnabla.Variable): Input N-D array with shape. This is normally network parameter.
+        dim (`int`): Output dimension. Default is 0. If the dimension is not 0, then the specified dimension becomes the most-left dimension by transposing.
+        itr (`int`): Number of iterations. Default is 1.
+        eps (`float`): Epsilon for the normalization. Default is 1e-12.
+        test (`bool`): Use test mode. Default is False.
+
+    Returns:
+        ~nnabla.Variable: Spectrally normalized :math:`W_{sn}` with the same shape as :math:`W`.
+
+    Example:
+
+        .. code-block:: python
+
+            import nnabla as nn
+            import nnabla.parametric_functions as PF
+
+            b, c, h, w = 4, 64, 32, 32
+
+            # Spectrally normalized convolution
+            apply_w = lambda w: PF.spectral_norm(w, dim=0)
+            h = nn.Variable.from_numpy_array(np.random.randn(b, c, h, w))
+            h = PF.convolution(h, with_bias=False, apply_w=apply_w)
+
+            # Spectrally normalized affine
+            apply_w = lambda w: PF.spectral_norm(w, dim=1)
+            h = nn.Variable.from_numpy_array(np.random.randn(b, c))
+            h = PF.affine(h, with_bias=False, apply_w=apply_w)
+
+            # Spectrally normalized embed
+            apply_w = lambda w: PF.spectral_norm(w, dim=1)
+            h = nn.Variable.from_numpy_array(np.random.randn(b, c))
+            h = PF.embed(h, c, apply_w=apply_w)
+
+    """
+
+    assert (0 <= dim < len(w.shape)
+            ), "`dim` must be `0 <= dim and dim < len(w.shape)`."
+
+    if u_init is None:
+        u_init = NormalInitializer()
+    u_shape = (w.shape[dim],)
+    u = get_parameter_or_create("u", u_shape, u_init, False, False)
+
+    return F.spectral_norm(w, u, dim=dim, itr=itr, eps=eps, test=test)
+
+
+@parametric_function_api("spectral-norm", [
+    ('W_sn', 'Spectral Normalized Weight matrix', 'w.shape', False),
+    ('u', 'singular vector', '(w.shape[dim], )', False),
+])
+def _spectral_norm_v1(w, dim=0, itr=1, eps=1e-12, test=False, u_init=None, fix_parameters=True):
     """Spectral Normalization.
 
     .. math::

@@ -2044,6 +2044,54 @@ Normalization:
     c_runtime: not support
     function_ids:
       if: 325
+  SpectralNorm:
+    snake_name: spectral_norm
+    doc: |2
+
+      Spectral Normalization.
+
+      .. math::
+
+          W_{sn} = \\frac{W}{\\sigma(W)}.
+
+      where :math:`W` is the input matrix, and the :math:`\\sigma(W)` is the spectral norm of :math:`W`. The spectral norm is approximately computed by the power iteration.
+
+      References:
+
+          Takeru Miyato, Toshiki Kataoka, Masanori Koyama, Yuichi Yoshida, 
+          "Spectral Normalization for Generative Adversarial Networks", 
+          International Conference on Learning Representations. 2018.
+    inputs:
+      w:
+        doc: N-D array of learnable weights. This is normally network parameter.
+      u:
+        doc: 1-D array of singular vector. When `test == False`, the data region of
+          `u` will be updated during forward calculation.
+    arguments:
+      dim:
+        doc: Output dimension. Default is 0. If the dimension is not 0, then the specified
+          dimension becomes the most-left dimension by transposing.
+        type: int64
+        default: '0'
+      itr:
+        doc: Number of power iterations. Default is 1.
+        type: int64
+        default: '1'
+      eps:
+        doc: Epsilon for the normalization. This `eps` is added before taking the
+          sqrt in the norm computation.
+        type: float
+        default: 1e-12
+      test:
+        doc: When in `True`, `u` will not be updated. Default is `False`.
+        type: bool
+        default: 'False'
+    outputs:
+      w_sn:
+        doc: Spectrally normalized :math:`W_{sn}` with the same shape as :math:`W`.
+    c_runtime: not support
+    function_ids:
+      iifB: 330
   MeanSubtraction:
     snake_name: mean_subtraction
     doc: |2

@@ -105,6 +105,7 @@ Normalization
 .. autofunction:: group_normalization
 .. autofunction:: weight_standardization
 .. autofunction:: weight_normalization
+.. autofunction:: spectral_norm
 
 
 Reduction
