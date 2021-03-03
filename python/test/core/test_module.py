@@ -18,8 +18,9 @@ import numpy as np
 import nnabla as nn
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
-from nnabla.testing import assert_allclose
 from nnabla.core.modules import ConvBn, ResUnit
+
+from helper import ModuleCreator, forward_variable_and_check_equal
 
 nnp_file = "t.nnp"
 
@@ -71,12 +72,29 @@ class TSTNetAbnormal(nn.Module):
         return y
 
 
+class TSTPureConv(nn.Module):
+    def __init__(self):
+        self.conv_bn = ConvBn(3)
+
+    def call(self, x1):
+        h1 = self.conv_bn(x1)
+        h2 = self.conv_bn(h1)
+        y = self.conv_bn(h2)
+        return y
+
+
 class TSTNetNormal(nn.Module):
     def __init__(self):
         self.conv_bn_1 = ConvBn(1)
         self.conv_bn_2 = ConvBn(1)
 
     def call(self, x1, x2):
+        y1 = self.conv_bn_1(x1)
+        y2 = self.conv_bn_2(x2)
+        y = F.concatenate(y1, y2, axis=1)
+        return y
+
+    def no_call(self, x1, x2):
         y1 = self.conv_bn_1(x1)
         y2 = self.conv_bn_2(x2)
         y = F.concatenate(y1, y2, axis=1)
@@ -89,6 +107,12 @@ class NestedTestNet(nn.Module):
         self.tnd2 = TSTNetNormal()
 
     def call(self, x1, x2):
+        y1 = self.tnd1(x1, x2)
+        y2 = self.tnd2(x1, x2)
+        y = F.concatenate(y1, y2, axis=1)
+        return y
+
+    def no_call(self, x1, x2):
         y1 = self.tnd1(x1, x2)
         y2 = self.tnd2(x1, x2)
         y = F.concatenate(y1, y2, axis=1)
@@ -137,53 +161,6 @@ def test_module_parameter_path():
     assert '@cb/conv/W' in e2.get_parameters()
 
 
-class ModuleCreator:
-    def __init__(self, module, input_shape):
-        self.module = module
-        self.input_shape = input_shape
-        self.variable_inputs = None
-        self.proto_variable_inputs = None
-
-    def get_variable_inputs(self):
-        if self.variable_inputs is None:
-            variable_inputs = [nn.Variable(shape)
-                               for shape in self.input_shape]
-            variable_values = [np.random.random(
-                shape) for shape in self.input_shape]
-            for v, d in zip(variable_inputs, variable_values):
-                v.d = d
-            self.variable_inputs = variable_inputs
-            return variable_inputs
-        return self.variable_inputs
-
-    def get_proto_variable_inputs(self):
-        if self.proto_variable_inputs is None:
-            proto_variable_inputs = [nn.ProtoVariable(
-                shape) for shape in self.input_shape]
-            self.proto_variable_inputs = proto_variable_inputs
-            return proto_variable_inputs
-        return self.proto_variable_inputs
-
-
-def forward_variable_and_check_equal(variable_a, variable_b):
-    def forward_output(variable):
-        if isinstance(variable, nn.Variable):
-            variable.forward()
-        else:
-            y = F.sink(*variable)
-            for v in variable:
-                v.persistent = True
-            y.forward()
-
-    for v in [variable_a, variable_b]:
-        forward_output(v)
-    if isinstance(variable_a, nn.Variable):
-        assert_allclose(variable_a.d, variable_b.d)
-        return
-    for a, b in zip(variable_a, variable_b):
-        assert_allclose(a.d, b.d, rtol=1e-4, atol=1e-6)
-
-
 @pytest.mark.parametrize("module_creator", [ModuleCreator(TSTNetAbnormal(), [(4, 3, 32, 32), (4, 3, 32, 32)])])
 def test_unsupported_module_definition(module_creator):
     # Since we use global graphdef, we should reset it beforehand
@@ -213,8 +190,8 @@ def test_unsupported_module_definition(module_creator):
     # Here, the result is impossible to equal.
     # Since the variable instance of parameters in local module instance
     # will be re-created in another time's instantiated.
-    #     1. cb = ConvBn(1), cb ownered a few of parameters
-    #     In the following, cb ownered parameters will release after leave the scope.
+    #     1. cb = ConvBn(1), cb owned a few of parameters
+    #     In the following, cb owned parameters will release after leave the scope.
     #          ref_outputs = module(*variable_inputs)
     #     2. proto_outputs = module(*proto_variable_inputs)
     #     The new parameters will be created during generating output.
@@ -227,6 +204,63 @@ def test_unsupported_module_definition(module_creator):
     with pytest.raises(AssertionError) as excinfo:
         forward_variable_and_check_equal(outputs, ref_outputs)
     print(excinfo.value)
+
+
+@pytest.mark.parametrize("module_creator", [ModuleCreator(TSTNetNormal(), [(4, 3, 32, 32), (4, 3, 32, 32)])])
+def test_create_graph_def_without_using_call(module_creator):
+    # get module from test parameters
+    module = module_creator.module
+
+    # create proto variables as inputs
+    proto_variable_inputs = [nn.ProtoVariable(
+        shape) for shape in module_creator.input_shape]
+
+    # create graph_def by passing proto_variables as inputs
+    with nn.parameter_scope('', module.parameter_scope):
+        # Here, if user does not call module(), instead, they call a self-defined
+        # function, we should not produce strange result.
+        outputs = module.no_call(*proto_variable_inputs)
+
+    # find out graph_def in global default graph
+    graph_def = nn.graph_def.get_default_graph()
+
+    # create variable inputs and initialized by random value
+    variable_inputs = module_creator.get_variable_inputs()
+
+    # create network by module-like graph_def
+    outputs = graph_def(*variable_inputs)
+
+    # create reference network by passing in variable inputs
+    ref_outputs = module(*variable_inputs)
+
+    # check if outputs are equal
+    forward_variable_and_check_equal(outputs, ref_outputs)
+
+
+@pytest.mark.parametrize("module_creator", [ModuleCreator(TSTNetNormal(), [(4, 3, 32, 32), (4, 3, 32, 32)])])
+def test_with_statement_graph_def_without_call(module_creator):
+    # get module from test parameters
+    module = module_creator.module
+
+    # create proto variables as inputs
+    proto_variable_inputs = [nn.ProtoVariable(
+        shape) for shape in module_creator.input_shape]
+
+    # create graph_def by passing proto_variables as inputs
+    with nn.graph_def.graph() as g:
+        outputs = module.no_call(*proto_variable_inputs)
+
+    # create variable inputs and initialized by random value
+    variable_inputs = module_creator.get_variable_inputs()
+
+    # create network by module-like graph_def
+    outputs = g(*variable_inputs)
+
+    # create reference network by passing in variable inputs
+    ref_outputs = module(*variable_inputs)
+
+    # check if outputs are equal
+    forward_variable_and_check_equal(outputs, ref_outputs)
 
 
 @pytest.mark.parametrize("module_creator", [ModuleCreator(TSTNetNormal(), [(4, 3, 32, 32), (4, 3, 32, 32)]),
@@ -245,19 +279,42 @@ def test_simple_create_graph_def(module_creator):
     outputs = module(*proto_variable_inputs)
 
     # find out graph_def in global default graph
-    graph_def = nn.graph_def.get_default_graph()
+    g = nn.graph_def.get_default_graph()
 
     # create variable inputs and initialized by random value
     variable_inputs = module_creator.get_variable_inputs()
 
     # create network by module-like graph_def
-    outputs = graph_def(*variable_inputs)
+    outputs = g(*variable_inputs)
 
     # create reference network by passing in variable inputs
     ref_outputs = module(*variable_inputs)
 
     # check if outputs are equal
     forward_variable_and_check_equal(outputs, ref_outputs)
+
+
+@pytest.mark.parametrize("module_creator", [ModuleCreator(TSTPureConv(), [(4, 3, 32, 32)])])
+@pytest.mark.parametrize("another_input_shape", [(1, 3, 64, 64), (1, 3, 80, 80)])
+def test_another_shape_input(module_creator, another_input_shape):
+    # get module from test parameters
+    module = module_creator.module
+
+    # create proto variables as inputs
+    proto_variable_inputs = [nn.ProtoVariable(
+        shape) for shape in module_creator.input_shape]
+
+    # create graph_def by passing proto_variables as inputs
+    outputs = module(*proto_variable_inputs)
+
+    # find out graph_def in global default graph
+    g = nn.graph_def.get_default_graph()
+
+    input = nn.Variable(another_input_shape)
+
+    output = g(input)
+
+    output.forward()
 
 
 @pytest.mark.parametrize("module_creator", [ModuleCreator(TSTNetNormal(), [(4, 3, 32, 32), (4, 3, 32, 32)]),
@@ -326,6 +383,7 @@ def test_with_statement_graph_def(module_creator):
                                             ModuleCreator(NestedTestNet(), [(4, 3, 32, 32), (4, 3, 32, 32)])])
 @pytest.mark.parametrize("network_name", ['TestNet', "network"])
 def test_with_statement_graph_def_name(module_creator, network_name):
+    # get module from test module
     module = module_creator.module
 
     # create proto variables as inputs
@@ -378,6 +436,79 @@ def test_with_statement_graph_def_test_name(module_creator):
 
     # check if outputs are equal
     forward_variable_and_check_equal(outputs, ref_outputs)
+
+
+def test_with_statement_graph_def_multiple_network_no_call():
+    """This cases assume that user create network multiple times in a ProtoGraph.
+    Because no graph_name() is called to name each network, all computation graph
+    operators are collected into a network, it looks like multiple networks
+    are merged into a network. In testing time, we only need to feed concatenated
+    inputs to this network and check concatenate outputs.
+    """
+    module_creators = [ModuleCreator(TSTNetNormal(), [(4, 3, 32, 32), (4, 3, 32, 32)]),
+                       ModuleCreator(NestedTestNet(), [(4, 3, 32, 32), (4, 3, 32, 32)])]
+
+    # create graph_def by passing proto_variables as inputs
+    with nn.graph_def.graph() as g:
+        for module_creator in module_creators:
+            module = module_creator.module
+
+            # create proto variables as inputs
+            proto_variable_inputs = [nn.ProtoVariable(
+                shape) for shape in module_creator.input_shape]
+
+            # generate graph
+            outputs = module.no_call(*proto_variable_inputs)
+
+    for module_creator, network in zip(module_creators, g.networks.values()):
+        # create variable inputs and initialized by random value
+        variable_inputs = module_creator.get_variable_inputs()
+
+        # create network by module-like graph_def
+        outputs = network(*variable_inputs)
+
+        # create reference network by passing in variable inputs
+        ref_outputs = module_creator.module(*variable_inputs)
+
+        # check if outputs are equal
+        forward_variable_and_check_equal(outputs, ref_outputs)
+
+
+def test_multiple_network():
+    """This cases assume that user create network multiple times in a ProtoGraph.
+    Because no graph_name() is called to name each network, all computation graph
+    operators are collected into a network, it looks like multiple networks
+    are merged into a network. In testing time, we only need to feed concatenated
+    inputs to this network and check concatenate outputs.
+    """
+    module_creators = [ModuleCreator(TSTNetNormal(), [(4, 3, 32, 32), (4, 3, 32, 32)]),
+                       ModuleCreator(ResUnit(16), [(4, 3, 32, 32)]),
+                       ModuleCreator(NestedTestNet(), [(4, 3, 32, 32), (4, 3, 32, 32)])]
+
+    # create graph_def by passing proto_variables as inputs
+    with nn.graph_def.graph() as g:
+        for module_creator in module_creators:
+            module = module_creator.module
+
+            # create proto variables as inputs
+            proto_variable_inputs = [nn.ProtoVariable(
+                shape) for shape in module_creator.input_shape]
+
+            # generate graph
+            outputs = module(*proto_variable_inputs)
+
+    for module_creator, network in zip(module_creators, g.networks.values()):
+        # create variable inputs and initialized by random value
+        variable_inputs = module_creator.get_variable_inputs()
+
+        # create network by module-like graph_def
+        outputs = network(*variable_inputs)
+
+        # create reference network by passing in variable inputs
+        ref_outputs = module_creator.module(*variable_inputs)
+
+        # check if outputs are equal
+        forward_variable_and_check_equal(outputs, ref_outputs)
 
 
 def test_get_graph_def_by_name():
@@ -563,8 +694,84 @@ def test_flat_module_with_statement(module_func):
     forward_variable_and_check_equal(outputs, outputs_ref)
 
 
+@pytest.mark.parametrize("module_func", [(flat_module, [(4, 3, 32, 32)]),
+                                         (mlp_module, [(16, 100), (16, 100)])])
+def test_iterator_through_forward_sequence(module_func):
+    func, in_shapes = module_func
+    with nn.graph_def.graph() as g:
+        inputs = [nn.ProtoVariable(shape) for shape in in_shapes]
+        outputs = func(*inputs)
+
+    inputs = [nn.Variable(shape) for shape in in_shapes]
+    for i in inputs:
+        i.d = np.random.random(i.shape)
+    outputs_ref = func(*inputs)
+    if not isinstance(outputs_ref, tuple):
+        outputs_ref = (outputs_ref, )
+
+    output = F.sink(*outputs_ref)
+    forward_sequence = []
+
+    def visit_func(f):
+        if f.name != 'Sink':
+            forward_sequence.append(f.name)
+
+    output.visit(visit_func)
+
+    for a, b in zip(g.default_graph().forward_sequence(), forward_sequence):
+        assert a.type == b
+
+
+@pytest.mark.parametrize("module_func", [(flat_module, [(4, 3, 32, 32)]),
+                                         (mlp_module, [(16, 100), (16, 100)])])
+@pytest.mark.parametrize("backend", ['cpu', 'cuda', 'cudnn'])
+def test_context_priority_hierarchy_testing(module_func, backend):
+    context_backend = ''
+    func, in_shapes = module_func
+    with nn.graph_def.graph() as g:
+        inputs = [nn.ProtoVariable(shape) for shape in in_shapes]
+        outputs = func(*inputs)
+
+    import nnabla_ext.cpu
+    nn.set_default_context(nnabla_ext.cpu.context())
+
+    if backend == 'cpu':
+        ctx = nnabla_ext.cpu.context()
+    elif backend == 'cuda':
+        try:
+            import nnabla_ext.cuda
+            ctx = nnabla_ext.cuda.context()
+            context_backend = 'Cuda'
+        except ImportError:
+            ctx = nnabla_ext.cpu.context()
+    elif backend == 'cudnn':
+        try:
+            import nnabla_ext.cudnn
+            ctx = nnabla_ext.cudnn.context()
+            context_backend = 'Cudnn'
+        except ImportError:
+            ctx = nnabla_ext.cpu.context()
+
+    g.current_context = ctx
+    g()
+    for f in g.default_graph().forward_sequence():
+        if context_backend:
+            assert ('Cuda' in f.function_instance.name)
+
+
+def test_training_property():
+    import nnabla.parametric_functions as PF
+
+    class ConvBn(nn.Module):
+        def call(self, x):
+            h = PF.convolution(x, 3, (3, 2))
+            return h
+
+    model = ConvBn()
+    x = nn.Variable((64, 3, 32, 32))
+    y = model(x)
+    model.training = True
+    assert model.training == True
+
 # TODO:
-#   - context priority hierarchy testing
-#   - context setting change testing
-#   - batch size change testing (Not implemented yet)
 #   - binary-operator of ProtoVariable testing

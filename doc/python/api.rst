@@ -22,4 +22,6 @@ Python API Reference
     api/ext
     api/models
     api/lms
+    api/module
+    api/graph_def
     api/experimental

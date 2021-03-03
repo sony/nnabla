@@ -73,14 +73,14 @@ def check_relative_csv_file_result(cache_file_fmt, csvfilename, cachedir):
 @pytest.mark.parametrize('cache_file_fmt', ['.npy', '.h5'])
 @pytest.mark.parametrize('shuffle', [False, True])
 @pytest.mark.parametrize('normalize', [False, True])
-@pytest.mark.parametrize('process_num', [i+1 for i in range(8)])
+@pytest.mark.parametrize('num_of_threads', [i for i in range(10)])
 def test_create_cache(test_data_csv_csv_20,
                       test_data_csv_png_20,
                       input_file_fmt,
                       cache_file_fmt,
                       shuffle,
                       normalize,
-                      process_num):
+                      num_of_threads):
     if input_file_fmt == 'csv':
         csvfilename = test_data_csv_csv_20
     else:
@@ -89,7 +89,8 @@ def test_create_cache(test_data_csv_csv_20,
     nnabla_config.set('DATA_ITERATOR', 'cache_file_format', cache_file_fmt)
 
     with create_temp_with_dir() as tmpdir:
-        cc = CreateCache(csvfilename, shuffle=shuffle, process_num=process_num)
+        cc = CreateCache(csvfilename, shuffle=shuffle,
+                         num_of_threads=num_of_threads)
         cc.create(tmpdir, normalize=normalize)
 
         # get cache data source and csv file data source
