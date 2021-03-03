@@ -167,8 +167,12 @@ class Network:
                 p.grad.zero()
         for v in backward_sequence.variables:
             v.need_grad = True
+
+        # We think this should be a bug
+        # for l in backward_sequence.loss_variables:
+        #     l.grad.fill(1.0 / l.size)
         for l in backward_sequence.loss_variables:
-            l.grad.fill(1.0 / l.size)
+            l.grad.fill(1.0)
 
     def backward(self, backward_sequence, parameter_zero_grad=True):
         self.prepare_backward(backward_sequence, parameter_zero_grad)

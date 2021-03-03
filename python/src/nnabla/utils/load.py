@@ -18,337 +18,44 @@ Load saved network from nntxt.
 '''
 
 from collections import OrderedDict
-import google.protobuf.text_format as text_format
-import itertools
 import numpy
 import os
 import re
-import shutil
-import tempfile
 
 from nnabla.initializer import (
-    NormalInitializer, UniformInitializer, ConstantInitializer, RangeInitializer,
-    calc_normal_std_he_forward, calc_normal_std_he_backward, calc_normal_std_glorot, calc_uniform_lim_glorot)
+    NormalInitializer, UniformInitializer, ConstantInitializer, RangeInitializer)
 from nnabla.logger import logger
-from nnabla.parameter import get_parameter_or_create
 
 from nnabla.utils import nnabla_pb2
 from nnabla.utils.data_iterator import data_iterator_csv_dataset, data_iterator_cache
 from nnabla.utils.create_cache import CreateCache
-from nnabla.utils.load_function import _create_function_instance
-from nnabla.utils.nnp_format import nnp_version
 from nnabla.utils.communicator_util import current_communicator, single_or_rankzero
 from nnabla.utils.learning_rate_scheduler import (
     PolynomialScheduler, CosineScheduler, ExponentialScheduler, StepScheduler, LinearWarmupScheduler)
 
-from nnabla.utils.network import Network
-from nnabla.utils.progress import progress
-from nnabla.utils.get_file_handle import get_file_handle_load, get_buf_type
+from nnabla.utils.get_file_handle import get_initial_file_loader, load_files
+from nnabla.core.graph_optimizer import IdentityRemover
 
 import nnabla as nn
-import nnabla.function as F
+import nnabla.functions as F
 import nnabla.solver as S
 
-
-##########################################################################
-# Utilities for handling exceptional function arguments.
-#
-
-
-def resolve_reshape_params(inputs, function_proto, batch_size):
-    '''Resolve shape parameter and returns shape.
-    '''
-    f = function_proto  # alias
-
-    # There are 2 exceptional cases.
-    # A. Negative dimension is batch dimension
-    # A-1. Detect multiple negative dimensions (not allowed).
-    negative_count = 0
-    for d in f.reshape_param.shape.dim:
-        if d < 0:
-            negative_count += 1
-    if negative_count > 1:
-        raise ValueError('Reshape: shape has multiple negative number.')
-
-    # A-2. Fill negative dimensions with batch size.
-    shape = tuple(
-        [d if d >= 0 else batch_size for d in f.reshape_param.shape.dim])
-
-    # B. Console omits batch dimensions (the first dimension) during saving.
-    # B-1. Fill with batch size if shapes don't match.
-    if numpy.prod(shape) != numpy.prod(inputs[0].shape):
-        shape = (batch_size,) + shape
-        if numpy.prod(shape) != numpy.prod(inputs[0].shape):
-            raise ValueError('Shape after filling batch dimension does not match the input shape. prod({}) != prod({})'.format(
-                shape, inputs[0].shape))
-    return shape
+# The mainly difference between legacy implementation and refactor-ed implementation:
+#  - legacy shares variable dictionary with each networks, while new has not implemented.
+#  - legacy parameters are included in variables, refactor-ed is included in parameters
+#  - legacy [-1, x, y, z] will be replaced to [b, x, y, z]. But refactor-ed implementation
+#     keep proto variable's shape as [-1, x, y, z], only computation graph's variable's
+#     shape is replaced as [b, x, y, z]
 
 
-def resolve_broadcast_params(inputs, function_proto, batch_size):
-    '''Resolve shape parameter and returns shape.
-    '''
-    f = function_proto  # alias
-
-    # A. Detect multiple negative dimensions (not allowed).
-    negative_count = 0
-    for d in f.broadcast_param.shape.dim:
-        if d < 0:
-            negative_count += 1
-    if negative_count > 1:
-        raise ValueError('Reshape: shape has multiple negative number.')
-
-    # B. Fill negative dimensions with batch size.
-    shape = tuple(
-        [d if d >= 0 else batch_size for d in f.broadcast_param.shape.dim])
-    return shape
-
-
-##########################################################################
-# Private functions.
-#
-
-
-def _create_function(ctx, network, f, variable_index):
-
-    variable_index_name = ''.join(
-        ['_' + f.repeat_id[index] + '[' + str(i) + ']' for index, i in enumerate(variable_index)])
-    variable_index_low_level_name = ''.join(
-        ['_' + f.repeat_id[index] + '[' + str(i) + ']' for index, i in enumerate(variable_index[:-1])])
-    function_name = f.name + variable_index_name
-
-    if f.type == "RepeatStart":
-        # RepeatStart takes input variable and t-1 variable
-        assert(len(f.input) == 2)
-        if variable_index[-1] == 0:
-            # Input variable if t == 0
-            input_variable_names = [f.input[0] if f.input[
-                0] in network.variables else f.input[0] + variable_index_low_level_name]
-        else:
-            # t-1 variable if t > 0
-            input_variable_names = [f.input[1] + variable_index_low_level_name +
-                                    '_' + f.repeat_param.repeat_id + '[' + str(variable_index[-1] - 1) + ']']
-
-    elif f.type == "RepeatEnd":
-        assert(len(f.input) == 1)
-        input_variable_names = [f.input[0] + variable_index_name + '_' +
-                                f.repeat_param.repeat_id + '[' + str(f.repeat_param.times - 1) + ']']
-
-    elif f.type == "RecurrentInput":
-        if variable_index[-1] > 0:
-            # Create single split function for single RecurrentInput
-            return None, None, None
-        function_name = f.name + variable_index_low_level_name
-        variable_index_name = variable_index_low_level_name
-        input_variable_names = [v_name if v_name in network.variables else v_name +
-                                variable_index_low_level_name for v_name in f.input]
-
-    elif f.type == "RecurrentOutput":
-        assert(len(f.input) == 1)
-        input_variable_names = [f.input[0] + variable_index_name + '_' + f.recurrent_param.repeat_id +
-                                '[' + str(v_index) + ']' for v_index in range(f.recurrent_param.length)]
-
-    elif f.type == "Delay":
-        assert(len(f.input) == 2)  # Delay takes t-1 variable and initial value
-        if variable_index[-1] == 0:
-            # Initial value if t == 0
-            input_variable_names = [f.input[1] if f.input[
-                1] in network.variables else f.input[1] + variable_index_low_level_name]
-        else:
-            # t-1 variable if t > 0
-            input_variable_names = [f.input[0] + variable_index_low_level_name + '_' +
-                                    f.recurrent_param.repeat_id + '[' + str(variable_index[-1] - 1) + ']']
-    else:
-        v_names = []
-        for v_name in f.input:
-            for index, i in enumerate(variable_index):
-                v_name = v_name.replace(
-                    '{' + f.repeat_id[index] + '}', '[' + str(i) + ']')
-            v_names.append(v_name)
-        input_variable_names = [v_name if v_name in network.variables else
-                                v_name + variable_index_name if v_name + variable_index_name in network.variables else
-                                v_name + variable_index_low_level_name for v_name in v_names]
-    inputs = [network.variables[v_name] for v_name in input_variable_names]
-
-    if f.type == "RecurrentInput":
-        assert(len(inputs) == 1)
-        assert(len(f.output) == 1)
-        output_variable_names = [f.output[0] + variable_index_low_level_name + '_' + f.recurrent_param.repeat_id + '[' + str(v_index) + ']'
-                                 for v_index in range(inputs[0].shape[f.recurrent_param.axis])]
-    else:
-        output_variable_names = [v_name + variable_index_name if v_name +
-                                 variable_index_name in network.variables else v_name for v_name in f.output]
-
-    outputs = [network.variables[v_name] for v_name in output_variable_names]
-
-    persistent = True
-    if f.type == "Reshape":
-        shape = resolve_reshape_params(inputs, f, network.batch_size)
-        function_instance = F.Reshape(
-            ctx, shape=shape, inplace=True)
-    elif f.type == "RepeatStart":
-        function_instance = F.Identity(ctx)
-        persistent = False
-    elif f.type == "RepeatEnd":
-        function_instance = F.Identity(ctx)
-        persistent = False
-    elif f.type == "RecurrentOutput":
-        function_instance = F.Stack(ctx, axis=f.recurrent_param.axis)
-    elif f.type == "RecurrentInput":
-        function_instance = F.Split(ctx, axis=f.recurrent_param.axis)
-    elif f.type == "Delay":
-        function_instance = F.Identity(ctx)
-        persistent = False
-    elif f.type == "Broadcast":
-        shape = resolve_broadcast_params(inputs, f, network.batch_size)
-        function_instance = F.Broadcast(ctx, shape)
-    else:
-        function_instance = _create_function_instance(ctx, f)
-
-    # Prepare link structure
-    class Function:
-        pass
-    function = Function()
-    function.name = function_name
-    function.function_instance = function_instance
-    function.inputs = list(inputs)
-    function.outputs = list(outputs)
-    function.persistent = persistent
-
-    return function, input_variable_names, output_variable_names
-
-
-def _create_variable(v, name, shape, rng):
-    # Create and initialize variables
-    class Variable:
-        pass
-
-    parameter = v.type == "Parameter"
-    variable_instance = None
-    if parameter:
-        if v.initializer.type == 'Normal':
-            initializer = NormalInitializer(v.initializer.multiplier, rng=rng)
-        elif v.initializer.type == 'NormalAffineHe' or v.initializer.type == 'NormalAffineHeForward':
-            initializer = (lambda shape: NormalInitializer(calc_normal_std_he_forward(
-                shape[0], numpy.prod(shape[1:])), rng=rng)(shape) * v.initializer.multiplier)
-        elif v.initializer.type == 'NormalAffineHeBackward':
-            initializer = (lambda shape: NormalInitializer(calc_normal_std_he_backward(
-                shape[0], numpy.prod(shape[1:])), rng=rng)(shape) * v.initializer.multiplier)
-        elif v.initializer.type == 'NormalAffineGlorot':
-            initializer = (lambda shape: NormalInitializer(calc_normal_std_glorot(
-                shape[0], numpy.prod(shape[1:])), rng=rng)(shape) * v.initializer.multiplier)
-        elif v.initializer.type == 'NormalConvolutionHe' or v.initializer.type == 'NormalConvolutionHeForward':
-            initializer = (lambda shape: NormalInitializer(calc_normal_std_he_forward(
-                shape[-3], shape[0], kernel=shape[-2:]), rng=rng)(shape) * v.initializer.multiplier)
-        elif v.initializer.type == 'NormalConvolutionHeBackward':
-            initializer = (lambda shape: NormalInitializer(calc_normal_std_he_backward(
-                shape[-3], shape[0], kernel=shape[-2:]), rng=rng)(shape) * v.initializer.multiplier)
-        elif v.initializer.type == 'NormalConvolutionGlorot':
-            initializer = (lambda shape: NormalInitializer(calc_normal_std_glorot(
-                shape[-3], shape[0], kernel=shape[-2:]), rng=rng)(shape) * v.initializer.multiplier)
-        elif v.initializer.type == 'NormalCLConvHe' or v.initializer.type == 'NormalCLConvHeForward':
-            initializer = (lambda shape: NormalInitializer(calc_normal_std_he_forward(
-                shape[-1], shape[0], kernel=shape[1:3]), rng=rng)(shape) * v.initializer.multiplier)
-        elif v.initializer.type == 'NormalCLConvHeBackward':
-            initializer = (lambda shape: NormalInitializer(calc_normal_std_he_backward(
-                shape[-1], shape[0], kernel=shape[1:3]), rng=rng)(shape) * v.initializer.multiplier)
-        elif v.initializer.type == 'NormalCLConvGlorot':
-            initializer = (lambda shape: NormalInitializer(calc_normal_std_glorot(
-                shape[-1], shape[0], kernel=shape[1:3]), rng=rng)(shape) * v.initializer.multiplier)
-        elif v.initializer.type == 'Uniform':
-            initializer = UniformInitializer(
-                lim=[-v.initializer.multiplier, v.initializer.multiplier], rng=rng)
-        elif v.initializer.type == 'UniformAffineGlorot':
-            initializer = (lambda shape: UniformInitializer(calc_uniform_lim_glorot(
-                shape[0], numpy.prod(shape[1:])), rng=rng)(shape) * v.initializer.multiplier)
-        elif v.initializer.type == 'UniformConvolutionGlorot':
-            initializer = (lambda shape: UniformInitializer(calc_uniform_lim_glorot(
-                shape[-3], shape[0], kernel=shape[-2:]), rng=rng)(shape) * v.initializer.multiplier)
-        elif v.initializer.type == 'UniformCLConvGlorot':
-            initializer = (lambda shape: UniformInitializer(calc_uniform_lim_glorot(
-                shape[-1], shape[0], kernel=shape[1:3]), rng=rng)(shape) * v.initializer.multiplier)
-        elif v.initializer.type == 'Range':
-            initializer = (lambda shape: RangeInitializer(0, 1)
-                           (shape) * v.initializer.multiplier)
-        elif v.initializer.type == 'Constant':
-            initializer = ConstantInitializer(value=v.initializer.multiplier)
-        else:
-            initializer = None
-        variable_instance = get_parameter_or_create(name, shape, initializer)
-    else:
-        # create empty variable, memory will be allocated in network.setup()
-        # after network optimization
-        variable_instance = nn.Variable()
-
-    variable = Variable()
-    variable.name = name
-    variable.parameter = parameter
-    variable.shape = shape
-    variable.variable_instance = variable_instance
-
-    return variable
-
-
-def _network(proto, default_context, batch_size, all_variables, rng):
-    network = Network()
-    network.name = proto.name
-    # Read Repeat Info
-    network.repeat_info = {}
-    for r in proto.repeat_info:
-        network.repeat_info[r.id] = r.times
-
-    network.variables = OrderedDict()
-
-    if batch_size is None:
-        network.batch_size = proto.batch_size
-    else:
-        network.batch_size = batch_size
-
-    for v in proto.variable:
-        for variable_index in itertools.product(*map(tuple, map(range, [network.repeat_info[id] for id in v.repeat_id]))):
-            name = v.name
-            for index, i in enumerate(variable_index):
-                if ('{' + v.repeat_id[index] + '}' in name):
-                    name = name.replace(
-                        '{' + v.repeat_id[index] + '}', '[' + str(i) + ']')
-                else:
-                    name += '_' + v.repeat_id[index] + '[' + str(i) + ']'
-            if name in all_variables:
-                variable = all_variables[name]
-            else:
-                shape = tuple(
-                    [d if d >= 1 else network.batch_size for d in v.shape.dim])
-                variable = _create_variable(v, name, shape, rng)
-                all_variables[name] = variable
-            network.variables[name] = variable
-            logger.debug('{}'.format(
-                (name, variable.shape, v.initializer.type if v.initializer.type else '-', v.initializer.multiplier)))
-
-    network.functions = OrderedDict()
-    network.function_inputs = OrderedDict()
-    network.function_outputs = OrderedDict()
-    network.variable_inputs = OrderedDict()
-    network.variable_outputs = OrderedDict()
-    for f in proto.function:
-        ctx = default_context if not f.context.backends else _context(
-            f.context)
-
-        for variable_index in itertools.product(*map(tuple, map(range, [network.repeat_info[id] for id in f.repeat_id]))):
-            function, input_variable_names, output_variable_names = _create_function(
-                ctx, network, f, variable_index)
-            if function is not None:
-                network.functions[function.name] = function
-                for v_name in output_variable_names:
-                    network.variable_inputs[
-                        network.variables[v_name]] = [function]
-                for v_name in input_variable_names:
-                    if not network.variables[v_name] in network.variable_outputs:
-                        network.variable_outputs[
-                            network.variables[v_name]] = []
-                    network.variable_outputs[
-                        network.variables[v_name]].append(function)
-
-    network.setup(optimize=True)
-    return network
+def _networks(info, proto_graph):
+    # TODO: sharing variable among networks
+    info.proto_graph = proto_graph
+    proto_graph.expand_loop_control()
+    for network in proto_graph.networks.values():
+        network.execute_on_proto(IdentityRemover(info.renamed_variables))
+        network(ctx=info.default_context, batch_size=info.batch_size)
+    return proto_graph.networks
 
 
 def _get_generator(proto):
@@ -379,7 +86,7 @@ def _get_matching_variable_names(variable, variable_names):
     return variable_names
 
 
-def _create_optimizer(ctx, o, networks, datasets):
+def _create_optimizer(ctx, o, networks, datasets, renamed):
     class Optimizer:
         pass
 
@@ -402,25 +109,29 @@ def _create_optimizer(ctx, o, networks, datasets):
     optimizer.dataset_assign = OrderedDict()
     for d in o.data_variable:
         optimizer.dataset_assign[
-            optimizer.network.variables[d.variable_name]] = d.data_name
+            optimizer.network.variables[renamed.get(d.variable_name, d.variable_name)]] = d.data_name
 
     optimizer.generator_assign = OrderedDict()
     for g in o.generator_variable:
         optimizer.generator_assign[optimizer.network.variables[
-            g.variable_name]] = _get_generator(g)
+            renamed.get(g.variable_name, g.variable_name)]] = _get_generator(g)
+
+    # for debugging
+    # optimizer.net_variables = optimizer.network.variables
+    # optimizer.net_variables.update(optimizer.network.parameters)
 
     optimizer.loss_variables = []
     for l in o.loss_variable:
         optimizer.loss_variables.append(
-            optimizer.network.variables[l.variable_name])
+            optimizer.network.variables[renamed.get(l.variable_name, l.variable_name)])
 
     optimizer.parameter_learning_rate_multipliers = OrderedDict()
     for p in o.parameter_variable:
         param_variable_names = _get_matching_variable_names(
-            p.variable_name, optimizer.network.variables.keys())
+            p.variable_name, optimizer.network.parameters.keys())
         for v_name in param_variable_names:
             optimizer.parameter_learning_rate_multipliers[
-                optimizer.network.variables[v_name]] = p.learning_rate_multiplier
+                optimizer.network.parameters[v_name]] = p.learning_rate_multiplier
 
     with nn.context_scope(ctx):
         if o.solver.type == 'Adagrad':
@@ -552,10 +263,8 @@ def _create_optimizer(ctx, o, networks, datasets):
             optimizer.scheduler = LinearWarmupScheduler(
                 optimizer.scheduler, o.solver.linear_warmup_scheduler_param.warmup_iter // comm_size)
 
-    optimizer.forward_sequence = optimizer.network.get_forward_sequence(
-        optimizer.loss_variables)
-    optimizer.backward_sequence = optimizer.network.get_backward_sequence(
-        optimizer.loss_variables, optimizer.parameter_learning_rate_multipliers)
+    optimizer.target = F.sink(
+        *[v.variable_instance for v in optimizer.loss_variables])
 
     return optimizer
 
@@ -611,12 +320,15 @@ def _context(proto):
     return ctx
 
 
-def _global_config(proto):
+def _global_config(proto, default_context=None):
     class GlobalConfig:
         pass
     config = GlobalConfig()
-    config.default_context = _context(proto.global_config.default_context)
-    nn.set_default_context(config.default_context)
+    if proto is not None:
+        config.default_context = _context(proto.global_config.default_context)
+        nn.set_default_context(config.default_context)
+    else:
+        config.default_context = default_context
 
     return config
 
@@ -720,35 +432,26 @@ def _datasets(proto, prepare_data_iterator=True):
     return datasets
 
 
-def _networks(proto, default_context, batch_size, network_names=None):
-    # Load networks
-    networks = OrderedDict()
-    all_variables = {}
-
-    # Random generator for using the same init parameters in all devices
-    rng = numpy.random.RandomState(0)
-
-    for np in proto.network:
-        if not network_names or np.name in network_names:
-            networks[np.name] = _network(
-                np, default_context, batch_size, all_variables, rng)
-
-    return networks
-
-
-def _optimizers(proto, default_context, networks, datasets):
+def _optimizers(info):
+    proto, default_context, networks, datasets = info.proto, info.default_context, info.networks, info.datasets
     optimizers = OrderedDict()
+    renamed_variables = info.renamed_variables
 
     for o in proto.optimizer:
         ctx = default_context if not o.solver.context.backends else _context(
             o.solver.context)
-        optimizer = _create_optimizer(ctx, o, networks, datasets)
+        optimizer = _create_optimizer(
+            ctx, o, networks, datasets, renamed_variables)
         optimizers[o.name] = optimizer
 
     return optimizers
 
 
-def _monitors(proto, default_context, networks, datasets):
+def _monitors(info):
+    proto, default_context, networks, datasets = \
+      info.proto, info.default_context, info.networks, info.datasets
+    renamed = info.renamed_variables
+
     class Monitor:
         pass
     monitors = OrderedDict()
@@ -757,6 +460,11 @@ def _monitors(proto, default_context, networks, datasets):
         monitor = Monitor()
 
         monitor.network = networks[m.network_name]
+
+        # for debugging
+        # monitor.net_variables = monitor.network.variables
+        # monitor.net_variables.update(monitor.network.parameters)
+
         monitor.data_iterators = OrderedDict()
         for d in m.dataset_name:
             monitor.data_iterators[d] = datasets[d].data_iterator
@@ -764,32 +472,36 @@ def _monitors(proto, default_context, networks, datasets):
         monitor.dataset_assign = OrderedDict()
         for d in m.data_variable:
             monitor.dataset_assign[monitor.network.variables[
-                d.variable_name]] = d.data_name
+                renamed.get(d.variable_name, d.variable_name)]] = d.data_name
 
         monitor.generator_assign = OrderedDict()
         for g in m.generator_variable:
             monitor.generator_assign[monitor.network.variables[
-                g.variable_name]] = _get_generator(g)
+                renamed.get(g.variable_name, g.variable_name)]] = _get_generator(g)
 
         monitor.monitor_variables = []
         for e in m.monitor_variable:
             monitor.monitor_variables.append(
-                monitor.network.variables[e.variable_name])
+                monitor.network.variables[
+                    renamed.get(e.variable_name, e.variable_name)])
 
-        monitor.forward_sequence = monitor.network.get_forward_sequence(
-            monitor.monitor_variables)
+        monitor.target = F.sink(
+            *[v.variable_instance for v in monitor.monitor_variables])
 
         monitors[m.name] = monitor
 
     return monitors
 
 
-def _executors(executors_proto, networks):
+def _executors(info):
+    renamed = info.renamed_variables
+    proto, networks = info.proto, info.networks
+
     class Executor:
         pass
     executors = OrderedDict()
 
-    for e in executors_proto.executor:
+    for e in proto.executor:
         executor = Executor()
 
         executor.network = networks[e.network_name]
@@ -801,28 +513,28 @@ def _executors(executors_proto, networks):
         executor.dataset_assign = OrderedDict()
         for d in e.data_variable:
             executor.dataset_assign[executor.network.variables[
-                d.variable_name]] = d.data_name
+                renamed.get(d.variable_name, d.variable_name)]] = d.data_name
 
         executor.generator_assign = OrderedDict()
         for g in e.generator_variable:
             executor.generator_assign[executor.network.variables[
-                g.variable_name]] = _get_generator(g)
+                renamed.get(g.variable_name, g.variable_name)]] = _get_generator(g)
 
         executor.output_assign = OrderedDict()
         for o in e.output_variable:
             executor.output_assign[executor.network.variables[
-                o.variable_name]] = [o.type, o.data_name]
+                renamed.get(o.variable_name, o.variable_name)]] = [o.type, o.data_name]
 
         executor.parameters = OrderedDict()
         for p in e.parameter_variable:
             param_variable_names = _get_matching_variable_names(
-                p.variable_name, executor.network.variables.keys())
+                p.variable_name, executor.network.parameters.keys())
             for v_name in param_variable_names:
                 executor.parameters[
-                    executor.network.variables[v_name]] = v_name
+                    executor.network.parameters[v_name]] = v_name
 
-        executor.forward_sequence = executor.network.get_forward_sequence(
-            [o for o in executor.output_assign.keys()])
+        executor.forward_target = F.sink(*[v.variable_instance
+                                           for v in executor.output_assign.keys()])
 
         if executor.need_back_propagation:
             executor.loss_variables = []
@@ -833,38 +545,17 @@ def _executors(executors_proto, networks):
             executor.parameter_learning_rate_multipliers = OrderedDict()
             for p in e.parameter_variable:
                 param_variable_names = _get_matching_variable_names(
-                    p.variable_name, executor.network.variables.keys())
+                    p.variable_name, executor.network.parameters.keys())
                 for v_name in param_variable_names:
                     executor.parameter_learning_rate_multipliers[
-                        executor.network.variables[v_name]] = p.learning_rate_multiplier
+                        executor.network.parameters[v_name]] = p.learning_rate_multiplier
 
-            executor.backward_sequence = executor.network.get_backward_sequence(
-                executor.loss_variables, executor.parameter_learning_rate_multipliers)
+            executor.backward_target = F.sink(
+                *[v.variable_instance for v in executor.loss_variables])
 
         executors[e.name] = executor
 
     return executors
-
-
-def _load_optimizer_checkpoint(opti_proto, opti_h5_files, info):
-    if opti_proto.optimizer:
-        opti_proto_dict = {}
-        for o in opti_proto.optimizer:
-            opti_proto_dict[o.name] = o
-        for o in info.optimizers.values():
-            if o.name in opti_proto_dict:
-                o.solver.set_states_from_protobuf(opti_proto_dict[o.name])
-    elif opti_h5_files:
-        for o in info.optimizers.values():
-            key = '{}_{}_optimizer.h5.optimizer'.format(
-                o.name,
-                re.sub(r'(|Cuda)$', '', str(o.solver.name))
-            )
-            if key in opti_h5_files:
-                name_ext = opti_h5_files[key]
-                filepath = os.path.splitext(name_ext)[0]
-                os.rename(name_ext, filepath)
-                o.solver.load_states(filepath)
 
 
 ##########################################################################
@@ -884,85 +575,23 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
         pass
     info = Info()
 
-    proto = nnabla_pb2.NNablaProtoBuf()
+    info.prepare_data_iterator = prepare_data_iterator
+    info.batch_size = batch_size
+    info.exclude_parameter = exclude_parameter
+    info.parameter_only = parameter_only
+    info.proto = nnabla_pb2.NNablaProtoBuf()
 
-    # optimizer checkpoint
-    opti_proto = nnabla_pb2.NNablaProtoBuf()
-    OPTI_BUF_EXT = ['.optimizer']
-    opti_h5_files = {}
-    tmpdir = tempfile.mkdtemp()
+    # first stage file loaders
+    file_loaders = get_initial_file_loader()
 
-    if isinstance(filenames, list) or isinstance(filenames, tuple):
-        pass
-    elif isinstance(filenames, str) or hasattr(filenames, 'read'):
-        filenames = [filenames]
+    # using global parameter scope, keep consistency with legacy implementation.
+    # To avoid to surprise previous developers, but it is better using
+    # stand-alone OrderedDict() instance.
+    info.parameter_scope = nn.parameter.get_current_parameter_scope()
+    load_files(info, file_loaders, filenames, extension)
 
-    for filename in filenames:
-        if isinstance(filename, str):
-            _, ext = os.path.splitext(filename)
-        else:
-            ext = extension
-
-        # TODO: Here is some known problems.
-        #   - Even when protobuf file includes network structure,
-        #     it will not loaded.
-        #   - Even when prototxt file includes parameter,
-        #     it will not loaded.
-
-        if ext in ['.nntxt', '.prototxt']:
-            if not parameter_only:
-                with get_file_handle_load(filename, ext) as f:
-                    try:
-                        text_format.Merge(f.read(), proto)
-                    except:
-                        logger.critical('Failed to read {}.'.format(filename))
-                        logger.critical(
-                            '2 byte characters may be used for file name or folder name.')
-                        raise
-            if len(proto.parameter) > 0:
-                if not exclude_parameter:
-                    nn.load_parameters(filename, extension=ext)
-        elif ext in ['.protobuf', '.h5']:
-            if not exclude_parameter:
-                nn.load_parameters(filename, extension=ext)
-            else:
-                logger.info('Skip loading parameter.')
-
-        elif ext == '.nnp':
-            with get_file_handle_load(filename, ext) as nnp:
-                for name in nnp.namelist():
-                    _, ext = os.path.splitext(name)
-                    if name == 'nnp_version.txt':
-                        pass  # TODO currently do nothing with version.
-                    elif ext in ['.nntxt', '.prototxt']:
-                        if not parameter_only:
-                            with nnp.open(name, 'r') as f:
-                                text_format.Merge(f.read(), proto)
-                        if len(proto.parameter) > 0:
-                            if not exclude_parameter:
-                                with nnp.open(name, 'r') as f:
-                                    nn.load_parameters(f, extension=ext)
-                    elif ext in ['.protobuf', '.h5']:
-                        if not exclude_parameter:
-                            with nnp.open(name, 'r') as f:
-                                nn.load_parameters(f, extension=ext)
-                        else:
-                            logger.info('Skip loading parameter.')
-                    elif ext in OPTI_BUF_EXT:
-                        buf_type = get_buf_type(name)
-                        if buf_type == 'protobuf':
-                            with nnp.open(name, 'r') as f:
-                                with get_file_handle_load(f, '.protobuf') as opti_p:
-                                    opti_proto.MergeFromString(
-                                        opti_p.read())
-                        elif buf_type == 'h5':
-                            nnp.extract(name, tmpdir)
-                            opti_h5_files[name] = os.path.join(
-                                tmpdir, name)
-
-    default_context = None
-    if proto.HasField('global_config'):
-        info.global_config = _global_config(proto)
+    if info.proto.HasField('global_config'):
+        info.global_config = _global_config(info.proto)
         default_context = info.global_config.default_context
         if 'cuda' in default_context.backend:
             import nnabla_ext.cudnn
@@ -972,9 +601,10 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
             except:
                 pass
         try:
+            import nnabla.function
             x = nn.Variable()
             y = nn.Variable()
-            func = F.ReLU(default_context, inplace=True)
+            func = nnabla.function.ReLU(default_context, inplace=True)
             func.setup([x], [y])
             func.forward([x], [y])
         except:
@@ -984,26 +614,25 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
     else:
         import nnabla_ext.cpu
         default_context = nnabla_ext.cpu.context()
+        info.global_config = _global_config(
+            None, default_context=default_context)
 
     comm = current_communicator()
     if comm:
         default_context.device_id = str(comm.local_rank)
-    if proto.HasField('training_config'):
-        info.training_config = _training_config(proto)
+    if info.proto.HasField('training_config'):
+        info.training_config = _training_config(info.proto)
 
+    info.default_context = default_context
     info.datasets = _datasets(
-        proto, prepare_data_iterator if prepare_data_iterator is not None else info.training_config.max_epoch > 0)
+        info.proto, prepare_data_iterator if prepare_data_iterator is not None else info.training_config.max_epoch > 0)
 
-    info.networks = _networks(proto, default_context, batch_size)
+    info.renamed_variables = {}
+    info.networks = _networks(info, nn.graph_def.ProtoGraph.from_proto(info.proto, param_scope=info.parameter_scope,
+                                                                       rng=numpy.random.RandomState(0)))
 
-    info.optimizers = _optimizers(
-        proto, default_context, info.networks, info.datasets)
-    _load_optimizer_checkpoint(opti_proto, opti_h5_files, info)
-    shutil.rmtree(tmpdir)
-
-    info.monitors = _monitors(
-        proto, default_context, info.networks, info.datasets)
-
-    info.executors = _executors(proto, info.networks)
+    info.optimizers = _optimizers(info)
+    info.monitors = _monitors(info)
+    info.executors = _executors(info)
 
     return info
