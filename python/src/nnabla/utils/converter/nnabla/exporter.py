@@ -110,7 +110,7 @@ class NnpExporter:
         with open('{}/nnp_version.txt'.format(outdir), 'w') as f:
             f.write('0.1\n')
         if self._parameter_type == 'included':
-            self.write_nntxt('{}/network.nntxt'.format(outdir), self._nnp)
+            self._write_nntxt('{}/network.nntxt'.format(outdir), self._nnp)
         else:
             nnp_wo_parameter = nnabla_pb2.NNablaProtoBuf()
             nnp_wo_parameter.CopyFrom(self._nnp)
