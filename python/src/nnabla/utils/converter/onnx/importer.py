@@ -338,47 +338,6 @@ def rearrange_pads(pads):
     return [j for i in zip(starts, ends) for j in i]
 
 
-def convert_parameter_shape(pb):
-    """Convert the shape of some parameters so they fit NNabla's requirements.
-    We do this as a post conversion because in the future we may be able to
-    delete the whole conversion if NNabla's code gets changed"""
-    if len(pb.network) != 1:
-        raise ValueError(
-            "NNP with more then a single network is currently not supported")
-    net = pb.network[0]
-    batch_norm_constants = []
-    for f in net.function:
-        if f.type == "BatchNormalization":
-            # BatchNormalization in ONNX requires the scale, bias, mean, and variance input to be
-            # one dimensional (https://github.com/onnx/onnx/blob/master/docs/Operators.md#batchnormalization).
-            # However in NNabla these input must have a specific shape that matches the input shape.
-            # For example if the input shape is (1,3,3,3), the above variables must have the shape (1,3,1,1) and not (3).
-            # (1,3,1,1) is actually the same as a one-dimensional tensor of size 3,
-            # but NNabla's check currently does not allow this.
-            # Thus, we convert the shape of the above input so we can pass NNabla's check.
-            # If NNabla lightens the shape check, we should be able to remove this conversion.
-            # copy all input names for scale, bias, mean, variance
-            batch_norm_constants.extend(f.input[1:5])
-
-    batch_norm_constants = list(set(batch_norm_constants))
-
-    # This loop should be fairly slow since we loop through all variables and parameters per constant
-    for c in batch_norm_constants:
-        # Reshape all BatchNormalization constant inputs assuming the size is (1,size,1,1)
-        for v in net.variable:
-            if v.name == c:
-                size = v.shape.dim[0]
-                del v.shape.dim[:]
-                v.shape.dim.extend([1, size, 1, 1])
-                break
-        for p in pb.parameter:
-            if p.variable_name == c:
-                size = p.shape.dim[0]
-                del p.shape.dim[:]
-                p.shape.dim.extend([1, size, 1, 1])
-                break
-
-
 def add_tensor_as_parameter(pb, tensor):
     """Add given tensor as a parameter"""
     p = pb.parameter.add()
@@ -473,6 +432,8 @@ class OnnxImporter:
         self._func_counter = {}  # a counter for all functions
         self._shape_output = {}  # The shape of the output that all functions
         self._cast_node = {}  # Dict holding Cast node info, format: {output:input}
+        # Convert the shape of some parameters, format: {name: new_shape}
+        self._parameter_shape = {}
 
         # Dictionary used to convert ONNX op_type to processing method of NNabla function
         # opset_6 default op table
@@ -909,6 +870,8 @@ class OnnxImporter:
         # We need to rearrange the input data order.
         # ONNX BatchNormalization input order: X, scale, bias, mean, variance
         # NNabla BatchNormalization input order: X, beta, gamma, mean, variance
+        input_shape = self.get_func_input_shape(n.input[0])
+        scale_shape = self.get_func_input_shape(n.input[1])
         nnp_order = [0, 2, 1, 3, 4]
         if len(n.input) != len(nnp_order):
             raise ValueError(
@@ -944,6 +907,10 @@ class OnnxImporter:
             bnp.batch_stat = True
         else:
             bnp.batch_stat = False
+        new_const_inp_shape = [1] * len(input_shape)
+        new_const_inp_shape[1] = scale_shape[0]
+        for inp in n.input[1:5]:
+            self._parameter_shape[inp] = new_const_inp_shape
         self._shape_output[func.output[0]
                            ] = self.get_func_input_shape(func.input[0])
         func_list.append(func)
@@ -3109,7 +3076,17 @@ class OnnxImporter:
         for name in list(self._param_vars.keys()):
             p = exe.parameter_variable.add()
             p.variable_name = name
-        convert_parameter_shape(pb)
+        # Convert the shape of some parameters
+        for var_name, shape in self._parameter_shape.items():
+            for v in network.variable:
+                if v.name == var_name:
+                    del v.shape.dim[:]
+                    v.shape.dim.extend(shape)
+                    break
+            for p in pb.parameter:
+                if p.variable_name == var_name:
+                    del p.shape.dim[:]
+                    p.shape.dim.extend(shape)
 
     def onnx_model_to_nnp_protobuf(self):
         pb = nnabla_pb2.NNablaProtoBuf()
