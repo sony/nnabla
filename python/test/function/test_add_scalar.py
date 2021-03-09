@@ -48,14 +48,13 @@ def test_add_scalar_inplace(seed, val, ctx, func_name):
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("val", [0.5, 1, -2])
 def test_add_scalar_double_backward(seed, val, ctx, func_name):
+    # inplace test is not needed since grad does not depend on the inputs
     from nbla_test_utils import backward_function_tester
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(2, 3).astype(np.float32)]
-    backward_function_tester(rng, F.add_scalar, None,
+    backward_function_tester(rng, F.add_scalar,
                              inputs=inputs,
                              func_args=[val], func_kwargs={},
-                             atol_b=1e-3,
                              atol_accum=1e-3,
                              dstep=1e-3,
-                             ctx=ctx, func_name=None,
-                             disable_half_test=False)
+                             ctx=ctx)

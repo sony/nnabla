@@ -37,3 +37,26 @@ def test_global_average_pooling_forward_backward(seed, fname, ctx, func_name):
     inputs = [rng.random_sample((2, 3, 4, 5))]
     function_tester(rng, func, ref_func, inputs, [],
                     ctx=ctx, func_name=func_name)
+
+
+@pytest.mark.parametrize("seed", [314])
+@pytest.mark.parametrize("fname, ctx, func_name", list_ctx_and_func_name(['global_average_pooling']))
+def test_global_average_pooling_double_backward(seed, fname, ctx, func_name):
+    from nbla_test_utils import backward_function_tester, grad_function_forward_function_output
+    from nnabla.backward_function.global_average_pooling import GlobalAveragePoolingDataGrad
+    rng = np.random.RandomState(seed)
+    ref_func = eval('ref_' + fname)
+    func = getattr(F, fname)
+    inputs = [rng.random_sample((2, 3, 4, 5))]
+    # 2nd-order
+    backward_function_tester(rng, func, inputs, ctx=ctx)
+
+    # 3rd-order
+    df, y = grad_function_forward_function_output(GlobalAveragePoolingDataGrad,
+                                                  F.global_average_pooling,
+                                                  ctx, inputs)
+    df.xshape = inputs[0].shape
+    ginputs = [rng.randn(*y.shape)]
+    backward_function_tester(rng, df,
+                             inputs=ginputs,
+                             ctx=ctx, atol_f=1e-6, atol_accum=1e-2, non_accum_check=True)

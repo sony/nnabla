@@ -199,15 +199,14 @@ The variable names must be valid names for Cython, Python and C++.
 For example, the variable name lambda cannot be used for keywords, since it is an invalid name in Cython and Python, although it is valid in C++.   
 
 
-Optionally, if you need the gradient of gradient (i.e., double-backward) of the new function added, implement the following two methods:  
-1. **def backward_impl(self, inputs, outputs, prop_down, accum):**  
-   This method implements the backward pass of the backward function, meaning the gradient of gradient of the function added.  
-2. **def _create_forward_inputs_and_outputs(self, inputs, outputs):**  
-   You do not need to implement this method normally.  
-   This method creates the input and output variables used in the *def forward_impl(self, inputs, outputs):* of the backward function class.  
-   The exceptional case is for example the sigmoid funtion where the output of the forward\_impl of the forward function class is used again in the backward\_impl of the forward function class. Here, you have to implement this method to set the input and output variables manually.  
-   In this cases, the *def backward_impl(self, inputs, outputs, prop_down, accum):* implementation is slightly different since the inputs to the backward function class also contains the output of the forward function class in this case.  
-   See [sigmoid.py](https://github.com/sony/nnabla/blob/master/python/src/nnabla/backward_function/sigmoid.py) for details.  
+Optionally, if you need the higher-order gradients of the new function added, 
+
+1. Implement **def ${snake_name}_backward(self, inputs, \*\*kwargs)** in `python/src/nnabla/backward_function/${snake_name}.py`:  
+   This method implements the backward pass of the function added in the python-layer, meaning the gradients of the function. See [sigmoid.py](https://github.com/sony/nnabla/blob/master/python/src/nnabla/backward_function/sigmoid.py), [relu.py](https://github.com/sony/nnabla/blob/master/python/src/nnabla/backward_function/relu.py), and/or [affine.py](https://github.com/sony/nnabla/blob/master/python/src/nnabla/backward_function/affine.py) for details.  
+2. Call **nnabla.backward_functions.register(\<FunctionName\>, ${snake_name}_backward)**:  
+   If you add the new function based on the functions.yaml, this registration is automatically done at 
+   the compile-time, you do not need to do any registration. If you add a new PythonFunction 
+   (python-layer-only way to add a function), you have to do registration manually. See [backward\_functions.py.tmpl](https://github.com/sony/nnabla/blob/master/python/src/nnabla/backward\_functions.py.tmpl) and [backward\_function.py](https://github.com/sony/nnabla/blob/master/python/src/nnabla/backward\_function/backward\_function.py) for more details.
 
 
 ## Write unit testing

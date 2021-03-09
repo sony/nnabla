@@ -54,12 +54,10 @@ def test_split_double_backward(seed, axis, ctx, func_name):
     shape = [2, 3, 4]
     x = rng.randn(*shape).astype(np.float32)
     inputs = [x]
-    backward_function_tester(rng, F.split, None,
+    backward_function_tester(rng, F.split,
                              inputs=inputs,
                              func_args=[axis], func_kwargs={},
                              atol_f=1e-3,
-                             atol_b=5e-3,
                              atol_accum=5e-3,
                              dstep=1e-2,
-                             ctx=ctx, func_name=None,
-                             disable_half_test=False)
+                             ctx=ctx)

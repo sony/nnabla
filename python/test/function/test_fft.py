@@ -81,3 +81,30 @@ def test_fft_forward_backward(seed, ctx, func_name, batch_dims,
                     func_name=func_name,
                     ref_grad=ref_grad_fft,
                     disable_half_test=True)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("batch_dims", [(), (4, ), (8, 4)])
+@pytest.mark.parametrize("signal_ndim, dims", [(1, (8,)), (2, (8, 4)), (3, (4, 4, 2))])
+@pytest.mark.parametrize("normalized", [True, False])
+def test_fft_double_backward(seed, ctx, func_name, batch_dims,
+                             signal_ndim, dims, normalized):
+    if func_name == "FFT":
+        pytest.skip("Not implemented in CPU.")
+
+    from nbla_test_utils import backward_function_tester, convert_to_float2_array, convert_to_complex_array
+    rng = np.random.RandomState(seed)
+    shape = batch_dims + dims
+    x_data_complex = rng.rand(*shape) + 1j * rng.rand(*shape)
+    x_data = convert_to_float2_array(x_data_complex)
+    inputs = [x_data]
+    func_args = [signal_ndim, normalized]
+    backward_function_tester(rng,
+                             F.fft,
+                             inputs,
+                             func_args=func_args,
+                             atol_f=1e-3,
+                             atol_accum=8e-2,
+                             backward=[True],
+                             ctx=ctx)

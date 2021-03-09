@@ -196,3 +196,62 @@ def test_fused_batch_normalization_forward_backward(seed, axis, decay_rate, eps,
         y = F.fused_batch_normalization(
             *(vinputs + [axes, decay_rate, eps, batch_stat, nonlinearity, output_stat]))
     assert_allclose(ref_y, y.d, atol=1e-6)
+
+
+@pytest.mark.parametrize("seed", [313])
+# @pytest.mark.parametrize("axis", [0, 3])
+@pytest.mark.parametrize("axis", [1, 3])
+@pytest.mark.parametrize("decay_rate", [0.9])
+@pytest.mark.parametrize("eps", [1e-5])
+@pytest.mark.parametrize("nonlinearity", ['relu'])
+# Wait until FusedBN with test mode is supported
+# @pytest.mark.parametrize("output_stat, batch_stat", [[False, False], [False, True]])
+@pytest.mark.parametrize("output_stat, batch_stat", [[False, True]])
+@pytest.mark.parametrize("add", [True, False])
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("no_scale, no_bias", [[False, False], [True, True]])
+@pytest.mark.parametrize("no_mean", [True, False])
+@pytest.mark.parametrize("no_variance", [True, False])
+def test_fused_batch_normalization_double_backward(seed, axis, decay_rate, eps,
+                                                   nonlinearity,
+                                                   output_stat, batch_stat,
+                                                   add,
+                                                   ctx, func_name,
+                                                   no_scale, no_bias, no_mean, no_variance):
+    import platform
+    if platform.system() == 'Windows' and len(ctx.backend) > 1:
+        pytest.skip(
+            "Currently not worked with CUDA/cuDNN on Windows platform.")  # TODO
+
+    from nbla_test_utils import backward_function_tester, grad_function_forward_function_output
+    from nnabla.backward_function.fused_batch_normalization import FusedBatchNormalizationBackward
+
+    rng = np.random.RandomState(seed)
+    inputs = list(create_inputs(rng, axis, add))
+    axes = [axis]
+    func_args = [axes, decay_rate, eps, batch_stat, nonlinearity, output_stat]
+    inputs = mask_inputs(inputs, no_scale, no_bias, no_mean, no_variance)
+
+    # 2nd-order
+    backward = [True, True, True, False, False, add] if batch_stat else \
+        [False, False, False, False, False, False]
+    backward_function_tester(rng, F.fused_batch_normalization,
+                             inputs,
+                             func_args=func_args,
+                             backward=backward,
+                             ctx=ctx)
+    # 3rd-order
+    func_args = func_args[:-1]
+    fused_batch_normalization_backward, y = \
+        grad_function_forward_function_output(FusedBatchNormalizationBackward,
+                                              F.fused_batch_normalization,
+                                              ctx, inputs, *func_args)
+    fused_batch_normalization_backward.is_add = add
+    ginputs = [rng.randn(*y.shape)] + inputs + [rng.randn(*y.shape)] if add else \
+        [rng.randn(*y.shape)] + inputs[:-1] + [rng.randn(*y.shape)]
+    backward_function_tester(rng, fused_batch_normalization_backward,
+                             inputs=ginputs,
+                             func_args=[],
+                             backward=[True, True, False, True,
+                                       False, False, False, add],
+                             ctx=ctx, atol_accum=5e-2, dstep=1e-3, non_accum_check=True)

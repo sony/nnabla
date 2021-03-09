@@ -1,54 +1,136 @@
 # Copyright (c) 2017 Sony Corporation. All Rights Reserved.
-#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-#
 #     http://www.apache.org/licenses/LICENSE-2.0
-#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 import nnabla as nn
-from .backward_function import BackwardFunction
+import nnabla.functions as F
+import nnabla.function as _F
+from nnabla.function import PythonFunction
 
 
-class MaxPoolingBackwardBackward(BackwardFunction):
+class MaxPoolingBackwardDataGrad(PythonFunction):
+    """
+    Input is the dy and output is the dx.
+    Use the function.backward in the forward_impl.
+    Use the function.forward in the backward_impl.
+    """
+
+    def __init__(self, ctx, kernel, stride=None,
+                 ignore_border=True, pad=None, channel_last=False):
+        super(MaxPoolingBackwardDataGrad, self).__init__(ctx)
+        self._func = _F.MaxPoolingBackward(ctx, kernel, stride,
+                                           ignore_border, pad, channel_last)
 
     @property
     def name(self):
-        return 'MaxPoolingBackwardBackward'
+        return self.__class__.__name__
 
-    def _create_forward_inputs_and_outputs(self, inputs, outputs):
-        msg = ("Implement this function correctly \n"
-               "if the backward function takes the output(s) of the forward function.\n"
-               "See the SigmoidBackward in that case.\n"
-               "Delete this error message after implementing.")
-        raise Exception(msg)
+    @property
+    def args(self):
+        return self._func.args
 
-        # Inputs on the forward graph
-        inputs_fwd = []
-        for i in range(self._num_inputs_fwd):
-            need_grad = self.forward_func.inputs[i].need_grad
-            v = nn.Variable(inputs[i].shape, need_grad=need_grad)
-            v.data = inputs[i].data
-            v.grad = outputs[i].data
-            inputs_fwd += [v]
-        # Outputs on the forward graph
-        outputs_fwd = []
-        for i in range(self._num_outputs_fwd):
-            inp = inputs[self._num_inputs_fwd + i]
-            v = nn.Variable(inp.shape)
-            v.grad = inp.data
-            outputs_fwd += [v]
+    def _create_fwd_inputs_outputs(self, inputs, outputs):
+        dx = inputs[0].data
+        ishape = self.yshape
+        oshape = dx.shape
+        inputs_fwd = [nn.Variable(ishape, need_grad=True),
+                      nn.Variable(oshape, need_grad=False)]
+        outputs_fwd = [nn.Variable(oshape)]
+        # inputs_fwd[0]:  dy
+        # inputs_fwd[1]:  x0
+        # outputs_fwd[0]: dx
         return inputs_fwd, outputs_fwd
 
-    def backward_impl(self, inputs, outputs, prop_down, accum):
-        # inputs: [inputs_fwd_graph] + [inputs_bwd_graph] or
-        # [inputs_fwd_graph] + [outputs_fwd_graph] + [inputs_bwd_graph]
+    def min_inputs(self):
+        return 2
 
-        raise NotImplementedError(
-            "The backward method of MaxPoolingBackwardBackward class is not implemented.")
+    def min_outputs(self):
+        return 1
+
+    @property
+    def yshape(self):
+        return self._yshape
+
+    @yshape.setter
+    def yshape(self, yshape):
+        self._yshape = yshape
+
+    def setup_impl(self, inputs, outputs):
+        # inputs[0]:  gdx
+        # inputs[1]:  x0
+        # outputs[0]: gdy
+
+        inputs_fwd, outputs_fwd = self._create_fwd_inputs_outputs(
+            inputs, outputs)
+        self._func.setup(inputs_fwd, outputs_fwd)
+        oshape = self.yshape
+        outputs[0].reset_shape(oshape, True)
+
+    def forward_impl(self, inputs, outputs):
+        dx = inputs[0].data
+        x0 = inputs[1].data
+        dy = outputs[0].data
+
+        inputs_fwd, outputs_fwd = self._create_fwd_inputs_outputs(
+            inputs, outputs)
+        vx0 = inputs_fwd[0].apply(need_grad=True)
+        vx1 = inputs_fwd[1].apply(need_grad=True)
+        vy0 = outputs_fwd[0]
+
+        vx0.grad = dy
+        vx1.data = x0
+        vy0.grad = dx
+        self._func.backward(inputs_fwd, outputs_fwd, [False])
+
+    def backward_impl(self, inputs, outputs, propagate_down, accum):
+        if not propagate_down[0]:
+            return
+
+        gdx = inputs[0].grad
+        x0 = inputs[1].data
+        gdy = outputs[0].grad
+
+        inputs_fwd, outputs_fwd = self._create_fwd_inputs_outputs(
+            inputs, outputs)
+        vx0 = inputs_fwd[0]
+        vx1 = inputs_fwd[1]
+        vy0 = outputs_fwd[0]
+
+        vx0.data = gdy
+        vx1.data = x0
+
+        if accum[0]:
+            self._func.forward(inputs_fwd, outputs_fwd)
+            gdx += vy0.data
+        else:
+            vy0.data = gdx
+            self._func.forward(inputs_fwd, outputs_fwd)
+
+
+def max_pooling_backward_backward(inputs, kernel, stride=None,
+                                  ignore_border=True, pad=None, channel_last=False):
+    """
+    Args:
+      inputs (list of nn.Variable): Incomming grads/inputs to/of the forward function.
+      kwargs (dict of arguments): Dictionary of the corresponding function arguments.
+
+    Return:
+      list of Variable: Return the gradients wrt inputs of the corresponding function.
+    """
+    gdx = inputs[0]
+    dy = inputs[1]
+    x0 = inputs[2]
+    ctx = nn.get_current_context()
+    df = MaxPoolingBackwardDataGrad(
+        ctx, kernel, stride, ignore_border, pad, channel_last)
+    df.yshape = dy.shape
+    gdy = df(gdx, x0)
+    return gdy, None

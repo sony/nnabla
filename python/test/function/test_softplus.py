@@ -40,5 +40,4 @@ def test_softplus_double_backward(seed, ctx, func_name):
     from nbla_test_utils import cap_ignore_region, backward_function_tester
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2]
-    backward_function_tester(rng, F.softplus, None, inputs,
-                             ctx=ctx, func_name=func_name)
+    backward_function_tester(rng, F.softplus, inputs, ctx=ctx)

@@ -36,11 +36,9 @@ def test_sinh_double_backward(seed, ctx, func_name):
     from nbla_test_utils import cap_ignore_region, backward_function_tester
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(2, 3, 4).astype(np.float32)]
-    backward_function_tester(rng, F.sinh, None,
+    backward_function_tester(rng, F.sinh,
                              inputs=inputs,
                              func_args=[], func_kwargs={},
-                             atol_b=1e-2,
-                             atol_accum=1e-2,
+                             atol_accum=3e-2,
                              dstep=1e-3,
-                             ctx=ctx, func_name=None,
-                             disable_half_test=False)
+                             ctx=ctx)

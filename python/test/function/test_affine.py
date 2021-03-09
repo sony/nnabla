@@ -61,7 +61,8 @@ def test_affine_forward_backward(seed, base_axis, weight_shape, bias,
 def test_affine_double_backward(seed, base_axis, weight_shape, bias,
                                 ctx, func_name):
 
-    from nbla_test_utils import backward_function_tester
+    from nbla_test_utils import backward_function_tester, grad_function_forward_function_output
+    from nnabla.backward_function.affine import AffineDataGrad, AffineFilterGrad
     rng = np.random.RandomState(seed)
     # Input
     inputs = [rng.randn(2, 3, 4).astype(np.float32)]
@@ -72,5 +73,22 @@ def test_affine_double_backward(seed, base_axis, weight_shape, bias,
         inputs += [rng.randn(*weight_shape[1:]).astype(np.float32) * 1e2]
     else:
         inputs += [None]
-    backward_function_tester(rng, F.affine, None, inputs, func_args=[base_axis],
-                             atol_b=1e-2, atol_accum=1e-2, dstep=1e-3, ctx=ctx, func_name=func_name)
+    func_args = [base_axis]
+    # Affine
+    backward_function_tester(rng, F.affine, inputs, func_args=func_args,
+                             dstep=1e-3, ctx=ctx)
+    # DataGrad
+    df, y = grad_function_forward_function_output(AffineDataGrad,
+                                                  F.affine, ctx, inputs, *func_args)
+    df.xshape = inputs[0].shape
+    ginputs = [rng.randn(*y.shape), inputs[1]]
+    backward_function_tester(rng, df, ginputs, func_args=[],
+                             atol_accum=2e-2, dstep=1e-3, ctx=ctx, non_accum_check=True)
+
+    # FilterGrad
+    df, y = grad_function_forward_function_output(AffineFilterGrad,
+                                                  F.affine, ctx, inputs, *func_args)
+    df.wshape = inputs[1].shape
+    ginputs = [rng.randn(*y.shape), inputs[0]]
+    backward_function_tester(rng, df, ginputs, func_args=[],
+                             dstep=1e-3, ctx=ctx, non_accum_check=True)

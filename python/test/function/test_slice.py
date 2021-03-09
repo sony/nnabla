@@ -90,9 +90,21 @@ def test_slice_forward_special(seed, inshape, start, stop, step, ctx, fname):
     ((6, 7, 6, 5), (5, 0, -2, 1), (4, -6, 5, 4), (-1, 2, 3, 4)),
 ])
 def test_slice_double_backward(seed, inshape, start, stop, step, ctx, fname):
-    from nbla_test_utils import backward_function_tester, cap_ignore_region
+    from nbla_test_utils import backward_function_tester, grad_function_forward_function_output
+    from nnabla.backward_function.slice import SliceDataGrad
     rng = np.random.RandomState(seed)
     x = rng.randn(*inshape).astype(np.float32)
-    backward_function_tester(rng, F.slice, None, [x], ctx=ctx, func_name=fname,
-                             func_args=[start, stop, step], atol_f=1e-4,
-                             atol_b=1e-2, atol_accum=1e-2, dstep=1e-4)
+    func_args = [start, stop, step]
+    # 2nd-order
+    backward_function_tester(rng, F.slice, [x], ctx=ctx,
+                             func_args=func_args)
+    # 3rd-order
+    df, y = grad_function_forward_function_output(SliceDataGrad,
+                                                  F.slice,
+                                                  ctx, [x],
+                                                  *func_args)
+    df.xshape = x.shape
+    ginputs = [rng.randn(*y.shape)]
+    backward_function_tester(rng, df,
+                             ginputs, func_args=[],
+                             ctx=ctx, non_accum_check=True)

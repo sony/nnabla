@@ -16,92 +16,10 @@ import pytest
 import numpy as np
 import nnabla as nn
 import nnabla.functions as F
+from nnabla.utils.rnn import _create_fixed_length_lstm
 from nbla_test_utils import list_context
 
 ctxs = list_context('LSTM')
-
-
-def lstm(x, h, c, w, b, with_bias):
-    hidden_size = h.shape[1]
-    xh = F.concatenate(*(x, h), axis=1)
-    w0, w1, w2, w3 = F.split(w, axis=0)
-    b0 = b1 = b2 = b3 = None
-    if with_bias:
-        b0, b1, b2, b3 = F.split(b, axis=0)
-    i_t = F.affine(xh, F.transpose(w0, (1, 0)), b0)
-    f_t = F.affine(xh, F.transpose(w1, (1, 0)), b1)
-    g_t = F.affine(xh, F.transpose(w2, (1, 0)), b2)
-    o_t = F.affine(xh, F.transpose(w3, (1, 0)), b3)
-    c_t = F.sigmoid(f_t) * c + F.sigmoid(i_t) * F.tanh(g_t)
-    h_t = F.sigmoid(o_t) * F.tanh(c_t)
-
-    return h_t, c_t
-
-
-def create_fixed_length_lstm(xs0, h0, c0, w0, w, b, num_layers, num_directions, with_bias):
-    # xs : [T, B, I]
-    # h0 : [L, D, B, H]
-    # c0 : [L, D, B, H]
-    # w0 : [D, 4, H, I+H]
-    # w : [L-1, D, 4, H, D * H + H]
-    # b : [L, D, 4*H]
-
-    batch_size = xs0.shape[1]
-    hidden_size = h0.shape[3]
-
-    if xs0.shape[0] == 1:
-        xs = [xs0[0]]
-    else:
-        xs = F.split(xs0, axis=0)
-    hn = []
-    cn = []
-    for i in range(num_layers):
-        wi = w0
-        if i > 0:
-            wi = w[i - 1]
-        # wi : [D, 4, H, ?]
-        # Forward direction
-        hif = h0[i, 0]  # [B, H]
-        cif = c0[i, 0]  # [B, H]
-        wif = wi[0]
-        bif = None
-        if with_bias:
-            bif = b[i, 0]
-        hs = []
-        for j, x in enumerate(xs):
-            # x : [B, I]
-            hif, cif = lstm(x, hif, cif, wif, bif, with_bias)
-            hs.append(hif)
-        hn.append(hif)
-        cn.append(cif)
-
-        if num_directions == 1:
-            xs = hs
-            continue
-
-        # Backward direction
-        hib = h0[i, 1]  # [B, H]
-        cib = c0[i, 1]  # [B, H]
-        wib = wi[1]
-        bib = None
-        if with_bias:
-            bib = b[i, 1]
-        for k, x, in enumerate(reversed(xs)):
-            j = len(xs) - 1 - k
-            # x : [B, I]
-            hib, cib = lstm(x, hib, cib, wib, bib, with_bias)
-            hs[j] = F.concatenate(hs[j], hib, axis=1)
-        hn.append(hib)
-        cn.append(cib)
-        xs = hs
-
-    ys = xs  # list of [B, HD]
-    ys = F.stack(*ys, axis=0)  # [T, B, HD]
-    hn = F.reshape(F.stack(*hn, axis=0), (num_layers, num_directions,
-                                          batch_size, hidden_size))  # LD list of [B, H] --> [L, D, B, H]
-    cn = F.reshape(F.stack(*cn, axis=0), (num_layers, num_directions,
-                                          batch_size, hidden_size))  # LD list of [B, H] --> [L, D, B, H]
-    return ys, hn, cn
 
 
 def execute_fixed_length_lstm(xs_np, h0_np, c0_np, w0_np, w_np, b_np, num_layers=1, dropout=0.0, bidirectional=False, training=True):
@@ -124,7 +42,7 @@ def execute_fixed_length_lstm(xs_np, h0_np, c0_np, w0_np, w_np, b_np, num_layers
         b = nn.Variable.from_numpy_array(b_np)
         with_bias = True
 
-    ys, hn, cn = create_fixed_length_lstm(
+    ys, hn, cn = _create_fixed_length_lstm(
         xs, h0, c0, w0, w, b, num_layers, num_directions, with_bias)  # returns Variables
     dummy = F.sink(ys, hn, cn)
     dummy.forward()
@@ -162,7 +80,7 @@ def get_lstm_grad(xs_np, h0_np, c0_np, w0_np, w_np, b_np, dy, dh, dc, num_layers
     if with_bias:
         b.grad.zero()
 
-    ys, hn, cn = create_fixed_length_lstm(
+    ys, hn, cn = _create_fixed_length_lstm(
         xs, h0, c0, w0, w, b, num_layers, num_directions, with_bias)  # returns Variables
 
     dummy = F.sink(ys, hn, cn, one_input_grad=False)
@@ -224,6 +142,55 @@ def test_lstm(seed, num_layers, dropout, bidirectional, training, seq_len, batch
 
     function_tester(rng, F.lstm, execute_fixed_length_lstm, inputs, func_kwargs=dict(
                     num_layers=num_layers, dropout=dropout, bidirectional=bidirectional, training=training), atol_f=2e-3, atol_b=1e-2, dstep=1e-3, backward=backward, ctx=ctx, func_name=func_name, ref_grad=get_lstm_grad, disable_half_test=True)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("num_layers", [1, 2])
+@pytest.mark.parametrize("dropout", [0.0])
+@pytest.mark.parametrize("bidirectional", [True, False])
+@pytest.mark.parametrize("training", [True])
+@pytest.mark.parametrize("seq_len", [2, 5])
+@pytest.mark.parametrize("batch_size", [3])
+@pytest.mark.parametrize("input_size", [2])
+@pytest.mark.parametrize("hidden_size", [3])
+@pytest.mark.parametrize("with_bias", [True, False])
+def test_lstm_double_backward(seed, num_layers, dropout, bidirectional, training,
+                              seq_len, batch_size, input_size, hidden_size, with_bias, ctx, func_name):
+    from nbla_test_utils import backward_function_tester
+
+    rng = np.random.RandomState(seed)
+    num_directions = 1
+    if bidirectional:
+        num_directions = 2
+    inputs = [rng.randn(seq_len, batch_size, input_size).astype(np.float32)]
+    inputs += [rng.randn(num_layers, num_directions,
+                         batch_size, hidden_size).astype(np.float32)]
+    inputs += [rng.randn(num_layers, num_directions,
+                         batch_size, hidden_size).astype(np.float32)]
+    inputs += [rng.randn(num_directions, 4, hidden_size,
+                         input_size + hidden_size)]
+    if num_layers > 1:
+        inputs += [rng.randn(max(1, num_layers-1), num_directions, 4, hidden_size,
+                             num_directions*hidden_size + hidden_size).astype(np.float32)]
+    else:
+        inputs += [None]
+    if with_bias:
+        inputs += [rng.randn(num_layers, num_directions,
+                             4, hidden_size).astype(np.float32)]
+    else:
+        inputs += [None]
+
+    backward = [False for _ in inputs]
+    if training:
+        backward = [True for _ in inputs]
+
+    backward_function_tester(rng, F.lstm, inputs, func_kwargs=dict(
+        num_layers=num_layers, dropout=dropout,
+        bidirectional=bidirectional,
+        training=training),
+                    atol_f=1e-3, dstep=1e-3, backward=backward,
+                    ctx=ctx, skip_backward_check=True)
 
 
 @pytest.mark.parametrize("num_layers", [2])

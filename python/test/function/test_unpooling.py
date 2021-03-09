@@ -69,12 +69,23 @@ def test_unpooling_double_backward(seed, inshape, kernel, channel_last, ctx, fun
         pytest.skip(
             "len(input shape) == len(kernel) is only valid for the channel first.")
 
-    from nbla_test_utils import backward_function_tester
+    from nbla_test_utils import backward_function_tester, grad_function_forward_function_output
+    from nnabla.backward_function.unpooling import UnpoolingDataGrad
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(*inshape).astype(np.float32)]
+    func_args = [kernel, channel_last]
+    # 2nd-order
     backward_function_tester(rng,
-                             F.unpooling, None,
+                             F.unpooling,
                              inputs=inputs,
-                             func_args=[kernel, channel_last],
-                             ctx=ctx, func_name=func_name,
-                             atol_f=1e-6, atol_b=1e-1, atol_accum=1e-1)
+                             func_args=func_args,
+                             ctx=ctx)
+    # 3rd-order
+    df, y = grad_function_forward_function_output(UnpoolingDataGrad,
+                                                  F.unpooling,
+                                                  ctx, inputs,
+                                                  *func_args)
+    df.xshape = inputs[0].shape
+    ginputs = [rng.randn(*y.shape)]
+    backward_function_tester(rng, df,
+                             inputs=ginputs, ctx=ctx, non_accum_check=True)

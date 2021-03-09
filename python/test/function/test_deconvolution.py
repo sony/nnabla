@@ -71,16 +71,16 @@ def test_deconvolution_2d_forward_backward(inshape, kernel, outmaps, pad,
         t = refs.ChannelLastToFirstTranspose(len(inshape), len(kernel))
         inshape = tuple(inshape[i] for i in t.inv_axes)
     rng = np.random.RandomState(seed)
-    i = rng.randn(*inshape).astype(np.float32)
+    i = np.clip(rng.randn(*inshape).astype(np.float32), -0.5, 0.5)
     kshape = (inmaps,) + (outmaps // group,) + kernel
     if channel_last:
         t = refs.ChannelLastToFirstTranspose(len(kshape), len(kernel))
         kshape = tuple(kshape[i] for i in t.inv_axes)
-    k = rng.randn(*kshape).astype(np.float32)
+    k = np.clip(rng.randn(*kshape).astype(np.float32), -0.5, 0.5)
     base_axis = len(inshape) - 3
     b = None
     if with_bias:
-        b = rng.randn(outmaps).astype(np.float32)
+        b = np.clip(rng.randn(outmaps).astype(np.float32), -0.5, 0.5)
     inputs = [i, k, b]
     func_args = [base_axis, pad, stride, dilation, group, channel_last,
                  output_padding]
@@ -109,7 +109,8 @@ def test_deconvolution_2d_double_backward(inshape, kernel, outmaps, pad,
                                           stride, dilation, group, with_bias,
                                           channel_last, output_padding,
                                           seed, ctx, func_name):
-    from nbla_test_utils import function_tester, backward_function_tester
+    from nbla_test_utils import function_tester, backward_function_tester, grad_function_forward_function_output
+    from nnabla.backward_function.deconvolution import DeconvolutionDataGrad, DeconvolutionFilterGrad
 
     if channel_last and not func_name.endswith('Cudnn'):
         pytest.skip('channel_last=True is only supported in CUDNN backend.')
@@ -119,20 +120,37 @@ def test_deconvolution_2d_double_backward(inshape, kernel, outmaps, pad,
         t = refs.ChannelLastToFirstTranspose(len(inshape), len(kernel))
         inshape = tuple(inshape[i] for i in t.inv_axes)
     rng = np.random.RandomState(seed)
-    i = rng.randn(*inshape).astype(np.float32)
+    i = np.clip(rng.randn(*inshape).astype(np.float32), -0.5, 0.5)
     kshape = (inmaps,) + (outmaps // group,) + kernel
     if channel_last:
         t = refs.ChannelLastToFirstTranspose(len(kshape), len(kernel))
         kshape = tuple(kshape[i] for i in t.inv_axes)
-    k = rng.randn(*kshape).astype(np.float32)
+    k = np.clip(rng.randn(*kshape).astype(np.float32), -0.5, 0.5)
     base_axis = len(inshape) - 3
     b = None
     if with_bias:
-        b = rng.randn(outmaps).astype(np.float32)
+        b = np.clip(rng.randn(outmaps).astype(np.float32), -0.5, 0.5)
     inputs = [i, k, b]
     func_args = [base_axis, pad, stride, dilation, group, channel_last,
                  output_padding]
-    backward_function_tester(rng, F.deconvolution, None, inputs,
-                             func_args=func_args,
-                             atol_f=1e-4, atol_b=1e-1, atol_accum=1e-1, dstep=1e-3,
-                             ctx=ctx, func_name=func_name)
+    # Deconvolution
+    backward_function_tester(rng, F.deconvolution,
+                             inputs, func_args=func_args, ctx=ctx, atol_accum=1e-1)
+
+    # DataGrad
+    df, y = grad_function_forward_function_output(DeconvolutionDataGrad,
+                                                  F.deconvolution,
+                                                  ctx, inputs, *func_args)
+    df.xshape = i.shape
+    ginputs = [rng.randn(*y.shape), k]
+    backward_function_tester(rng, df, ginputs, ctx=ctx, atol_accum=1e-1,
+                             non_accum_check=True)
+
+    # FilterGrad
+    df, y = grad_function_forward_function_output(DeconvolutionFilterGrad,
+                                                  F.deconvolution,
+                                                  ctx, inputs, *func_args)
+    df.wshape = k.shape
+    ginputs = [rng.randn(*y.shape), i]
+    backward_function_tester(rng, df, ginputs, func_args=[], ctx=ctx, atol_accum=1e-1,
+                             non_accum_check=True)

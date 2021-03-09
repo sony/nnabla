@@ -40,14 +40,10 @@ def test_r_div_scalar_forward_backward(seed, val, ctx, func_name):
 def test_r_div_scalar_double_backward(seed, val, ctx, func_name):
     from nbla_test_utils import backward_function_tester, cap_ignore_region
     rng = np.random.RandomState(seed)
-    inputs = [
-        cap_ignore_region(
-            rng.randn(2, 3).astype(np.float32) * 3, (-0.5, 0.5))]
-    backward_function_tester(rng, F.r_div_scalar, None,
+    inputs = [rng.randn(2, 3).astype(np.float32) * 10]
+    backward_function_tester(rng, F.r_div_scalar,
                              inputs=inputs,
                              func_args=[val], func_kwargs={},
-                             atol_b=1e-2,
-                             atol_accum=1e-2,
+                             atol_accum=4e-2,
                              dstep=1e-3,
-                             ctx=ctx, func_name=None,
-                             disable_half_test=False)
+                             ctx=ctx)

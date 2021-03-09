@@ -42,11 +42,9 @@ def test_log_sigmoid_double_backward(seed, ctx, func_name):
     rng = np.random.RandomState(seed)
     inputs = [
         np.clip(np.abs(rng.randn(2, 3, 4).astype(np.float32)) * 1e4, 1e-2, 1e4)]
-    backward_function_tester(rng, F.log_sigmoid, None,
+    backward_function_tester(rng, F.log_sigmoid,
                              inputs=inputs,
                              func_args=[], func_kwargs={},
-                             atol_b=1e-3,
                              atol_accum=1e-3,
                              dstep=1e-3,
-                             ctx=ctx, func_name=None,
-                             disable_half_test=False)
+                             ctx=ctx)

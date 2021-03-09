@@ -35,3 +35,14 @@ def test_sinc_forward_backward(seed, ctx, func_name):
     inputs = [rng.randn(2, 3, 4).astype(np.float32) * 1]
     function_tester(rng, F.sinc, ref_sinc, inputs,
                     ctx=ctx, func_name=func_name)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+def test_sinc_double_backward(seed, ctx, func_name):
+    from nbla_test_utils import backward_function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(2, 3, 4).astype(np.float32) * 1]
+    backward_function_tester(rng, F.sinc,
+                             inputs=inputs,
+                             ctx=ctx)

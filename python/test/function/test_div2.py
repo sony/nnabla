@@ -22,16 +22,15 @@ ctxs = list_context('Div2')
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
-def test_div2_double_backward(seed, ctx, func_name):
+@pytest.mark.parametrize("inplace", [False, True])
+def test_div2_double_backward(inplace, seed, ctx, func_name):
     from nbla_test_utils import backward_function_tester
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(2, 3).astype(np.float32),
               rng.randn(2, 3).astype(np.float32) * 2]
-    backward_function_tester(rng, F.div2, None,
+    backward_function_tester(rng, F.div2,
                              inputs=inputs,
-                             func_args=[], func_kwargs={},
-                             atol_b=1e-1,
+                             func_args=[inplace], func_kwargs={},
                              atol_accum=1e-1,
                              dstep=1e-4,
-                             ctx=ctx, func_name=None,
-                             disable_half_test=False)
+                             ctx=ctx)

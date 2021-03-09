@@ -49,6 +49,6 @@ def test_epsilon_insensitive_loss_double_backward(seed, ctx, func_name, epsilon)
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2 for _ in range(2)]
     backward_function_tester(rng, F.epsilon_insensitive_loss,
-                             None, inputs,
+                             inputs,
                              func_args=[epsilon],
-                             atol_b=5e-3, atol_accum=5e-3, ctx=ctx, func_name=func_name)
+                             atol_accum=5e-3, ctx=ctx)

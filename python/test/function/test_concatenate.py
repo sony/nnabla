@@ -57,18 +57,30 @@ def test_no_value():
 @pytest.mark.parametrize('different_size', [False, True])
 @pytest.mark.parametrize('num_inputs', [2, 3])
 def test_concatenate_double_backward(seed, axis, different_size, num_inputs, ctx, func_name):
-    from nbla_test_utils import cap_ignore_region, backward_function_tester
+    from nbla_test_utils import cap_ignore_region, backward_function_tester, grad_function_forward_function_output
+    from nnabla.backward_function.concatenate import ConcatenateDataGrad
     rng = np.random.RandomState(seed)
     shape0 = [2, 3, 4]
     inputs = []
     for i in range(num_inputs):
         inputs.append(rng.randn(*shape0).astype(np.float32))
         shape0[axis] += int(different_size)
-    backward_function_tester(rng, F.concatenate, None,
+    func_kwargs = dict(axis=axis)
+
+    # 2nd-order
+    backward_function_tester(rng, F.concatenate,
                              inputs=inputs,
-                             func_args=[], func_kwargs=dict(axis=axis),
-                             atol_b=1e-2,
+                             func_args=[], func_kwargs=func_kwargs,
                              atol_accum=1e-2,
                              dstep=1e-3,
-                             ctx=ctx, func_name=None,
-                             disable_half_test=False)
+                             ctx=ctx)
+    # 3rd-order
+    df, y = grad_function_forward_function_output(ConcatenateDataGrad,
+                                                  F.concatenate,
+                                                  ctx, inputs,
+                                                  *[], **func_kwargs)
+    df.xshapes = [x.shape for x in inputs]
+    ginputs = [rng.randn(*y.shape)]
+    backward_function_tester(rng, df,
+                             ginputs,
+                             ctx=ctx, non_accum_check=True)

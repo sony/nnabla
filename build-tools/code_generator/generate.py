@@ -278,12 +278,13 @@ def generate_function_cpp_interface(function_info):
     utils.generate_from_template(
         join(base, 'src/nbla/functions.cpp.tmpl'), function_info=function_info, function_list=function_list)
 
+
 def generate_backward_function_mapping(function_info):
     function_list = utils.info_to_list(function_info)
     utils.generate_from_template(
         join(base, 'python/src/nnabla/backward_functions.py.tmpl'),
         function_info=function_info, function_list=function_list)
-
+    
 def generate():
     version = sys.argv[1]
     update_function_order_in_functsions_yaml()
@@ -305,7 +306,7 @@ def generate():
     generate_proto(function_info, solver_info)
     generate_cpp_utils(function_info)
     generate_function_cpp_interface(function_info)
-    generate_backward_function_mapping(function_info)
+    generate_backward_function_mapping(function_info) 
 
     # Generate function skeletons if new ones are added to functions.yaml and function_types.yaml.
     utils.generate_skeleton_function_impl(
@@ -320,10 +321,9 @@ def generate():
     # Generate backward function skeletons if new ones are added to functions.yaml
     utils.generate_skeleton_backward_function_impl(function_info,
                                                    join(base,
-                                                        'python/src/nnabla/backward_function_class.py.tmpl'),
+                                                        'python/src/nnabla/backward_function.py.tmpl'),
                                                    join(base,
                                                         'python/src/nnabla/backward_function'))
-
     # TODO: solver skeleton generation
 
 

@@ -7281,12 +7281,13 @@ Unsupported, Special Use:
     snake_name: max_pooling_backward
     doc: |2
 
-      Max pooling backward. This is tentative and temporal solution to support the double backward of
-      the max pooling. The document of this function must not be shown.
+      Max pooling backward. This aims to support the n-th order gradients of 
+      the max pooling. The document of this function must not be shown, and 
+      the function must not be called in the end-user side.
     inputs:
-      x:
-        doc: Input variable.
       dy:
+        doc: Input variable.
+      x:
         doc: Input variable.
     arguments:
       kernel:
@@ -7306,7 +7307,7 @@ Unsupported, Special Use:
         type: Shape
         default: (0,) * len(kernel)
       channel_last:
-        doc: If True, the last dimension is considered as channel dimension, a.k.a
+        doc: If True, the last dimension is considered as channel dimension, a.k.a.
           NHWC order.
         type: bool
         default: 'False'

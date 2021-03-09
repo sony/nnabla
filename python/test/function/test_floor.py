@@ -54,8 +54,7 @@ def test_floor_double_backward(seed,
     inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2]
 
     backward_function_tester(rng, F.floor,
-                             None,
                              inputs,
-                             atol_b=5e-1, atol_accum=5e-1,
+                             atol_accum=1e-2,
                              backward=[True],
-                             ctx=ctx, func_name=func_name)
+                             ctx=ctx)

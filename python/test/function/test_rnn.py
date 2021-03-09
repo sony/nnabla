@@ -16,83 +16,10 @@ import pytest
 import numpy as np
 import nnabla as nn
 import nnabla.functions as F
+from nnabla.utils.rnn import _create_fixed_length_rnn
 from nbla_test_utils import list_context
 
 ctxs = list_context('RNN')
-
-
-def rnn(x, h, w, b, nonlinearity, with_bias):
-    hidden_size = h.shape[1]
-    xh = F.concatenate(*(x, h), axis=1)
-    b_ = None
-    if with_bias:
-        b_ = b
-    h_t = F.affine(xh, F.transpose(w, (1, 0)), b_)
-    if nonlinearity == 'tanh':
-        h_t = F.tanh(h_t)
-    elif nonlinearity == 'relu':
-        h_t = F.relu(h_t)
-
-    return h_t
-
-
-def create_fixed_length_rnn(xs0, h0, w0, w, b, num_layers, nonlinearity, num_directions, with_bias):
-    # xs : [T, B, I]
-    # h0 : [L, D, B, H]
-    # c0 : [L, D, B, H]
-    # w0 : [D, H, I+H]
-    # w : [L-1, D, H, D * H + H]
-    # b : [L, D, H]
-
-    batch_size = xs0.shape[1]
-    hidden_size = h0.shape[3]
-
-    if xs0.shape[0] == 1:
-        xs = [xs0[0]]
-    else:
-        xs = F.split(xs0, axis=0)
-    hn = []
-    for i in range(num_layers):
-        wi = w0
-        if i > 0:
-            wi = w[i - 1]
-        # wi : [D, H, ?]
-        # Forward direction
-        hif = h0[i, 0]  # [B, H]
-        wif = wi[0]
-        bif = None
-        if with_bias:
-            bif = b[i, 0]
-        hs = []
-        for j, x in enumerate(xs):
-            # x : [B, I]
-            hif = rnn(x, hif, wif, bif, nonlinearity, with_bias)
-            hs.append(hif)
-        hn.append(hif)
-
-        if num_directions == 1:
-            xs = hs
-            continue
-
-        # Backward direction
-        hib = h0[i, 1]  # [B, H]
-        wib = wi[1]
-        bib = None
-        if with_bias:
-            bib = b[i, 1]
-        for k, x, in enumerate(reversed(xs)):
-            j = len(xs) - 1 - k
-            # x : [B, I]
-            hib = rnn(x, hib, wib, bib, nonlinearity, with_bias)
-            hs[j] = F.concatenate(hs[j], hib, axis=1)
-        hn.append(hib)
-        xs = hs
-
-    ys = xs  # list of [B, HD]
-    ys = F.stack(*ys, axis=0)  # [T, B, HD]
-    hn = F.reshape(F.stack(*hn, axis=0), (num_layers, num_directions,
-                                          batch_size, hidden_size))  # LD list of [B, H] --> [L, D, B, H]
-    return ys, hn
 
 
 def execute_fixed_length_rnn(xs_np, h0_np, w0_np, w_np, b_np, num_layers=1, nonlinearity='tanh', dropout=0.0, bidirectional=False, training=True):
@@ -114,7 +41,7 @@ def execute_fixed_length_rnn(xs_np, h0_np, w0_np, w_np, b_np, num_layers=1, nonl
         b = nn.Variable.from_numpy_array(b_np)
         with_bias = True
 
-    ys, hn = create_fixed_length_rnn(
+    ys, hn = _create_fixed_length_rnn(
         xs, h0, w0, w, b, num_layers, nonlinearity, num_directions, with_bias)  # returns Variables
 
     dummy = F.sink(ys, hn)
@@ -152,7 +79,7 @@ def get_rnn_grad(xs_np, h0_np, w0_np, w_np, b_np, dy, dh, num_layers=1, nonlinea
     if with_bias:
         b.grad.zero()
 
-    ys, hn = create_fixed_length_rnn(
+    ys, hn = _create_fixed_length_rnn(
         xs, h0, w0, w, b, num_layers, nonlinearity, num_directions, with_bias)  # returns Variables
 
     dummy = F.sink(ys, hn, one_input_grad=False)
@@ -173,7 +100,7 @@ def get_rnn_grad(xs_np, h0_np, w0_np, w_np, b_np, dy, dh, num_layers=1, nonlinea
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [100])
-@pytest.mark.parametrize("num_layers", [1, 2])
+@pytest.mark.parametrize("num_layers", [1])
 @pytest.mark.parametrize("nonlinearity", ["tanh", "relu"])
 @pytest.mark.parametrize("dropout", [0.0])
 @pytest.mark.parametrize("bidirectional", [True, False])
@@ -212,6 +139,54 @@ def test_rnn(seed, num_layers, nonlinearity, dropout, bidirectional, training, s
 
     function_tester(rng, F.rnn, execute_fixed_length_rnn, inputs, func_kwargs=dict(
                     num_layers=num_layers, nonlinearity=nonlinearity, dropout=dropout, bidirectional=bidirectional, training=training), atol_f=2e-1, atol_b=2e-1, dstep=1e-3, backward=backward, ctx=ctx, func_name=func_name, ref_grad=get_rnn_grad, disable_half_test=True)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [100])
+@pytest.mark.parametrize("num_layers", [1, 2])
+@pytest.mark.parametrize("nonlinearity", ["tanh", "relu"])
+@pytest.mark.parametrize("dropout", [0.0])
+@pytest.mark.parametrize("bidirectional", [True, False])
+@pytest.mark.parametrize("training", [True])
+@pytest.mark.parametrize("seq_len", [2, 5])
+@pytest.mark.parametrize("batch_size", [1])
+@pytest.mark.parametrize("input_size", [2])
+@pytest.mark.parametrize("hidden_size", [2])
+@pytest.mark.parametrize("with_bias", [True, False])
+def test_rnn_double_backward(seed, num_layers, nonlinearity, dropout, bidirectional, training,
+                             seq_len, batch_size, input_size, hidden_size, with_bias, ctx, func_name):
+    from nbla_test_utils import backward_function_tester
+
+    rng = np.random.RandomState(seed)
+    num_directions = 1
+    if bidirectional:
+        num_directions = 2
+    inputs = [rng.randn(seq_len, batch_size, input_size).astype(np.float32)]
+    inputs += [rng.randn(num_layers, num_directions,
+                         batch_size, hidden_size).astype(np.float32)]
+    inputs += [rng.randn(num_directions, hidden_size,
+                         input_size + hidden_size)]
+    if num_layers > 1:
+        inputs += [rng.randn(max(1, num_layers-1), num_directions, hidden_size,
+                             num_directions*hidden_size + hidden_size).astype(np.float32)]
+    else:
+        inputs += [None]
+    if with_bias:
+        inputs += [rng.randn(num_layers, num_directions,
+                             hidden_size).astype(np.float32)]
+    else:
+        inputs += [None]
+
+    backward = [False for _ in inputs]
+    if training:
+        backward = [True for _ in inputs]
+
+    backward_function_tester(rng, F.rnn, inputs, func_kwargs=dict(
+        num_layers=num_layers, nonlinearity=nonlinearity, dropout=dropout,
+        bidirectional=bidirectional,
+        training=training),
+                             atol_f=1e-4, dstep=1e-3, backward=backward,
+                             ctx=ctx, skip_backward_check=True)
 
 
 @pytest.mark.parametrize("num_layers", [2])

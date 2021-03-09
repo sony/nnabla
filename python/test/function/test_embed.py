@@ -41,13 +41,21 @@ def test_embed_forward_backward(seed, shape_x, shape_w, ctx, func_name):
 @pytest.mark.parametrize("shape_x", [(10,), (2, 8), (2, 3, 4), (2, 2, 3, 4)])
 @pytest.mark.parametrize("shape_w", [(5, 3), (4, 3, 4), (6, 2, 2, 3)])
 def test_embed_double_backward(seed, shape_x, shape_w, ctx, func_name):
-    from nbla_test_utils import cap_ignore_region, backward_function_tester
+    from nbla_test_utils import backward_function_tester, grad_function_forward_function_output
+    from nnabla.backward_function.embed import EmbedFilterGrad
     rng = np.random.RandomState(seed)
     n_class = shape_w[0]
     x = rng.randint(0, n_class - 1, shape_x).astype(np.int32)
     w = rng.randn(*shape_w).astype(np.float32)
     inputs = [x, w]
-    backward_function_tester(rng, F.embed, None, inputs,
-                             ctx=ctx, func_name=func_name, atol_b=6e-2, atol_accum=6e-2,
-                             dstep=1e-3,
+    # Embed
+    backward_function_tester(rng, F.embed, inputs,
+                             ctx=ctx,
                              backward=[False, True])
+    # FilterGrad
+    df, y = grad_function_forward_function_output(EmbedFilterGrad,
+                                                  F.embed, ctx, inputs)
+    df.wshape = inputs[1].shape
+    ginputs = [rng.randn(*y.shape), inputs[0]]
+    backward_function_tester(rng, df, ginputs, func_args=[], backward=[True, False],
+                             atol_accum=3e-2, dstep=1e-3, ctx=ctx, non_accum_check=True)

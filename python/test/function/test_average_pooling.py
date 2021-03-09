@@ -135,7 +135,8 @@ def test_average_pooling_3d(seed, inshape, kernel, stride, pad, ignore_border, c
 def test_average_pooling_2d_double_backward(seed, inshape, kernel, stride, pad, ignore_border,
                                             channel_last,
                                             including_pad, ctx, func_name):
-    from nbla_test_utils import backward_function_tester
+    from nbla_test_utils import backward_function_tester, grad_function_forward_function_output
+    from nnabla.backward_function.average_pooling import AveragePoolingDataGrad
     if channel_last and not func_name.endswith('Cudnn'):
         pytest.skip('Channel last is only supported in Cudnn so far')
     if channel_last:
@@ -145,9 +146,20 @@ def test_average_pooling_2d_double_backward(seed, inshape, kernel, stride, pad, 
     inputs = [rng.randn(*inshape).astype(np.float32)]
     func_args = [kernel, stride, ignore_border,
                  pad, channel_last, including_pad]
-    backward_function_tester(rng, F.average_pooling, None,
-                             inputs=inputs, func_args=func_args, func_name=func_name,
-                             ctx=ctx, atol_f=1e-6, atol_b=1e-2, atol_accum=1e-2)
+    # 2nd-order
+    backward_function_tester(rng, F.average_pooling,
+                             inputs=inputs, func_args=func_args,
+                             ctx=ctx)
+    # 3rd-order
+    average_pooling_data_grad, y = grad_function_forward_function_output(AveragePoolingDataGrad,
+                                                                         F.average_pooling,
+                                                                         ctx, inputs,
+                                                                         *func_args)
+    average_pooling_data_grad.xshape = inputs[0].shape
+    ginputs = [rng.randn(*y.shape)]
+    backward_function_tester(rng, average_pooling_data_grad,
+                             inputs=ginputs, func_args=[],
+                             ctx=ctx)
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
@@ -164,7 +176,8 @@ def test_average_pooling_2d_double_backward(seed, inshape, kernel, stride, pad, 
 def test_average_pooling_3d_double_backward(seed, inshape, kernel, stride, pad, ignore_border,
                                             channel_last,
                                             including_pad, ctx, func_name):
-    from nbla_test_utils import backward_function_tester
+    from nbla_test_utils import backward_function_tester, grad_function_forward_function_output
+    from nnabla.backward_function.average_pooling import AveragePoolingDataGrad
     if channel_last and not func_name.endswith('Cudnn'):
         pytest.skip('Channel last is only supported in Cudnn so far')
     if channel_last:
@@ -174,6 +187,17 @@ def test_average_pooling_3d_double_backward(seed, inshape, kernel, stride, pad, 
     inputs = [rng.randn(*inshape).astype(np.float32)]
     func_args = [kernel, stride, ignore_border,
                  pad, channel_last, including_pad]
-    backward_function_tester(rng, F.average_pooling, None,
-                             inputs=inputs, func_args=func_args, func_name=func_name,
-                             ctx=ctx, atol_f=1e-6, atol_b=1e-2, atol_accum=1e-2)
+    # 2nd-order
+    backward_function_tester(rng, F.average_pooling,
+                             inputs=inputs, func_args=func_args,
+                             ctx=ctx, atol_f=1e-6, atol_accum=1e-2, non_accum_check=True)
+    # 3rd-order
+    df, y = grad_function_forward_function_output(AveragePoolingDataGrad,
+                                                  F.average_pooling,
+                                                  ctx, inputs,
+                                                  *func_args)
+    df.xshape = inputs[0].shape
+    ginputs = [rng.randn(*y.shape)]
+    backward_function_tester(rng, df,
+                             inputs=ginputs, func_args=[],
+                             ctx=ctx, atol_f=1e-6, atol_accum=1e-2, non_accum_check=True)

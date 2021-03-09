@@ -44,10 +44,9 @@ def test_r_sub_scalar_double_backward(seed, val, ctx, func_name):
     inputs = [
         cap_ignore_region(
             rng.randn(2, 3).astype(np.float32) * 3, (-0.5, 0.5))]
-    backward_function_tester(rng, F.r_sub_scalar, None,
+    backward_function_tester(rng, F.r_sub_scalar,
                              inputs=inputs,
                              func_args=[val], func_kwargs={},
-                             atol_b=1e-3, atol_accum=1e-3,
+                             atol_accum=1e-3,
                              dstep=1e-3,
-                             ctx=ctx, func_name=None,
-                             disable_half_test=False)
+                             ctx=ctx)

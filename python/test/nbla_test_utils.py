@@ -310,12 +310,14 @@ def half_test(rng, func, finputs, hinputs, func_args, func_kwargs, backward, ctx
     # 5. Check if output values are close between function data types.
     for ff, hh in zip(y_f, y_h):
         # TODO: set tol param
-        assert_allclose(ff, hh, atol=atol)
+        assert_allclose(
+            ff, hh, atol=atol, err_msg="{} half forward test fails.".format(func_name))
     if True not in backward:
         return
     for ff, hh in zip(g_f, g_h):
         # TODO: set tol param
-        assert_allclose(ff, hh, atol=atol)
+        assert_allclose(
+            ff, hh, atol=atol, err_msg="{} half backward test fails.".format(func_name))
 
 
 def create_function_nnp(inputs, outputs, func_name, func_args, func_kwargs):
@@ -537,7 +539,8 @@ def function_tester(rng, func, ref_func, inputs,
     assert len(o) == len(refs)
     for i, ref in enumerate(refs):
         res = o[i].d
-        assert_allclose(ref, res, atol=atol_f)
+        assert_allclose(ref, res, atol=atol_f,
+                        err_msg="{} forward test fails".format(func_name))
 
     # Checking function name
     try:
@@ -595,7 +598,8 @@ def function_tester(rng, func, ref_func, inputs,
         ngrads = ref_grad(*(rinputs + doutputs + func_args),
                           **func_kwargs, need_grad_flags=backward)
 
-    assert_allclose(ngrads, agrads, atol=atol_b)
+    assert_allclose(ngrads, agrads, atol=atol_b,
+                    err_msg="{} backward w/o accumulation test fails".format(func_name))
 
     # Check if need_grad works
     for v, b in zip(vinputs, backward):
@@ -647,7 +651,8 @@ def function_tester(rng, func, ref_func, inputs,
         f.forward(finputs, o)
         f.backward(finputs, o, accum)
         assert_allclose(
-            v.g, true_g, atol=atol_accum)
+            v.g, true_g, atol=atol_accum,
+            err_msg="{} backward w/ accumulation test fails.".format(func_name))
 
         # Check accum=False with NaN gradient
         v.g = np.float32('nan')
@@ -657,7 +662,8 @@ def function_tester(rng, func, ref_func, inputs,
         assert not np.any(np.isnan(v.g))
 
 
-def inplace_function_test_helper(inputs, func, func_args=[], func_kwargs={}, ctx=None, rng=None):
+def inplace_function_test_helper(inputs, func, func_args=[], func_kwargs={},
+                                 ctx=None, func_name=None, rng=None):
     if rng is None:
         rng = np.random.RandomState(313)
     if ctx is None:
@@ -683,7 +689,8 @@ def inplace_function_test_helper(inputs, func, func_args=[], func_kwargs={}, ctx
     l_i.backward()
     grads_i = [inp.g.copy() for inp in inputs]
     for g, g_i in zip(grads, grads_i):
-        assert_allclose(g, g_i)
+        assert_allclose(
+            g, g_i, err_msg="{} inplace test fails.".format(func_name))
 
 
 def convert_to_float2_array(x_complex, dtype=np.float32):
@@ -702,166 +709,186 @@ def convert_to_complex_array(x_float2, dtype=np.complex64):
     return x_complex
 
 
-def backward_function_tester(rng, func, ref_func, inputs,
+def backward_function_tester(rng, func, inputs=None,
                              func_args=[], func_kwargs={},
-                             atol_f=1e-6, atol_b=1e-3, atol_accum=1e-3, dstep=1e-3, backward=None,
-                             ctx=None, func_name=None, ref_grad=None, disable_half_test=False, atol_half=1e-1):
-    """Backward function tester
+                             atol_f=1e-4, atol_b=1e-3, atol_accum=5e-2,
+                             dstep=1e-3, backward=None, backward_b=None,
+                             ctx=None, non_accum_check=False, skip_backward_check=False):
+    """ Automatic testing of backward function and backward pass of `func` by comparing it.
+    The backward pass of `func` is the reference; therefore, 
+    the backward pass of `func` must be tested first!
 
-    In the forward test, it compares the results of nn.grad and `func`.backward.
-    In the backward test, it compares the analytical gradients and numerical gradient with `grad_outputs`.
+    Syntax of `ref_func`: inputs, parameters
     """
-    from scipy.optimize import approx_fprime
 
     if ctx is None:
         ctx = nn.Context()
     if backward is None:
-        backward = [True if i is not None else False for i in inputs]
+        backward = [True for _ in inputs]
 
-    # TODO: Remove set_default_context after adding ctx to BackwardFunction.
-    nn.set_default_context(ctx)
-
-    # Create Variables
     def create_variables(inputs, backward):
         vinputs = []
         for i, b in zip(inputs, backward):
             if i is None:
                 vinputs += [None]
                 continue
-            vinputs += [nn.Variable(i.shape, need_grad=b)]
+            vinp = nn.Variable(i.shape, need_grad=b)
+            vinp.grad.zero()  # grads always not accumulation
+            vinputs += [vinp]
             vinputs[-1].data.cast(i.dtype)[...] = i
         return vinputs
 
-    # Create grad_outputs
-    def create_grad_outputs(outputs):
-        grad_outputs = []
-        for o in outputs:
-            if o.shape == ():
-                go = nn.NdArray.from_numpy_array(np.array(randn(rng)))
-                #go = nn.NdArray.from_numpy_array(np.array(1.0))
-            else:
-                go = nn.NdArray.from_numpy_array(randn(rng, *o.shape))
-                #go = nn.NdArray.from_numpy_array(np.ones(o.shape))
+    vinputs = create_variables(inputs, backward)
 
-            grad_outputs.append(go)
-        return grad_outputs
+    # Forward and backward of the forward function
+    with nn.context_scope(ctx), nn.auto_forward():
+        outputs0 = func(*(vinputs + func_args), **func_kwargs)
+        outputs0 = force_list(outputs0)
+    grad_voutputs = []
+    for output in outputs0:
+        ograd = rng.randn(*output.shape)
+        grad_voutputs.append(nn.Variable.from_numpy_array(
+            ograd).apply(need_grad=True))
+        output.g = ograd
+    F.sink(*outputs0, one_input_grad=False).backward()
+    vinputs = list(filter(lambda x: x is not None, vinputs))
+    grad_inputs0 = [inp.g.copy() for inp in vinputs]
 
-    # Fill grads
-    def fill_grads(vinputs, grads):
-        for vi, gd in zip(vinputs, grads):
-            if vi is None:
-                continue
-            vi.g = gd
+    # Forward of the backward function
+    from nnabla.backward_functions import registry
+    func_name = output.parent.info.type_name
+    func_backward = registry[func_name]
+    grad_vinputs = grad_voutputs + vinputs
+    func_info_args = output.parent.info.args
+    with nn.context_scope(ctx), nn.auto_forward():
+        ograds0 = func_backward(grad_vinputs, **func_info_args)
+        ograds0 = force_list(ograds0)
+    outputs1 = []
+    for i, ograd in enumerate(ograds0):
+        outputs1.append(ograd.d.copy()) if ograd is not None else \
+          outputs1.append(None)
 
-    # Fill grads
-    def zero_grads(vinputs):
-        for vi in vinputs:
-            if vi is None:
-                continue
-            vi.grad.zero()
-        return
+    # Check num of returned elements
+    assert_allclose(len(vinputs), len(outputs1),
+                    err_msg="Length of the outputs ({}) does not match "
+                    "the length of the inputs ({}) to the backward function".format(len(outputs1), len(vinputs)))
 
-    # Gradient penalty on grads
-    def gradient_penalty2(grads):
-        gp2 = 0.0
-        for g in grads:
-            gp2 += F.sum(g ** 2.0)
-        return gp2
-    # Product sum
+    # Check forward
+    for i, elm in enumerate(zip(grad_inputs0, outputs1)):
+        grad_ref, grad_res = elm
+        if grad_ref is None or grad_res is None:
+            continue
+        assert_allclose(grad_ref, grad_res, atol=atol_f,
+                        err_msg="Forward of the backward function ({}) fails at {}-th output.".format(
+                            func_backward.__name__, i))
 
-    def prod_sum(inputs0, inputs1):
-        out = 0.0
-        for inp0, inp1 in zip(inputs0, inputs1):
-            out += inp0 * nn.Variable(inp1.shape).apply(data=inp1)
-        return out
-    # Set inputs for the numerical gradients
-
+    # Check backward
+    # needed since we sometimes do need_grad=False for optimization, e.g., mask.
     def set_inputs(inputs0, vinputs):
         begin = 0
         for i in vinputs:
             end = begin + i.size
-            if i.need_grad:
-                i.d = inputs0[begin:end].reshape(i.shape)
+            i.d = inputs0[begin:end].reshape(i.shape)
             begin = end
 
-    # Gradient penalty on grads used for computing numerical gradients
-    def obj_func(inputs0, gp2, vinputs):
+    def obj_func(inputs0, voutput, vinputs):
         set_inputs(inputs0, vinputs)
-        gp2.forward()
-        return gp2.d.copy()
+        voutput.forward()
+        y = voutput.d.copy()
+        return y
 
-    # Half test
-    if not disable_half_test:
-        finputs = create_variables(inputs, backward)
-        hinputs = create_variables(inputs, backward)
-        half_test(rng, func, finputs, hinputs, func_args,
-                  func_kwargs, backward, ctx, func_name, atol=atol_half)
-
-    # Create input variables
-    vinputs = create_variables(inputs, backward)
-    # --- Forward test --- #
-    # Zero grads
-    zero_grads(vinputs)
-    # Forward/Backward on the forward graph
-    voutputs = [F.sigmoid(x) for x in force_list(
-        func(*(vinputs + func_args), **func_kwargs))]
-    agrad_outputs = create_grad_outputs(voutputs)
-    o = prod_sum(voutputs, agrad_outputs)
-    o.forward()
-    o.backward()  # clear_buffer=True)
-    # Grads
-    voutputs = voutputs
-    vinputs = list(filter(lambda vi: vi is not None, vinputs))
-    agrad_outputs = agrad_outputs
-    grads = nn.grad(voutputs, vinputs, agrad_outputs)
-    grads = list(filter(lambda x: x is not None, grads))
-    o = F.sink(*grads)
-    o.forward()
-
-    # Intend to check @property decorator would be set properly.
-    o.visit(lambda x: None)
-
-    # Check forward
-    for vi, go in zip(vinputs, grads):
-        if vi.need_grad is False:
+    initial_grads = []
+    for grad_vinput in grad_vinputs:
+        if grad_vinput is None:
             continue
-        fgrads = vi.g
-        bgrads = go.d
-        assert_allclose(fgrads, bgrads, atol=atol_f)
+        g = np.asarray(rng.randn(*grad_vinput.shape))
+        initial_grads.append(g)
+    grad_inputs1 = np.concatenate([v.d.flatten()
+                                   for v in grad_vinputs if v is not None])
 
-    # TODO: 1. Pass function argument directly to backward functions.
-    # TODO: 2. should be changed for the simplier form by simply testing BackwardFunction
+    for i, ograd in enumerate(ograds0):
+        # We can skip if the backward is the functions composite.
+        # If the backward is of functions composite,
+        # the numerical difference is really different from the analytical one for some functions.
+        if skip_backward_check:
+            continue
 
-    # --- Backward (accum = False) test --- #
-    # Zero grads
-    zero_grads(vinputs)
-    # Compute analytical grads
-    gp2 = gradient_penalty2(grads)
-    gp2.forward()
-    gp2.backward(clear_buffer=True)
-    analytical_grads = np.concatenate(
-        [vi.g.copy().flatten() for vi in vinputs])
-    analytical_grads0 = analytical_grads
-    # Compute numerical grads
-    inputs0 = np.concatenate([inp.flatten()
-                              for inp in inputs if inp is not None])
-    numerical_grads = approx_fprime(inputs0, obj_func, dstep, gp2, vinputs)
-    # Check backward
-    assert_allclose(analytical_grads, numerical_grads, atol=atol_b)
+        if ograd is None or not backward[i]:
+            continue
+        for ig, v in zip(initial_grads, grad_vinputs):
+            v.g = ig
+        from scipy.optimize import approx_fprime
+        rgrad = rng.randn()
+        sum_ograd = F.sum(ograd) * rgrad
+        numerical_grads = approx_fprime(
+            grad_inputs1, obj_func, dstep, sum_ograd, grad_vinputs)
+        sum_ograd.forward()
+        sum_ograd.backward()
+        analytical_grads = np.concatenate(
+            [v.g.flatten() for v in grad_vinputs])
+        analytical_grads -= np.concatenate([g.flatten()
+                                            for g in initial_grads])
+        # grad_vinputs: dy_1, ..., dy_n, x_1, ..., x_n
+        # grad_voutputs: dy_1, ..., dy_n
+        seps = [0] + np.cumsum([int(np.prod(v.shape))
+                                for v in grad_vinputs]).tolist()
+        ngrads = len(grad_voutputs)
+        ninputs = len(grad_vinputs)
+        backward_b = [True] * ninputs if backward_b is None else backward_b
+        for k, sep in enumerate(zip(seps[:-1], seps[1:])):
+            if k >= ngrads and not backward[k - ngrads] or not backward_b[k]:
+                continue
+            s0, s1 = sep
+            analytical_grad = analytical_grads[s0:s1]
+            numerical_grad = numerical_grads[s0:s1]
+            assert_allclose(analytical_grad, numerical_grad, atol=atol_accum,
+                            err_msg="Backward (accum) of the backward function ({}) wrt {}-th / {} input fails.".format(
+                                func_backward.__name__, k, ninputs))
 
-    # --- Backward (accum = True) test --- #
-    # Random grads
-    rand_grads = [randn(rng, *vi.shape) for vi in vinputs]
-    fill_grads(vinputs, rand_grads)
-    # Compute analytical grads
-    gp2.forward()
-    gp2.backward(clear_buffer=True)
+    # Check the same results between backward_function and nn.grad
+    vinputs = [v for b, v in zip(backward, vinputs) if b]
+    vinputs = list(filter(lambda x: x is not None, vinputs))
 
-    analytical_grads = np.concatenate(
-        [vi.g.copy().flatten() for vi in vinputs])
-    rand_grads = np.concatenate([rg.flatten() if isinstance(rg, np.ndarray) else np.array(rg).reshape((1, ))
-                                 for rg in rand_grads])
-    analytical_grads -= rand_grads
-    # Check backward
-    assert_allclose(
-        analytical_grads, analytical_grads0, atol=atol_accum)
+    with nn.context_scope(ctx), nn.auto_forward():
+        ograds1 = nn.grad(outputs0, vinputs,
+                          grad_outputs=[g.d.copy() for g in grad_voutputs])
+    ograds0 = list(filter(lambda o: o is not None, ograds0))
+    ograds1 = list(filter(lambda o: o is not None, ograds1))
+    for i in range(len(ograds0)):
+        if ograds0[i].parent is None:
+            continue
+        assert_allclose(ograds0[i].d, ograds1[i].d, atol=atol_f,
+                        err_msg="nn.grad and backward_functon results differ.")
+
+    # Some functions backward like AffineDataGrad and AffineFilterGrad does not check non-accum anywhere
+    # so check those non-accum backward method here.
+    if non_accum_check:
+        # for any outputs, parents are the same function.
+        parent = outputs0[0].parent
+        inputs = parent.inputs
+        # Accum
+        initial_grads = np.concatenate(
+            [inp.g.flatten() for inp, b in zip(inputs, backward) if b])
+        accum = [True] * len(inputs)
+        parent.backward(inputs, outputs0, accum=accum)
+        accum_grads = np.concatenate([inp.g.flatten()
+                                      for inp, b in zip(inputs, backward) if b])
+        non_accum_grads0 = accum_grads - initial_grads
+        # Non-accum
+        accum = [False] * len(inputs)
+        parent.backward(inputs, outputs0, accum=accum)
+        non_accum_grads1 = np.concatenate(
+            [inp.g.flatten() for inp, b in zip(inputs, backward) if b])
+        # Check
+        assert_allclose(non_accum_grads0, non_accum_grads1, atol=atol_b,
+                        err_msg="Backward (non-accum) of the backward function ({}) fails.".format(
+                            func_backward.__name__))
+
+
+def grad_function_forward_function_output(bwd_func_class, fwd_func, ctx, inputs,
+                                          *func_args, **func_kwargs):
+    vinputs = [nn.Variable(inp.shape)
+               if inp is not None else None for inp in inputs]
+    y = fwd_func(*(vinputs + force_list(func_args)), **func_kwargs)
+    bwd_func = bwd_func_class(ctx, *func_args, **func_kwargs)
+    return bwd_func, y

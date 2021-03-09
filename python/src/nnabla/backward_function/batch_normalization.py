@@ -1,247 +1,342 @@
 # Copyright (c) 2017 Sony Corporation. All Rights Reserved.
-#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-#
 #     http://www.apache.org/licenses/LICENSE-2.0
-#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 import numpy as np
+import nnabla.functions as F
+from .utils import no_grad, force_tuple
+from functools import partial
+
+
 import nnabla as nn
 import nnabla.functions as F
-from .backward_function import BackwardFunction
+import nnabla.function as _F
+from nnabla.function import PythonFunction
 
 
-class BatchNormalizationBackward(BackwardFunction):
+def double_backward_for_batch(g_dx0, g_db0, g_dg0,
+                              dy, x0, b0, g0, rm, rv,
+                              axes, decay_rate, eps):
+    # Prerequisite
+    # axes reduced and denominator
+    axes0 = [a for a in range(x0.ndim)]
+    axes = list(set(axes0) - set(axes))
+    F_sum = partial(F.sum, axis=axes, keepdims=True)
+    F_mean = partial(F.mean, axis=axes, keepdims=True)
+    de = np.prod([x0.shape[a] for a in axes])        # denominator
+    bm = F_mean(x0)                                  # batch mean
+    bv = F_mean(x0 ** 2.0) - bm ** 2.0               # batch variance
+    x0_bm = x0 - bm                                  # x0 - batch mean
+    v_eps_r1 = (bv + eps) ** -1.0               # (variance + eps) * (-1)
+    v_eps_rsqrt1 = (bv + eps) ** (-1.0 / 2.0)   # (variance + eps) * (-1/2)
+    v_eps_rsqrt3 = v_eps_rsqrt1 ** 3.0          # (variance + eps) * (-3/2)
+
+    # common factors
+    dy_x0_bm_sum = F_sum(dy * x0_bm)
+    dy_sum = F_sum(dy)
+    g_dx0_x0_bm_sum = F_sum(g_dx0 * x0_bm)
+    g_dx0_sum = F_sum(g_dx0)
+
+    # wrt. x
+    # from dx
+    dv = (-1.0 / 2.0) * g0 * v_eps_rsqrt3 * F_sum(dy * x0_bm)
+    g_dx0_dy_sum = F_sum(g_dx0 * dy)
+
+    g1 = (-1.0 / de) * v_eps_rsqrt3 * g_dx0_dy_sum * g0 * x0_bm
+    g2 = (1.0 / de) * g0 * g_dx0_x0_bm_sum * v_eps_rsqrt3 * (1.0 / de * dy_sum - dy
+                                                             + (3.0 / de) * v_eps_r1 * dy_x0_bm_sum * x0_bm)
+    g2 += (2.0 / de) * dv * (g_dx0 - (1.0 / de) * g_dx0_sum)
+    g3 = (1.0 / de ** 2.0) * g_dx0_sum * dy_sum * g0 * v_eps_rsqrt3 * x0_bm
+    g_x0 = g1 + g2 + g3
+
+    # from gamma
+    t1 = (dy - dy_sum / de) * v_eps_rsqrt1
+    t2 = (- 1.0 / de) * dy_x0_bm_sum * v_eps_rsqrt3 * x0_bm
+    g_x0 += g_dg0 * (t1 + t2)
+
+    # wrt. beta
+    # zero, do nothing
+
+    # wrt. gamma
+    t1 = dy * v_eps_rsqrt1
+    t2 = (- 1.0 / de) * dy_x0_bm_sum * v_eps_rsqrt3 * x0_bm
+    t3 = (- 1.0 / de) * dy_sum * v_eps_rsqrt1
+    g_g0 = F_sum(g_dx0 * (t1 + t2 + t3))
+
+    # wrt. dy
+    t1 = g_dx0 * g0 * v_eps_rsqrt1
+    t2 = - (1.0 / de) * g0 * v_eps_rsqrt3 * g_dx0_x0_bm_sum * x0_bm
+    t3 = - (1.0 / de) * g0 * v_eps_rsqrt1 * g_dx0_sum
+    x0_hat = x0_bm * v_eps_rsqrt1
+    g_dy = (t1 + t2 + t3) + g_dg0 * x0_hat + g_db0
+
+    return g_dy, g_x0, None, g_g0
+
+
+def double_backward_for_global(g_dx0, g_db0, g_dg0,
+                               dy, x0, b0, g0, rm, rv,
+                               axes, decay_rate, eps):
+    # Prerequisite
+    # axes reduced and denominator
+    axes0 = [a for a in range(x0.ndim)]
+    axes = list(set(axes0) - set(axes))
+    # (variance + eps) * (-1/2)
+    v_eps_rsqrt1 = (rv + eps) ** (-1.0 / 2.0)
+
+    # wrt. x
+    g_x0 = g_dg0 * dy * v_eps_rsqrt1
+
+    # wrt. beta
+    # zero, do nothing
+
+    # wrt. gamma
+    g_g0 = F.sum(g_dx0 * dy * v_eps_rsqrt1, axes, True)
+
+    # no backward wrt. rm and rv
+
+    # wrt. dy
+    g_dy = g_dx0 * g0 * v_eps_rsqrt1 \
+        + g_dg0 * (x0 - rm) * v_eps_rsqrt1 + g_db0
+
+    return g_dy, g_x0, None, g_g0
+
+
+class BatchNormalizationBackward(PythonFunction):
+
+    def __init__(self, ctx, axes=[], decay_rate=0.9, eps=1e-05, batch_stat=True,
+                 no_scale=False, no_bias=False):
+        super(BatchNormalizationBackward, self).__init__(ctx)
+        self._func = _F.BatchNormalization(
+            ctx, axes, decay_rate, eps, batch_stat, no_scale, no_bias)
+        self.axes = axes
+        self.decay_rate = decay_rate
+        self.eps = eps
+        self.batch_stat = batch_stat
+        self.no_scale = no_scale
+        self.no_bias = no_bias
+
+        # Variable indices
+        self.dy_idx = 0
+        self.x0_idx = 1
+        self.b0_idx = None
+        self.g0_idx = None
+        self.rm_idx = None
+        self.rv_idx = None
+        v_idx = 2
+        if not no_bias:
+            self.b0_idx = v_idx
+            v_idx += 1
+        if not no_scale:
+            self.g0_idx = v_idx
+            v_idx += 1
+        self.rm_idx = v_idx
+        self.rv_idx = self.rm_idx + 1
 
     @property
     def name(self):
-        return 'BatchNormalizationBackward'
+        return self.__class__.__name__
 
-    def _create_forward_inputs_and_outputs(self, inputs, outputs):
-        # Inputs on the forward graph
-        inputs_fwd = []
-        for i in range(self._num_inputs_fwd):
-            need_grad = self.forward_func.inputs[i].need_grad
-            v = nn.Variable(inputs[i].shape, need_grad=need_grad)
-            v.data = inputs[i].data
-            v.grad = outputs[i].data
-            inputs_fwd += [v]
-        # Outputs on the forward graph
-        outputs_fwd = []
-        for i in range(self._num_outputs_fwd):
-            inp = inputs[self._num_inputs_fwd + i]
-            v = nn.Variable(inp.shape)
-            v.grad = inp.data
-            outputs_fwd += [v]
+    @property
+    def args(self):
+        return self._func.args
+
+    def _create_fwd_inputs_outputs(self, inputs, outputs):
+        # inputs_fwd: x, (beta, gamma), rmean, rvar
+        # outputs_fwd: y(, bmean, bvar)
+        x0 = nn.Variable(inputs[self.x0_idx].shape).apply(need_grad=True)
+        b0 = nn.Variable(inputs[self.b0_idx].shape).apply(
+            need_grad=True) if not self.no_bias else None
+        g0 = nn.Variable(inputs[self.g0_idx].shape).apply(
+            need_grad=True) if not self.no_scale else None
+        rm = nn.Variable(inputs[self.rm_idx].shape).apply(need_grad=False)
+        rv = nn.Variable(inputs[self.rv_idx].shape).apply(need_grad=False)
+        inputs_fwd = list(
+            filter(lambda v: v is not None, [x0, b0, g0, rm, rv]))
+        oshape = inputs[0].shape
+        outputs_fwd = [nn.Variable(oshape)]
         return inputs_fwd, outputs_fwd
 
-        self.inputs_fwd, self.outputs_fwd = self._create_forward_inputs_and_outputs(
+    def min_inputs(self):
+        return 4  # dy, x0, (b0, g0), rm, rv
+
+    def min_outputs(self):
+        return self.rm_idx - 1
+
+    def setup_impl(self, inputs, outputs):
+        # inputs:  dy, x, beta, gamma, rmean, rvar
+        # outputs: dx, dbeta, dgamma
+
+        inputs_fwd, outputs_fwd = self._create_fwd_inputs_outputs(
             inputs, outputs)
-        self.forward_func.backward(self.inputs_fwd, self.outputs_fwd, accum=[
-                                   False] * self._num_inputs_fwd)
+        self._func.setup(inputs_fwd, outputs_fwd)
+        dx_shape = inputs_fwd[self.x0_idx - 1].shape
+        db_shape = inputs_fwd[self.b0_idx -
+                              1].shape if not self.no_bias else None
+        dg_shape = inputs_fwd[self.g0_idx -
+                              1].shape if not self.no_scale else None
+        outputs[self.x0_idx - 1].reset_shape(dx_shape, True)
+        outputs[self.b0_idx -
+                1].reset_shape(db_shape, True) if not self.no_bias else None
+        outputs[self.g0_idx -
+                1].reset_shape(dg_shape, True) if not self.no_scale else None
 
-    def backward_impl(self, inputs, outputs, prop_down, accum):
-        # TODO: output_stat (can not be obtained by self.forward_func.info.args["batch_stat"])
+    def forward_impl(self, inputs, outputs):
+        inputs_fwd, outputs_fwd = self._create_fwd_inputs_outputs(
+            inputs, outputs)
 
-        batch_stat = self.forward_func.info.args["batch_stat"]
-        if batch_stat:
-            self.backward_impl_for_batch(inputs, outputs, prop_down, accum)
-        else:
-            self.backward_impl_global(inputs, outputs, prop_down, accum)
+        # BN data
+        x0 = inputs[self.x0_idx].data
+        b0 = inputs[self.b0_idx].data if not self.no_bias else None
+        g0 = inputs[self.g0_idx].data if not self.no_scale else None
+        inputs_fwd[self.x0_idx - 1].data = x0
+        if not self.no_bias:
+            inputs_fwd[self.b0_idx - 1].data = b0
+        if not self.no_scale:
+            inputs_fwd[self.g0_idx - 1].data = g0
+        if not self.batch_stat:
+            rm = inputs[self.rm_idx].data
+            rv = inputs[self.rv_idx].data
+            inputs_fwd[self.rm_idx - 1].data = rm
+            inputs_fwd[self.rv_idx - 1].data = rv
+        # BN grad
+        dx0 = outputs[self.x0_idx - 1].data
+        inputs_fwd[self.x0_idx - 1].grad = dx0
+        if not self.no_bias:
+            db0 = outputs[self.b0_idx - 1].data
+            inputs_fwd[self.b0_idx - 1].grad = db0
+        if not self.no_scale:
+            dg0 = outputs[self.g0_idx - 1].data
+            inputs_fwd[self.g0_idx - 1].grad = dg0
+        dy = inputs[0].data
+        outputs_fwd[0].grad = dy
+        # BN backward
+        self._func.forward(inputs_fwd, outputs_fwd) \
+            if self.batch_stat and not "cudnn" in self.ctx.backend else None
+        self._func.backward(inputs_fwd, outputs_fwd, [False] * len(inputs_fwd))
 
-    def backward_impl_global(self, inputs, outputs, prop_down, accum):
-        # inputs: [inputs_fwd_graph] + [inputs_bwd_graph] or
-        # [inputs_fwd_graph] + [outputs_fwd_graph] + [inputs_bwd_graph]
+    def backward_impl(self, inputs, outputs, propagate_down, accum):
+        g_dx0 = nn.Variable(
+            outputs[self.x0_idx - 1].shape).apply(data=outputs[0].grad)
+        g_db0 = nn.Variable(outputs[self.b0_idx - 1].shape).apply(data=outputs[self.b0_idx - 1].grad) \
+            if not self.no_bias else 0
+        g_dg0 = nn.Variable(outputs[self.g0_idx - 1].shape).apply(data=outputs[self.g0_idx - 1].grad) \
+            if not self.no_scale else 0
+        dy = nn.Variable(inputs[0].shape).apply(
+            data=inputs[0].data, need_grad=True)
+        x0 = nn.Variable(inputs[1].shape).apply(
+            data=inputs[1].data, need_grad=True)
+        b0 = nn.Variable(inputs[self.b0_idx].shape).apply(
+            data=inputs[self.b0_idx].data, need_grad=True) if not self.no_bias else 0
+        g0 = nn.Variable(inputs[self.g0_idx].shape).apply(
+            data=inputs[self.g0_idx].data, need_grad=True) if not self.no_scale else 1
+        rm = nn.Variable(inputs[self.rm_idx].shape).apply(
+            data=inputs[self.rm_idx].data)
+        rv = nn.Variable(inputs[self.rv_idx].shape).apply(
+            data=inputs[self.rv_idx].data)
 
-        # Args
-        axes = self.forward_func.info.args["axes"]
-        decay_rate = self.forward_func.info.args["decay_rate"]
-        eps = self.forward_func.info.args["eps"]
-        no_scale = self.forward_func.info.args["no_scale"]
-        no_bias = self.forward_func.info.args["no_bias"]
-
-        beta_idx = -1 if no_bias else 1
-        gamma_idx = -1 if no_scale else 1 if no_bias else 2
-
-        # TODO: factorize more
-        # Inputs
-        x0 = inputs[0].data  # input
-        b0 = 0 if no_bias else inputs[beta_idx].data  # beta
-        g0 = 1 if no_scale else inputs[gamma_idx].data  # gamma
-        rm = inputs[-3].data  # running mean
-        rv = inputs[-2].data  # running variance
-        dy = inputs[-1].data  # grad input
-        # Outputs
-        dx0 = outputs[0].data
-        db0 = 0 if no_bias else outputs[beta_idx].data
-        dg0 = 0 if no_scale else outputs[gamma_idx].data
-        # Grads of inputs
-        g_x0 = inputs[0].grad
-        g_b0 = None if no_bias else inputs[beta_idx].grad
-        g_g0 = None if no_scale else inputs[gamma_idx].grad
-        g_rm = inputs[-3].grad
-        g_rv = inputs[-2].grad
-        g_dy = inputs[-1].grad
-        # Grads of outputs
-        g_dx0 = outputs[0].grad
-        g_db0 = 0 if no_bias else outputs[beta_idx].grad
-        g_dg0 = 0 if no_scale else outputs[gamma_idx].grad
-
-        # Prerequisite
-        # axes reduced and denominator
-        axes0 = [a for a in range(x0.ndim)]
-        axes = list(set(axes0) - set(axes))
-        # (variance + eps) * (-1/2)
-        v_eps_rsqrt1 = (rv + eps) ** (-1.0 / 2.0)
-
-        # w.r.t. x
-        if prop_down[0]:
-            g_x0_ = g_dg0 * dy * v_eps_rsqrt1
+        double_backward = double_backward_for_batch \
+            if self.batch_stat else double_backward_for_global
+        with nn.auto_forward():
+            g_dy_, g_x0_, g_b0_, g_g0_ = double_backward(g_dx0, g_db0, g_dg0,
+                                                         dy, x0, b0, g0, rm, rv,
+                                                         self.axes, self.decay_rate, self.eps)
+        g_dy = inputs[0].grad
+        g_x0 = inputs[1].grad
+        g_g0 = inputs[self.g0_idx].grad if not self.no_scale else 0
+        # wrt dy
+        if propagate_down[0]:
             if accum[0]:
-                g_x0 += g_x0_
+                g_dy += g_dy_.data
             else:
-                g_x0.copy_from(g_x0_)
-
-        # w.r.t. beta
-        # zero, do nothing
-
-        # w.r.t. gamma
-        if not no_scale and prop_down[gamma_idx]:
-            g_g0_ = F.sum(g_dx0 * dy * v_eps_rsqrt1, axes, True)
-            if accum[gamma_idx]:
-                g_g0 += g_g0_
+                g_dy.copy_from(g_dy_.data)
+        # wrt x
+        if propagate_down[1]:
+            if accum[1]:
+                g_x0 += g_x0_.data
             else:
-                g_g0.copy_from(g_g0_)
-
-        # no backward w.r.t. rm and rv
-
-        # w.r.t. dy
-        if prop_down[-1]:
-            g_dy_ = g_dx0 * g0 * v_eps_rsqrt1 + \
-                g_dg0 * (x0 - rm) * v_eps_rsqrt1 + g_db0
-            if accum[-1]:
-                g_dy += g_dy_
+                g_x0.copy_from(g_x0_.data)
+        # wrt g
+        if not self.no_scale and propagate_down[self.g0_idx]:
+            if accum[self.g0_idx]:
+                g_g0 += g_g0_.data
             else:
-                g_dy.copy_from(g_dy_)
+                g_g0.copy_from(g_g0_.data)
 
-    def backward_impl_for_batch(self, inputs, outputs, prop_down, accum):
-        # inputs: [inputs_fwd_graph] + [inputs_bwd_graph] or
-        # [inputs_fwd_graph] + [outputs_fwd_graph] + [inputs_bwd_graph]
 
-        # Args
-        axes = self.forward_func.info.args["axes"]
-        decay_rate = self.forward_func.info.args["decay_rate"]
-        eps = self.forward_func.info.args["eps"]
-        no_scale = self.forward_func.info.args["no_scale"]
-        no_bias = self.forward_func.info.args["no_bias"]
+def batch_normalization_backward(inputs, axes=(1,), decay_rate=0.9, eps=1e-05,
+                                 batch_stat=True, no_scale=False, no_bias=False):
+    """
+    Args:
+      inputs (list of nn.Variable): Incomming grads/inputs to/of the forward function.
+      kwargs (dict of arguments): Dictionary of the corresponding function arguments.
 
-        beta_idx = -1 if no_bias else 1
-        gamma_idx = -1 if no_scale else 1 if no_bias else 2
+    Return:
+      list of Variable: Return the gradients wrt inputs of the corresponding function.
+    """
+    ctx = nn.get_current_context()
+    df = BatchNormalizationBackward(
+        ctx, axes, decay_rate, eps, batch_stat, no_scale, no_bias)
+    d_inputs = df(*inputs)
+    return force_tuple(d_inputs) + (None, None)
 
-        # TODO: factorize more
-        # Inputs
-        x0 = inputs[0].data  # input
-        b0 = 0 if no_bias else inputs[beta_idx].data  # beta
-        g0 = 1 if no_scale else inputs[gamma_idx].data  # gamma
-        rm = inputs[-3].data  # running mean
-        rv = inputs[-2].data  # running variance
-        dy = inputs[-1].data  # grad input
-        # Outputs
-        dx0 = outputs[0].data
-        db0 = 0 if no_bias else outputs[beta_idx].data
-        dg0 = 0 if no_scale else outputs[gamma_idx].data
-        # Grads of inputs
-        g_x0 = inputs[0].grad
-        g_b0 = None if no_bias else inputs[beta_idx].grad
-        g_g0 = None if no_scale else inputs[gamma_idx].grad
-        g_rm = inputs[-3].grad
-        g_rv = inputs[-2].grad
-        g_dy = inputs[-1].grad
-        # Grads of outputs
-        g_dx0 = outputs[0].grad
-        g_db0 = 0 if no_bias else outputs[beta_idx].grad
-        g_dg0 = 0 if no_scale else outputs[gamma_idx].grad
 
-        # Prerequisite
-        # axes reduced and denominator
-        axes0 = [a for a in range(x0.ndim)]
-        axes = list(set(axes0) - set(axes))
-        de = np.prod([x0.shape[a] for a in axes])        # denominator
-        bm = F.mean(x0, axes, True)                      # batch mean
-        bv = F.mean(x0 ** 2.0, axes, True) - bm ** 2.0   # batch variance
-        x0_bm = x0 - bm                                  # x0 - batch mean
-        # (variance + eps) * (-1)
-        v_eps_r1 = (bv + eps) ** -1.0
-        # (variance + eps) * (-1/2)
-        v_eps_rsqrt1 = (bv + eps) ** (-1.0 / 2.0)
-        # (variance + eps) * (-3/2)
-        v_eps_rsqrt3 = v_eps_rsqrt1 ** 3.0
+def batch_normalization_backward_backward(inputs, axes=(1,), decay_rate=0.9, eps=1e-05,
+                                          batch_stat=True, no_scale=False, no_bias=False):
+    """
+    Args:
+      inputs (list of nn.Variable): Incomming grads/inputs to/of the forward function.
+      kwargs (dict of arguments): Dictionary of the corresponding function arguments.
 
-        # common factors
-        if prop_down[0] or (not no_scale and prop_down[gamma_idx]):
-            dy_x0_bm_sum = F.sum(dy * x0_bm, axes, True)
-            dy_sum = F.sum(dy, axes, True)
-        if prop_down[0] or prop_down[-1]:
-            g_dx0_x0_bm_sum = F.sum(g_dx0 * x0_bm, axes, True)
-            g_dx0_sum = F.sum(g_dx0, axes, True)
+    Return:
+      list of Variable: Return the gradients wrt inputs of the corresponding function.
+    """
+    # Align variable indices
+    v_idx = 1
+    x_idx = 0
+    if not no_bias:
+        g_db0_idx = v_idx
+        v_idx += 1
+    if not no_scale:
+        g_dg0_idx = v_idx
+        v_idx += 1
+    dy_idx = v_idx
+    v_idx += 1
+    x0_idx = v_idx
+    v_idx += 1
+    if not no_bias:
+        b0_idx = v_idx
+        v_idx += 1
+    if not no_scale:
+        g0_idx = v_idx
+        v_idx += 1
+    rm_idx = v_idx
+    rv_idx = rm_idx + 1
+    # Indexing
+    g_dx0 = inputs[0]
+    g_db0 = inputs[g_db0_idx] if not no_bias else 0
+    g_dg0 = inputs[g_dg0_idx] if not no_scale else 0
+    dy = inputs[dy_idx]
+    x0 = inputs[x0_idx]
+    b0 = inputs[b0_idx] if not no_bias else 0
+    g0 = inputs[g0_idx] if not no_scale else 1
+    rm = inputs[rm_idx]
+    rv = inputs[rv_idx]
 
-        # w.r.t. x
-        if prop_down[0]:
-            # from dx
-            dv = (-1.0 / 2.0) * g0 * v_eps_rsqrt3 * \
-                  F.sum(dy * x0_bm, axes, True)
-            g_dx0_dy_sum = F.sum(g_dx0 * dy, axes, True)
+    double_backward = double_backward_for_batch \
+        if batch_stat else double_backward_for_global
+    g_dy, g_x0, g_b0, g_g0 = double_backward(g_dx0, g_db0, g_dg0,
+                                             dy, x0, b0, g0, rm, rv,
+                                             axes, decay_rate, eps)
+    if not no_bias and not no_scale:
+        return g_dy, g_x0, None, g_g0, None, None
 
-            g1 = (-1.0 / de) * v_eps_rsqrt3 * g_dx0_dy_sum * g0 * x0_bm
-            g2 = (1.0 / de) * g0 * g_dx0_x0_bm_sum * v_eps_rsqrt3 * (1.0 / de * dy_sum - dy
-                                                                     + (3.0 / de) * v_eps_r1 * dy_x0_bm_sum * x0_bm)
-            g2 += (2.0 / de) * dv * (g_dx0 - (1.0 / de) * g_dx0_sum)
-            g3 = (1.0 / de ** 2.0) * g_dx0_sum * \
-                dy_sum * g0 * v_eps_rsqrt3 * x0_bm
-
-            g_x0_ = g1 + g2 + g3
-
-            # from gamma
-            t1 = (dy - dy_sum / de) * v_eps_rsqrt1
-            t2 = (- 1.0 / de) * dy_x0_bm_sum * v_eps_rsqrt3 * x0_bm
-            g_x0_ += g_dg0 * (t1 + t2)
-
-            if accum[0]:
-                g_x0 += g_x0_
-            else:
-                g_x0.copy_from(g_x0_)
-
-        # w.r.t. beta
-        # zero, do nothing
-
-        # w.r.t. gamma
-        if not no_scale and prop_down[gamma_idx]:
-            t1 = dy * v_eps_rsqrt1
-            t2 = (- 1.0 / de) * dy_x0_bm_sum * v_eps_rsqrt3 * x0_bm
-            t3 = (- 1.0 / de) * dy_sum * v_eps_rsqrt1
-            g_g0_ = F.sum(g_dx0 * (t1 + t2 + t3), axes, True)
-            if accum[gamma_idx]:
-                g_g0 += g_g0_
-            else:
-                g_g0.copy_from(g_g0_)
-
-        # no backward w.r.t. rm and rv
-
-        # w.r.t. dy
-        if prop_down[-1]:
-            t1 = g_dx0 * g0 * v_eps_rsqrt1
-            t2 = - (1.0 / de) * g0 * v_eps_rsqrt3 * g_dx0_x0_bm_sum * x0_bm
-            t3 = - (1.0 / de) * g0 * v_eps_rsqrt1 * g_dx0_sum
-            x0_hat = x0_bm * v_eps_rsqrt1
-            g_dy_ = (t1 + t2 + t3) + g_dg0 * x0_hat + g_db0
-            if accum[-1]:
-                g_dy += g_dy_
-            else:
-                g_dy.copy_from(g_dy_)
+    if no_bias and no_scale:
+        return g_dy, g_x0, None, None
