@@ -369,6 +369,12 @@ class CacheDataSource(DataSource):
 class CsvDataSource(DataSource):
     '''
     '''
+    def _remove_comment_cols(self, header, rows):
+        for col_index in reversed(range(len(header))):
+            if header[col_index][0] == '#':
+                del header[col_index]
+                for row in rows:
+                    del row[col_index]
 
     def _process_header(self, row):
         self._variables_dict = OrderedDict()
@@ -438,18 +444,13 @@ class CsvDataSource(DataSource):
         self._generation = -1
         self._rows = []
         self._filereader = FileReader(self._filename)
-        with self._filereader.open() as f:
-            csv_lines = [x.decode('utf-8') for x in f.readlines()]
-            csvreader = csv.reader(csv_lines)
-            first_line = True
-            for row in csvreader:
-                if len(row):
-                    if first_line:
-                        self._process_header(row)
-                        first_line = False
-                    else:
-                        self._rows.append(row)
-                        self._size += 1
+        with self._filereader.open(textmode=True, encoding='utf-8') as f:
+            csvreader = csv.reader(f)
+            header = next(csvreader)
+            self._rows = list(csvreader)
+            self._size = len(self._rows)
+            self._remove_comment_cols(header, self._rows)
+            self._process_header(header)
         self._original_source_uri = self._filename
         self._original_order = list(range(self._size))
         self._order = list(range(self._size))
