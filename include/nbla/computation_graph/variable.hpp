@@ -263,7 +263,7 @@ public:
       @param     communicator_callbacks The callback functions invoked when 1)
                  backward computation of each function is finished and
                  2) all backward computation is finished.
-      @param     clear_initial_grad If true, The input parameter, grad, will be
+      @param     clear_initial_grad If true, the input parameter, grad, will be
                  cleared during backward propagation. This flag is only
                  activated when grad is set.
 
