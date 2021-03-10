@@ -98,9 +98,9 @@ class CreateCache(CsvDataSource):
         # read index.csv
         self._file = open(input_csv_filename, 'r', encoding='utf-8')
         csvreader = csv.reader(self._file)
-        
+
         header = next(csvreader)
-        
+
         # Store file positions of each data.
         self._csv_data = list(csvreader)
         self._size = len(self._csv_data)

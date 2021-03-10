@@ -369,6 +369,7 @@ class CacheDataSource(DataSource):
 class CsvDataSource(DataSource):
     '''
     '''
+
     def _remove_comment_cols(self, header, rows):
         for col_index in reversed(range(len(header))):
             if header[col_index][0] == '#':
