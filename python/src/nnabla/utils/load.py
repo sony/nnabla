@@ -263,8 +263,14 @@ def _create_optimizer(ctx, o, networks, datasets, renamed):
             optimizer.scheduler = LinearWarmupScheduler(
                 optimizer.scheduler, o.solver.linear_warmup_scheduler_param.warmup_iter // comm_size)
 
-    optimizer.target = F.sink(
-        *[v.variable_instance for v in optimizer.loss_variables])
+    for v in optimizer.loss_variables:
+        v.variable_instance.grad.fill(1.0 / v.variable_instance.size)
+
+    if len(optimizer.loss_variables) == 1:
+        optimizer.target = optimizer.loss_variables[0].variable_instance
+    else:
+        optimizer.target = F.sink(
+            *[v.variable_instance for v in optimizer.loss_variables], one_input_grad=False)
 
     return optimizer
 
