@@ -368,14 +368,17 @@ def lms_scheduler(ctx, use_lms, gpu_memory_size=None, window_length=None):
             "ctx passed to scheduler doesn't have cuda/cudnn backend. lms scheduler will not be used.")
         use_lms = False
 
+    comm = current_communicator()
+    if comm:
+        logger.log(99, f'[OoC] Currently OoC is disabled for Multi-GPU training.')
+        use_lms = False
+
     if use_lms:
         gpu_index = 0
-        comm = current_communicator()
-        if comm:
-            gpu_index = comm.local_rank
-        elif 'cuda' in str(ctx.backend):
+        if 'cuda' in str(ctx.backend):
             gpu_index = int(ctx.device_id)
         else:
+            logger.log(99, f'[OoC] OoC is only enabled for GPU training.')
             raise Exception
 
         # It is better to use nvml to get GPU infomation but due to windows problem, temporarily get information with `nvidia-smi`.
@@ -385,13 +388,14 @@ def lms_scheduler(ctx, use_lms, gpu_memory_size=None, window_length=None):
                 gpu_memory_size = int(int(subprocess.check_output('nvidia-smi --query-gpu=index,memory.total --format=csv').decode(
                 ).splitlines()[1:][gpu_index].split(',')[1].strip().split()[0]) * (1024 ** 2) * 0.7)
             except:
-                gpu_memory_size = 8e9  # default 8 GiB
+                logger.log(99, f'[OoC] Could not get GPU memory size using default value(6GB).')
+                gpu_memory_size = 6e9  # default 6 GiB
                 pass
 
         if window_length is None or window_length == 0:
             window_length = int(gpu_memory_size * 1.5)
 
-        logger.log(99, f'[LMS] gpu_memory_limit: {gpu_memory_size / 1e9}GB, prefetch_window_length: {window_length / 1e9}GB')
+        logger.log(99, f'[OoC] gpu_memory_limit: {gpu_memory_size / 1e9}GB, prefetch_window_length: {window_length / 1e9}GB')
         # Change array preference so that lms works well.
         # import nnabla_ext.cuda.init as cuda_init
         # cuda_init.prefer_cpu_pinned_array()
