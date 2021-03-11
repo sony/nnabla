@@ -90,7 +90,7 @@ def _save_parameters(args, suffix, epoch, train_config, force=False):
         with open(version_filename, 'w') as file:
             file.write('{}\n'.format(nnp_version()))
 
-        param_filename = base + '_param.h5'
+        param_filename = f'{base}_param{nnabla_config.get("MISC", "nnp_param_format")}'
         save_parameters(param_filename)
 
         need_save_opti = train_config.optimizers and epoch % _OPTIMIZER_CHECKPOINT_INTERVAL == 0
@@ -102,7 +102,7 @@ def _save_parameters(args, suffix, epoch, train_config, force=False):
             nnp.write(version_filename, 'nnp_version.txt')
             nnp.write(_save_parameter_info['config'], os.path.basename(
                 _save_parameter_info['config']))
-            nnp.write(param_filename, 'parameter.h5')
+            nnp.write(param_filename, f'parameter{nnabla_config.get("MISC", "nnp_param_format")}')
             if need_save_opti:
                 for f in opti_filenames:
                     nnp.write(f, f[len(base) + 1:])
@@ -568,7 +568,7 @@ def train_command(args):
         configure_progress(os.path.join(args.outdir, 'progress.txt'))
 
     info = load.load([args.config], prepare_data_iterator=None,
-                     exclude_parameter=True)
+                     exclude_parameter=True, context=args.context)
 
     # Check dataset uri is empty.
     dataset_error = False
@@ -700,5 +700,7 @@ def add_train_command(subparsers):
         '-p', '--param', help='path to parameter file', required=False)
     subparser.add_argument(
         '-o', '--outdir', help='output directory', required=True)
+    subparser.add_argument(
+        '-C', '--context', help='Force exec context (cpu or cudnn[:DEVID])', default=None)
     callback.add_train_command_arg(subparser)
     subparser.set_defaults(func=train_command)
