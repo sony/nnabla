@@ -1497,6 +1497,7 @@ class OnnxImporter:
                 raise ValueError("Unsupported attribute {} was specified at {}"
                                  .format(attr.name, n.op_type))
         if opset == "11":
+            del func.input[1:]
             pads = self.get_input_raw_data(n.input[1], TensorProto.INT64)
             try:
                 value = self.get_input_raw_data(
@@ -2035,6 +2036,7 @@ class OnnxImporter:
                     logger.info('Unsupported attribute {} was specified at {}'
                                 .format(attr.name, n.op_type))
         else:
+            del func.input[1:]
             starts = self.get_input_raw_data(n.input[1], TensorProto.INT64)
             ends = self.get_input_raw_data(n.input[2], TensorProto.INT64)
             try:
@@ -2395,6 +2397,7 @@ class OnnxImporter:
                 elif init.float_data:
                     scales.extend(init.float_data)
         self._merged_inputs.append(n.input[1])
+        del func.input[1]
         scales = [int(np.floor(i)) for i in scales]
         output_shape = []
         for i in range(len(input_shape)):
