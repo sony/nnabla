@@ -43,6 +43,9 @@ def _import_file(args, ifiles):
             args.import_format == "SAVED_MODEL":
         from .tensorflow import TensorflowImporter
         return TensorflowImporter(*ifiles, tf_format=args.import_format, outputs=args.outputs, inputs=args.inputs).execute()
+    elif args.import_format == 'TFLITE':
+        from .tensorflow import TensorflowLiteImporter
+        return TensorflowLiteImporter(*ifiles).execute()
     return None
 
 

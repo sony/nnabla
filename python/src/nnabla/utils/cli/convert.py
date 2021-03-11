@@ -58,6 +58,8 @@ def resolve_file_format(args, import_files, export_file=None):
             args.import_format = "TF_CKPT_V1"
         elif input_ext == '.meta':
             args.import_format = "TF_CKPT_V2"
+        elif input_ext == '.tflite':
+            args.import_format = "TFLITE"
         elif input_ext == '' and os.path.isdir(import_files[0]):
             args.import_format = "SAVED_MODEL"
 
@@ -81,7 +83,7 @@ def resolve_file_format(args, import_files, export_file=None):
     else:
         args.export_format = ''
 
-    if args.import_format in ['ONNX', 'TF_CKPT_V1', 'TF_CKPT_V2', 'TF_PB', 'SAVED_MODEL'] or \
+    if args.import_format in ['ONNX', 'TF_CKPT_V1', 'TF_CKPT_V2', 'TF_PB', 'SAVED_MODEL', 'TFLITE'] or \
             args.export_format in ['ONNX', 'TFLITE', 'SAVED_MODEL']:
         try:
             import nnabla.utils.converter.onnx
