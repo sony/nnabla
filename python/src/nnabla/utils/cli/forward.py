@@ -223,7 +223,7 @@ def forward_command(args):
 
         # load dataset as csv
         filereader = FileReader(args.dataset)
-        with filereader.open(textmode=True, encoding='utf-8') as f:
+        with filereader.open(textmode=True, encoding='utf-8-sig') as f:
             rows = [row for row in csv.reader(f)]
         row0 = rows.pop(0)
         if args.replace_path:
@@ -249,7 +249,7 @@ def forward_command(args):
         try:
             # load dataset as csv
             filereader = FileReader(original_csv)
-            with filereader.open(textmode=True, encoding='utf-8') as f:
+            with filereader.open(textmode=True, encoding='utf-8-sig') as f:
                 rows = [row for row in csv.reader(f)]
             row0 = rows.pop(0)
             root_path = '.'

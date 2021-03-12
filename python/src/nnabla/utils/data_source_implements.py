@@ -445,7 +445,7 @@ class CsvDataSource(DataSource):
         self._generation = -1
         self._rows = []
         self._filereader = FileReader(self._filename)
-        with self._filereader.open(textmode=True, encoding='utf-8') as f:
+        with self._filereader.open(textmode=True, encoding='utf-8-sig') as f:
             csvreader = csv.reader(f)
             header = next(csvreader)
             self._rows = list(csvreader)

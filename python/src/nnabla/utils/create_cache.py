@@ -96,7 +96,7 @@ class CreateCache(CsvDataSource):
         self._shuffle = shuffle
 
         # read index.csv
-        self._file = open(input_csv_filename, 'r', encoding='utf-8')
+        self._file = open(input_csv_filename, 'r', encoding='utf-8-sig')
         csvreader = csv.reader(self._file)
 
         header = next(csvreader)
