@@ -36,7 +36,7 @@ except Exception:
 
 gpu_load_backend_ok = True
 try:
-    import pynvml
+    from nnabla.utils.nvml import pynvml
     pynvml.nvmlInit()
 except Exception:
     # measure gpu load only if nvml installed
