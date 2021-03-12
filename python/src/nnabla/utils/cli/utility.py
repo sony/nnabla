@@ -73,6 +73,41 @@ def is_float(x):
         return False
 
 
+def str_to_num(str):
+    # Convert str to num.
+    #   12345678
+    #   123e123  123 ^ 123
+    #   1234K    1234 * 1000
+    #   1234k    1234 * 1024
+    #   1234M    1234 * 1000^2
+    #   1234m    1234 * 1024^2
+    #   1234G    1234 * 1000^3
+    #   1234g    1234 * 1024^3
+    #   1234T    1234 * 1000^4
+    #   1234t    1234 * 1024^4
+    #   1234P    1234 * 1000^5
+    #   1234p    1234 * 1024^5
+    import re
+    m = re.match(
+        r'(^[1-9][0-9]*$|^([1-9][0-9]*(\.[0-9]+)?)((e)([0-9]+)|[KkMmGgTtPp]))$', str)
+    print(m)
+    if m:
+        if m.group(4):
+            if m.group(5):
+                return int(float(m.group(2)) ** int(m.group(6)))
+            else:
+                return int(float(m.group(2)) *
+                           {'K': 1000, 'k': 1024,
+                            'M': 1000 ** 2, 'm': 1024 ** 2,
+                            'G': 1000 ** 3, 'g': 1024 ** 3,
+                            'T': 1000 ** 4, 't': 1024 ** 4,
+                            'P': 1000 ** 5, 'p': 1024 ** 5}[m.group(4)])
+        else:
+            return int(m.group(1))
+    else:
+        return -1
+
+
 def compute_full_path(root_path, file_path):
     full_path = os.path.join(root_path, file_path)
     full_path = full_path.replace('\\', os.path.sep)
@@ -312,3 +347,80 @@ def load_train_state(filename, info):
     info.parameter_scope = nn.parameter.get_current_parameter_scope()
     load_files(info, file_loaders, filename)
     logger.info("Load training resume states: {}".format(filename))
+
+
+from contextlib import contextmanager
+import nnabla.logger as logger
+from nnabla.lms import SwapInOutScheduler
+
+
+@contextmanager
+def sechdule_scope(scheduler):
+    scheduler.update_pre_hook()
+    yield scheduler
+    scheduler.update_post_hook()
+
+
+def lms_scheduler(ctx, use_lms, gpu_memory_size=None, window_length=None):
+    _check_list = [x.split(":")[0] for x in ctx.backend]
+    if "cudnn" not in _check_list and "cuda" not in _check_list:
+        logger.warn(
+            "ctx passed to scheduler doesn't have cuda/cudnn backend. lms scheduler will not be used.")
+        use_lms = False
+
+    comm = current_communicator()
+    if comm:
+        logger.log(99, f'[OoC] Currently OoC is disabled for Multi-GPU training.')
+        use_lms = False
+
+    if use_lms:
+        gpu_index = 0
+        if 'cuda' in str(ctx.backend):
+            gpu_index = int(ctx.device_id)
+        else:
+            logger.log(99, f'[OoC] OoC is only enabled for GPU training.')
+            raise Exception
+
+        # It is better to use nvml to get GPU infomation but due to windows problem, temporarily get information with `nvidia-smi`.
+        if gpu_memory_size is None or gpu_memory_size == 0:
+            try:
+                import subprocess
+                gpu_memory_size = int(int(subprocess.check_output('nvidia-smi --query-gpu=index,memory.total --format=csv').decode(
+                ).splitlines()[1:][gpu_index].split(',')[1].strip().split()[0]) * (1024 ** 2) * 0.7)
+            except:
+                logger.log(99, f'[OoC] Could not get GPU memory size using default value(6GB).')
+                gpu_memory_size = 6e9  # default 6 GiB
+                pass
+
+        if window_length is None or window_length == 0:
+            window_length = int(gpu_memory_size * 1.5)
+
+        logger.log(99, f'[OoC] gpu_memory_limit: {gpu_memory_size / 1e9}GB, prefetch_window_length: {window_length / 1e9}GB')
+        # Change array preference so that lms works well.
+        # import nnabla_ext.cuda.init as cuda_init
+        # cuda_init.prefer_cpu_pinned_array()
+        # cuda_init.prefer_cuda_virtual_array()
+        from nnabla.ext_utils import get_extension_context
+        be, tc = ctx.backend[0].split(":")
+        cpu_ctx = get_extension_context("cpu", device_id="", type_config=tc)
+        return SwapInOutScheduler(cpu_ctx, ctx, gpu_memory_size, window_length)
+    else:
+        class DummyScheduler(object):
+            function_pre_hook = None
+            function_post_hook = None
+            update_pre_hook = None
+            update_post_hook = None
+
+            def start_scheduling(self):
+                return None
+
+            def end_scheduling(self):
+                return None
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc_val, exc_tb):
+                pass
+
+        return DummyScheduler()
