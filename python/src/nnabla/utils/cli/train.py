@@ -214,6 +214,10 @@ def _update(iter, config, cost, scheduler):
                     cost.sum_iteration = 0.0
 
             with scheduler:
+                # This size is omitted if multiple variables in loss_variables
+                # otherwise, this size is omitted since passing through F.sink()
+                l_size = o.loss_variables[0].variable_instance.size
+
                 with nodeTimeCollector.collect_cost_time(comm, iter):
                     # Forward
                     o.target.forward(clear_no_need_grad=True)
@@ -225,10 +229,10 @@ def _update(iter, config, cost, scheduler):
                     # Backward
                     if o.comm and iter % o.update_interval == o.update_interval - 1:
                         params = [x.grad for x in o.parameters.values()]
-                        o.target.backward(
-                            clear_buffer=True, communicator_callbacks=comm.all_reduce_callback(params, 2 << 10))
+                        o.target.backward(grad=1.0 / l_size,
+                                          clear_buffer=True, communicator_callbacks=comm.all_reduce_callback(params, 2 << 20, division=True))
                     else:
-                        o.target.backward(clear_buffer=True)
+                        o.target.backward(grad=1.0 / l_size, clear_buffer=True)
 
                 # Update
                 if iter % o.update_interval == o.update_interval - 1:
@@ -239,12 +243,6 @@ def _update(iter, config, cost, scheduler):
                         o.solver.set_learning_rate(
                             o.scheduler.get_learning_rate(iter))
                     o.solver.update()
-
-            # Sync w sometimes
-            if iter % 10 == 9:  # TODO: change the interval
-                if o.comm:
-                    params = [x.data for x in o.parameters.values()]
-                    _all_reduce(o.comm, params, division=True, inplace=True)
 
             # Reserve monitor loss
             cost.variables = o.loss_variables
