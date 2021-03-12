@@ -86,6 +86,20 @@ def _get_matching_variable_names(variable, variable_names):
     return variable_names
 
 
+def _check_context(ctx):
+    try:
+        x = nn.Variable()
+        y = nn.Variable()
+        func = F.ReLU(ctx, inplace=True)
+        func.setup([x], [y])
+        func.forward([x], [y])
+    except:
+        logger.warn('Fallback to CPU context.')
+        import nnabla_ext.cpu
+        ctx = nnabla_ext.cpu.context()
+    return ctx
+
+
 def _create_optimizer(ctx, o, networks, datasets, renamed):
     class Optimizer:
         pass
@@ -567,7 +581,7 @@ def _executors(info):
 ##########################################################################
 # API
 #
-def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_parameter=False, parameter_only=False, extension=".nntxt"):
+def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_parameter=False, parameter_only=False, extension=".nntxt", context=None):
     '''load
     Load network information from files.
 
@@ -596,33 +610,45 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
     info.parameter_scope = nn.parameter.get_current_parameter_scope()
     load_files(info, file_loaders, filenames, extension)
 
-    if info.proto.HasField('global_config'):
-        info.global_config = _global_config(info.proto)
-        default_context = info.global_config.default_context
-        if 'cuda' in default_context.backend:
-            import nnabla_ext.cudnn
-        elif 'cuda:float' in default_context.backend:
-            try:
-                import nnabla_ext.cudnn
-            except:
-                pass
-        try:
-            import nnabla.function
-            x = nn.Variable()
-            y = nn.Variable()
-            func = nnabla.function.ReLU(default_context, inplace=True)
-            func.setup([x], [y])
-            func.forward([x], [y])
-        except:
-            logger.warn('Fallback to CPU context.')
+    default_context = None
+    if context:
+        if context == 'cpu':
             import nnabla_ext.cpu
             default_context = nnabla_ext.cpu.context()
-    else:
-        import nnabla_ext.cpu
-        default_context = nnabla_ext.cpu.context()
-        info.global_config = _global_config(
-            None, default_context=default_context)
+        else:
+            cs = context.split(':')
+            if cs[0] == 'cudnn':
+                if len(cs) == 1:
+                    devid = 0
+                else:
+                    devid = int(cs[1])
+            import nnabla_ext.cudnn
+            default_context = nnabla_ext.cudnn.context(device_id=devid)
+        if default_context is None:
+            logger.warn('Invalid context [{}]'.format(context))
+        elif info.proto.HasField('global_config'):
+            info.global_config = _global_config(proto)
+            info.global_config.default_context = default_context
 
+    if default_context is None:
+        if info.proto.HasField('global_config'):
+            info.global_config = _global_config(info.proto)
+            default_context = info.global_config.default_context
+            if 'cuda' in default_context.backend:
+                import nnabla_ext.cudnn
+            elif 'cuda:float' in default_context.backend:
+                try:
+                    import nnabla_ext.cudnn
+                except:
+                    pass
+        else:
+            import nnabla_ext.cpu
+            default_context = nnabla_ext.cpu.context()
+            info.global_config = _global_config(
+                None, default_context=default_context)
+
+    default_context = _check_context(default_context)
+    logger.log(99, 'Using context "{}"'.format(default_context))
     comm = current_communicator()
     if comm:
         default_context.device_id = str(comm.local_rank)
