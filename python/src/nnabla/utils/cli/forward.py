@@ -223,7 +223,7 @@ def forward_command(args):
 
         # load dataset as csv
         filereader = FileReader(args.dataset)
-        with filereader.open(textmode=True) as f:
+        with filereader.open(textmode=True, encoding='utf-8') as f:
             rows = [row for row in csv.reader(f)]
         row0 = rows.pop(0)
         if args.replace_path:
@@ -232,8 +232,8 @@ def forward_command(args):
         else:
             root_path = '.'
         rows = [row for row in rows if len(row)]
-        rows = list(map(lambda row: list(map(lambda x: x if is_float(
-            x) else compute_full_path(root_path, x), row)), rows))
+        rows = list(map(lambda row: list(map(lambda i, x: x if row0[i][0] == '#' or is_float(
+            x) else compute_full_path(root_path, x), range(len(row)), row)), rows))
         for i in range(len(rows)):
             orders[i] = i
     # With Cache
@@ -249,7 +249,7 @@ def forward_command(args):
         try:
             # load dataset as csv
             filereader = FileReader(original_csv)
-            with filereader.open(textmode=True) as f:
+            with filereader.open(textmode=True, encoding='utf-8') as f:
                 rows = [row for row in csv.reader(f)]
             row0 = rows.pop(0)
             root_path = '.'
@@ -279,7 +279,7 @@ def forward_command(args):
     callback.update_status('processing', True)
 
     result_csv_filename = os.path.join(args.outdir, args.outfile)
-    with open(result_csv_filename, 'w') as f:
+    with open(result_csv_filename, 'w', encoding='utf-8') as f:
         writer = csv.writer(f, lineterminator='\n')
         with data_iterator() as di:
             index = 0

@@ -96,17 +96,20 @@ class CreateCache(CsvDataSource):
         self._shuffle = shuffle
 
         # read index.csv
-        self._file = open(input_csv_filename, 'r')
+        self._file = open(input_csv_filename, 'r', encoding='utf-8')
         csvreader = csv.reader(self._file)
 
-        self._process_header(next(csvreader))
-        self._variables = tuple(self._variables_dict.keys())
+        header = next(csvreader)
 
         # Store file positions of each data.
         self._csv_data = list(csvreader)
         self._size = len(self._csv_data)
 
         self._file.close()
+
+        self._remove_comment_cols(header, self._csv_data)
+        self._process_header(header)
+        self._variables = tuple(self._variables_dict.keys())
 
         self._original_order = list(range(self._size))
 

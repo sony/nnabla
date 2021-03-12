@@ -144,7 +144,7 @@ class FileReader:
         return result
 
     @contextlib.contextmanager
-    def open(self, filename=None, textmode=False):
+    def open(self, filename=None, textmode=False, encoding='utf-8'):
         if filename is None:
             filename = self._base_uri
         else:
@@ -164,14 +164,14 @@ class FileReader:
             key = '/'.join(us)
             logger.info('Opening {}'.format(key))
             if textmode:
-                f = StringIO(self.read_s3_object(key).decode('utf-8'))
+                f = StringIO(self.read_s3_object(key).decode(encoding))
             else:
                 f = BytesIO(self.read_s3_object(key))
         elif self._file_type == 'http':
             f = requests.get(filename, stream=True)
         else:
             if textmode:
-                f = open(filename, 'rt')
+                f = open(filename, 'rt', encoding=encoding)
             else:
                 f = open(filename, 'rb')
         yield f
