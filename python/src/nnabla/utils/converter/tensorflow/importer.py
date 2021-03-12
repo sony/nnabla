@@ -20,6 +20,8 @@ from tf2onnx import constants, tf_loader, optimizer
 from tf2onnx.tfonnx import process_tf_graph
 from tensorflow.python.tools import freeze_graph
 from .common import find_out_terminal_node
+import tflite
+import tflite2onnx
 
 
 class TensorflowImporter:
@@ -102,4 +104,23 @@ class TensorflowImporter:
         onnx_model = self.convert_to_onnx(graph_def, inputs, outputs)
         onnx_importer = OnnxImporter()
         onnx_importer.import_from_onnx_model(onnx_model)
+        return onnx_importer.execute()
+
+
+class TensorflowLiteImporter:
+    """ Import tensorflow lite model to nnp model.
+    """
+
+    def __init__(self, file_path=''):
+        self._file_path = file_path
+
+    def execute(self):
+        with open(self._file_path, 'rb') as f:
+            data = f.read()
+            tflite_model = tflite.Model.GetRootAsModel(data, 0)
+
+        model = tflite2onnx.model.Model(tflite_model)
+        model.convert(dict())
+        onnx_importer = OnnxImporter()
+        onnx_importer.import_from_onnx_model(model.onnx)
         return onnx_importer.execute()

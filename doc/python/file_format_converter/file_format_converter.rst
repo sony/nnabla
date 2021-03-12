@@ -23,13 +23,13 @@ Overview
       NNP2 [label = "NNP", color="cyan", width=40, height=20];
       NNB [label = "NNB", color="cyan", width=40, height=20];
       CSRC [label = "C Source\ncode", color="seagreen", width=40];
-      TF1 [label = "Tensorflow\n(.pb,ckpt)", shape="roundedbox", color="yellow", width=80, height=60];
-      TF2 [label = "Frozen graph(.pb)",      color="yellow", width=80];
+      TF1 [label = "Tensorflow\n(.pb,ckpt,.tflite,\nsaved_model)", shape="roundedbox", color="yellow", width=80, height=60];
+      TF2 [label = "SavedModel,\nTFlite",      color="yellow", width=80];
       OtherRuntime [label = "Other runtime", shape="roundedbox", width=80];
       NNablaCRuntime [label = "NNabla C\nRuntime", color="lime", shape="roundedbox", width=80];
       Product [label = "Implement to\nproduct", shape="roundedbox", width=80];
       Tensorflow [label = "Tensorflow", shape="roundedbox", width=80];
-      
+
       NNabla1 -> NNP1;
       Other -> ONNX1 -> Conv1 -> NNP1;
       NNP1 -> Conv2;
@@ -53,6 +53,8 @@ File format converter has following functions.
 - Convert NNP to NNB(Binary format for NNabla C Runtime)
 - Convert NNP to Tensorflow saved_model
 - Convert Tensorflow checkpoint, frozen graph or saved_model to NNP
+- Convert NNP to Tensorflow Lite
+- Convert Tensorflow Lite to NNP
 - Experimental: Convert NNP to C Source code for NNabla C Runtime
 
 **IMPORTANT NOTICE**: This file format converter still has some known problems.
@@ -364,6 +366,14 @@ Convert NNP to Tensorflow Lite
 .. code-block:: none
 
    $ nnabla_cli convert input.nnp output.tflite
+
+
+Convert Tensorflow Lite to NNP
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: none
+
+   $ nnabla_cli convert input.tflite output.nnp
 
 
 Splitting network

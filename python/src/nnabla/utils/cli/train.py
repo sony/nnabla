@@ -30,7 +30,15 @@ from nnabla.parameter import save_parameters
 from nnabla.utils.progress import configure_progress, progress
 import nnabla.utils.callback as callback
 
-from nnabla.utils.cli.utility import let_data_to_variable, measure_cpu_gpu_instant_load, get_cpu_gpu_average_load, save_optimizer_states, NodeTimeInfoCollector, load_train_state
+from nnabla.utils.cli.utility import let_data_to_variable
+from nnabla.utils.cli.utility import measure_cpu_gpu_instant_load
+from nnabla.utils.cli.utility import get_cpu_gpu_average_load
+from nnabla.utils.cli.utility import save_optimizer_states
+from nnabla.utils.cli.utility import NodeTimeInfoCollector
+from nnabla.utils.cli.utility import load_train_state
+from nnabla.utils.cli.utility import str_to_num
+from nnabla.utils.cli.utility import lms_scheduler
+
 from nnabla.utils.nnp_format import nnp_version
 from nnabla.utils.communicator_util import current_communicator, single_or_rankzero
 
@@ -119,7 +127,7 @@ def _save_parameters(args, suffix, epoch, train_config, force=False):
         callback.save_train_snapshot()
 
 
-def _update(iter, config, cost):
+def _update(iter, config, cost, scheduler):
     comm = current_communicator()
 
     loaded_data = {}
@@ -205,35 +213,36 @@ def _update(iter, config, cost):
                                  (iter % config.training_config.iter_per_epoch) * 1.0 / config.training_config.iter_per_epoch)
                     cost.sum_iteration = 0.0
 
-            # This size is omitted if multiple variables in loss_variables
-            # otherwise, this size is omitted since passing through F.sink()
-            l_size = o.loss_variables[0].variable_instance.size
+            with scheduler:
+                # This size is omitted if multiple variables in loss_variables
+                # otherwise, this size is omitted since passing through F.sink()
+                l_size = o.loss_variables[0].variable_instance.size
 
-            with nodeTimeCollector.collect_cost_time(comm, iter):
-                # Forward
-                o.target.forward(clear_no_need_grad=True)
+                with nodeTimeCollector.collect_cost_time(comm, iter):
+                    # Forward
+                    o.target.forward(clear_no_need_grad=True)
 
-                # Equivalency with previous version
-                if iter % o.update_interval == 0:
-                    o.solver.zero_grad()
+                    # Equivalency with previous version
+                    if iter % o.update_interval == 0:
+                        o.solver.zero_grad()
 
-                # Backward
-                if o.comm and iter % o.update_interval == o.update_interval - 1:
-                    params = [x.grad for x in o.parameters.values()]
-                    o.target.backward(grad=1.0 / l_size,
-                                      clear_buffer=True, communicator_callbacks=comm.all_reduce_callback(params, 2 << 20, division=True))
-                else:
-                    o.target.backward(grad=1.0 / l_size, clear_buffer=True)
+                    # Backward
+                    if o.comm and iter % o.update_interval == o.update_interval - 1:
+                        params = [x.grad for x in o.parameters.values()]
+                        o.target.backward(grad=1.0 / l_size,
+                                          clear_buffer=True, communicator_callbacks=comm.all_reduce_callback(params, 2 << 20, division=True))
+                    else:
+                        o.target.backward(grad=1.0 / l_size, clear_buffer=True)
 
-            # Update
-            if iter % o.update_interval == o.update_interval - 1:
-                if o.weight_decay > 0:
-                    o.solver.weight_decay(o.weight_decay)
+                # Update
+                if iter % o.update_interval == o.update_interval - 1:
+                    if o.weight_decay > 0:
+                        o.solver.weight_decay(o.weight_decay)
 
-                if o.scheduler is not None:
-                    o.solver.set_learning_rate(
-                        o.scheduler.get_learning_rate(iter))
-                o.solver.update()
+                    if o.scheduler is not None:
+                        o.solver.set_learning_rate(
+                            o.scheduler.get_learning_rate(iter))
+                    o.solver.update()
 
             # Reserve monitor loss
             cost.variables = o.loss_variables
@@ -250,7 +259,7 @@ def _update(iter, config, cost):
     return cost
 
 
-def _evaluate(args, config, monitoring_report, best_error, epoch):
+def _evaluate(args, config, monitoring_report, best_error, epoch, scheduler):
     comm = current_communicator()
     error_str = ''
     valid_error = 0.0
@@ -311,8 +320,9 @@ def _evaluate(args, config, monitoring_report, best_error, epoch):
                         di.position * 1.0 / di.size)
             error_count += comm.size if comm else 1
 
-            # Forward recursive
-            m.target.forward(clear_no_need_grad=True)
+            with scheduler:
+                # Forward recursive
+                m.target.forward(clear_no_need_grad=True)
 
         # Sum error at the end of dataset
         error_sum = 0.0
@@ -466,6 +476,23 @@ def _train(args, config):
     timeinfo.estimate_time = 0
     timeinfo.last_past_time = None
 
+    ctx = config.global_config.default_context
+
+    if args.enable_ooc:
+        logger.log(99, 'OOC enabled.')
+        logger.log(99, f'    OOC GPU memory size {args.ooc_gpu_memory_size}.')
+        logger.log(99, f'    OOC Window length   {args.ooc_window_length}.')
+    scheduler = lms_scheduler(
+        ctx,
+        use_lms=args.enable_ooc,
+        gpu_memory_size=args.ooc_gpu_memory_size,
+        window_length=args.ooc_window_length)
+    val_scheduler = lms_scheduler(
+        ctx,
+        use_lms=args.enable_ooc,
+        gpu_memory_size=args.ooc_gpu_memory_size,
+        window_length=args.ooc_window_length)
+
     if max_iteration > 0:
         last_iteration = last_epoch * config.training_config.iter_per_epoch
         if last_iteration < max_iteration:
@@ -480,7 +507,7 @@ def _train(args, config):
                 # instant load measurement
                 measure_cpu_gpu_instant_load()
 
-                cost = _update(iteration, config, cost)
+                cost = _update(iteration, config, cost, scheduler)
 
                 if np.isnan(cost.sum_epoch) or np.isinf(cost.sum_epoch):
                     logger.log(99, 'Cost is Nan')
@@ -508,7 +535,7 @@ def _train(args, config):
                     error_str = ''
                     if epoch % config.training_config.monitor_interval == 0 or epoch <= 5:
                         best_error, error_str = _evaluate(
-                            args, config, monitoring_report, best_error, epoch)
+                            args, config, monitoring_report, best_error, epoch, val_scheduler)
 
                     # Cpu/Gpu average load
                     cg_load_str = ''
@@ -560,6 +587,19 @@ def _train(args, config):
 
 
 def train_command(args):
+    if args.ooc_gpu_memory_size is not None:
+        ooc_gpu_memory_size = str_to_num(args.ooc_gpu_memory_size)
+        if ooc_gpu_memory_size < 0:
+            logger.log(99, f'Fatal error. invalid ooc_gpu_memory_size [{args.ooc_gpu_memory_size}].')
+            return False
+        args.ooc_gpu_memory_size = ooc_gpu_memory_size
+    if args.ooc_window_length is not None:
+        ooc_window_length = str_to_num(args.ooc_window_length)
+        if ooc_window_length < 0:
+            logger.log(99, f'Fatal error. invalid ooc_window_length [{args.ooc_window_length}].')
+            return False
+        args.ooc_window_length = ooc_window_length
+
     callback.update_status(args)
 
     if single_or_rankzero():
@@ -691,12 +731,18 @@ def add_train_command(subparsers):
     # Train
     subparser = subparsers.add_parser('train', help='Training with NNP.')
     subparser.add_argument(
-        '-r', '--resume', help='resume from last saved parameter.', action='store_true')
+        '-r', '--resume', help='Resume from last saved parameter', action='store_true')
     subparser.add_argument(
-        '-c', '--config', help='path to nntxt', required=True)
+        '-c', '--config', help='Path to nntxt', required=True)
     subparser.add_argument(
-        '-p', '--param', help='path to parameter file', required=False)
+        '-p', '--param', help='Path to parameter file', required=False)
     subparser.add_argument(
-        '-o', '--outdir', help='output directory', required=True)
+        '-o', '--outdir', help='Output directory', required=True)
+    subparser.add_argument(
+        '-O', '--enable-ooc', help='Enable Out Of Core training', action='store_true')
+    subparser.add_argument(
+        '-m', '--ooc-gpu-memory-size', help='OOC gpu memory size (INTEGER or NUMeNUM or NUM[KkMmGgTtPp])', default=None)
+    subparser.add_argument(
+        '-w', '--ooc-window-length', help='OOC window length (INTEGER or NUMeNUM or NUM[KkMmGgTtPp])', default=None)
     callback.add_train_command_arg(subparser)
     subparser.set_defaults(func=train_command)
