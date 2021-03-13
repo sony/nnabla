@@ -282,6 +282,10 @@ def _h5_parameter_file_loader(ctx, file_loader, nnp, filename, ext):
 
 def _pb_parameter_file_loader(ctx, file_loaders, nnp, filename, ext):
     with get_file_handle_load(nnp, filename, ext) as f:
+        try:
+            ctx.proto
+        except:
+            ctx.proto = nnabla_pb2.NNablaProtoBuf()
         ctx.proto.MergeFromString(f.read())
         nn.parameter.set_parameter_from_proto(ctx.proto)
 

@@ -743,8 +743,6 @@ def add_train_command(subparsers):
     subparser.add_argument(
         '-m', '--ooc-gpu-memory-size', help='OOC gpu memory size (INTEGER or NUMeNUM or NUM[KkMmGgTtPp])', default=None)
     subparser.add_argument(
-        '-o', '--outdir', help='output directory', required=True)
-    subparser.add_argument(
         '-C', '--context', help='Force exec context (cpu or cudnn[:DEVID])', default=None)
     subparser.add_argument(
         '-w', '--ooc-window-length', help='OOC window length (INTEGER or NUMeNUM or NUM[KkMmGgTtPp])', default=None)
