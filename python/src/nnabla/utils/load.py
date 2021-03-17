@@ -89,10 +89,7 @@ def _get_matching_variable_names(variable, variable_names):
 def _check_context(ctx):
     try:
         x = nn.Variable()
-        y = nn.Variable()
-        func = F.ReLU(ctx, inplace=True)
-        func.setup([x], [y])
-        func.forward([x], [y])
+        F.relu(x)
     except:
         logger.warn('Fallback to CPU context.')
         import nnabla_ext.cpu

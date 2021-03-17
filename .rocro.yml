@@ -1,0 +1,16 @@
+inspecode:
+  tools:
+    flake8:
+      config-file: build-tools/tox.ini
+      machine:
+        cpu: 1.5 # 1.5 CPU, 5760 MiB RAM
+    cppcheck:
+      input:
+        - src
+        - include
+      options:
+        --enable: all
+    misspell:
+      options:
+        -locale: US
+          

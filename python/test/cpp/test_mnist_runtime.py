@@ -35,6 +35,7 @@ def command_exists(command):
 
 @pytest.mark.parametrize('batch_size', [1])
 def test_examples_cpp_mnist_runtime(tmpdir, nnabla_examples_root, batch_size):
+    pytest.skip('Temporarily skip due to mnist training data server trouble.')
     nn.clear_parameters()
 
     # A. Check this test can run
