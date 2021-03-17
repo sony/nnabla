@@ -164,7 +164,7 @@ def _create_optimizer(ctx, o, networks, datasets, renamed):
                                            o.solver.adabelief_param.weight_decouple,
                                            o.solver.adabelief_param.fixed_decay,
                                            o.solver.adabelief_param.rectify)
-            init_lr = o.solver.adabelief_param.lr
+            init_lr = o.solver.adabelief_param.alpha
         elif o.solver.type == 'Adam':
             optimizer.solver = S.Adam(o.solver.adam_param.alpha, o.solver.adam_param.beta1,
                                       o.solver.adam_param.beta2, o.solver.adam_param.eps)

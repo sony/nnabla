@@ -144,7 +144,7 @@ class FileReader:
         return result
 
     @contextlib.contextmanager
-    def open(self, filename=None, textmode=False, encoding='utf-8'):
+    def open(self, filename=None, textmode=False, encoding='utf-8-sig'):
         if filename is None:
             filename = self._base_uri
         else:
