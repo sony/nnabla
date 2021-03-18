@@ -21,6 +21,7 @@ from collections import OrderedDict
 import numpy
 import os
 import re
+import itertools
 
 from nnabla.initializer import (
     NormalInitializer, UniformInitializer, ConstantInitializer, RangeInitializer)
@@ -139,10 +140,15 @@ def _create_optimizer(ctx, o, networks, datasets, renamed):
     optimizer.parameter_learning_rate_multipliers = OrderedDict()
     for p in o.parameter_variable:
         param_variable_names = _get_matching_variable_names(
-            p.variable_name, optimizer.network.parameters.keys())
+            p.variable_name, list(itertools.chain(optimizer.network.parameters.keys(),
+                                                  optimizer.network.variables.keys())))
         for v_name in param_variable_names:
-            optimizer.parameter_learning_rate_multipliers[
-                optimizer.network.parameters[v_name]] = p.learning_rate_multiplier
+            if v_name in optimizer.network.parameters:
+                optimizer.parameter_learning_rate_multipliers[
+                    optimizer.network.parameters[v_name]] = p.learning_rate_multiplier
+            elif v_name in optimizer.network.variables:
+                optimizer.parameter_learning_rate_multipliers[
+                    optimizer.network.variables[v_name]] = p.learning_rate_multiplier
 
     with nn.context_scope(ctx):
         if o.solver.type == 'Adagrad':
@@ -545,10 +551,15 @@ def _executors(info):
         executor.parameters = OrderedDict()
         for p in e.parameter_variable:
             param_variable_names = _get_matching_variable_names(
-                p.variable_name, executor.network.parameters.keys())
+                p.variable_name, list(itertools.chain(executor.network.parameters.keys(),
+                                                      executor.network.variables.keys())))
             for v_name in param_variable_names:
-                executor.parameters[
-                    executor.network.parameters[v_name]] = v_name
+                if v_name in executor.network.parameters:
+                    executor.parameters[
+                        executor.network.parameters[v_name]] = v_name
+                if v_name in executor.network.variables:
+                    executor.parameters[
+                        executor.network.variables[v_name]] = v_name
 
         executor.forward_target = F.sink(*[v.variable_instance
                                            for v in executor.output_assign.keys()])
@@ -562,10 +573,15 @@ def _executors(info):
             executor.parameter_learning_rate_multipliers = OrderedDict()
             for p in e.parameter_variable:
                 param_variable_names = _get_matching_variable_names(
-                    p.variable_name, executor.network.parameters.keys())
+                    p.variable_name, list(itertools.chain(executor.network.parameters.keys(),
+                                                          executor.network.variables.keys())))
                 for v_name in param_variable_names:
-                    executor.parameter_learning_rate_multipliers[
-                        executor.network.parameters[v_name]] = p.learning_rate_multiplier
+                    if v_name in executor.network.parameters:
+                        executor.parameter_learning_rate_multipliers[
+                            executor.network.parameters[v_name]] = p.learning_rate_multiplier
+                    elif v_name in executor.network.variables:
+                        executor.parameter_learning_rate_multipliers[
+                            executor.network.variables[v_name]] = p.learning_rate_multiplier
 
             executor.backward_target = F.sink(
                 *[v.variable_instance for v in executor.loss_variables])

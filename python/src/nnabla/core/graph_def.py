@@ -225,6 +225,8 @@ def _get_unique_name(names, prefix):
 
 
 def _create_initializer(v, rng):
+    if v.initializer is None:
+        return None
     from nnabla.initializer import (
         NormalInitializer, UniformInitializer, ConstantInitializer, RangeInitializer,
         calc_normal_std_he_forward, calc_normal_std_he_backward, calc_normal_std_glorot, calc_uniform_lim_glorot)
@@ -483,10 +485,19 @@ class ProtoNetwork:
             batch_size = batch_size if batch_size is not None else self.batch_size
             if len(args) == 0:
                 for pv in input_proto_variables:
-                    # TODO: more robust code is needed here.
                     pv_shape = tuple(
                         [d if d >= 1 else batch_size for d in pv.shape])
-                    pv.variable_instance = nn.Variable(pv_shape)
+                    if callable(pv.initializer):
+                        pv_shared = self.owner().global_variables.get(pv.name, None)
+                        if pv_shared:
+                            pv.variable_instance = pv_shared
+                        else:
+                            pv.variable_instance = nn.Variable.from_numpy_array(
+                                pv.initializer(shape=pv_shape), need_grad=True)
+                            self.owner(
+                            ).global_variables[pv.name] = pv.variable_instance
+                    else:
+                        pv.variable_instance = nn.Variable(pv_shape)
             else:
                 for pv, v in zip(input_proto_variables, args):
                     # pv_shape = tuple(
@@ -818,10 +829,11 @@ class ProtoNetwork:
             if v.type == 'Buffer':
                 pv = g.variables[v.name] = ProtoVariable(
                     list(v.shape.dim), v.name, False, v.type)
+                pv.initializer = _create_initializer(v, rng)
             elif v.type == 'Parameter':
                 pv = g.parameters[v.name] = ProtoVariable(
                     list(v.shape.dim), v.name, True, v.type)
-                g.parameters[v.name].initializer = _create_initializer(v, rng)
+                pv.initializer = _create_initializer(v, rng)
             pv.repeat_id = [repeat_id for repeat_id in v.repeat_id]
         for f in proto.function:
             # Here, we temporarily created a function instance for converting
@@ -1209,6 +1221,7 @@ class ProtoGraph:
     def __init__(self, networks=None, parameter_scope=None):
         self.networks = networks if networks is not None else OrderedDict()
         self.parameter_scope = parameter_scope if parameter_scope else OrderedDict()
+        self.global_variables = {}
 
     def get_parameters(self, grad_only=False):
         """Get parameters in current module name scope.
