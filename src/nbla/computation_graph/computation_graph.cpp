@@ -17,7 +17,6 @@
 
 #include <algorithm>
 #include <memory>
-#include <mutex>
 
 namespace nbla {
 
@@ -186,23 +185,19 @@ void forward_all(const vector<CgVariablePtr> variables, bool clear_buffer,
   }
 }
 
-#define SCOPED_MUTEX                                                           \
-  static std::mutex mtx;                                                       \
-  std::lock_guard<decltype(mtx)> lock(mtx)
-
 GlobalClearBufferState::GlobalClearBufferState() {}
 bool GlobalClearBufferState::clear_buffer() const {
-  SCOPED_MUTEX;
+  std::lock_guard<decltype(mtx_)> lock(mtx_);
   auto tid = std::this_thread::get_id();
   return clear_buffer_[tid];
 }
 bool GlobalClearBufferState::clear_no_need_grad() const {
-  SCOPED_MUTEX;
+  std::lock_guard<decltype(mtx_)> lock(mtx_);
   auto tid = std::this_thread::get_id();
   return clear_no_need_grad_[tid];
 }
 void GlobalClearBufferState::set(bool clear_buffer, bool clear_no_need_grad) {
-  SCOPED_MUTEX;
+  std::lock_guard<std::mutex> lock(mtx_);
   auto tid = std::this_thread::get_id();
   clear_buffer_[tid] = clear_buffer;
   clear_no_need_grad_[tid] = clear_no_need_grad;

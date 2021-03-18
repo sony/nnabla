@@ -21,6 +21,7 @@
 #include <nbla/singleton_manager.hpp>
 
 #include <memory>
+#include <mutex>
 #include <thread>
 
 namespace nbla {
@@ -73,6 +74,7 @@ NBLA_API void forward_all(const vector<CgVariablePtr> variables,
 class NBLA_API GlobalClearBufferState {
   mutable unordered_map<std::thread::id, bool> clear_buffer_;
   mutable unordered_map<std::thread::id, bool> clear_no_need_grad_;
+  mutable std::mutex mtx_;
 
   class NBLA_API ScopedState {
     GlobalClearBufferState *self_;
