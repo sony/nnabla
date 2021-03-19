@@ -13,10 +13,9 @@
 # limitations under the License.
 
 from functools import reduce
-from multiprocessing.pool import ThreadPool
-from scipy.linalg import pinv
 
 import numpy as np
+from scipy.linalg import pinv
 
 
 class ALS(object):

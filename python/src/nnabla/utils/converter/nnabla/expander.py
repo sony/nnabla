@@ -16,7 +16,9 @@ import collections
 import re
 
 from nnabla.utils import nnabla_pb2
+
 from .exporter import rename_square_bracket
+
 
 # Expand repeat and recurrent in nnp file.
 

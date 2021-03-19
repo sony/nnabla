@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import numpy as np
-from nnabla.utils.image_utils import imsave, imresize
 from nnabla.models.semantic_segmentation import image_preprocess
+from nnabla.utils.image_utils import imsave, imresize
 
 
 def get_color():

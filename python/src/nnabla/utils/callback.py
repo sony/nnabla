@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from nnabla.config import nnabla_config
-from nnabla.logger import logger
 
 ################################################################################
 # Import callback module

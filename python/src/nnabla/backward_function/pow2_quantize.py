@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def pow2_quantize_backward(inputs, sign=True, with_zero=True, n=8, m=1, ste_fine_grained=True):
     """
     Args:

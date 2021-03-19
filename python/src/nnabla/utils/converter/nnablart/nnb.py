@@ -14,16 +14,16 @@
 
 import collections
 import math
-import numpy as np
 import struct
-import yaml
 
 import nnabla.utils.converter
+import numpy as np
+import yaml
 
+from .resolver import Resolver
 from .utils import create_nnabart_info
 from .utils import preprocess_for_exporter
 from .utils import revise_buffer_size
-from .resolver import Resolver
 
 NN_BINARY_FORMAT_VERSION = 2
 

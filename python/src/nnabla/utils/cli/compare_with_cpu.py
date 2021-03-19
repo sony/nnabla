@@ -12,17 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from collections import OrderedDict
-from contextlib2 import ExitStack  # Backport from python3
-import numpy as np
 import os
+from collections import OrderedDict
 
 import nnabla as nn
-from nnabla.logger import logger
-from nnabla.parameter import save_parameters, get_parameters
-from nnabla.utils.progress import configure_progress, progress
-from nnabla.utils.cli.utility import let_data_to_variable
 import nnabla.utils.load as load
+import numpy as np
+from contextlib2 import ExitStack  # Backport from python3
+from nnabla.logger import logger
+from nnabla.parameter import get_parameters
+from nnabla.utils.cli.utility import let_data_to_variable
+from nnabla.utils.progress import configure_progress, progress
 
 
 def add_result(title, result_dict, result_array):

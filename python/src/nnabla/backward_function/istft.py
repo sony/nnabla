@@ -20,9 +20,6 @@
 # 3. UPDATE THE MAPPING IF NECESSARY (see function_backward_functions.py.tmpl)
 
 
-import nnabla.functions as F
-
-
 def istft_backward(inputs, window_size, stride, fft_size, window_type='hanning', center=True):
     """
     Args:

@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def shift_backward(inputs, shifts=None, border_mode='nearest'):
     """
     Args:

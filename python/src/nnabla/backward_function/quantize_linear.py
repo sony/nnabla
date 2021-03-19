@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def quantize_linear_backward(inputs, round_mode='HALF_AWAY_FROM_ZERO', narrow_range=False, dtype=1):
     """
     Args:

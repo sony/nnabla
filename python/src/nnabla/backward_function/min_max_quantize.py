@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def min_max_quantize_backward(inputs, decay=0.999, x_min_max=False, ema=False, ste_fine_grained=True, eps=0.01):
     """
     Args:

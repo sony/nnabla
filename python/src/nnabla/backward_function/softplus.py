@@ -15,7 +15,6 @@
 
 
 import nnabla.functions as F
-from .utils import no_grad
 
 
 def softplus_backward(inputs, beta=1.0):

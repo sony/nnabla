@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def patch_correlation_backward(inputs, patch=(1, 1), shift=(0, 0), patch_step=(1, 1), shift_step=(1, 1), padding=(0, 0, 0, 0)):
     """
     Args:

@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def bc_add2_backward(inputs):
     """
     Args:

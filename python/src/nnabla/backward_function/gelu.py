@@ -15,7 +15,6 @@
 
 import nnabla.functions as F
 import numpy as np
-from .utils import no_grad
 
 
 def gelu_backward(inputs):

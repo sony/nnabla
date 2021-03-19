@@ -13,10 +13,12 @@
 # limitations under the License.
 
 from collections import OrderedDict
-import nnabla.logger as logger
 from functools import partial
-from nnabla.utils import nnabla_pb2
+
+import nnabla.logger as logger
 import numpy as np
+from nnabla.utils import nnabla_pb2
+
 try:
     from onnx import (ModelProto, TensorProto, AttributeProto)
 except:

@@ -13,15 +13,16 @@
 # limitations under the License.
 
 import glob
-import google.protobuf.text_format as text_format
 import os
 import shutil
 import tempfile
-import zipfile
-import numpy as np
-
 # TODO temporary work around to suppress FutureWarning message.
 import warnings
+import zipfile
+
+import google.protobuf.text_format as text_format
+import numpy as np
+
 warnings.simplefilter('ignore', category=FutureWarning)
 
 from nnabla.utils import nnabla_pb2

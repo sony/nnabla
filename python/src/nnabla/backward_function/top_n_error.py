@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def top_n_error_backward(inputs, axis=None, n=1):
     """
     Args:

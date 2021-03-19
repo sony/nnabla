@@ -13,10 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-from .utils import no_grad
-
-
 def constant_backward(inputs, val=0, shape=[]):
     """
     Args:

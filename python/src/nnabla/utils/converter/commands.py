@@ -20,10 +20,10 @@ import sys
 from .nnabla import NnpImporter, NnpExporter
 from .nnablart import NnbExporter, CsrcExporter
 from .utils import func_set_import_nnp, \
-                   func_set_import_onnx_config, \
-                   func_set_import_config, \
-                   func_set_nnabla_support, \
-                   func_set_onnx_support
+    func_set_import_onnx_config, \
+    func_set_import_config, \
+    func_set_nnabla_support, \
+    func_set_onnx_support
 
 
 def _import_file(args, ifiles):

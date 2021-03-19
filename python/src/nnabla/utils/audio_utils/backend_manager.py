@@ -13,10 +13,8 @@
 # limitations under the License.
 
 
-from collections import OrderedDict
 import importlib
-
-from nnabla.logger import logger
+from collections import OrderedDict
 
 
 class AudioUtilsBackendManager(object):

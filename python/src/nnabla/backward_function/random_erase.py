@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def random_erase_backward(inputs, prob=0.5, area_ratios=(0.02, 0.4), aspect_ratios=(0.3, 3.3333), replacements=(0.0, 255.0), n=None, share=True, inplace=False, base_axis=1, seed=-1, channel_last=False, ste_fine_grained=True):
     """
     Args:

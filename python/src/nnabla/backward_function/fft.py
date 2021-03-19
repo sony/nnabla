@@ -13,9 +13,9 @@
 # limitations under the License.
 
 
-import numpy as np
 import nnabla as nn
 import nnabla.functions as F
+import numpy as np
 
 
 def fft_backward(inputs, signal_ndim, normalized=False):

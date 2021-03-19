@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def clip_grad_by_norm_backward(inputs, clip_norm=None, axes=None):
     """
     Args:

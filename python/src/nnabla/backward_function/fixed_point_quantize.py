@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def fixed_point_quantize_backward(inputs, sign=True, n=8, delta=0.0625, ste_fine_grained=True):
     """
     Args:

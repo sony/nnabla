@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def sync_batch_normalization_backward(inputs, comm, group=None, axes=(1,), decay_rate=0.9, eps=1e-05, batch_stat=True):
     """
     Args:

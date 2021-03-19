@@ -15,6 +15,7 @@
 
 import nnabla as nn
 import nnabla.functions as F
+
 from .utils import positive_axis
 
 

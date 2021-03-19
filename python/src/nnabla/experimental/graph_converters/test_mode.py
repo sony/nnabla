@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import nnabla as nn
-import nnabla.parametric_functions as PF
-import nnabla.functions as F
-import numpy as np
-
 
 class TestModeModifier(object):
     """

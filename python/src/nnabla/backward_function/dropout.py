@@ -15,6 +15,7 @@
 
 
 import nnabla.functions as F
+
 from .utils import no_grad, get_output
 
 

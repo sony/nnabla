@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def binary_weight_convolution_backward(inputs, base_axis=1, pad=None, stride=None, dilation=None, group=1, quantize_zero_to=1.0):
     """
     Args:

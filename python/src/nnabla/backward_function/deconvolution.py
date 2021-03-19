@@ -14,9 +14,9 @@
 
 
 import nnabla as nn
-import nnabla.functions as F
 import nnabla.function as _F
-from .utils import no_grad
+import nnabla.functions as F
+
 from .backward_function import LinearDataGrad, LinearFilterGrad
 
 

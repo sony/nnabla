@@ -13,10 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-from .utils import no_grad
-
-
 def sign_backward(inputs, alpha=1.0):
     """
     Args:

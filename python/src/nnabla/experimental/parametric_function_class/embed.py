@@ -12,14 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy as np
-
 import nnabla as nn
 import nnabla.functions as F
-from nnabla.parameter import get_parameter_or_create, get_parameter
+import numpy as np
 from nnabla.initializer import (
-    calc_uniform_lim_glorot,
-    ConstantInitializer, NormalInitializer, UniformInitializer)
+    UniformInitializer)
 
 from .module import Module
 

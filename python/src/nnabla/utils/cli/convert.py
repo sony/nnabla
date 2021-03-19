@@ -14,9 +14,10 @@
 # limitations under the License.
 
 
-import nnabla.utils.converter
 import os
+
 import nnabla.logger as logger
+import nnabla.utils.converter
 
 
 def dump_command(args):

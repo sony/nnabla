@@ -12,16 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from tensorboardX import SummaryWriter
 import tensorboardX.proto.event_pb2 as event_pb2
+from nnabla.parameter import get_parameters
+from tensorboardX import SummaryWriter
+from tensorboardX.proto.attr_value_pb2 import AttrValue
 from tensorboardX.proto.graph_pb2 import GraphDef
 from tensorboardX.proto.node_def_pb2 import NodeDef
-from tensorboardX.proto.versions_pb2 import VersionDef
-from tensorboardX.proto.attr_value_pb2 import AttrValue
 from tensorboardX.proto.tensor_shape_pb2 import TensorShapeProto
 from tensorboardX.proto.types_pb2 import DT_FLOAT
-
-from nnabla.parameter import get_parameters
+from tensorboardX.proto.versions_pb2 import VersionDef
 
 
 class TBGraphWriter(SummaryWriter):

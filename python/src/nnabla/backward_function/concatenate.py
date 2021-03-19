@@ -15,9 +15,8 @@
 
 
 import nnabla as nn
-import nnabla.functions as F
 import nnabla.function as _F
-from .utils import force_list
+import nnabla.functions as F
 from nnabla.function import PythonFunction
 
 

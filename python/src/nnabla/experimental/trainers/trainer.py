@@ -14,13 +14,13 @@
 
 
 import os
+
 import nnabla as nn
 import nnabla.functions as F
-from nnabla.monitor import Monitor, MonitorSeries, MonitorTimeElapsed
-
-from six.moves import range
-from nnabla.experimental.trainers import Updater
 from nnabla.experimental.trainers import Evaluator
+from nnabla.experimental.trainers import Updater
+from nnabla.monitor import Monitor, MonitorSeries, MonitorTimeElapsed
+from six.moves import range
 
 
 class Trainer(object):

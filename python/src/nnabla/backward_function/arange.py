@@ -13,10 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-from .utils import no_grad
-
-
 def arange_backward(inputs, start, stop, step=1):
     """
     Args:

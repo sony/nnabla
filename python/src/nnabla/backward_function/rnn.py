@@ -14,7 +14,6 @@
 
 
 import nnabla as nn
-import nnabla.functions as F
 from nnabla.utils.rnn import _create_fixed_length_rnn
 
 

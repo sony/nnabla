@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import copy
-
 
 def plot_series_command(args):
     import nnabla.monitor as M

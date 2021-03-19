@@ -14,12 +14,10 @@
 
 from __future__ import absolute_import, division
 
-import pydicom
 import numpy as np
-import os
+import pydicom
 
-from nnabla.logger import logger
-from .common import _imread_before, _imread_after, _imsave_before, _imresize_before, _imresize_after
+from .common import _imread_before, _imread_after
 from .image_utils_backend import ImageUtilsBackend
 
 

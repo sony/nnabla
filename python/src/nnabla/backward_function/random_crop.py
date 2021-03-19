@@ -13,10 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-from .utils import no_grad
-
-
 def random_crop_backward(inputs, shape=None, base_axis=1, seed=-1):
     """
     Args:

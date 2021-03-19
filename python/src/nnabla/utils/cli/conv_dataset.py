@@ -14,13 +14,12 @@
 
 import os
 import shutil
-from tqdm import tqdm
 
+from nnabla.config import nnabla_config
 from nnabla.utils.create_cache import CreateCache
 from nnabla.utils.data_source import DataSourceWithFileCache
 from nnabla.utils.data_source_implements import CacheDataSource, CsvDataSource
-
-from nnabla.config import nnabla_config
+from tqdm import tqdm
 
 
 def _convert(args, source):

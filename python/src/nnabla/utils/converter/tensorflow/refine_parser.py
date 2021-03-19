@@ -11,10 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import tensorflow as tf
 from ply import yacc
-import re
-from .refine_graph import Token, RefineGraph
+
+from .refine_graph import Token
 
 
 class RefineParser:

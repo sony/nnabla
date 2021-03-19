@@ -13,10 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-from .utils import no_grad
-
-
 def rand_binomial_backward(inputs, n=1, p=0.5, shape=[], seed=-1):
     """
     Args:

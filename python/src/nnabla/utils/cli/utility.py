@@ -15,18 +15,17 @@
 
 import os
 import re
-import sys
-import numpy as np
 import timeit
 from contextlib import contextmanager
 
 import nnabla as nn
 import nnabla.utils.callback as callback
-from nnabla.utils.communicator_util import current_communicator
-from nnabla.utils import nnabla_pb2
-from nnabla.utils.get_file_handle import get_file_handle_save, get_decorated_file_loader, load_files
-from nnabla.logger import logger
+import numpy as np
 from nnabla.config import nnabla_config
+from nnabla.logger import logger
+from nnabla.utils import nnabla_pb2
+from nnabla.utils.communicator_util import current_communicator
+from nnabla.utils.get_file_handle import get_file_handle_save, get_decorated_file_loader, load_files
 
 cpu_load_backend_ok = True
 try:

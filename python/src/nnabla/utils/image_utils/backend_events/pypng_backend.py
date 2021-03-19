@@ -14,12 +14,11 @@
 
 from __future__ import absolute_import, division
 
-import png
 import numpy as np
-import os
-
+import png
 from nnabla.logger import logger
-from .common import upscale_pixel_intensity, check_type_and_cast_if_necessary,\
+
+from .common import upscale_pixel_intensity, check_type_and_cast_if_necessary, \
     _imread_before, _imread_after, _imsave_before
 from .image_utils_backend import ImageUtilsBackend
 

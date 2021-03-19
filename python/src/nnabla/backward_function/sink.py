@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def sink_backward(inputs, one_input_grad=True):
     """
     Args:

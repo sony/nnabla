@@ -13,10 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-from .utils import no_grad
-
-
 def r_div_scalar_backward(inputs, val=1):
     """
     Args:

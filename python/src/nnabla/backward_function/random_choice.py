@@ -13,10 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-from .utils import no_grad
-
-
 def random_choice_backward(inputs, shape=[], replace=True, seed=-1):
     """
     Args:

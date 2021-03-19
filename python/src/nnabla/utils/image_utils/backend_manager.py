@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import glob
 import importlib
+import os
 
 from .backend_events.image_utils_backend import ImageUtilsBackend
 

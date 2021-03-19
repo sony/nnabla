@@ -14,8 +14,9 @@
 
 
 import nnabla as nn
-import nnabla.functions as F
 import nnabla.function as _F
+import nnabla.functions as F
+
 from .backward_function import UnaryDataGrad
 
 

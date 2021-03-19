@@ -14,16 +14,15 @@
 # limitations under the License.
 
 
-import numpy as np
-import nnabla.functions as F
-from .utils import no_grad, force_tuple
 from functools import partial
 
-
 import nnabla as nn
-import nnabla.functions as F
 import nnabla.function as _F
+import nnabla.functions as F
+import numpy as np
 from nnabla.function import PythonFunction
+
+from .utils import force_tuple
 
 
 def double_backward_for_batch(g_dx0, g_db0, g_dg0,

@@ -14,7 +14,8 @@
 
 
 import nnabla.functions as F
-from .utils import no_grad, get_output
+
+from .utils import get_output
 
 
 def batch_inv_backward(inputs):

@@ -16,20 +16,21 @@
 '''
 
 
-from collections import OrderedDict
-from time import sleep
-from six.moves import queue
+import atexit
 import csv
-import numpy
 import os
 import threading
-import atexit
+from collections import OrderedDict
+from time import sleep
+
+import numpy
+from nnabla.config import nnabla_config
+from nnabla.logger import logger
+from nnabla.utils.communicator_util import current_communicator
+from six.moves import queue
 
 from .data_source import DataSource
 from .data_source_loader import FileReader, load
-from nnabla.logger import logger
-from nnabla.utils.communicator_util import current_communicator
-from nnabla.config import nnabla_config
 
 
 class SimpleDataSource(DataSource):

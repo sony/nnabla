@@ -12,38 +12,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from six.moves import range
-from collections import OrderedDict
-from contextlib2 import ExitStack  # Backport from python3
-
 import glob
-import numpy as np
 import os
 import time
 import zipfile
+from collections import OrderedDict
 
 import nnabla as nn
-from nnabla.logger import logger
-from nnabla import available_contexts
-from nnabla.parameter import save_parameters
-
-from nnabla.utils.progress import configure_progress, progress
 import nnabla.utils.callback as callback
-
-from nnabla.utils.cli.utility import let_data_to_variable
-from nnabla.utils.cli.utility import measure_cpu_gpu_instant_load
-from nnabla.utils.cli.utility import get_cpu_gpu_average_load
-from nnabla.utils.cli.utility import save_optimizer_states
-from nnabla.utils.cli.utility import NodeTimeInfoCollector
-from nnabla.utils.cli.utility import load_train_state
-from nnabla.utils.cli.utility import str_to_num
-from nnabla.utils.cli.utility import lms_scheduler
-
-from nnabla.utils.nnp_format import nnp_version
-from nnabla.utils.communicator_util import current_communicator, single_or_rankzero
-
 import nnabla.utils.load as load
+import numpy as np
+from contextlib2 import ExitStack  # Backport from python3
+from nnabla import available_contexts
 from nnabla.config import nnabla_config
+from nnabla.logger import logger
+from nnabla.parameter import save_parameters
+from nnabla.utils.cli.utility import NodeTimeInfoCollector
+from nnabla.utils.cli.utility import get_cpu_gpu_average_load
+from nnabla.utils.cli.utility import let_data_to_variable
+from nnabla.utils.cli.utility import lms_scheduler
+from nnabla.utils.cli.utility import load_train_state
+from nnabla.utils.cli.utility import measure_cpu_gpu_instant_load
+from nnabla.utils.cli.utility import save_optimizer_states
+from nnabla.utils.cli.utility import str_to_num
+from nnabla.utils.communicator_util import current_communicator, single_or_rankzero
+from nnabla.utils.nnp_format import nnp_version
+from nnabla.utils.progress import configure_progress, progress
+from six.moves import range
 
 try:
     _OPTIMIZER_CHECKPOINT_INTERVAL = int(

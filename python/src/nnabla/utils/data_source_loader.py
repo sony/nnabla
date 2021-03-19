@@ -20,15 +20,16 @@ Contents loader functions for DataSource.
 
 from __future__ import absolute_import
 
-from six.moves import map
-from six import BytesIO
-from six import StringIO
-from six.moves.urllib.parse import urljoin
 import contextlib
 import csv
-
 # TODO temporary work around to suppress FutureWarning message.
 import warnings
+
+from six import BytesIO
+from six import StringIO
+from six.moves import map
+from six.moves.urllib.parse import urljoin
+
 warnings.simplefilter('ignore', category=FutureWarning)
 import h5py
 
@@ -41,14 +42,12 @@ import tempfile
 import binascii
 from shutil import rmtree
 
-from nnabla.utils import image_utils
 from nnabla.utils.image_utils import imresize, imread
 from nnabla.utils.audio_utils import auresize, auread
 from nnabla.logger import logger
 
 
 # Expose for backward compatibility
-from .download import download, get_data_home
 
 pydub_available = False
 with warnings.catch_warnings():

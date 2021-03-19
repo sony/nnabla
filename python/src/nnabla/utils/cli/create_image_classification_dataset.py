@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import csv
+import multiprocessing as mp
 import os
 import re
-import multiprocessing as mp
-import numpy as np
-import nnabla.logger as logger
-import csv
-import tqdm
 
+import nnabla.logger as logger
+import numpy as np
+import tqdm
 from nnabla.utils.image_utils import imsave, imread, imresize
 
 

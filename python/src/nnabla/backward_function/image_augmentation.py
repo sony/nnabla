@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def image_augmentation_backward(inputs, shape=None, pad=(0, 0), min_scale=1.0, max_scale=1.0, angle=0.0, aspect_ratio=1.0, distortion=0.0, flip_lr=False, flip_ud=False, brightness=0.0, brightness_each=False, contrast=1.0, contrast_center=0.0, contrast_each=False, noise=0.0, seed=-1):
     """
     Args:

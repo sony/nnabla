@@ -16,8 +16,6 @@ import nnabla as nn
 import nnabla.functions as F
 import numpy as np
 
-from collections import defaultdict
-
 
 class PackedSequence(object):
     """
