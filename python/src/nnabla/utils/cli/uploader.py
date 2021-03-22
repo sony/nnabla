@@ -1,7 +1,9 @@
 import boto3
 import csv
+import json
 import os
-import requests
+import urllib.parse
+import urllib.request as request
 import shutil
 import tarfile
 import tempfile
@@ -94,12 +96,13 @@ class Uploader:
         else:
             self._log('Getting Upload path from [{}]'.format(endpoint))
 
-        r = requests.get('{}/v1/misc/credential'.format(endpoint),
-                         params={
+        params = urllib.parse.urlencode({
             'encrypted_text': token,
             'dataset_name': name,
-            'dataset_size': size})
-        info = r.json()
+            'dataset_size': size
+        })
+        r = request.urlopen(f'{endpoint}/v1/misc/credential?{params}')
+        info = json.loads(r.read().decode())
 
         if 'upload_path' not in info:
             if endpoint == 'https://console-api.dl.sony.com':

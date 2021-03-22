@@ -47,7 +47,6 @@ RUN python3 -m pip install --no-cache-dir \
     pillow \
     protobuf \
     pyyaml \
-    requests \
     tqdm
 
 RUN python3 -m pip install ipython
