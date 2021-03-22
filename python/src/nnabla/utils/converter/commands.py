@@ -166,9 +166,10 @@ def _export_from_nnp(args, nnp, output):
             OnnxExporter(nnp, args.batch_size, opset=opset).execute(output)
         else:
             OnnxExporter(nnp, args.batch_size).execute(output)
-    elif args.export_format == 'SAVED_MODEL':
+    elif args.export_format == 'SAVED_MODEL' or args.export_format == 'TF_PB':
         from .tensorflow import TensorflowExporter
-        TensorflowExporter(nnp, args.batch_size).execute(output)
+        TensorflowExporter(nnp, args.batch_size,
+                           model_format=args.export_format).execute(output)
     elif args.export_format == 'TFLITE':
         from .tensorflow import TensorflowLiteExporter
         TensorflowLiteExporter(nnp, args.batch_size).execute(output)

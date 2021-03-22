@@ -84,7 +84,7 @@ def resolve_file_format(args, import_files, export_file=None):
         args.export_format = ''
 
     if args.import_format in ['ONNX', 'TF_CKPT_V1', 'TF_CKPT_V2', 'TF_PB', 'SAVED_MODEL', 'TFLITE'] or \
-            args.export_format in ['ONNX', 'TFLITE', 'SAVED_MODEL']:
+            args.export_format in ['ONNX', 'TFLITE', 'SAVED_MODEL', 'TF_PB']:
         try:
             import nnabla.utils.converter.onnx
             import nnabla.utils.converter.tensorflow
