@@ -25,7 +25,7 @@ from nnabla.testing import assert_allclose
 ctx_list = [ctx_fname[0] for ctx_fname in list_context('Convolution')]
 
 
-def SmallResNet(x, test=False, inplace=False, shared=False):
+def SmallResNet(x, test=False, act=F.relu, inplace=False, shared=False):
     h = x
 
     def conv(x, maps=8, name="conv"):
@@ -36,7 +36,7 @@ def SmallResNet(x, test=False, inplace=False, shared=False):
         with nn.parameter_scope("{}-shortcut".format(name)):
             s = PF.convolution(h, maps, (3, 3), (1, 1), with_bias=False)
             h = PF.batch_normalization(h, batch_stat=not test)
-        return F.relu(h + s, inplace)
+        return act(h + s, inplace) if act in (F.relu, F.leaky_relu) else act(h + s)
     h = conv(h, maps=4, name="conv1")
     h = F.max_pooling(h, (2, 2))
     h = conv(h, maps=4, name="conv2")
@@ -51,9 +51,11 @@ def SmallResNet(x, test=False, inplace=False, shared=False):
 @pytest.mark.parametrize("ctx", ctx_list)
 @pytest.mark.parametrize("auto_forward", [True, False])
 @pytest.mark.parametrize("flag_grad_outputs", [True, False])
-@pytest.mark.parametrize("inplace", [False, True])
+@pytest.mark.parametrize("act, inplace", [(F.relu, True), (F.relu, False),
+                                          (F.leaky_relu, True), (F.leaky_relu, False),
+                                          (F.sin, False)])
 @pytest.mark.parametrize("shared", [False, True])
-def test_grad_resnet(seed, ctx, auto_forward, flag_grad_outputs, inplace, shared):
+def test_grad_resnet(seed, ctx, auto_forward, flag_grad_outputs, act, inplace, shared):
     nn.clear_parameters()
 
     # Settings
@@ -66,7 +68,7 @@ def test_grad_resnet(seed, ctx, auto_forward, flag_grad_outputs, inplace, shared
     # Network
     x = nn.Variable.from_numpy_array(rng.randn(b, c, h, w))
     y = nn.Variable.from_numpy_array(rng.randint(0, n_cls, b).reshape(b, 1))
-    p = SmallResNet(x, inplace=inplace, shared=shared)
+    p = SmallResNet(x, act=act, inplace=inplace, shared=shared)
     loss = F.mean(F.softmax_cross_entropy(p, y))
 
     # Zerograd, Forward, Backward on the forward graph
