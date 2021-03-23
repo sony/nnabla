@@ -17,6 +17,7 @@ import numpy as np
 import nnabla as nn
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
+import nnabla.initializer as I
 from nnabla.ext_utils import get_extension_context
 from nbla_test_utils import list_context
 from nnabla.testing import assert_allclose
@@ -278,3 +279,56 @@ def test_shared_leaf_variable_basic_arithmetics(seed, ctx, auto_forward):
         # Second-order gradient
         dy_dx[0].backward()
         assert_allclose(x.g, math_type(xd, 2))
+
+
+# TODO: this is an ad-hoc test
+@pytest.mark.parametrize("ctx", ctx_list)
+def test_compute_simple_hessian(ctx):
+    nn.clear_parameters()
+
+    # Network
+    state = nn.Variable((1, 2))
+    output = PF.affine(state, 1,
+                       w_init=I.ConstantInitializer(value=1.),
+                       b_init=I.ConstantInitializer(value=1.))
+    loss = F.sum(output**2)
+    # Input
+    state_array = np.array([[1.0, 0.5]])
+    state.d = state_array
+
+    # Grad of network
+    params = nn.get_parameters().values()
+    for param in params:
+        param.grad.zero()
+    grads = nn.grad([loss], params)
+    flat_grads = F.concatenate(*[F.reshape(grad, (-1,)) for grad in grads]) if len(grads) > 1 \
+        else F.reshape(grads[0], (-1,))
+
+    # Compute hessian
+    hessian = np.zeros(
+        (flat_grads.shape[0], flat_grads.shape[0]), dtype=np.float32)
+    for i in range(flat_grads.shape[0]):
+        flat_grads_i = flat_grads[i]
+        flat_grads_i.forward()
+        for param in params:
+            param.grad.zero()
+        flat_grads_i.backward()
+        num_index = 0
+        for param in params:
+            grad = param.g.flatten()  # grad of grad so this is hessian
+            hessian[i, num_index:num_index+len(grad)] = grad
+            num_index += len(grad)
+
+    actual = hessian
+    expected = np.array(
+        [[2*state_array[0, 0]**2,
+          2*state_array[0, 0]*state_array[0, 1],
+          2*state_array[0, 0]],
+         [2*state_array[0, 0]*state_array[0, 1],
+          2*state_array[0, 1]**2,
+          2*state_array[0, 1]],
+         [2*state_array[0, 0],
+          2*state_array[0, 1],
+          2.]]
+          )
+    assert_allclose(actual, expected)
