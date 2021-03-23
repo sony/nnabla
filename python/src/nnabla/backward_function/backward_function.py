@@ -182,6 +182,7 @@ class LinearDataGrad(PythonFunction):
 
         # w.r.t. dy
         if propagate_down[0]:
+            vx.data = gdx
             vw.data = w0
             if accum[0]:
                 self._linear.forward(inputs_fwd, outputs_fwd)
@@ -274,6 +275,7 @@ class LinearFilterGrad(PythonFunction):
         # w.r.t. dy
         if propagate_down[0]:
             vx.data = x0
+            vw.data = gdw
             if accum[0]:
                 self._linear.forward(inputs_fwd, outputs_fwd)
                 gdy += vy.data
