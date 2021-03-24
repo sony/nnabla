@@ -142,9 +142,7 @@ def profile_optimizer(config, result_array, synchronize):
         for func in o.forward_sequence:
             if func.name == 'Sink':
                 continue
-            in_place_str = ' : in_place' if func.inplace_data(
-                0) > 0 else ''
-            profile(config, 'forward_function (%s : %s%s)' % (func.name, func.name, in_place_str),
+            profile(config, 'forward_function (%s : %s)' % (func.name, func.name),
                     partial(func.forward, inputs=func.inputs,
                             outputs=func.outputs),
                     result_dict, synchronize)
@@ -158,9 +156,7 @@ def profile_optimizer(config, result_array, synchronize):
         for func in o.backward_sequence:
             if func.name == 'Sink':
                 continue
-            in_place_str = ' : in_place' if func.inplace_grad(
-                0) > 0 else ''
-            profile(config, 'backward_function (%s : %s%s)' % (func.name, func.name, in_place_str),
+            profile(config, 'backward_function (%s : %s)' % (func.name, func.name),
                     partial(func.backward, inputs=func.inputs,
                             outputs=func.outputs),
                     result_dict, synchronize)
