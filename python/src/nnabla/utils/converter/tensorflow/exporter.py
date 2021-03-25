@@ -15,12 +15,15 @@
 from ..onnx import OnnxExporter
 from onnx_tf.backend import prepare
 import tensorflow as tf
+import os
+from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
 
 
 class TensorflowExporter:
-    def __init__(self, nnp, batch_size):
+    def __init__(self, nnp, batch_size, model_format='TF_PB'):
         self._nnp = nnp
         self._batch_size = batch_size
+        self._model_format = model_format
         self.check_nnp_variable_name()
 
     def check_nnp_variable_name(self):
@@ -63,7 +66,18 @@ class TensorflowExporter:
         onnx_model = OnnxExporter(
             self._nnp, self._batch_size, opset="11").export_model_proto()
         tf_rep = prepare(onnx_model)
-        tf_rep.export_graph(output)
+        if self._model_format == 'TF_PB':
+            output_path = os.path.dirname(output)
+            tf_model = tf_rep.tf_module.__call__.get_concrete_function(
+                **tf_rep.signatures)
+            frozen_func = convert_variables_to_constants_v2(
+                tf_model, lower_control_flow=False)
+            tf.io.write_graph(graph_or_graph_def=frozen_func.graph,
+                              logdir=output_path,
+                              name=os.path.basename(output),
+                              as_text=False)
+        else:
+            tf_rep.export_graph(output)
 
 
 class TensorflowLiteExporter:

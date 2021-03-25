@@ -347,7 +347,7 @@ File format converter
                             [import][tensorflow] The name(s) of the input nodes, comma separated.
                                                  Only needed when convert CKPT format.
       -O EXPORT_FORMAT, --export-format EXPORT_FORMAT
-                            [export] export format. (one of [NNP,NNB,CSRC,ONNX,SAVED_MODEL,TFLITE],
+                            [export] export format. (one of [NNP,NNB,CSRC,ONNX,SAVED_MODEL,TFLITE,TF_PB],
                                      the export file format is 'CSRC' or 'SAVED_MODEL' that
                                      argument '--export-format' will have to be set!!!)
       -f, --force           [export] overwrite output file.
