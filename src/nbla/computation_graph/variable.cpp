@@ -760,12 +760,31 @@ void CgVariable::backward(
   // Scoped context.
   // Set flags used during backward of this variable to avoid clearing
   // buffer. Also, set the grad array passed as an argument.
-  NdArrayPtr bak_grad = this->variable()->grad();
-  DestructorCallback at_scope_exit(
-      [&]() { this->variable()->set_grad(bak_grad); });
-  if (grad) {
-    this->variable()->set_grad(grad);
-    activate_clear_initial_grad = clear_initial_grad;
+  std::vector<NdArrayPtr> bak_grads;
+  std::vector<NdArrayPtr> dummy_zero_grads;
+  for (auto var : parent_->outputs()) {
+    bak_grads.push_back(var->variable()->grad());
+    NdArrayPtr dummpy_grad = NdArray::create(var->variable()->shape());
+    dummpy_grad->zero();
+    dummy_zero_grads.push_back(dummpy_grad);
+  }
+
+  DestructorCallback at_scope_exit([&]() {
+    for (std::size_t i = 0; i < parent_->outputs().size(); i++) {
+      parent_->outputs()[i]->variable()->set_grad(bak_grads[i]);
+    }
+  });
+
+  for (std::size_t i = 0; i < parent_->outputs().size(); i++) {
+    auto var = parent_->outputs()[i];
+    if (var.get() == this) {
+      if (grad) {
+        this->variable()->set_grad(grad);
+        activate_clear_initial_grad = clear_initial_grad;
+      }
+    } else {
+      var->variable()->set_grad(dummy_zero_grads[i]);
+    }
   }
 
   // Create callback
