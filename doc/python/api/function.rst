@@ -203,6 +203,9 @@ Math
 .. autofunction:: atanh
 .. autofunction:: cumsum
 .. autofunction:: cumprod
+.. autofunction:: batch_inv
+.. autofunction:: batch_det
+.. autofunction:: batch_logdet
 
 
 Array Manipulation
@@ -227,9 +230,6 @@ Array Manipulation
 .. autofunction:: sort
 .. autofunction:: reshape
 .. autofunction:: one_hot
-.. autofunction:: batch_inv
-.. autofunction:: batch_det
-.. autofunction:: batch_logdet
 .. autofunction:: assign
 .. autofunction:: top_k_data
 .. autofunction:: top_k_grad
