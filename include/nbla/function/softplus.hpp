@@ -40,7 +40,9 @@ Outputs:
 @tparam T Data type for computation.
 \ingroup FunctionImplGrp
  */
-NBLA_DEFINE_TRANSFORM_UNARY(SoftPlus, std::log(std::exp(x) + (T)1),
+NBLA_DEFINE_TRANSFORM_UNARY(SoftPlus,
+                            x > (T)0 ? x + std::log(std::exp(-x) + (T)1)
+                                     : std::log(std::exp(x) + (T)1),
                             dy / ((T)1 + std::exp(-x)), false);
 }
 #endif
