@@ -105,18 +105,21 @@ class NnpImporter:
         return var_list
 
     def generate_parameters_data(self, var_list, batch_size):
-        from nnabla.utils.load import _create_variable
+        from nnabla.core.graph_def import _create_initializer
+        from nnabla.parameter import get_parameter_or_create
         import numpy as np
 
         rng = np.random.RandomState(0)
         for var in var_list:
             shape = tuple(
                 [d if d >= 1 else batch_size for d in var.shape.dim])
-            variable = _create_variable(var, var.name, shape, rng)
+            initializer = _create_initializer(var, rng)
+            variable_instance = get_parameter_or_create(
+                var.name, shape, initializer)
             p = self._nnp.parameter.add()
-            p.variable_name = variable.name
-            p.shape.dim.extend(variable.shape)
-            p.data.extend(variable.variable_instance.d.flatten())
+            p.variable_name = var.name
+            p.shape.dim.extend(shape)
+            p.data.extend(variable_instance.d.flatten())
 
     def execute(self):
         self._nnp = nnabla_pb2.NNablaProtoBuf()

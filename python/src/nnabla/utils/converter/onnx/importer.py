@@ -2794,6 +2794,10 @@ class OnnxImporter:
             bnp.batch_stat = True
             func_list.append(bn_func)
             self._shape_output[n.output[0]] = input_shape
+        new_const_inp_shape = [1] * len(input_shape)
+        new_const_inp_shape[1] = scale_shape[0]
+        for inp in nnp_input[1:5]:
+            self._parameter_shape[inp] = new_const_inp_shape
 
     def ThresholdedRelu(self, func_list, n):
         alpha = 1.0
