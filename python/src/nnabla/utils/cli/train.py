@@ -322,7 +322,7 @@ def _evaluate(args, config, monitoring_report, best_error, epoch, scheduler):
 
             with scheduler:
                 # Forward recursive
-                m.target.forward(clear_no_need_grad=True)
+                m.target.forward(clear_no_need_grad=True, clear_buffer=True)
 
         # Sum error at the end of dataset
         error_sum = 0.0
