@@ -19,6 +19,7 @@ from . import dtypes
 import nnabla as nn
 import numpy as np
 from .normalization_functions import *
+from .numpy_compat_functions import *
 
 
 def sum(x, axis=None, keepdims=False):

@@ -467,6 +467,9 @@ cdef class NdArray:
     def __pow__(x, y, z):
         return AOP.pow(x, y, z)
 
+    def __matmul__(x, y):
+        return AOP.matmul(x, y)
+
     def __iadd__(self, x):
         import nnabla.functions as F
         if isinstance(x, (NdArray, Variable)):

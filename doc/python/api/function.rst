@@ -237,6 +237,7 @@ Array Manipulation
 .. autofunction:: pack_padded_sequence
 .. autofunction:: pad_packed_sequence
 .. autofunction:: searchsorted
+.. autofunction:: dot
 
 
 Stochasticity
