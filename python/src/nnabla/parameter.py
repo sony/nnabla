@@ -1,4 +1,4 @@
-# Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+# Copyright (c) 2017-2021 Sony Corporation. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -318,6 +318,12 @@ def get_parameter_or_create(name, shape=None, initializer=None, need_grad=True,
     # Try to find a existing parameter.
     param = get_parameter(names[0])
 
+    # Postprocess for a parameter variable
+    def _returning(v):
+        v = v.get_unlinked_variable(need_grad=as_need_grad)
+        v.name = names[0]
+        return v
+
     # If found, verify shape and flags, and returns it.
     if param is not None:
         if param.shape != tuple(shape):
@@ -330,7 +336,7 @@ def get_parameter_or_create(name, shape=None, initializer=None, need_grad=True,
         if need_grad != param.need_grad:
             param.need_grad = need_grad
             set_parameter(name, param)
-        return param.get_unlinked_variable(need_grad=as_need_grad)
+        return _returning(param)
 
     class VariableInfo:
         pass
@@ -342,7 +348,7 @@ def get_parameter_or_create(name, shape=None, initializer=None, need_grad=True,
     param = _create_parameter_by_initializer(initializer, shape, need_grad)
     param.info = info
     set_parameter(name, param)
-    return param.get_unlinked_variable(need_grad=as_need_grad)
+    return _returning(param)
 
 
 def get_parameters(params=None, path='', grad_only=True):

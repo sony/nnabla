@@ -227,3 +227,17 @@ def test_no_grad(auto_forward):
 
     y1.visit(assert_need_grad_flase)
     np.testing.assert_allclose(y0.d, y1.d)
+
+
+@pytest.mark.parametrize("p_name", ["aaa/bbb/ccc", "abc"])
+def test_param_name(p_name):
+    import nnabla as nn
+    rng = np.random.RandomState(seed=313)
+    shape = (8, 8, 3, 3)
+
+    pe_name = p_name.split('/')[-1]
+    nn.clear_parameters()
+    initializer = UniformInitializer(lim=(-1, 1), rng=rng)
+    param1 = nn.parameter.get_parameter_or_create(
+        p_name, shape, initializer=initializer, need_grad=True)
+    assert param1.name == pe_name
