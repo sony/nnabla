@@ -15,7 +15,7 @@ REM limitations under the License.
 REM
 REM
 REM Install chocolatey (https://chocolatey.org/)
-REM cinst cmake git miniconda3
+REM cinst cmake git
 REM :for VC2015
 REM cinst VisualCppBuildTools
 REM :for VC2019
@@ -103,4 +103,5 @@ IF NOT DEFINED nnabla_build_wheel_folder      SET nnabla_build_wheel_folder=%nna
 IF NOT DEFINED nnabla_test_venv_folder        SET nnabla_test_venv_folder=%nnabla_build_wheel_folder%\env
 IF NOT DEFINED generate_target                SET generate_target=Visual Studio 14 2015 Win64
 IF NOT DEFINED build_type                     SET build_type=Release
+
 
