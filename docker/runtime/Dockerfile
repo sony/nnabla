@@ -1,53 +1,41 @@
-############################################################
-# Miniconda3
-############################################################
-FROM ubuntu:18.04 as miniconda
-
-RUN apt-get update
-RUN apt-get install -y --no-install-recommends \
-        bzip2 \
-        ca-certificates \
-        wget
+FROM ubuntu:18.04
 
 ARG PYTHON_VERSION_MAJOR
 ARG PYTHON_VERSION_MINOR
 ENV PYVERNAME=${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}
 
-RUN umask 0 \
-    && mkdir -p /tmp/deps \
-    && cd /tmp/deps \
-    && wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh \
-    && bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda3 \
-    && rm -rf Miniconda3-latest-Linux-x86_64.sh
+RUN apt-get update
+RUN apt install -y software-properties-common
+RUN add-apt-repository ppa:deadsnakes/ppa
+RUN apt-get update
+RUN apt-get install -y --no-install-recommends \
+        bzip2 \
+        ca-certificates \
+        curl \
+        libglib2.0-0 \
+        libgl1-mesa-glx \
+        python${PYVERNAME} \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN . /opt/miniconda3/bin/activate && conda install python=${PYVERNAME}
-RUN . /opt/miniconda3/bin/activate && conda update -y --all
-RUN . /opt/miniconda3/bin/activate && conda install pip
-RUN . /opt/miniconda3/bin/activate && conda install wheel
-RUN . /opt/miniconda3/bin/activate && conda install protobuf
-RUN . /opt/miniconda3/bin/activate && conda install opencv || true
-RUN . /opt/miniconda3/bin/activate && conda clean -y --all
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+       python${PYVERNAME}-distutils || echo "skip install python-distutils" \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
+    && python${PYVERNAME} get-pip.py
+
+RUN ln -s -f /usr/bin/python${PYVERNAME} /usr/bin/python3
+
+RUN pip install wheel
+RUN pip install protobuf
+RUN pip install opencv-python || true
 
 ARG WHL_PATH
 ADD $WHL_PATH/*.whl /tmp/
 
-RUN . /opt/miniconda3/bin/activate && pip install /tmp/*.whl
+RUN pip install /tmp/*.whl && rm -rf /tmp/*
 
-############################################################
-# Runtime image
-############################################################
-FROM ubuntu:18.04
-
-RUN cd /tmp \
-	&& apt-get update \
-        && apt-get install -y \
-               bzip2 \
-               ca-certificates \
-               wget \
-        && rm -rf /var/lib/apt/lists/* \
-        && cd / \
-        && rm -rf /tmp/*
-
-COPY --from=miniconda /opt/miniconda3 /opt/miniconda3
-ENV PATH /opt/miniconda3/bin:$PATH
-ENV LD_LIBRARY_PATH /usr/lib64:/opt/miniconda3/lib:$LD_LIBRARY_PATH
+ENV LD_LIBRARY_PATH /usr/lib64:$LD_LIBRARY_PATH

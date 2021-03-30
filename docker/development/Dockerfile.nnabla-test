@@ -14,19 +14,26 @@
 
 # for nnabla>=1.5.0
 
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 
 ENV LC_ALL C
 ENV LANG C
 ENV LANGUAGE C
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-       build-essential \
+ARG PYTHON_VERSION_MAJOR
+ARG PYTHON_VERSION_MINOR
+ENV PYVERNAME=${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}
+
+RUN apt-get update
+RUN apt install -y software-properties-common
+RUN add-apt-repository -y ppa:deadsnakes/ppa
+RUN apt-get update
+
+RUN apt-get install -y --no-install-recommends \
        bzip2 \
        ca-certificates \
        ccache \
-       clang-format-3.8 \
+       clang-format-5.0 \
        cmake \
        curl \
        g++ \
@@ -44,8 +51,23 @@ RUN apt-get update \
        unzip \
        wget \
        zip \
+       python3-venv \
+       python${PYVERNAME} \
+       python${PYVERNAME}-venv \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+       python${PYVERNAME}-distutils || echo "skip install python-distutils" \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
+    && python${PYVERNAME} get-pip.py \
+    && rm get-pip.py
+
+RUN ln -s -f /usr/bin/python${PYVERNAME} /usr/bin/python
 
 ################################################## protobuf
 RUN mkdir /tmp/deps \
@@ -65,32 +87,17 @@ RUN mkdir /tmp/deps \
     && cd / \
     && rm -rf /tmp/*
 
-################################################## miniconda3
-ARG PYTHON_VERSION_MAJOR
-ARG PYTHON_VERSION_MINOR
-ENV PYVERNAME=${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}
+################################################## requirements
 
 ADD python/setup_requirements.txt /tmp/deps/
 ADD python/requirements.txt /tmp/deps/
 ADD python/test_requirements.txt /tmp/deps/
 
-RUN umask 0 \
-    && mkdir -p /tmp/deps \
-    && cd /tmp/deps \
-    && wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh \
-    && bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda3 \
-    && rm -rf Miniconda3-latest-Linux-x86_64.sh \
-    && . /opt/miniconda3/bin/activate \
-    && conda create -n nnabla-build python=${PYVERNAME} \
-    && conda activate nnabla-build \
-    && if [ ${PYTHON_VERSION_MINOR} -gt 7 ]; then conda install -c conda-forge pydicom; else conda install -c conda-forge pydicom gdcm; fi \
-    && pip install numpy \
+RUN pip install numpy \
     && pip install -U -r /tmp/deps/setup_requirements.txt \
     && pip install -U -r /tmp/deps/requirements.txt \
     && pip install -U -r /tmp/deps/test_requirements.txt \
-    && conda clean -y --all \
-    && cd / \
     && rm -rf /tmp/*
 
-ENV PATH /opt/miniconda3/envs/nnabla-build/bin:$PATH
-ENV LD_LIBRARY_PATH /opt/miniconda3/envs/nnabla-build/lib:$LD_LIBRARY_PATH
+ENV PATH /tmp/.local/bin:$PATH
+ENV LD_LIBRARY_PATH /usr/local/lib64:$LD_LIBRARY_PATH
