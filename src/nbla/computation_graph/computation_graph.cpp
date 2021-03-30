@@ -180,6 +180,13 @@ void forward_all(const vector<CgVariablePtr> variables, bool clear_buffer,
 
   unordered_set<CgFunctionPtr> fclosed;
   for (vector<CgVariablePtr>::size_type i = 0; i < variables.size(); ++i) {
+    // Check if the parent function has been seen before.
+    // Important to avoid duplicate calls of a function
+    // which has more than two outputs.
+    auto parent = variables.at(i)->parent();
+    if (!parent || fclosed.find(parent) != fclosed.end()) {
+      continue;
+    }
     variables[i]->forward(clear_buffer, clear_no_need_grad, &fclosed,
                           function_pre_hook, function_post_hook);
   }
