@@ -1463,10 +1463,15 @@ Neural Network Activation Functions:
       Unlike Sigmoid and Tanh that have upper and lower bound, SoftPlus is only lower-bounded by 0.
 
       .. math::
-          SoftPlus(x) = \log(1+\exp(x_i))
+          SoftPlus(x) = \frac{1}{\beta} * \log(1+\exp(\beta * x_i))
     inputs:
       x:
         doc: N-D array
+    arguments:
+      beta:
+        doc: the `beta` value for SoftPlus formulation
+        type: double
+        default: '1.0'
     outputs:
       y:
         doc: N-D array with the same shape as x
@@ -1474,6 +1479,8 @@ Neural Network Activation Functions:
     function_ids:
       ii: 252
       Empty: 262
+      i: 331
+      f: 332
   SoftSign:
     snake_name: softsign
     doc: |2

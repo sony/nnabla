@@ -18,5 +18,5 @@
 
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_SOURCE(SoftPlus);
+NBLA_REGISTER_FUNCTION_SOURCE(SoftPlus, double);
 }

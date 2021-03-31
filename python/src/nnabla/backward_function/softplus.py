@@ -14,7 +14,7 @@ import nnabla.functions as F
 from .utils import no_grad
 
 
-def softplus_backward(inputs):
+def softplus_backward(inputs, beta=1.0):
     """
     Args:
       inputs (list of nn.Variable): Incomming grads/inputs to/of the forward function.
@@ -25,6 +25,5 @@ def softplus_backward(inputs):
     """
     dy = inputs[0]
     x0 = inputs[1]
-    e0 = F.exp(x0)
-    dx0 = dy * e0 / (1 + e0)
+    dx0 = dy / (1.0 + F.exp(-beta * x0))
     return dx0
