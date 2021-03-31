@@ -390,6 +390,13 @@ class Module(metaclass=MetaClass):
         params = self.get_parameters()
         self.set_parameters(params)
 
+    def zero_grad(self):
+        '''
+        Clear the gradient of the parameters in this module to 0.
+        '''
+        for param in self.get_parameters().values():
+            param.grad.zero()
+
     def __len__(self):
         return len(self.submodules)
 
