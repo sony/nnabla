@@ -440,8 +440,8 @@ def data_iterator_simple(load_func,
                          batch_size,
                          shuffle=False,
                          rng=None,
-                         with_memory_cache=True,
-                         with_file_cache=True,
+                         with_memory_cache=False,
+                         with_file_cache=False,
                          cache_dir=None,
                          epoch_begin_callbacks=[],
                          epoch_end_callbacks=[]):
@@ -465,7 +465,7 @@ def data_iterator_simple(load_func,
             If ``True``, use :py:class:`.data_source.DataSourceWithMemoryCache`
             to wrap ``data_source``. It is a good idea to set this as true unless
             data_source provides on-memory data.
-            Default value is True.
+            Default value is False.
         with_file_cache (bool):
             If ``True``, use :py:class:`.data_source.DataSourceWithFileCache`
             to wrap ``data_source``.
