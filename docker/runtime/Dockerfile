@@ -27,7 +27,7 @@ RUN apt-get update \
 RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
     && python${PYVERNAME} get-pip.py
 
-RUN ln -s -f /usr/bin/python${PYVERNAME} /usr/bin/python3
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python${PYVERNAME} 0
 
 RUN pip install wheel
 RUN pip install protobuf

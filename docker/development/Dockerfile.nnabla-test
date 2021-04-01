@@ -67,7 +67,7 @@ RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
     && python${PYVERNAME} get-pip.py \
     && rm get-pip.py
 
-RUN ln -s -f /usr/bin/python${PYVERNAME} /usr/bin/python
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python${PYVERNAME} 0
 
 ################################################## protobuf
 RUN mkdir /tmp/deps \
