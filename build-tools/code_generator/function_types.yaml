@@ -157,6 +157,9 @@ ClipGradByNorm:
 Sum:
   float: [float]
   half: [Half]
+CumSum:
+  float: [float]
+  # half: [Half]  
 Mean:
   float: [float]
   half: [Half]
@@ -169,6 +172,9 @@ Min:
 Prod:
   float: [float]
   half: [Half]
+CumProd:
+  float: [float]
+  # half: [Half]  
 ReduceSum:
   float: [float]
   half: [Half]

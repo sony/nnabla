@@ -138,6 +138,7 @@ Arithmetic
 .. autofunction:: r_div_scalar
 .. autofunction:: r_pow_scalar
 
+
 Logical
 -------
 
@@ -200,6 +201,8 @@ Math
 .. autofunction:: asinh
 .. autofunction:: acosh
 .. autofunction:: atanh
+.. autofunction:: cumsum
+.. autofunction:: cumprod
 
 
 Array Manipulation
