@@ -46,6 +46,6 @@ NBLA_DEFINE_TRANSFORM_UNARY(
                                            (x + (T)0.044715 * std::pow(x, 3))),
                                  2)) *
              std::sqrt((T)(2 / M_PI)) * (1 + 0.134145 * std::pow(x, 2))),
-    true);
+    true, true);
 }
 #endif

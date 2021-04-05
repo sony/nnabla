@@ -6,34 +6,35 @@ IF [%PYVER%] == [] (
 FOR /F "TOKENS=1 DELIMS=." %%A IN ("%PYVER%") DO SET PYVER_MAJOR=%%A
 FOR /F "TOKENS=2 DELIMS=." %%A IN ("%PYVER%") DO SET PYVER_MINOR=%%A
 
-REM Miniconda
+REM VENV
 IF [%BUILDID%] == [] SET BUILDID=local
-SET CONDAENV=nnabla-build-%BUILDID%-py%PYVER_MAJOR%%PYVER_MINOR%
+SET VENV=%CD%\build-env-%BUILDID%-py%PYVER_MAJOR%%PYVER_MINOR%
 
-if [%CONDA_PREFIX%] == [] (
-   if NOT [%ChocolateyToolsLocation%] == [] (
-      SET CONDA_PREFIX=%ChocolateyToolsLocation%\miniconda3
-   )
+if [%PYTHON_DIR%] == [] (
+   SET PYTHON_DIR=C:\Python%PYVER_MAJOR%%PYVER_MINOR%
 )
 
-IF NOT EXIST "%CONDA_PREFIX%" (
-   ECHO "Please install miniconda3 with chocolatey or exec this script on Anaconda Prompt(miniconda3)".
+IF NOT EXIST "%PYTHON_DIR%" (
+   ECHO "Please install python%PYVER_MAJOR%%PYVER_MINOR% with chocolatey".
    EXIT /b 255
 )
 
-SET BACK_CONDA_PREFIX=%CONDA_PREFIX%
-CALL %CONDA_PREFIX%\Scripts\activate.bat %CONDAENV%
-IF NOT [%CONDA_PREFIX%] == [%BACK_CONDA_PREFIX%] GOTO :SKIP_CONDA_ENV_CREATE
+%PYTHON_DIR%\python.exe -m venv %VENV%
 
-SETLOCAL
-CALL %CONDA_PREFIX%\Scripts\activate.bat
-CALL conda create -y -n %CONDAENV% python=%PYVER%
-ENDLOCAL
-CALL %CONDA_PREFIX%\Scripts\activate.bat %CONDAENV%
+IF NOT EXIST "%VENV%" (
+   ECHO "Failed to create virtual env".
+   EXIT /b 255
+)
 
-:SKIP_CONDA_ENV_CREATE
+if [%VENV_PYTHON_PKG_DIR%] == [] (
+   SET VENV_PYTHON_PKG_DIR=%VENV%\\Lib\\site-packages
+)
 
-CALL conda install -y --update-deps ^
+CALL %VENV%\Scripts\activate.bat
+
+CALL python -m pip install --upgrade pip
+
+CALL pip install ^
            Cython ^
            boto3 ^
            h5py ^
@@ -52,4 +53,4 @@ CALL conda install -y --update-deps ^
            virtualenv ^
            wheel
 
-CALL conda install -y -c conda-forge pynvml
+CALL pip install pynvml

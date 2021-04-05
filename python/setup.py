@@ -182,6 +182,7 @@ if __name__ == '__main__':
         '_arithmetic_ops',
         '_indexing',
         'utils/dlpack',
+        'testing/clear_called_flag_recorder',
         'lms']
 
     ext_modules = [Extension('nnabla.{}'.format(mname.replace('/', '.')),

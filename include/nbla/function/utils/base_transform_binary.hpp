@@ -411,7 +411,15 @@ void TransformBinary<T, BinaryOp, Args...>::backward_impl(
     return GOP;                                                                \
   }
 
-#define NBLA_DEFINE_TRANSFORM_BINARY_CLASS_COMMON(NAME, DEP_Y_0, DEP_Y_1)      \
+#define NBLA_DEFINE_TRANSFORM_BINARY_CLASS_COMMON(NAME, DEP_Y_0, DEP_Y_1,      \
+                                                  DEP_X_0, DEP_X_1)            \
+protected:                                                                     \
+  virtual bool grad_depends_input_data_impl(int i, int j) const {              \
+    if (i == 0)                                                                \
+      return DEP_X_0;                                                          \
+    return DEP_X_1;                                                            \
+  }                                                                            \
+                                                                               \
 public:                                                                        \
   virtual ~NAME() {}                                                           \
   virtual string name() { return #NAME; }                                      \
@@ -438,10 +446,12 @@ public:                                                                        \
     NBLA_DEFINE_BINARY_OP_BACKWARD(1, GOP1)                                    \
   }
 
-#define NBLA_DEFINE_TRANSFORM_BINARY_CLASS(NAME, DEP_Y_0, DEP_Y_1)             \
+#define NBLA_DEFINE_TRANSFORM_BINARY_CLASS(NAME, DEP_Y_0, DEP_Y_1, DEP_X_0,    \
+                                           DEP_X_1)                            \
   template <typename T>                                                        \
   class NAME : public TransformBinary<T, NAME##BinaryOp> {                     \
-    NBLA_DEFINE_TRANSFORM_BINARY_CLASS_COMMON(NAME, DEP_Y_0, DEP_Y_1)          \
+    NBLA_DEFINE_TRANSFORM_BINARY_CLASS_COMMON(NAME, DEP_Y_0, DEP_Y_1, DEP_X_0, \
+                                              DEP_X_1)                         \
     NAME(const Context &ctx)                                                   \
         : TransformBinary<T, NAME##BinaryOp>(ctx, false) {}                    \
     virtual shared_ptr<Function> copy() const {                                \
@@ -449,10 +459,12 @@ public:                                                                        \
     }                                                                          \
   }
 
-#define NBLA_DEFINE_TRANSFORM_BINARY_CLASS_INPLACE(NAME, DEP_Y_0, DEP_Y_1)     \
+#define NBLA_DEFINE_TRANSFORM_BINARY_CLASS_INPLACE(NAME, DEP_Y_0, DEP_Y_1,     \
+                                                   DEP_X_0, DEP_X_1)           \
   template <typename T>                                                        \
   class NAME : public TransformBinary<T, NAME##BinaryOp> {                     \
-    NBLA_DEFINE_TRANSFORM_BINARY_CLASS_COMMON(NAME, DEP_Y_0, DEP_Y_1)          \
+    NBLA_DEFINE_TRANSFORM_BINARY_CLASS_COMMON(NAME, DEP_Y_0, DEP_Y_1, DEP_X_0, \
+                                              DEP_X_1)                         \
     NAME(const Context &ctx, bool inplace)                                     \
         : TransformBinary<T, NAME##BinaryOp>(ctx, inplace) {}                  \
     virtual shared_ptr<Function> copy() const {                                \
@@ -463,18 +475,20 @@ public:                                                                        \
 #define NBLA_DEFINE_TRANSFORM_BINARY_NO_GRAD(NAME, OP)                         \
   NBLA_REGISTER_FUNCTION_HEADER(NAME);                                         \
   NBLA_DEFINE_BINARY_OP_NO_GRAD(NAME, OP);                                     \
-  NBLA_DEFINE_TRANSFORM_BINARY_CLASS(NAME, false, false)
+  NBLA_DEFINE_TRANSFORM_BINARY_CLASS(NAME, false, false, false, false)
 
-#define NBLA_DEFINE_TRANSFORM_BINARY(NAME, OP, GOP0, GOP1, DEP_Y_0, DEP_Y_1)   \
+#define NBLA_DEFINE_TRANSFORM_BINARY(NAME, OP, GOP0, GOP1, DEP_Y_0, DEP_Y_1,   \
+                                     DEP_X_0, DEP_X_1)                         \
   NBLA_REGISTER_FUNCTION_HEADER(NAME);                                         \
   NBLA_DEFINE_BINARY_OP(NAME, OP, GOP0, GOP1);                                 \
-  NBLA_DEFINE_TRANSFORM_BINARY_CLASS(NAME, DEP_Y_0, DEP_Y_1)
+  NBLA_DEFINE_TRANSFORM_BINARY_CLASS(NAME, DEP_Y_0, DEP_Y_1, DEP_X_0, DEP_X_1)
 
 #define NBLA_DEFINE_TRANSFORM_BINARY_INPLACE(NAME, OP, GOP0, GOP1, DEP_Y_0,    \
-                                             DEP_Y_1)                          \
+                                             DEP_Y_1, DEP_X_0, DEP_X_1)        \
   NBLA_REGISTER_FUNCTION_HEADER(NAME, bool);                                   \
   NBLA_DEFINE_BINARY_OP(NAME, OP, GOP0, GOP1);                                 \
-  NBLA_DEFINE_TRANSFORM_BINARY_CLASS_INPLACE(NAME, DEP_Y_0, DEP_Y_1)
+  NBLA_DEFINE_TRANSFORM_BINARY_CLASS_INPLACE(NAME, DEP_Y_0, DEP_Y_1, DEP_X_0,  \
+                                             DEP_X_1)
 
 // ----------------------------------------------------------------------------
 // One argument
@@ -489,10 +503,12 @@ public:                                                                        \
     NBLA_DEFINE_BINARY_OP_BACKWARD(1, GOP1)                                    \
   }
 
-#define NBLA_DEFINE_TRANSFORM_BINARY_CLASS_1(NAME, DEP_Y_0, DEP_Y_1, A0)       \
+#define NBLA_DEFINE_TRANSFORM_BINARY_CLASS_1(NAME, DEP_Y_0, DEP_Y_1, DEP_X_0,  \
+                                             DEP_X_1, A0)                      \
   template <typename T>                                                        \
   class NAME : public TransformBinary<T, NAME##BinaryOp, A0> {                 \
-    NBLA_DEFINE_TRANSFORM_BINARY_CLASS_COMMON(NAME, DEP_Y_0, DEP_Y_1)          \
+    NBLA_DEFINE_TRANSFORM_BINARY_CLASS_COMMON(NAME, DEP_Y_0, DEP_Y_1, DEP_X_0, \
+                                              DEP_X_1)                         \
     NAME(const Context &ctx, const A0 &a0)                                     \
         : TransformBinary<T, NAME##BinaryOp, A0>(ctx, false, a0) {}            \
     virtual shared_ptr<Function> copy() const {                                \
@@ -501,9 +517,10 @@ public:                                                                        \
   }
 
 #define NBLA_DEFINE_TRANSFORM_BINARY_1(NAME, OP, GOP0, GOP1, DEP_Y_0, DEP_Y_1, \
-                                       A0)                                     \
+                                       DEP_X_0, DEP_X_1, A0)                   \
   NBLA_REGISTER_FUNCTION_HEADER(NAME, A0);                                     \
   NBLA_DEFINE_BINARY_OP_1(NAME, OP, GOP0, GOP1, A0);                           \
-  NBLA_DEFINE_TRANSFORM_BINARY_CLASS_1(NAME, DEP_Y_0, DEP_Y_1, A0)
+  NBLA_DEFINE_TRANSFORM_BINARY_CLASS_1(NAME, DEP_Y_0, DEP_Y_1, DEP_X_0,        \
+                                       DEP_X_1, A0)
 }
 #endif

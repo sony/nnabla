@@ -40,6 +40,6 @@ Outputs:
 \ingroup FunctionImplGrp
  */
 NBLA_DEFINE_TRANSFORM_UNARY_1(RDivScalar, (T)a0 / x, dy *(-(T)a0 / (x * x)),
-                              false, double);
+                              false, true, double);
 }
 #endif

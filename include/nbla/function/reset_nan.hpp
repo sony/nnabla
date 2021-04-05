@@ -34,6 +34,6 @@ Outputs:
 \ingroup FunctionImplGrp
  */
 NBLA_DEFINE_TRANSFORM_UNARY_1(ResetNaN, std::isnan(x) ? (T)a0 : x,
-                              std::isnan(x) ? (T)0 : dy, false, double);
+                              std::isnan(x) ? (T)0 : dy, false, true, double);
 }
 #endif

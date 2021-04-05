@@ -36,6 +36,6 @@ Outputs:
 @tparam T Data type for computation.
 \ingroup FunctionImplGrp
  */
-NBLA_DEFINE_TRANSFORM_UNARY(Cos, std::cos(x), -dy *std::sin(x), false);
+NBLA_DEFINE_TRANSFORM_UNARY(Cos, std::cos(x), -dy *std::sin(x), false, true);
 }
 #endif

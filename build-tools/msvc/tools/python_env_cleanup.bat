@@ -8,35 +8,18 @@ IF [%BUILDID%] == [] (
    EXIT /b
 )
 
-if [%CONDA_PREFIX%] == [] (
-   if NOT [%ChocolateyToolsLocation%] == [] (
-      SET CONDA_PREFIX=%ChocolateyToolsLocation%\miniconda3
-   )
-)
-
-IF NOT EXIST "%CONDA_PREFIX%" (
-   ECHO "Please install miniconda3 with chocolatey or exec this script on Anaconda Prompt(miniconda3)".
-   EXIT /b 255
-)
-SET CONDAENV=nnabla-build-%BUILDID%-py%PYVER_MAJOR%%PYVER_MINOR%
+SET VENV=%CD%\build-env-%BUILDID%-py%PYVER_MAJOR%%PYVER_MINOR%
 
 IF [%BUILDID%] == [local] (
-   ECHO Skip Cleanup local CONDA environment.
+   ECHO Skip Cleanup local virtual environment.
    EXIT /b
 )
 
-CALL %CONDA_PREFIX%\Scripts\activate.bat
-CALL %CONDA_PREFIX%\Scripts\activate.bat %CONDAENV%
+ECHO Cleanup virtual environment.
+CALL %VENV%\Scripts\activate.bat
+CALL %VENV%\Scripts\deactivate.bat
 
-SET ENVNAME=%CONDA_DEFAULT_ENV%
-SET ENVDIR=%CONDA_PREFIX%
-
-ECHO Cleanup CONDA environment.
-CALL conda deactivate
-CALL conda env remove -y -n %CONDAENV%
-IF [%ENVNAME%] == [%CONDAENV%] (
-   RMDIR /s /q %ENVDIR%
-)
+RMDIR /s /q %VENV%
 
 REM Ignore error.
 EXIT /b 0

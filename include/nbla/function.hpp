@@ -67,6 +67,8 @@ accumulated to the gradient of the input variable because we assume
 */
 class NBLA_API Function {
   bool used_{false};
+  // This flag turns true once Function::setup calls.
+  bool called_setup_{false};
 
 public:
   typedef shared_ptr<Function> Ptr;
@@ -167,8 +169,8 @@ public:
 
   /** Dependency flag for checking if in-grad depends on out-data.
 
-      If i=1 and o=0, checking checking if i-th input' gradient
-      computation requires o-th output's data or not.
+      Checking if i-th input' gradient computation requires o-th output's data
+     or not.
 
       @param[in] i Input variable index.
       @param[in] o Output variable index.
@@ -180,17 +182,37 @@ public:
   virtual bool grad_depends_output_data(int i, int o) const { return false; }
   /** Dependency flag for checking if in-grad depends on in-data.
 
-      If i=1 and j=0, checking checking if i-th input' gradient
-     computation requires j-th input's data or not.
-
-      By default, always returns true. If override this in a sub-class, the
-      computation graph engine will optimize memory usage.
+      Checking if i-th input' gradient computation requires j-th input's data or
+     not.
 
       @param[in] i Input variable index.
       @param[in] j Input variable index.
 
    */
-  virtual bool grad_depends_input_data(int i, int j) const { return true; }
+  virtual bool grad_depends_input_data(int i, int j) const final {
+    // The order of inputs is not obvious before setup is called because of
+    // optional inputs.
+    // For example, DeformableConvolution in NNabla 1.17.0 takes at most two
+    // optional inputs. Therefore, the inputs (x, weight, offset, mask) and (x,
+    // weight, offset, bias) are not distinguished before checking it in setup.
+    NBLA_CHECK(called_setup_, error_code::runtime,
+               "Call setup before calling this function.");
+    return grad_depends_input_data_impl(i, j);
+  }
+
+  /** Dependency flag for checking if i-th input is overwritten in forward or
+     not.
+
+      @param[in] i Input variable index.
+
+   */
+  virtual bool overwrite_input_data_in_forward(int i) const final {
+    // The order of inputs is not obvious before setup is called because of
+    // optional inputs.
+    NBLA_CHECK(called_setup_, error_code::runtime,
+               "Call setup before calling this function.");
+    return overwrite_input_data_in_forward_impl(i);
+  }
 
   /** Get in-place-level of i-th input variable's data (see below).
 
@@ -280,6 +302,24 @@ protected:
   virtual void backward_impl(const Variables &inputs, const Variables &outputs,
                              const vector<bool> &propagate_down,
                              const vector<bool> &accum) = 0;
+
+  /**
+    If any of inputs requires an input variable data when computing its
+    gradient, this function must be overridden to return appropriate boolean
+    value. Otherwise, backward computation will be incorrect.
+  */
+  virtual bool grad_depends_input_data_impl(int i, int j) const {
+    return false;
+  }
+
+  /**
+    If any of inputs are overwritten in forward, this function must be
+    overridden to return appropriate boolean value. Otherwise, backward
+    computation will be incorrect.
+  */
+  virtual bool overwrite_input_data_in_forward_impl(int i) const {
+    return false;
+  }
 
   DISABLE_COPY_AND_ASSIGN(Function);
 };

@@ -38,6 +38,6 @@ Outputs:
 \ingroup FunctionImplGrp
  */
 
-NBLA_DEFINE_TRANSFORM_UNARY(Floor, std::floor(x), dy, false);
+NBLA_DEFINE_TRANSFORM_UNARY(Floor, std::floor(x), dy, false, false);
 }
 #endif

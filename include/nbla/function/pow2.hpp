@@ -44,6 +44,6 @@ NBLA_DEFINE_TRANSFORM_BINARY_INPLACE(
     dy *x1 *std::pow(inplace ? std::pow(y, 1 / x1) : x0, x1 - (T)1),
     dy *std::log(inplace ? std::pow(y, 1 / x1) : x0) *
         std::pow(inplace ? std::pow(y, 1 / x1) : x0, x1),
-    false, false);
+    false, false, true, true);
 }
 #endif

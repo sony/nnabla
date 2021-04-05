@@ -78,6 +78,12 @@ protected:
                                       const Variables &outputs,
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
+  virtual bool grad_depends_input_data_impl(int i, int j) const {
+    if (ste_fine_grained_) {
+      return true;
+    }
+    return false;
+  }
 };
 }
 #endif

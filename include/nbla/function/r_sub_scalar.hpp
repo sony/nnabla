@@ -37,6 +37,6 @@ Outputs:
 @param val Value of the scalar.
 \ingroup FunctionImplGrp
  */
-NBLA_DEFINE_TRANSFORM_UNARY_1(RSubScalar, (T)a0 - x, -dy, false, double);
+NBLA_DEFINE_TRANSFORM_UNARY_1(RSubScalar, (T)a0 - x, -dy, false, false, double);
 }
 #endif

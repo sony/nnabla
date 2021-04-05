@@ -48,6 +48,6 @@ preprint arXiv:1602.02830 (2016).
 \ingroup FunctionImplGrp
  */
 NBLA_DEFINE_TRANSFORM_UNARY(BinaryTanh, (x > (T)0) ? (T)1 : (T)-1,
-                            (std::abs(x) >= (T)1) ? (T)0 : dy, false);
+                            (std::abs(x) >= (T)1) ? (T)0 : dy, false, true);
 }
 #endif

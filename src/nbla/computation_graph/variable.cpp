@@ -16,6 +16,7 @@
 #include <nbla/computation_graph/function.hpp>
 #include <nbla/computation_graph/variable.hpp>
 #include <nbla/global_function_callback.hpp>
+#include <nbla/singleton_manager-internal.hpp>
 
 #include <cstdint>
 #include <iostream>
@@ -110,6 +111,7 @@ class ForwardCallback {
   unordered_map<CgVariablePtr, unsigned int> vseen_;
   unordered_set<CgVariablePtr> need_grad_variable_set_;
   unordered_set<CgVariablePtr> inplace_variable_set_;
+  unordered_set<CgVariablePtr> overwrite_variable_set_;
   vector<string> history_;
 
 public:
@@ -142,21 +144,54 @@ public:
     return false;
   }
 
-  vector<bool> get_clear_flags(CgFunctionPtr func) {
+  // Check if input/output[target_idx] are needed for backward calculation.
+  // Return true if needed and false otherwise.
+  template <bool INPUT>
+  bool check_grad_depends_data(CgFunctionPtr func,
+                               vector<CgVariablePtr>::size_type target_idx) {
+
     auto inputs = func->inputs();
+    for (vector<CgVariablePtr>::size_type i = 0; i < inputs.size(); i++) {
+      if (INPUT) {
+        if (func->function()->grad_depends_input_data(i, target_idx)) {
+          return true;
+        }
+      } else { // OUTPUT
+        if (func->function()->grad_depends_output_data(i, target_idx)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  vector<bool> get_clear_flags(CgFunctionPtr func) {
+    auto outputs = func->outputs();
+    auto inputs = func->inputs();
+
+    for (vector<CgVariablePtr>::size_type o = 0; o < outputs.size(); ++o) {
+      if (func->need_grad() && check_grad_depends_data<false>(func, o)) {
+        need_grad_variable_set_.insert(outputs[o]);
+      }
+    }
+
     vector<bool> ret(inputs.size(), false);
     for (vector<CgVariablePtr>::size_type i = 0; i < inputs.size(); ++i) {
       auto vi = inputs[i];
       // Remember variables that should not be cleared during forward
-      if (func->need_grad() && !vi->need_grad()) {
-        // Any variable that is used to computate gradient shouldn't be cleared.
-        // TODO: Not optimal because the input may not be used in gradient
-        // computation of some function.
+      if (func->need_grad() && check_grad_depends_data<true>(func, i)) {
         need_grad_variable_set_.insert(vi);
+      }
+      if (func->need_grad() &&
+          func->function()->overwrite_input_data_in_forward(i)) {
+        overwrite_variable_set_.insert(vi);
       }
       if (func->function()->inplace_data(i)) {
         // Inplaced variable shouldn't be cleared during forward
+        const auto inplaced_output_idx = func->function()->inplace_data_with(i);
         inplace_variable_set_.insert(vi);
+        inplace_variable_set_.insert(func->outputs()[inplaced_output_idx]);
       }
 
       // This comes first because check_last_visit must be called in order to
@@ -178,10 +213,12 @@ public:
         ret[i] = true;
         continue;
       }
-      if (clear_no_need_grad_ && !func->need_grad()) {
-        // Not clear if any function requiring gradient computation uses this
-        // variable.
+
+      if (clear_no_need_grad_) {
         if (need_grad_variable_set_.find(vi) != need_grad_variable_set_.end()) {
+          continue;
+        }
+        if (overwrite_variable_set_.find(vi) != overwrite_variable_set_.end()) {
           continue;
         }
         ret[i] = true;
@@ -283,6 +320,13 @@ public:
     // Clear input buffers where possible.
     auto clear_flags = get_clear_flags(func);
     clear_inputs(func->inputs(), clear_flags);
+
+    // Record when inputs and outputs are cleared.
+    // It is possible to move clear_inputs above function_post_hook and record
+    // "clear" by using it. However, this change breaks backward compatibility.
+    if (SingletonManager::get<ClearCalledFlagRecorder>()->is_activated()) {
+      SingletonManager::get<ClearCalledFlagRecorder>()->record(func);
+    }
   }
 };
 
@@ -508,6 +552,12 @@ public:
 
     // Clear outputs buffer
     clear_output_buffers(f, output_prohibit_clear);
+
+    // Record when inputs and outputs are cleared.
+    // See the comment on ForwardCallback::operator().
+    if (SingletonManager::get<ClearCalledFlagRecorder>()->is_activated()) {
+      SingletonManager::get<ClearCalledFlagRecorder>()->record(f);
+    }
   }
 };
 
@@ -758,5 +808,75 @@ CgVariablePtr CgVariable::create_deep_copy(Context ctx, bool copy_grad) {
   }
 
   return ret;
+}
+
+ClearCalledFlagRecorder::ClearCalledFlagRecorder() {}
+
+ClearCalledFlagRecorder::~ClearCalledFlagRecorder() {}
+
+bool ClearCalledFlagRecorder::is_activated() { return is_activated_; }
+
+void ClearCalledFlagRecorder::activate() { is_activated_ = true; }
+
+void ClearCalledFlagRecorder::deactivate() {
+  is_activated_ = false;
+  recorded_input_clear_flags_.clear();
+  recorded_output_clear_flags_.clear();
+}
+
+std::vector<std::pair<bool, bool>>
+ClearCalledFlagRecorder::get_variable_clear_called_flag(
+    const std::vector<CgVariablePtr> &vars) {
+  std::vector<std::pair<bool, bool>> clear_called_flags;
+
+  for (const auto var : vars) {
+    bool data_flag = var->variable()->data()->array()->clear_called();
+    bool grad_flag = var->variable()->grad()->array()->clear_called();
+    clear_called_flags.push_back(std::make_pair(data_flag, grad_flag));
+  }
+
+  return clear_called_flags;
+}
+
+void ClearCalledFlagRecorder::record(const CgFunctionPtr func) {
+  if (!is_activated()) {
+    NBLA_ERROR(error_code::runtime, "Activate recorder before record.");
+  }
+
+  recorded_input_clear_flags_.push_back(
+      get_variable_clear_called_flag(func->inputs()));
+  recorded_output_clear_flags_.push_back(
+      get_variable_clear_called_flag(func->outputs()));
+}
+
+std::vector<std::vector<std::pair<bool, bool>>>
+ClearCalledFlagRecorder::get_recorded_input_clear_flags() const {
+  return recorded_input_clear_flags_;
+}
+
+std::vector<std::vector<std::pair<bool, bool>>>
+ClearCalledFlagRecorder::get_recorded_output_clear_flags() const {
+  return recorded_output_clear_flags_;
+}
+
+// Pasing empty arguments because this class is not defined by NBLA_API.
+NBLA_INSTANTIATE_SINGLETON(, ClearCalledFlagRecorder);
+
+void c_activate_clear_called_flag_recorder() {
+  SingletonManager::get<ClearCalledFlagRecorder>()->activate();
+}
+
+void c_deactivate_clear_called_flag_recorder() {
+  SingletonManager::get<ClearCalledFlagRecorder>()->deactivate();
+}
+
+vector<vector<pair<bool, bool>>> c_get_input_clear_called_flags() {
+  return SingletonManager::get<ClearCalledFlagRecorder>()
+      ->get_recorded_input_clear_flags();
+}
+
+vector<vector<pair<bool, bool>>> c_get_output_clear_called_flags() {
+  return SingletonManager::get<ClearCalledFlagRecorder>()
+      ->get_recorded_output_clear_flags();
 }
 }

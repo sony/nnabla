@@ -78,6 +78,9 @@ protected:
   int row_y_;
   int col_y_;
 
+  bool with_mask_{false};
+  bool with_bias_{false};
+
 public:
   DeformableConvolution(const Context &ctx, int base_axis,
                         const vector<int> &pad, const vector<int> &stride,
@@ -115,6 +118,16 @@ protected:
                                       const Variables &outputs,
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
+  virtual bool grad_depends_input_data_impl(int i, int j) const {
+    // all input gradient needs x, weight, mask
+    if (j == 0 || j == 1 || j == 2) {
+      return true;
+    }
+    if (j == 3 && with_mask_) {
+      return true;
+    }
+    return false;
+  }
 };
 }
 #endif

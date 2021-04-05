@@ -2244,6 +2244,33 @@ Reduction:
     function_ids:
       iIB: 24
     c_runtime: support
+  CumSum:
+    snake_name: cumsum
+    doc: |2
+
+      Cumulative sum along a given axis.
+    inputs:
+      x:
+        doc: N-D array.
+    arguments:
+      axis:
+        doc: Axis along which cumulative sum is to be calculated
+        type: int64
+        default: 0
+      exclusive:
+        doc: If True, perform exclusive cumsum
+        type: bool
+        default: 'False'
+      reverse:
+        doc: If True, perform cumsum in reverse direction
+        type: bool
+        default: 'False'
+    outputs:
+      y:
+        doc: N-D array
+    c_runtime: not support
+    function_ids:
+      iBB: 331
   Mean:
     snake_name: mean
     doc: |2
@@ -2388,6 +2415,36 @@ Reduction:
     function_ids:
       iIB: 28
     c_runtime: not support
+  CumProd:
+    snake_name: cumprod
+    doc: |2
+
+      Cumulative product along a given axis.
+
+      Note:
+          Backward computation is not accurate in a zero value input.
+    inputs:
+      x:
+        doc: N-D array.
+    arguments:
+      axis:
+        doc: Axis along which cumulative product is to be calculated
+        type: int64
+        default: 0
+      exclusive:
+        doc: If True, perform exclusive cumprod
+        type: bool
+        default: 'False'
+      reverse:
+        doc: If True, perform cumprod in reverse direction
+        type: bool
+        default: 'False'
+    outputs:
+      y:
+        doc: N-D array
+    c_runtime: not support
+    function_ids:
+      iBB: 332
   ReduceSum:
     snake_name: reduce_sum
     doc: |2

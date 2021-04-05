@@ -496,7 +496,7 @@ class ProtoNetwork:
                                 pv.initializer(shape=pv_shape), need_grad=True)
                             self.owner(
                             ).global_variables[pv.name] = pv.variable_instance
-                    else:
+                    elif pv.variable_instance is None:
                         pv.variable_instance = nn.Variable(pv_shape)
             else:
                 for pv, v in zip(input_proto_variables, args):
@@ -759,7 +759,8 @@ class ProtoNetwork:
                 if not no_need:
                     if not stop:
                         execute(pf)
-                        logger.debug("execute: {}".format(pf.name))
+                        logger.debug("execute: {}, {}".format(
+                            pf.name, [n for n in pf.outputs]))
                     else:
                         logger.debug("skip {}".format(pf.name))
                         if pf.delegate is not None:
@@ -970,6 +971,7 @@ class ProtoNetwork:
                     if o is var:
                         new = self
                     new_outputs.append(new)
+                # using up stream as current
                 self.parent.outputs = new_outputs
 
             @property
@@ -1017,20 +1019,22 @@ class ProtoNetwork:
             @property
             def inputs(self):
                 return [self.pn.variables[v_name].delegate() if v_name in self.pn.variables
-                        else self.pn.parameters[v_name].delegate() for v_name in self.pf.inputs]
+                        else self.pn.parameters[v_name].delegate() for v_name in self.pf.proto.input]
 
             @inputs.setter
             def inputs(self, inputs):
-                self.pf.inputs = [f.name for f in inputs]
+                self.pf.proto.ClearField('input')
+                self.pf.proto.input.extend([f.name for f in inputs])
 
             @property
             def outputs(self):
                 return [self.pn.variables[v_name].delegate() if v_name in self.pn.variables
-                        else self.pn.parameters[v_name].delegate() for v_name in self.pf.outputs]
+                        else self.pn.parameters[v_name].delegate() for v_name in self.pf.proto.output]
 
             @outputs.setter
             def outputs(self, outputs):
-                self.pf.outputs = [f.name for f in outputs]
+                self.pf.proto.ClearField('output')
+                self.pf.proto.output.extend([f.name for f in outputs])
 
             def disable(self):
                 self.pf.disabled = True
@@ -1086,22 +1090,29 @@ class ProtoNetwork:
                 pf.delegate(), variables, scope)
 
         n._update_network_ports()
-        for pf in n.forward_sequence():
+        for pf in n.functions.values():
             callback._apply_use_up_to(pf.delegate().inputs)
+
+        # Update from proto
+        rng = np.random.RandomState(1223)
+        renames = {}
+        for pv in chain(n.variables.values(), n.parameters.values()):
+            pv.update_from_proto(rng, renames)
+        for ol, ne in renames.items():
+            if ol in n.variables:
+                n.variables[ne] = n.variables[ol]
+                del n.variables[ol]
+            elif ol in n.parameters:
+                n.parameters[ne] = n.parameters[ol]
+                del n.parameters[ol]
+        for pf in n.functions.values():
+            pf.update_from_proto(renames)
 
         # apply disable()
         for _ in n.forward_sequence():
             pass
 
         n._update_network_ports()
-
-        # Update from proto
-        rng = np.random.RandomState(1223)
-        for pv in chain(n.variables.values(), n.parameters.values()):
-            pv.update_from_proto(rng)
-        for pf in n.forward_sequence():
-            pf.update_from_proto()
-
         return n
 
     def promote(self, callback):
@@ -1767,9 +1778,11 @@ class ProtoVariable:
                                                   lambda v: 0.0)(self.initializer)
         return self._proto
 
-    def update_from_proto(self, rng):
+    def update_from_proto(self, rng, renames):
         if self._proto is None:
             return
+        if self.name != self._proto.name:
+            renames[self.name] = self._proto.name
         self.name = self._proto.name
         assert self.type == self._proto.type, "Change type of variable is not allowed"
         self.shape = self._proto.shape.dim[:]
@@ -2079,7 +2092,7 @@ class ProtoFunction:
         _create_function_nntxt(self._proto, self.name, self)
         return self._proto
 
-    def update_from_proto(self):
+    def update_from_proto(self, renames):
         from nnabla.utils.load_function import _create_function_instance
 
         # temporarily create a function instance for obtaining
@@ -2089,8 +2102,8 @@ class ProtoFunction:
         self.args = function_instance.arguments
         self.type = self._proto.type
         self.name = self._proto.name
-        self.inputs = self._proto.input[:]
-        self.outputs = self._proto.output[:]
+        self.inputs = [renames.get(n, n) for n in self._proto.input]
+        self.outputs = [renames.get(n, n) for n in self._proto.output]
         self.repeat_id = self._proto.repeat_id[:]
         self.repeat_param = self._proto.repeat_param
         self.recurrent_param = self._proto.recurrent_param

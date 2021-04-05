@@ -26,6 +26,8 @@ Function::Function(const Context &ctx) : ctx_(ctx), fall_back_func_(nullptr) {}
 Function::~Function() {}
 
 void Function::setup(const Variables &inputs, const Variables &outputs) {
+  called_setup_ = true;
+
   if (fall_back_func_) {
     // Fall back to the specified Function.
     fall_back_func_->setup(inputs, outputs);

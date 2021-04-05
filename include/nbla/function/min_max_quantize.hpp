@@ -112,6 +112,12 @@ protected:
                                          Variable *scale,
                                          Variable *qr_min_nudged,
                                          Variable *qr_max_nudged);
+  virtual bool grad_depends_input_data_impl(int i, int j) const {
+    if (i == 0 || i == 1 || i == 2) {
+      return true;
+    }
+    return false;
+  }
 };
 }
 #endif
