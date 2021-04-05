@@ -99,6 +99,13 @@ protected:
                                       const Variables &outputs,
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
+  virtual bool grad_depends_input_data_impl(int i, int j) const { return true; }
+  virtual bool overwrite_input_data_in_forward_impl(int i) const {
+    if (i == 1) {
+      return true;
+    }
+    return false;
+  }
 
 private:
   // Members only used in a naive implementation with composite

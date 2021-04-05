@@ -33,6 +33,7 @@ cdef extern from "nbla/synced_array.hpp" namespace "nbla":
         void fill(float value) except+
         void copy_from(const CSyncedArray *src) except+
         size_t modification_count() except+
+        cpp_bool clear_called() except+
         cpp_bool zeroing() const
         void clear() except+
 

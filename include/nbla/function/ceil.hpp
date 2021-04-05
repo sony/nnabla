@@ -40,6 +40,6 @@ Outputs:
 \ingroup FunctionImpGrp
  */
 
-NBLA_DEFINE_TRANSFORM_UNARY(Ceil, std::ceil(x), dy, false);
+NBLA_DEFINE_TRANSFORM_UNARY(Ceil, std::ceil(x), dy, false, false);
 }
 #endif

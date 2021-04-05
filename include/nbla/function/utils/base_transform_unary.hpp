@@ -148,7 +148,12 @@ void TransformUnary<T, UnaryOp, Args...>::backward_impl(
     return GOP;                                                                \
   }
 
-#define NBLA_DEFINE_TRANSFORM_UNARY_CLASS_COMMON(NAME, DEP_Y)                  \
+#define NBLA_DEFINE_TRANSFORM_UNARY_CLASS_COMMON(NAME, DEP_Y, DEP_X)           \
+protected:                                                                     \
+  virtual bool grad_depends_input_data_impl(int i, int j) const {              \
+    return DEP_X;                                                              \
+  }                                                                            \
+                                                                               \
 public:                                                                        \
   virtual ~NAME() {}                                                           \
   virtual string name() { return #NAME; }                                      \
@@ -170,9 +175,9 @@ public:                                                                        \
     NBLA_DEFINE_UNARY_OP_BACKWARD(GOP)                                         \
   }
 
-#define NBLA_DEFINE_TRANSFORM_UNARY_CLASS(NAME, DEP_Y)                         \
+#define NBLA_DEFINE_TRANSFORM_UNARY_CLASS(NAME, DEP_Y, DEP_X)                  \
   template <typename T> class NAME : public TransformUnary<T, NAME##UnaryOp> { \
-    NBLA_DEFINE_TRANSFORM_UNARY_CLASS_COMMON(NAME, DEP_Y)                      \
+    NBLA_DEFINE_TRANSFORM_UNARY_CLASS_COMMON(NAME, DEP_Y, DEP_X)               \
     NAME(const Context &ctx) : TransformUnary<T, NAME##UnaryOp>(ctx, false) {} \
     virtual shared_ptr<Function> copy() const {                                \
       return create_##NAME(this->ctx_);                                        \
@@ -182,23 +187,23 @@ public:                                                                        \
 #define NBLA_DEFINE_TRANSFORM_UNARY_NO_GRAD(NAME, OPERATION)                   \
   NBLA_REGISTER_FUNCTION_HEADER(NAME);                                         \
   NBLA_DEFINE_UNARY_OP_NO_GRAD(NAME, OPERATION);                               \
-  NBLA_DEFINE_TRANSFORM_UNARY_CLASS(NAME, false)
+  NBLA_DEFINE_TRANSFORM_UNARY_CLASS(NAME, false, false)
 
 /**
 Note : If DEP_Y is true, the gradient computation depends on output data.
 */
-#define NBLA_DEFINE_TRANSFORM_UNARY(NAME, OP, GOP, DEP_Y)                      \
+#define NBLA_DEFINE_TRANSFORM_UNARY(NAME, OP, GOP, DEP_Y, DEP_X)               \
   NBLA_REGISTER_FUNCTION_HEADER(NAME);                                         \
   NBLA_DEFINE_UNARY_OP(NAME, OP, GOP);                                         \
-  NBLA_DEFINE_TRANSFORM_UNARY_CLASS(NAME, DEP_Y)
+  NBLA_DEFINE_TRANSFORM_UNARY_CLASS(NAME, DEP_Y, DEP_X)
 
 // ----------------------------------------------------------------------------
 // One argument
 // ----------------------------------------------------------------------------
-#define NBLA_DEFINE_TRANSFORM_UNARY_CLASS_1(NAME, DEP_Y, A0)                   \
+#define NBLA_DEFINE_TRANSFORM_UNARY_CLASS_1(NAME, DEP_Y, DEP_X, A0)            \
   template <typename T>                                                        \
   class NAME : public TransformUnary<T, NAME##UnaryOp, A0> {                   \
-    NBLA_DEFINE_TRANSFORM_UNARY_CLASS_COMMON(NAME, DEP_Y)                      \
+    NBLA_DEFINE_TRANSFORM_UNARY_CLASS_COMMON(NAME, DEP_Y, DEP_X)               \
     NAME(const Context &ctx, const A0 &a0)                                     \
         : TransformUnary<T, NAME##UnaryOp, A0>(ctx, false, a0) {}              \
     virtual shared_ptr<Function> copy() const {                                \
@@ -206,10 +211,10 @@ Note : If DEP_Y is true, the gradient computation depends on output data.
     }                                                                          \
   }
 
-#define NBLA_DEFINE_TRANSFORM_UNARY_CLASS_1_INPLACE(NAME, DEP_Y, A0)           \
+#define NBLA_DEFINE_TRANSFORM_UNARY_CLASS_1_INPLACE(NAME, DEP_Y, DEP_X, A0)    \
   template <typename T>                                                        \
   class NAME : public TransformUnary<T, NAME##UnaryOp, A0> {                   \
-    NBLA_DEFINE_TRANSFORM_UNARY_CLASS_COMMON(NAME, DEP_Y)                      \
+    NBLA_DEFINE_TRANSFORM_UNARY_CLASS_COMMON(NAME, DEP_Y, DEP_X)               \
     NAME(const Context &ctx, const A0 &a0, bool inplace)                       \
         : TransformUnary<T, NAME##UnaryOp, A0>(ctx, inplace, a0) {}            \
     virtual shared_ptr<Function> copy() const {                                \
@@ -227,15 +232,15 @@ Note : If DEP_Y is true, the gradient computation depends on output data.
     NBLA_DEFINE_UNARY_OP_BACKWARD(GOP)                                         \
   }
 
-#define NBLA_DEFINE_TRANSFORM_UNARY_1(NAME, OP, GOP, DEP_Y, A0)                \
+#define NBLA_DEFINE_TRANSFORM_UNARY_1(NAME, OP, GOP, DEP_Y, DEP_X, A0)         \
   NBLA_REGISTER_FUNCTION_HEADER(NAME, A0);                                     \
   NBLA_DEFINE_UNARY_OP_1(NAME, OP, GOP, A0);                                   \
-  NBLA_DEFINE_TRANSFORM_UNARY_CLASS_1(NAME, DEP_Y, A0)
+  NBLA_DEFINE_TRANSFORM_UNARY_CLASS_1(NAME, DEP_Y, DEP_X, A0)
 
-#define NBLA_DEFINE_TRANSFORM_UNARY_1_INPLACE(NAME, OP, GOP, DEP_Y, A0)        \
+#define NBLA_DEFINE_TRANSFORM_UNARY_1_INPLACE(NAME, OP, GOP, DEP_Y, DEP_X, A0) \
   NBLA_REGISTER_FUNCTION_HEADER(NAME, A0, bool);                               \
   NBLA_DEFINE_UNARY_OP_1(NAME, OP, GOP, A0);                                   \
-  NBLA_DEFINE_TRANSFORM_UNARY_CLASS_1_INPLACE(NAME, DEP_Y, A0)
+  NBLA_DEFINE_TRANSFORM_UNARY_CLASS_1_INPLACE(NAME, DEP_Y, DEP_X, A0)
 
 #define NBLA_DEFINE_UNARY_OP_1_NO_GRAD(NAME, OP, A0)                           \
   NBLA_DEFINE_UNARY_OP_CLASS(NAME) {                                           \
@@ -248,6 +253,6 @@ Note : If DEP_Y is true, the gradient computation depends on output data.
 #define NBLA_DEFINE_TRANSFORM_UNARY_1_NO_GRAD(NAME, OP, A0)                    \
   NBLA_REGISTER_FUNCTION_HEADER(NAME, A0);                                     \
   NBLA_DEFINE_UNARY_OP_1_NO_GRAD(NAME, OP, A0);                                \
-  NBLA_DEFINE_TRANSFORM_UNARY_CLASS_1(NAME, false, A0)
+  NBLA_DEFINE_TRANSFORM_UNARY_CLASS_1(NAME, false, false, A0)
 }
 #endif

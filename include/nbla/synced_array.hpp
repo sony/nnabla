@@ -47,6 +47,9 @@ class NBLA_API SyncedArray : public std::enable_shared_from_this<SyncedArray> {
   map<string, pair<shared_ptr<Array>, bool>>
       array_; ///< key: array_class, value: <Array instance, is_head>
   size_t modification_count_; ///< Number of modification count.
+  bool clear_called_; ///< clear called flag. If clear_all_array is called, it
+                      /// turns to true. When cast_sp, get_sp, zero, or fill are
+  /// called, it turns to false.
 
 public:
   SyncedArray(const Size_t size);
@@ -159,6 +162,10 @@ public:
       Modification accounts for calling either cast, zero or fill.
   */
   size_t modification_count() const;
+
+  /** Get clear called flag.
+   */
+  bool clear_called() const;
 
   /** Copy values from another SynedArray.
 

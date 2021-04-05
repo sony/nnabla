@@ -55,6 +55,6 @@ NBLA_DEFINE_TRANSFORM_BINARY_1(
     (T)-2 * dy * (std::abs(x0 - x1) < (T)a0
                       ? (x0 - x1)
                       : ((x0 - x1) > (T)0 ? (T)1 : (T)-1) * (T)a0),
-    false, false, float);
+    false, false, true, true, float);
 }
 #endif

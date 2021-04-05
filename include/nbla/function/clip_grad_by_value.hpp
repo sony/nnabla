@@ -80,6 +80,13 @@ protected:
                                       const Variables &outputs,
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
+  virtual bool grad_depends_input_data_impl(int i, int j) const {
+    if (i == 0) {
+      if (j == 1 || j == 2)
+        return true;
+    }
+    return false;
+  }
 };
 }
 #endif

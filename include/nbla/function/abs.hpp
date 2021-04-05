@@ -38,6 +38,7 @@ Outputs:
 @tparam T Data type for computation.
 \ingroup FunctionImplGrp
  */
-NBLA_DEFINE_TRANSFORM_UNARY(Abs, std::abs(x), (x < (T)0) ? -dy : dy, false);
+NBLA_DEFINE_TRANSFORM_UNARY(Abs, std::abs(x), (x < (T)0) ? -dy : dy, false,
+                            true);
 }
 #endif

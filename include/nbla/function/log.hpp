@@ -26,6 +26,6 @@ namespace nbla {
 /** @class Log
     @brief Take elementwise \f$\log(x)\f$.
  */
-NBLA_DEFINE_TRANSFORM_UNARY(Log, std::log(x), dy / x, false);
+NBLA_DEFINE_TRANSFORM_UNARY(Log, std::log(x), dy / x, false, true);
 }
 #endif

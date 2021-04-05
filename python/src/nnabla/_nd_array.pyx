@@ -437,6 +437,12 @@ cdef class NdArray:
         '''
         return self.arrp.array().get().modification_count()
 
+    @property
+    def clear_called(self):
+        '''Checking if the array is not modified after cleared. This returns False until clear is called at the first time.
+        '''
+        return self.arrp.array().get().clear_called()
+
     def __pos__(self):
         return AOP.pos(self)
 

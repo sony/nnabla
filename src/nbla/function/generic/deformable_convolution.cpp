@@ -72,6 +72,7 @@ void DeformableConvolution<T>::setup_impl(const Variables &inputs,
 
   // Check mask shape and fill inner mask size
   if (inputs.size() == 5 || (inputs.size() == 4 && inputs[3]->ndim() != 1)) {
+    with_mask_ = true;
     Shape_t shape_mask = inputs[3]->shape();
     NBLA_CHECK(shape_mask[0] == shape_data[0] &&
                    (channel_last_ ? shape_mask[1] == shape_data[1]
@@ -182,6 +183,7 @@ void DeformableConvolution<T>::setup_impl(const Variables &inputs,
 
   // Check for with bias
   if (inputs.size() == 5 || (inputs.size() == 4 && inputs[3]->ndim() == 1)) {
+    with_bias_ = true;
     Shape_t bias_shape;
     if (inputs.size() == 5) {
       bias_shape = inputs[4]->shape();
