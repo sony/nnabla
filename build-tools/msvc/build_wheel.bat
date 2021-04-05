@@ -33,6 +33,9 @@ REM Build Wheel
 IF NOT EXIST %nnabla_build_wheel_folder%\ MD %nnabla_build_wheel_folder%
 CD %nnabla_build_wheel_folder%
 
+SET third_party_folder=%nnabla_root%\third_party
+CALL %~dp0tools\build_protobuf.bat   || GOTO :error
+
 cmake -G "%generate_target%" ^
       -DBUILD_CPP_LIB=OFF ^
       -DBUILD_PYTHON_PACKAGE=ON ^
@@ -41,6 +44,7 @@ cmake -G "%generate_target%" ^
       -DLIB_NAME_SUFFIX=%lib_name_suffix% ^
       -DPYTHON_COMMAND_NAME=python ^
       -DWHEEL_SUFFIX=%wheel_suffix% ^
+      -DPROTOC_COMMAND=%protobuf_protoc_executable% ^
       %nnabla_root% || GOTO :error
 
 msbuild wheel.vcxproj /p:Configuration=%build_type% || GOTO :error

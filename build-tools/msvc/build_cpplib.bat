@@ -31,6 +31,10 @@ CALL %~dp0tools\build_zlib.bat       || GOTO :error
 CALL %~dp0tools\build_libarchive.bat || GOTO :error
 CALL %~dp0tools\build_protobuf.bat   || GOTO :error
 
+REM Get pre-built lz4 and zstd libraries
+CALL %~dp0tools\get_liblz4.bat || GOTO :error
+CALL %~dp0tools\get_libzstd.bat || GOTO :error
+
 REM Build CPP library.
 ECHO "--- CMake options for C++ build ---"
 set nnabla_debug_options=
