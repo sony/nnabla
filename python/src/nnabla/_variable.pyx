@@ -749,23 +749,29 @@ cdef class Variable:
 
         """
         cdef NdArrayPtr p
-        if grad is None:
-            pass
-        elif np.isscalar(grad):
-            arr = NdArray(self.shape)
-            arr.fill(grad)
-            p = ( < NdArray > arr).arr
-        elif isinstance(grad, NdArray):
-            p = ( < NdArray > grad).arr
-        elif isinstance(grad, np.ndarray):
-            arr = NdArray(grad.shape)
-            arr.data = grad
-            p = ( < NdArray > arr).arr
+        cdef cpp_bool clear_initial_grad = False
+        if isinstance(grad, NdArray):
+            # Share a user-refered NdArray as a initial grad
+            clear_initial_grad = False
+            p = ( < NdArray > grad).arr            
         else:
-            # Try to interpret as scalar value
-            arr = NdArray()
-            arr.data = grad
-            p = ( < NdArray > arr).arr
+            # Use a temporary NdArray as a initial grad
+            clear_initial_grad = True
+            if grad is None:
+                pass
+            elif np.isscalar(grad):
+                arr = NdArray(self.shape)
+                arr.fill(grad)
+                p = ( < NdArray > arr).arr
+            elif isinstance(grad, np.ndarray):
+                arr = NdArray(grad.shape)
+                arr.data = grad
+                p = ( < NdArray > arr).arr
+            else:
+                # Try to interpret as scalar value
+                arr = NdArray()
+                arr.data = grad
+                p = ( < NdArray > arr).arr
 
         cdef vector[CommunicatorBackwardCallbackPtr] callback_list
         if type(communicator_callbacks) == list:
@@ -783,7 +789,7 @@ cdef class Variable:
             function_post_hook_c = create_function_hook_with_object(function_post_hook)
 
         with nogil:
-            self.varp.backward(p, clear_buffer, callback_list, function_pre_hook_c, function_post_hook_c)
+            self.varp.backward(p, clear_buffer, callback_list, function_pre_hook_c, function_post_hook_c, clear_initial_grad)
 
     def unlinked(self, need_grad=None):
         """

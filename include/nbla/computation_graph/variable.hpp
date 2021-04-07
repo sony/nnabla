@@ -263,6 +263,9 @@ public:
       @param     communicator_callbacks The callback functions invoked when 1)
                  backward computation of each function is finished and
                  2) all backward computation is finished.
+      @param     clear_initial_grad If true, the input parameter, grad, will be
+                 cleared during backward propagation. This flag is only
+                 activated when grad is set.
 
       @seealso set_persistent() to prevent a specific variable to be cleared
                during forward propagation.
@@ -271,7 +274,8 @@ public:
   backward(NdArrayPtr grad = nullptr, bool clear_buffer = false,
            vector<CommunicatorBackwardCallbackPtr> communicator_callbacks = {},
            function_hook_type pre_callback = nullptr,
-           function_hook_type post_callback = nullptr);
+           function_hook_type post_callback = nullptr,
+           const bool clear_initial_grad = false);
 
   /**
   */
