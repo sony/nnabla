@@ -23,14 +23,17 @@ from nnabla.config import nnabla_config
 from nnabla.utils.data_source_loader import load_image
 from nnabla.utils.data_iterator import data_iterator_csv_dataset
 from nnabla.utils.data_iterator import data_iterator_simple
-
+from nnabla.utils.data_iterator import data_iterator_concat_datasets
+from nnabla.utils.data_source_implements import CsvDataSource
 from .conftest import test_data_csv_png_10, test_data_csv_png_20
 
 
-def check_data_iterator_result(di, batch_size, shuffle, normalize):
+def check_data_iterator_concat_result(di, batch_size, normalize, ds1, ds2, stop_exhausted):
     datalist = []
+    count = 0
     for data in di:
         for i in range(batch_size):
+            count += 1
             if normalize:
                 v1 = round(data[0][i].flatten()[0] * 256)
             else:
@@ -38,17 +41,50 @@ def check_data_iterator_result(di, batch_size, shuffle, normalize):
             v2 = round(data[1][i][0])
             assert v1 == v2
             datalist.append(v1)
-        if di.epoch > 0:
+        if not stop_exhausted and di.epoch > 0:
+            print("epoch=", di.epoch)
             break
-    s1 = set(datalist)
-    s2 = set(range(di._data_source.size))
-    assert len(s1 - s2) == 0
-    assert len(s2 - s1) == di._data_source.size - di.size
+
+    if not stop_exhausted:
+        s = sorted(list(range(ds1)) + list(range(ds2)))
+        assert len(set(datalist) - set(s)) == 0
+        for i in s:
+            assert i in datalist
+            datalist.remove(i)
+    else:
+        assert count == di._data_source.size // batch_size * batch_size
+
+
+def check_data_iterator_result(di, batch_size, shuffle, normalize, stop_exhausted):
+    datalist = []
+    count = 0
+    for data in di:
+        for i in range(batch_size):
+            count += 1
+            if normalize:
+                v1 = round(data[0][i].flatten()[0] * 256)
+            else:
+                v1 = round(data[0][i].flatten()[0])
+            v2 = round(data[1][i][0])
+            assert v1 == v2
+            datalist.append(v1)
+        if not stop_exhausted and di.epoch > 0:
+            print("epoch=", di.epoch)
+            break
+
+    if not stop_exhausted:
+        s1 = set(datalist)
+        s2 = set(range(di._data_source.size))
+        assert len(s1 - s2) == 0
+        assert len(s2 - s1) == di._data_source.size - di.size
+    else:
+        assert count == di._data_source.size // batch_size * batch_size
 
 
 @pytest.mark.parametrize("batch_size", [5, 7])
 @pytest.mark.parametrize("shuffle", [False, True])
-def test_data_iterator_simple(test_data_csv_png_10, batch_size, shuffle):
+@pytest.mark.parametrize('stop_exhausted', [False, True])
+def test_data_iterator_simple(test_data_csv_png_10, batch_size, shuffle, stop_exhausted):
     src_data = []
     with open(test_data_csv_png_10) as f:
         for l in f.readlines():
@@ -64,26 +100,31 @@ def test_data_iterator_simple(test_data_csv_png_10, batch_size, shuffle):
         return src_data[position]
 
     size = len(src_data)
-    with data_iterator_simple(test_load_func, size, batch_size, shuffle=shuffle) as di:
-        check_data_iterator_result(di, batch_size, shuffle, False)
+    with data_iterator_simple(test_load_func, size, batch_size, shuffle=shuffle, stop_exhausted=stop_exhausted) as di:
+        check_data_iterator_result(
+            di, batch_size, shuffle, False, stop_exhausted)
 
 
 @pytest.mark.parametrize("size", [10, 20])
 @pytest.mark.parametrize("batch_size", [5, 7, 23, 73])
-@pytest.mark.parametrize("shuffle", [False, True])
-@pytest.mark.parametrize("normalize", [False, True])
-@pytest.mark.parametrize("with_memory_cache", [False, True])
-@pytest.mark.parametrize("with_file_cache", [False, True])
-@pytest.mark.parametrize("with_context", [False, True])
+@pytest.mark.parametrize("shuffle", [True, False])
+@pytest.mark.parametrize("use_thread", [True, False])
+@pytest.mark.parametrize("normalize", [True, False])
+@pytest.mark.parametrize("with_memory_cache", [True, False])
+@pytest.mark.parametrize("with_file_cache", [True, False])
+@pytest.mark.parametrize("with_context", [True, False])
+@pytest.mark.parametrize('stop_exhausted', [True, False])
 def test_data_iterator_csv_dataset(test_data_csv_png_10,
                                    test_data_csv_png_20,
                                    size,
                                    batch_size,
                                    shuffle,
+                                   use_thread,
                                    normalize,
                                    with_memory_cache,
                                    with_file_cache,
-                                   with_context):
+                                   with_context,
+                                   stop_exhausted):
 
     nnabla_config.set('DATA_ITERATOR', 'data_source_file_cache_size', '3')
     nnabla_config.set(
@@ -104,14 +145,79 @@ def test_data_iterator_csv_dataset(test_data_csv_png_10,
                                        shuffle=shuffle,
                                        normalize=normalize,
                                        with_memory_cache=with_memory_cache,
-                                       with_file_cache=with_file_cache) as di:
-            check_data_iterator_result(di, batch_size, shuffle, normalize)
+                                       with_file_cache=with_file_cache,
+                                       use_thread=use_thread,
+                                       stop_exhausted=stop_exhausted) as di:
+            check_data_iterator_result(
+                di, batch_size, shuffle, normalize, stop_exhausted)
     else:
         di = data_iterator_csv_dataset(uri=csvfilename,
                                        batch_size=batch_size,
                                        shuffle=shuffle,
                                        normalize=normalize,
                                        with_memory_cache=with_memory_cache,
-                                       with_file_cache=with_file_cache)
-        check_data_iterator_result(di, batch_size, shuffle, normalize)
+                                       with_file_cache=with_file_cache,
+                                       use_thread=use_thread,
+                                       stop_exhausted=stop_exhausted)
+        check_data_iterator_result(
+            di, batch_size, shuffle, normalize, stop_exhausted)
+        di.close()
+
+
+@pytest.mark.parametrize("batch_size", [5, 7, 23, 73])
+@pytest.mark.parametrize("shuffle", [True, False])
+@pytest.mark.parametrize("use_thread", [True, False])
+@pytest.mark.parametrize("normalize", [True, False])
+@pytest.mark.parametrize("with_memory_cache", [True, False])
+@pytest.mark.parametrize("with_file_cache", [True, False])
+@pytest.mark.parametrize("with_context", [True, False])
+@pytest.mark.parametrize('stop_exhausted', [True, False])
+def test_data_iterator_concat_datasets(test_data_csv_png_10,
+                                       test_data_csv_png_20,
+                                       batch_size,
+                                       shuffle,
+                                       use_thread,
+                                       normalize,
+                                       with_memory_cache,
+                                       with_file_cache,
+                                       with_context,
+                                       stop_exhausted):
+
+    nnabla_config.set('DATA_ITERATOR', 'data_source_file_cache_size', '3')
+    nnabla_config.set(
+        'DATA_ITERATOR', 'data_source_buffer_max_size', '10000')
+    nnabla_config.set(
+        'DATA_ITERATOR', 'data_source_buffer_num_of_data', '9')
+
+    csvfilename_1 = test_data_csv_png_10
+    csvfilename_2 = test_data_csv_png_20
+
+    ds1 = CsvDataSource(csvfilename_1,
+                        shuffle=shuffle,
+                        normalize=normalize)
+
+    ds2 = CsvDataSource(csvfilename_2,
+                        shuffle=shuffle,
+                        normalize=normalize)
+
+    if with_context:
+        with data_iterator_concat_datasets([ds1, ds2],
+                                           batch_size=batch_size,
+                                           shuffle=shuffle,
+                                           with_memory_cache=with_memory_cache,
+                                           with_file_cache=with_file_cache,
+                                           use_thread=use_thread,
+                                           stop_exhausted=stop_exhausted) as di:
+            check_data_iterator_concat_result(
+                di, batch_size, normalize, ds1.size, ds2.size, stop_exhausted)
+    else:
+        di = data_iterator_concat_datasets([ds1, ds2],
+                                           batch_size=batch_size,
+                                           shuffle=shuffle,
+                                           with_memory_cache=with_memory_cache,
+                                           with_file_cache=with_file_cache,
+                                           use_thread=use_thread,
+                                           stop_exhausted=stop_exhausted)
+        check_data_iterator_concat_result(
+            di, batch_size, normalize, ds1.size, ds2.size, stop_exhausted)
         di.close()
