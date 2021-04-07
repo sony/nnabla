@@ -36,7 +36,7 @@ CD %zlib_folder%
 cmake -E tar xvzf ..\zlib123dllx64.zip || GOTO :error
 
 IF NOT EXIST %third_party_folder%\zlib123.zip (
-   powershell "iwr %nnabla_iwr_options% -Uri http://www.winimage.com/zLibDll/zlib123.zip -OutFile %third_party_folder%\zlib123.zip" || GOTO :error
+   powershell "[Net.ServicePointManager]::SecurityProtocol +='tls12'; iwr %nnabla_iwr_options% -Uri http://www.winimage.com/zLibDll/zlib123.zip -OutFile %third_party_folder%\zlib123.zip" || GOTO :error
 )
 
 CD %third_party_folder%
