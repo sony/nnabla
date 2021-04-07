@@ -16,6 +16,7 @@
 #include <nbla/computation_graph/function.hpp>
 #include <nbla/computation_graph/variable.hpp>
 #include <nbla/global_function_callback.hpp>
+#include <nbla/singleton_manager-internal.hpp>
 
 #include <cstdint>
 #include <iostream>
@@ -110,6 +111,7 @@ class ForwardCallback {
   unordered_map<CgVariablePtr, unsigned int> vseen_;
   unordered_set<CgVariablePtr> need_grad_variable_set_;
   unordered_set<CgVariablePtr> inplace_variable_set_;
+  unordered_set<CgVariablePtr> overwrite_variable_set_;
   vector<string> history_;
 
 public:
@@ -142,21 +144,54 @@ public:
     return false;
   }
 
-  vector<bool> get_clear_flags(CgFunctionPtr func) {
+  // Check if input/output[target_idx] are needed for backward calculation.
+  // Return true if needed and false otherwise.
+  template <bool INPUT>
+  bool check_grad_depends_data(CgFunctionPtr func,
+                               vector<CgVariablePtr>::size_type target_idx) {
+
     auto inputs = func->inputs();
+    for (vector<CgVariablePtr>::size_type i = 0; i < inputs.size(); i++) {
+      if (INPUT) {
+        if (func->function()->grad_depends_input_data(i, target_idx)) {
+          return true;
+        }
+      } else { // OUTPUT
+        if (func->function()->grad_depends_output_data(i, target_idx)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  vector<bool> get_clear_flags(CgFunctionPtr func) {
+    auto outputs = func->outputs();
+    auto inputs = func->inputs();
+
+    for (vector<CgVariablePtr>::size_type o = 0; o < outputs.size(); ++o) {
+      if (func->need_grad() && check_grad_depends_data<false>(func, o)) {
+        need_grad_variable_set_.insert(outputs[o]);
+      }
+    }
+
     vector<bool> ret(inputs.size(), false);
     for (vector<CgVariablePtr>::size_type i = 0; i < inputs.size(); ++i) {
       auto vi = inputs[i];
       // Remember variables that should not be cleared during forward
-      if (func->need_grad() && !vi->need_grad()) {
-        // Any variable that is used to computate gradient shouldn't be cleared.
-        // TODO: Not optimal because the input may not be used in gradient
-        // computation of some function.
+      if (func->need_grad() && check_grad_depends_data<true>(func, i)) {
         need_grad_variable_set_.insert(vi);
+      }
+      if (func->need_grad() &&
+          func->function()->overwrite_input_data_in_forward(i)) {
+        overwrite_variable_set_.insert(vi);
       }
       if (func->function()->inplace_data(i)) {
         // Inplaced variable shouldn't be cleared during forward
+        const auto inplaced_output_idx = func->function()->inplace_data_with(i);
         inplace_variable_set_.insert(vi);
+        inplace_variable_set_.insert(func->outputs()[inplaced_output_idx]);
       }
 
       // This comes first because check_last_visit must be called in order to
@@ -178,10 +213,12 @@ public:
         ret[i] = true;
         continue;
       }
-      if (clear_no_need_grad_ && !func->need_grad()) {
-        // Not clear if any function requiring gradient computation uses this
-        // variable.
+
+      if (clear_no_need_grad_) {
         if (need_grad_variable_set_.find(vi) != need_grad_variable_set_.end()) {
+          continue;
+        }
+        if (overwrite_variable_set_.find(vi) != overwrite_variable_set_.end()) {
           continue;
         }
         ret[i] = true;
@@ -283,15 +320,34 @@ public:
     // Clear input buffers where possible.
     auto clear_flags = get_clear_flags(func);
     clear_inputs(func->inputs(), clear_flags);
+
+    // Record when inputs and outputs are cleared.
+    // It is possible to move clear_inputs above function_post_hook and record
+    // "clear" by using it. However, this change breaks backward compatibility.
+    if (SingletonManager::get<ClearCalledFlagRecorder>()->is_activated()) {
+      SingletonManager::get<ClearCalledFlagRecorder>()->record(func);
+    }
   }
 };
 
 class BackwardCallback {
+  class ClearFlag {
+  public:
+    ClearFlag(bool data, bool grad) : data_(data), grad_(grad) {}
+    bool data_;
+    bool grad_;
+  };
+
   bool clear_buffer_;
+  const bool clear_initial_grad_;
   function_hook_type function_pre_hook_;
   function_hook_type function_post_hook_;
   // Visit CgVaiable list. The value is whether this is cleared during backward.
-  unordered_map<CgVariablePtr, bool> vseen_;
+  unordered_map<CgVariablePtr, ClearFlag> vseen_;
+
+  // "initial_variable_set_" holds the output variables of the function firstly
+  // visited after calling BackwardCallback from CgVariable::backward.
+  unordered_set<CgVariablePtr> initial_variable_set_;
   vector<string> history_;
 
   vector<bool> get_accum(const vector<CgVariablePtr> &inputs,
@@ -333,6 +389,11 @@ class BackwardCallback {
                                  const vector<bool> &first_visit) {
     for (vector<CgVariablePtr>::size_type i = 0; i < outputs.size(); i++) {
       auto o = outputs[i];
+
+      if (initial_variable_set_.find(o) != initial_variable_set_.end()) {
+        continue;
+      }
+
       if (first_visit[i]) {
         // The output variable has not been seen during this backprop, which
         // means no one sets the gradient previously. To prevent to propagate
@@ -344,28 +405,14 @@ class BackwardCallback {
     }
   }
 
-  void clear_output_buffers(CgFunctionPtr func,
-                            const vector<bool> &prohibit_clear) {
-    if (clear_buffer_) {
-      auto f = func->function();
-      auto inputs = func->inputs();
-      auto outputs = func->outputs();
-      vector<pair<bool, bool>> clear(outputs.size(), {true, true});
-      for (vector<CgVariablePtr>::size_type i = 0; i < inputs.size(); i++) {
-        if (f->inplace_data(i)) {
-          clear[f->inplace_data_with(i)].first = false;
-        }
+  void clear_outputs(const vector<CgVariablePtr> &outputs,
+                     const vector<ClearFlag> &output_clear_flags) {
+    for (vector<CgVariablePtr>::size_type o = 0; o < outputs.size(); ++o) {
+      if (output_clear_flags[o].data_) {
+        outputs[o]->variable()->data()->array()->clear();
       }
-      for (vector<CgVariablePtr>::size_type o = 0; o < outputs.size(); ++o) {
-        if (prohibit_clear[o] || outputs[o]->persistent()) {
-          continue;
-        }
-        if (clear[o].first) {
-          outputs[o]->variable()->data()->array()->clear();
-        }
-        if (clear[o].second) {
-          outputs[o]->variable()->grad()->array()->clear();
-        }
+      if (output_clear_flags[o].grad_) {
+        outputs[o]->variable()->grad()->array()->clear();
       }
     }
   }
@@ -373,31 +420,54 @@ class BackwardCallback {
   // Get first visit flags and prohibit clear flags;
   // The prohibit clear flags are set by query_input_flags function with inputs
   // of a previously called function.
-  pair<vector<bool>, vector<bool>>
-  query_outputs_flags(const vector<CgVariablePtr> &outputs) {
+  pair<vector<bool>, vector<ClearFlag>>
+  query_outputs_flags(const CgFunctionPtr func) {
+    auto f = func->function();
+    auto inputs = func->inputs();
+    auto outputs = func->outputs();
+
     vector<bool> first_visit(outputs.size());
-    vector<bool> prohibit_clear(outputs.size());
+    vector<ClearFlag> output_clear_flags(outputs.size(), {true, true});
     for (vector<CgVariablePtr>::size_type i = 0; i < outputs.size(); i++) {
       auto v = outputs[i];
       auto it = vseen_.find(v);
       bool first = it == vseen_.end();
       if (first) { // first visit
-        // Terminal variable always doesn't allow to clear buffers.
-        prohibit_clear[i] = true;
+        // Terminal variable always doesn't allow to clear buffers
+        // except a temporary initial gradient auto-generated by NNabla.
+        output_clear_flags[i] = {false, clear_initial_grad_};
 
         // Note that the following vseen_[v] won't be referred in the current
         // implementation because query_input_flags is called earlier than
         // query_output_flags. TODO: We may be able to call query_output_flags
         // before query_input_flags.
-        vseen_[v] = true;
+        vseen_.insert({v, ClearFlag(false, clear_initial_grad_)});
       } else {
         // Propagate prohibit_clear_inputs_buffers flag from the previous seen
-        // inputs.
-        prohibit_clear[i] = it->second;
+        // inputs data.
+        output_clear_flags[i] = it->second;
       }
+
+      if (v->persistent()) {
+        output_clear_flags[i] = ClearFlag(false, false);
+        vseen_.insert({v, ClearFlag(false, false)});
+      }
+
       first_visit[i] = first;
     }
-    return {first_visit, prohibit_clear};
+
+    if (!clear_buffer_) {
+      output_clear_flags.assign(outputs.size(), {false, false});
+    } else {
+      // Prohibit clear of in-placed outputs.
+      for (vector<CgVariablePtr>::size_type i = 0; i < inputs.size(); i++) {
+        if (f->inplace_data(i)) {
+          output_clear_flags[f->inplace_data_with(i)].data_ = false;
+        }
+      }
+    }
+
+    return {first_visit, output_clear_flags};
   }
 
   vector<bool> query_input_flags(const vector<CgVariablePtr> &inputs,
@@ -408,23 +478,29 @@ class BackwardCallback {
     for (vector<bool>::size_type i = 0; i < ret.size(); i++) {
       auto v = inputs[i];
       auto it = vseen_.find(v);
-      bool first_visit = it == vseen_.end();
+      bool first_visit = (it == vseen_.end());
       ret[i] = first_visit;
       if (first_visit) {
         bool dummy;
-        std::tie(it, dummy) = vseen_.insert({v, prohibit_clear});
+        std::tie(it, dummy) =
+            vseen_.insert({v, ClearFlag(!prohibit_clear, !prohibit_clear)});
       }
+
+      auto &clear_flag = it->second;
 
       // Prohibits clearing if any of previous function prohibits clearing
       // inputs.
-      it->second |= prohibit_clear;
+      clear_flag.data_ &= !prohibit_clear;
+      clear_flag.grad_ &= !prohibit_clear;
 
       // Propagate prohibit property from the output variables.
       if (func->function()->inplace_data(i)) {
         auto inplaced = outputs[func->function()->inplace_data_with(i)];
         auto it2 = vseen_.find(inplaced);
-        if (it2 == vseen_.end() || it2->second) {
-          it->second = true;
+        const auto &clear_flag2 = it2->second;
+        if (it2 == vseen_.end() || !clear_flag2.data_ ||
+            inplaced->persistent()) {
+          clear_flag.data_ = false;
         }
       }
     }
@@ -434,12 +510,14 @@ class BackwardCallback {
 public:
   BackwardCallback(CgFunctionPtr f, bool clear_buffer,
                    function_hook_type function_pre_hook,
-                   function_hook_type function_post_hook)
-      : clear_buffer_(clear_buffer), function_pre_hook_(function_pre_hook),
+                   function_hook_type function_post_hook,
+                   const bool clear_initial_grad)
+      : clear_buffer_(clear_buffer), clear_initial_grad_(clear_initial_grad),
+        function_pre_hook_(function_pre_hook),
         function_post_hook_(function_post_hook) {
     // Note prohibiting clearing variable buffers where terminal.
     for (auto o : f->outputs()) {
-      vseen_.insert({o, true});
+      initial_variable_set_.insert(o);
     }
   }
 
@@ -465,9 +543,9 @@ public:
 
     // Query output flags according to previous trace history.
     vector<bool> output_first_visit_flags;
-    vector<bool> output_prohibit_clear;
-    std::tie(output_first_visit_flags, output_prohibit_clear) =
-        query_outputs_flags(outputs);
+    vector<ClearFlag> output_clear_flags;
+    std::tie(output_first_visit_flags, output_clear_flags) =
+        query_outputs_flags(f);
 
     // Check if any of outputs is unseen.
     force_zero_grad_if_unseen(outputs, output_first_visit_flags);
@@ -507,7 +585,13 @@ public:
     history_.push_back(f->function()->name());
 
     // Clear outputs buffer
-    clear_output_buffers(f, output_prohibit_clear);
+    clear_outputs(outputs, output_clear_flags);
+
+    // Record when inputs and outputs are cleared.
+    // See the comment on ForwardCallback::operator().
+    if (SingletonManager::get<ClearCalledFlagRecorder>()->is_activated()) {
+      SingletonManager::get<ClearCalledFlagRecorder>()->record(f);
+    }
   }
 };
 
@@ -659,26 +743,54 @@ void CgVariable::forward(bool clear_buffer, bool clear_no_need_grad,
 void CgVariable::backward(
     NdArrayPtr grad, bool clear_buffer,
     vector<CommunicatorBackwardCallbackPtr> communicator_callbacks,
-    function_hook_type function_pre_hook,
-    function_hook_type function_post_hook) {
+    function_hook_type function_pre_hook, function_hook_type function_post_hook,
+    const bool clear_initial_grad) {
   NBLA_CHECK(parent_, error_code::value, "The variable has no parent.");
   auto clear_buffer_state =
       SingletonManager::get<GlobalClearBufferState>()->state(clear_buffer,
                                                              false);
 
+  // Initial gradient, "grad", can be cleared if it is a just temporary buffer
+  // for each backprop. This technique cannot be applied when grad == nullptr
+  // because users can give an initial gradient via another way;
+  // Variable::set_grad(). The activate_clear_initial_grad distinguish
+  // only the case where "grad" is set.
+  bool activate_clear_initial_grad = false;
+
   // Scoped context.
   // Set flags used during backward of this variable to avoid clearing
   // buffer. Also, set the grad array passed as an argument.
-  NdArrayPtr bak_grad = this->variable()->grad();
-  DestructorCallback at_scope_exit(
-      [&]() { this->variable()->set_grad(bak_grad); });
-  if (grad) {
-    this->variable()->set_grad(grad);
+  std::vector<NdArrayPtr> bak_grads;
+  std::vector<NdArrayPtr> dummy_zero_grads;
+  for (auto var : parent_->outputs()) {
+    bak_grads.push_back(var->variable()->grad());
+    NdArrayPtr dummpy_grad = NdArray::create(var->variable()->shape());
+    dummpy_grad->zero();
+    dummy_zero_grads.push_back(dummpy_grad);
+  }
+
+  DestructorCallback at_scope_exit([&]() {
+    for (std::size_t i = 0; i < parent_->outputs().size(); i++) {
+      parent_->outputs()[i]->variable()->set_grad(bak_grads[i]);
+    }
+  });
+
+  for (std::size_t i = 0; i < parent_->outputs().size(); i++) {
+    auto var = parent_->outputs()[i];
+    if (var.get() == this) {
+      if (grad) {
+        this->variable()->set_grad(grad);
+        activate_clear_initial_grad = clear_initial_grad;
+      }
+    } else {
+      var->variable()->set_grad(dummy_zero_grads[i]);
+    }
   }
 
   // Create callback
   BackwardCallback backward_callback(parent_, clear_buffer, function_pre_hook,
-                                     function_post_hook);
+                                     function_post_hook,
+                                     activate_clear_initial_grad);
 
   // Visit backward
   visit_function_backward(
@@ -758,5 +870,75 @@ CgVariablePtr CgVariable::create_deep_copy(Context ctx, bool copy_grad) {
   }
 
   return ret;
+}
+
+ClearCalledFlagRecorder::ClearCalledFlagRecorder() {}
+
+ClearCalledFlagRecorder::~ClearCalledFlagRecorder() {}
+
+bool ClearCalledFlagRecorder::is_activated() { return is_activated_; }
+
+void ClearCalledFlagRecorder::activate() { is_activated_ = true; }
+
+void ClearCalledFlagRecorder::deactivate() {
+  is_activated_ = false;
+  recorded_input_clear_flags_.clear();
+  recorded_output_clear_flags_.clear();
+}
+
+std::vector<std::pair<bool, bool>>
+ClearCalledFlagRecorder::get_variable_clear_called_flag(
+    const std::vector<CgVariablePtr> &vars) {
+  std::vector<std::pair<bool, bool>> clear_called_flags;
+
+  for (const auto var : vars) {
+    bool data_flag = var->variable()->data()->array()->clear_called();
+    bool grad_flag = var->variable()->grad()->array()->clear_called();
+    clear_called_flags.push_back(std::make_pair(data_flag, grad_flag));
+  }
+
+  return clear_called_flags;
+}
+
+void ClearCalledFlagRecorder::record(const CgFunctionPtr func) {
+  if (!is_activated()) {
+    NBLA_ERROR(error_code::runtime, "Activate recorder before record.");
+  }
+
+  recorded_input_clear_flags_.push_back(
+      get_variable_clear_called_flag(func->inputs()));
+  recorded_output_clear_flags_.push_back(
+      get_variable_clear_called_flag(func->outputs()));
+}
+
+std::vector<std::vector<std::pair<bool, bool>>>
+ClearCalledFlagRecorder::get_recorded_input_clear_flags() const {
+  return recorded_input_clear_flags_;
+}
+
+std::vector<std::vector<std::pair<bool, bool>>>
+ClearCalledFlagRecorder::get_recorded_output_clear_flags() const {
+  return recorded_output_clear_flags_;
+}
+
+// Pasing empty arguments because this class is not defined by NBLA_API.
+NBLA_INSTANTIATE_SINGLETON(, ClearCalledFlagRecorder);
+
+void c_activate_clear_called_flag_recorder() {
+  SingletonManager::get<ClearCalledFlagRecorder>()->activate();
+}
+
+void c_deactivate_clear_called_flag_recorder() {
+  SingletonManager::get<ClearCalledFlagRecorder>()->deactivate();
+}
+
+vector<vector<pair<bool, bool>>> c_get_input_clear_called_flags() {
+  return SingletonManager::get<ClearCalledFlagRecorder>()
+      ->get_recorded_input_clear_flags();
+}
+
+vector<vector<pair<bool, bool>>> c_get_output_clear_called_flags() {
+  return SingletonManager::get<ClearCalledFlagRecorder>()
+      ->get_recorded_output_clear_flags();
 }
 }

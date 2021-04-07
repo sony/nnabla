@@ -46,6 +46,6 @@ Outputs:
 */
 NBLA_DEFINE_TRANSFORM_UNARY_1(Sign,
                               (x > (T)0) ? (T)1 : ((x < (T)0) ? (T)-1 : (T)a0),
-                              dy, false, float);
+                              dy, false, false, float);
 }
 #endif

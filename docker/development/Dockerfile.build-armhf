@@ -78,3 +78,5 @@ RUN mv /tmp/deps/r.txt /tmp/deps/requirements.txt
 
 RUN pip3 install -r /tmp/deps/requirements.txt
 RUN pip3 install -r /tmp/deps/test_requirements.txt
+
+ENV PATH /tmp/.local/bin:$PATH

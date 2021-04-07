@@ -20,13 +20,10 @@ REM Environment
 CALL %~dp0tools\env.bat %1 || GOTO :error
 
 REM Execute test
-IF EXIST %nnabla_test_venv_folder% RMDIR /s /q %nnabla_test_venv_folder%
-python -m venv --system-site-packages %nnabla_test_venv_folder% || GOTO :error
-
-CALL %nnabla_test_venv_folder%\scripts\activate.bat || GOTO :error
 
 FOR /f %%i IN ('dir /b /s %nnabla_build_wheel_folder%\dist\nnabla-*.whl') DO set WHL=%%~fi
 pip install %WHL% || GOTO :error
+pip install pytest
 python -m pytest %~dp0..\..\python\test || GOTO :error
 
 CALL deactivate.bat  || GOTO :error

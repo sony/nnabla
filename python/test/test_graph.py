@@ -18,7 +18,7 @@ import numpy as np
 import nnabla as nn
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
-from nnabla.testing import assert_allclose
+from nnabla.testing import assert_allclose, clear_called_flag_recorder
 
 
 @pytest.mark.parametrize("seed", [313])
@@ -402,3 +402,350 @@ def test_no_need_grad_forward_double():
     x.data.fill(1)
     a.forward(clear_no_need_grad=True)
     assert np.isclose(a.d, 1.0)
+
+
+class TestClearInput():
+
+    def check_input_data_clear_called_flags(self, answer):
+        result = clear_called_flag_recorder.get_input_clear_called_flags()
+        assert len(result) == len(answer)
+        for i, flags in enumerate(answer):
+            assert len(result[i]) == len(flags)
+            for j, flag in enumerate(flags):
+                assert flag == result[i][j][0]
+
+    def setup_method(self):
+        clear_called_flag_recorder.activate_clear_called_flag_recorder()
+
+    def teardown_method(self):
+        clear_called_flag_recorder.deactivate_clear_called_flag_recorder()
+
+    # Test for clearing input in a network of two layers.
+    def test_clear_input_if_no_need_grad0(self):
+        x1 = nn.Variable([1, 5], need_grad=True)
+
+        xx1 = F.identity(x1)
+        y1 = F.add_scalar(xx1)
+
+        answer = []
+        answer.append([False])
+        answer.append([True])
+
+        y1.forward(clear_no_need_grad=True)
+
+        self.check_input_data_clear_called_flags(answer)
+
+    # Test for clearing input in a network of three layers.
+    def test_clear_input_if_no_need_grad1(self):
+        x1 = nn.Variable([1, 5], need_grad=True)
+
+        xx1 = F.identity(x1)
+        y1 = F.add_scalar(xx1)
+        y2 = F.add_scalar(y1)
+
+        answer = []
+        answer.append([False])
+        answer.append([True])
+        answer.append([True])
+
+        y2.forward(clear_no_need_grad=True)
+
+        self.check_input_data_clear_called_flags(answer)
+
+    # Test the case where an input is not cleared when it is required for backward at the previous layer function.
+    def test_clear_input_if_no_need_grad2(self):
+        x1 = nn.Variable([1, 5], need_grad=True)
+
+        xx1 = F.identity(x1)  # (1)
+        y1 = F.tanh(xx1)  # (2)
+        y2 = F.add_scalar(y1)  # (3)
+
+        answer = []
+        answer.append([False])
+        answer.append([True])
+        answer.append([False])
+        # y1 must not be clear after (3) because y1 is required for backward of (2).
+
+        y2.forward(clear_no_need_grad=True)
+
+        self.check_input_data_clear_called_flags(answer)
+
+    # Test for inplaced variable in a network of two layers.
+    def test_clear_input_if_no_need_grad_inplace0(self):
+        x1 = nn.Variable([1, 5], need_grad=True)
+
+        xx1 = F.identity(x1)
+        y1 = F.add_scalar(xx1, inplace=True)
+
+        answer = []
+        answer.append([False])
+        answer.append([False])
+
+        y1.forward(clear_no_need_grad=True)
+
+        self.check_input_data_clear_called_flags(answer)
+
+    # Test for inplaced variable in a network of three layers.
+    def test_clear_input_if_no_need_grad_inplace1(self):
+        x1 = nn.Variable([1, 5], need_grad=True)
+
+        xx1 = F.identity(x1)
+        y1 = F.add_scalar(xx1, inplace=True)
+        y2 = F.add_scalar(y1)
+
+        answer = []
+        answer.append([False])
+        answer.append([False])
+        answer.append([False])
+
+        y2.forward(clear_no_need_grad=True)
+        self.check_input_data_clear_called_flags(answer)
+
+    # Test for a variable shared with two layer functions.
+    # Check if it is cleared after the both functions finish to use it.
+    def test_clear_input_if_no_need_grad_branch0(self):
+        x1 = nn.Variable([1, 5], need_grad=True)
+        x2 = nn.Variable([1, 5], need_grad=True)
+
+        xx1 = F.identity(x1)
+        y1 = F.add_scalar(xx1)  # (1)
+        y2 = F.add_scalar(xx1)  # (2)
+        y3 = F.add2(y1, y2)  # (3)
+
+        answer = []
+        answer.append([False])
+        answer.append([False])  # (1) does not clear xx1
+        answer.append([True])  # (2) clears xx1
+        answer.append([True, True])
+
+        y3.forward(clear_no_need_grad=True)
+        self.check_input_data_clear_called_flags(answer)
+
+    # Test for a variable shared with mul2 and add2.
+    # add2 does not require it as input for backward, but mul2 does.
+    def test_clear_input_if_no_need_grad_branch1(self):
+        x1 = nn.Variable([1, 5], need_grad=True)
+        x2 = nn.Variable([1, 5], need_grad=True)
+        x3 = nn.Variable([1, 5], need_grad=True)
+
+        xx1 = F.identity(x1)
+        xx2 = F.identity(x2)
+        y1 = F.mul2(xx1, xx2)  # (1)
+        xx3 = F.identity(x3)
+        y2 = F.add2(xx2, xx3)  # (2)
+        y3 = F.add2(y1, y2)  # (3)
+
+        answer = []
+        answer.append([False])
+        answer.append([False])
+        answer.append([False, False])  # (1)
+        answer.append([False])
+        answer.append([False, True])  # (2) use xx2 in backward
+        answer.append([True, True])  # (3)
+
+        y3.forward(clear_no_need_grad=True)
+        self.check_input_data_clear_called_flags(answer)
+
+    # Test for inplace after branching.
+    def test_clear_input_if_no_need_grad_branch2(self):
+        x1 = nn.Variable([1, 5], need_grad=True)
+
+        xx1 = F.identity(x1)
+        y1 = F.add_scalar(xx1)
+        y2 = F.add_scalar(y1, inplace=True)
+        z1 = F.add_scalar(xx1)
+        z2 = F.add_scalar(z1)
+        y3 = F.add2(y2, z2)
+
+        answer = []
+        answer.append([False])
+        answer.append([False])
+        answer.append([False])
+        answer.append([True])
+        answer.append([True])
+        answer.append([False, True])
+
+        y3.forward(clear_no_need_grad=True)
+        self.check_input_data_clear_called_flags(answer)
+
+    # Test for only clearing bias in convolution.
+    def test_clear_input_if_no_need_grad_convolution(self):
+        x1 = nn.Variable([1, 1, 2], need_grad=True)
+        x2 = nn.Variable([1, 1, 2], need_grad=True)
+        x3 = nn.Variable([1], need_grad=True)
+
+        inp = F.identity(x1)
+        weight = F.identity(x2)
+        bias = F.identity(x3)
+        y = F.convolution(inp, weight, bias)  # (1)
+
+        answer = []
+        answer.append([False])
+        answer.append([False])
+        answer.append([False])
+        answer.append([False, False, True])  # (1) clears bias
+
+        y.forward(clear_no_need_grad=True)
+        self.check_input_data_clear_called_flags(answer)
+
+    # Test for only clearing beta in batch_normalization.
+    @pytest.mark.parametrize("batch_stat", [False, True])
+    def test_clear_input_if_no_need_grad_batch_normalization(self, batch_stat):
+        x1 = nn.Variable([1, 1, 2], need_grad=True)
+        x2 = nn.Variable([1, 1, 1], need_grad=True)
+        x3 = nn.Variable([1, 1, 1], need_grad=True)
+        x4 = nn.Variable([1, 1, 1], need_grad=True)
+        x5 = nn.Variable([1, 1, 1], need_grad=True)
+
+        x = F.identity(x1)
+        beta = F.identity(x2)
+        gamma = F.identity(x3)
+        if batch_stat:
+            y = F.batch_normalization(
+                x, beta, gamma, x4, x5, batch_stat=batch_stat)
+        else:
+            mean = F.identity(x4)
+            var = F.identity(x5)
+            y = F.batch_normalization(
+                x, beta, gamma, mean, var, batch_stat=batch_stat)
+
+        answer = []
+        answer.append([False])
+        answer.append([False])
+        answer.append([False])
+        if not batch_stat:
+            answer.append([False])
+            answer.append([False])
+        answer.append([False, True, False, False, False])
+
+        y.forward(clear_no_need_grad=True)
+        self.check_input_data_clear_called_flags(answer)
+
+
+class TestClearOutputGrad():
+
+    def check_grad_cleared_flags(self, answer):
+        result = clear_called_flag_recorder.get_output_clear_called_flags()
+        assert len(result) == len(answer)
+        for i, flags in enumerate(answer):
+            assert len(result[i]) == len(flags)
+            for j, flag in enumerate(flags):
+                assert flag == result[i][j][1]
+
+    def setup_method(self):
+        clear_called_flag_recorder.activate_clear_called_flag_recorder()
+
+    def teardown_method(self):
+        clear_called_flag_recorder.deactivate_clear_called_flag_recorder()
+
+    # Test for the type of grad given to backward.
+    @pytest.mark.parametrize("grad", [1, None, np.ndarray([1]), nn.NdArray([1])])
+    def test_clear_output_grad_argument(self, grad):
+        x1 = nn.Variable([1], need_grad=True)
+
+        xx1 = F.identity(x1)
+        y1 = F.add_scalar(xx1)
+
+        answer_grad = []
+        if grad is None or isinstance(grad, nn.NdArray):
+            answer_grad.append([False])  # y1
+        else:
+            answer_grad.append([True])  # y1
+        answer_grad.append([True])  # xx1
+
+        y1.forward(clear_no_need_grad=True)
+        clear_called_flag_recorder.deactivate_clear_called_flag_recorder()
+        clear_called_flag_recorder.activate_clear_called_flag_recorder()
+        y1.backward(clear_buffer=True, grad=grad)
+
+        self.check_grad_cleared_flags(answer_grad)
+        assert y1.grad.clear_called == False
+
+    # Test for an inplaced variable.
+    def test_clear_output_grad_inplace(self):
+        x1 = nn.Variable([1], need_grad=True)
+
+        xx1 = F.identity(x1)
+        y1 = F.add_scalar(xx1, inplace=True)
+        y2 = F.add_scalar(y1)
+
+        answer_grad = []
+        answer_grad.append([True])
+        answer_grad.append([True])
+        answer_grad.append([True])
+
+        y2.forward(clear_no_need_grad=True)
+        clear_called_flag_recorder.deactivate_clear_called_flag_recorder()
+        clear_called_flag_recorder.activate_clear_called_flag_recorder()
+        y2.backward(clear_buffer=True)
+
+        self.check_grad_cleared_flags(answer_grad)
+
+    # Test for a variable shared with two layer functions.
+    def test_clear_output_grad_shared_variable(self):
+        x1 = nn.Variable([1], need_grad=True)
+
+        xx1 = F.identity(x1)
+        y1 = F.add_scalar(xx1)
+        y2 = F.add_scalar(xx1)
+        y3 = F.add2(y1, y2)
+
+        answer_grad = []
+        answer_grad.append([True])
+        answer_grad.append([True])
+        answer_grad.append([True])
+        answer_grad.append([True])
+
+        y3.forward(clear_no_need_grad=True)
+        clear_called_flag_recorder.deactivate_clear_called_flag_recorder()
+        clear_called_flag_recorder.activate_clear_called_flag_recorder()
+        y3.backward(clear_buffer=True)
+
+        self.check_grad_cleared_flags(answer_grad)
+
+    # Test for a persistent variable.
+    def test_clear_output_grad_persistent(self):
+        x1 = nn.Variable([1], need_grad=True)
+
+        xx1 = F.identity(x1)
+        y1 = F.add_scalar(xx1)
+        y2 = F.add_scalar(y1)
+
+        xx1.persistent = True
+        y2.persistent = True
+
+        answer_grad = []
+        answer_grad.append([False])  # y2
+        answer_grad.append([True])  # y1
+        answer_grad.append([False])  # xx1
+
+        y2.forward(clear_no_need_grad=True)
+        clear_called_flag_recorder.deactivate_clear_called_flag_recorder()
+        clear_called_flag_recorder.activate_clear_called_flag_recorder()
+        y2.backward(clear_buffer=True)
+
+        self.check_grad_cleared_flags(answer_grad)
+
+    # Test for the input variables of sink.
+    # In the case where Function::prohibit_clear_input_buffers returns true,
+    # these inputs must not be cleared from any function.
+    def test_clear_output_grad_prohibit_clear_input(self):
+        x1 = nn.Variable([1], need_grad=True)
+
+        xx1 = F.identity(x1)
+        y1 = F.add_scalar(xx1)
+        y2 = F.add_scalar(xx1)
+        y3 = F.sink(y1, y2)
+
+        answer_grad = []
+        answer_grad.append([True])  # y3
+        answer_grad.append([False])  # y2
+        answer_grad.append([False])  # y1
+        answer_grad.append([True])  # xx1
+
+        y3.forward(clear_no_need_grad=True)
+        clear_called_flag_recorder.deactivate_clear_called_flag_recorder()
+        clear_called_flag_recorder.activate_clear_called_flag_recorder()
+        y3.backward(clear_buffer=True)
+
+        self.check_grad_cleared_flags(answer_grad)

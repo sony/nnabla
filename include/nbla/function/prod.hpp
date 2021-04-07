@@ -56,6 +56,7 @@ protected:
   NBLA_API virtual void
   backward_impl_reduce_prod(const T *dy, const T *x, const T *y, T *dx,
                             int outer_size, int reduction_size, bool accum);
+  virtual bool grad_depends_input_data_impl(int i, int j) const { return true; }
 };
 }
 #endif

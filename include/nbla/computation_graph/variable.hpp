@@ -263,6 +263,9 @@ public:
       @param     communicator_callbacks The callback functions invoked when 1)
                  backward computation of each function is finished and
                  2) all backward computation is finished.
+      @param     clear_initial_grad If true, the input parameter, grad, will be
+                 cleared during backward propagation. This flag is only
+                 activated when grad is set.
 
       @seealso set_persistent() to prevent a specific variable to be cleared
                during forward propagation.
@@ -271,7 +274,8 @@ public:
   backward(NdArrayPtr grad = nullptr, bool clear_buffer = false,
            vector<CommunicatorBackwardCallbackPtr> communicator_callbacks = {},
            function_hook_type pre_callback = nullptr,
-           function_hook_type post_callback = nullptr);
+           function_hook_type post_callback = nullptr,
+           const bool clear_initial_grad = false);
 
   /**
   */
@@ -351,5 +355,61 @@ public:
 /** shared_ptr typedef of CGVariable
  */
 typedef CgVariable::Ptr CgVariablePtr;
+
+class SingletonManager; // Forward declaration for friend
+
+/** ClearCalledFlagRecorder is a singleton class to record and collect
+ * the SyncedArray::clear_called flags during forward propagation.
+*/
+class ClearCalledFlagRecorder {
+
+  bool is_activated_{false};
+
+  std::vector<std::vector<std::pair<bool, bool>>> recorded_input_clear_flags_;
+  std::vector<std::vector<std::pair<bool, bool>>> recorded_output_clear_flags_;
+
+public:
+  ~ClearCalledFlagRecorder();
+
+  /** Check if this recorder is activated. */
+  bool is_activated();
+
+  /** Activate recording clear flags. */
+  void activate();
+
+  /** Deactivate recording clear flags and delete recorded flags. */
+  void deactivate();
+
+  /** Record clear flags from given function. */
+  void record(const CgFunctionPtr func);
+
+  /** Get recorded clear flags. */
+  std::vector<std::vector<std::pair<bool, bool>>>
+  get_recorded_input_clear_flags() const;
+
+  /** Get recorded clear flags. */
+  std::vector<std::vector<std::pair<bool, bool>>>
+  get_recorded_output_clear_flags() const;
+
+private:
+  friend SingletonManager; // needs forward declaration
+                           // Never called by users.
+  ClearCalledFlagRecorder();
+
+  std::vector<std::pair<bool, bool>>
+  get_variable_clear_called_flag(const std::vector<CgVariablePtr> &vars);
+
+  DISABLE_COPY_AND_ASSIGN(ClearCalledFlagRecorder);
+};
+
+NBLA_API void c_activate_clear_called_flag_recorder();
+
+NBLA_API void c_deactivate_clear_called_flag_recorder();
+
+NBLA_API std::vector<std::vector<std::pair<bool, bool>>>
+c_get_input_clear_called_flags();
+
+NBLA_API std::vector<std::vector<std::pair<bool, bool>>>
+c_get_output_clear_called_flags();
 }
 #endif

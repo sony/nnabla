@@ -84,7 +84,7 @@ RUN mkdir /tmp/deps \
 RUN python3 -m pip install --upgrade pip
 RUN echo "[global]" >/etc/pip.conf
 RUN echo "extra-index-url=https://www.piwheels.org/simple" >> /etc/pip.conf
-RUN python3 -m pip install --no-cache-dir numpy
+RUN python3 -m pip install --no-cache-dir numpy==1.19.5
 RUN python3 -m pip install --no-cache-dir scipy\<1.4
 RUN python3 -m pip install --no-cache-dir \
     autopep8 \
@@ -99,3 +99,5 @@ RUN python3 -m pip install --no-cache-dir \
     requests \
     tqdm
 RUN python3 -m pip install ipython
+
+ENV PATH /tmp/.local/bin:$PATH

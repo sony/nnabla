@@ -82,23 +82,23 @@ protected:
   int group_;
   bool channel_last_;
   vector<int> kernel_;
-  int channels_i_, channels_o_, channels_g_;
+  Size_t channels_i_, channels_o_, channels_g_;
   vector<int> spatial_shape_i_;
   vector<int> spatial_shape_o_;
   int spatial_dims_;
-  int outer_size_;
-  int inner_size_i_;
-  int inner_size_o_;
-  int inner_size_k_;
+  Size_t outer_size_;
+  Size_t inner_size_i_;
+  Size_t inner_size_o_;
+  Size_t inner_size_k_;
   Variable col_;
 
   // Variables for convolution by matrix multiplication
-  int row_w_;
-  int col_w_;
-  int row_col_;
-  int col_col_;
-  int row_y_;
-  int col_y_;
+  Size_t row_w_;
+  Size_t col_w_;
+  Size_t row_col_;
+  Size_t col_col_;
+  Size_t row_y_;
+  Size_t col_y_;
 
 public:
   Convolution(const Context &ctx, int base_axis, const vector<int> &pad,
@@ -134,6 +134,15 @@ protected:
                                       const Variables &outputs,
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
+  virtual bool grad_depends_input_data_impl(int i, int j) const {
+    if (i == 0 && j == 1) {
+      return true;
+    }
+    if (i == 1 && j == 0) {
+      return true;
+    }
+    return false;
+  }
 };
 }
 #endif

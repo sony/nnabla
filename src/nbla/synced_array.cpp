@@ -52,7 +52,7 @@ namespace nbla {
 // Constructor
 SyncedArray::SyncedArray(const Size_t size)
     : head_{"", "", dtypes::FLOAT}, zeroing_(false), filling_(false),
-      modification_count_(0) {
+      modification_count_(0), clear_called_(false) {
   size_ = size;
 }
 
@@ -78,6 +78,7 @@ shared_ptr<Array> SyncedArray::cast_sp(dtypes dtype, const Context &ctx,
   // 3. Increment modification count to let solver to know whether it's modified
   // or not
   modification_count_++;
+  clear_called_ = false;
 
   // 4. Call a callback function
   const bool off_recording = (bool)(async_flags & AsyncFlag::OFFREC);
@@ -99,6 +100,8 @@ shared_ptr<const Array> SyncedArray::get_sp(dtypes dtype, const Context &ctx,
                                             const int async_flags) {
   // This array is created at first time.
   const bool first_creation = (get_num_arrays() == 0);
+
+  clear_called_ = false;
 
   ArrayDesc desc =
       sync(dtype, ctx, false, async_flags); // get() does not change head.
@@ -130,6 +133,7 @@ void SyncedArray::zero() {
   clear();
   zeroing_ = true;
   modification_count_++;
+  clear_called_ = false;
 }
 
 void SyncedArray::fill(float value) {
@@ -137,9 +141,12 @@ void SyncedArray::fill(float value) {
   filling_ = true;
   fill_value_ = value;
   modification_count_++;
+  clear_called_ = false;
 }
 
 size_t SyncedArray::modification_count() const { return modification_count_; }
+
+bool SyncedArray::clear_called() const { return clear_called_; }
 
 inline string create_key(const dtypes &dtype, const Context &ctx) {
   // Array classes in the same array group are identified in SyncedArray.
@@ -227,6 +234,7 @@ void SyncedArray::clear_all_array() {
   array_.clear();
   this->clear_flags();
   modification_count_ = 0;
+  clear_called_ = true;
 }
 
 void SyncedArray::clear_flags() {

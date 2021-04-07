@@ -44,6 +44,6 @@ Outputs:
  */
 NBLA_DEFINE_TRANSFORM_UNARY(
     HardSigmoid, x > (T)2.5 ? (T)1 : x < (T)-2.5 ? (T)0 : (T)0.2 * x + (T)0.5,
-    x <= (T)2.5 && (T)-2.5 <= x ? dy * (T)0.2 : (T)0, false);
+    x <= (T)2.5 && (T)-2.5 <= x ? dy * (T)0.2 : (T)0, false, true);
 }
 #endif

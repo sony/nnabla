@@ -40,6 +40,6 @@ Outputs:
 \ingroup FunctionImplGrp
  */
 NBLA_DEFINE_TRANSFORM_UNARY_1(MaximumScalar, (x > (T)a0) ? x : (T)a0,
-                              (x > (T)a0) ? dy : (T)0, false, double);
+                              (x > (T)a0) ? dy : (T)0, false, true, double);
 }
 #endif

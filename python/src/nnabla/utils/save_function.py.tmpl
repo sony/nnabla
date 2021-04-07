@@ -38,6 +38,8 @@ def arg_field(name, arg):
         return "f.{}_param.{}.dim.extend({})".format(func['snake_name'], name, val)
     if arg['type'] == 'repeated int64':
         return "f.{}_param.{}.extend({})".format(func['snake_name'], name, val)
+    if arg['type'] == 'repeated float':
+        return "f.{}_param.{}.extend({})".format(func['snake_name'], name, val)
     if arg['type'] == 'bool':
         return "f.{}_param.{} = bool({})".format(func['snake_name'], name, val)
     return "f.{}_param.{} = {}".format(func['snake_name'], name, val)

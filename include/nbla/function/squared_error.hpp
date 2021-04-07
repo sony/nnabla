@@ -40,6 +40,6 @@ Outputs:
  */
 NBLA_DEFINE_TRANSFORM_BINARY(SquaredError, (x0 - x1) * (x0 - x1),
                              (T)2 * dy * (x0 - x1), (T)-2 * dy * (x0 - x1),
-                             false, false);
+                             false, false, true, true);
 }
 #endif

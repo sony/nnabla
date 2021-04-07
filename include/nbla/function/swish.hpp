@@ -48,6 +48,6 @@ https://arxiv.org/abs/1710.05941
 NBLA_DEFINE_TRANSFORM_UNARY(Swish, x / ((T)1 + std::exp(-x)),
                             dy *(y +
                                  ((T)1 / ((T)1 + std::exp(-x))) * ((T)1 - y)),
-                            true);
+                            true, true);
 }
 #endif

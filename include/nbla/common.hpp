@@ -56,8 +56,8 @@ inline Size_t compute_size_by_shape(const Shape_t &shape, Size_t axis = 0) {
              "axis must be less than or equal to size of shape. "
              "axis: %ld > size of shape: %ld.",
              axis, shape.size());
-  return std::accumulate(shape.begin() + axis, shape.end(), 1,
-                         std::multiplies<int>());
+  return std::accumulate(shape.begin() + axis, shape.end(), (Size_t)1,
+                         std::multiplies<Size_t>());
 }
 
 /** Helper for getting strides of C contiguous memory arrangement.

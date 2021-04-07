@@ -38,6 +38,6 @@ Outputs:
 @tparam T Data type for computation.
 \ingroup FunctionImplGrp
  */
-NBLA_DEFINE_TRANSFORM_UNARY(Round, std::round(x), dy, false);
+NBLA_DEFINE_TRANSFORM_UNARY(Round, std::round(x), dy, false, false);
 }
 #endif

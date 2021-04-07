@@ -39,6 +39,6 @@ Outputs:
  */
 NBLA_DEFINE_TRANSFORM_BINARY_INPLACE(Mul2, x0 *x1, dy *x1,
                                      inplace ? dy *y / x1 : dy *x0, false,
-                                     false);
+                                     false, true, true);
 }
 #endif

@@ -79,3 +79,24 @@ def test_nd_array_data(value):
         assert a.data.dtype == np.asarray(value).dtype
     else:
         assert a.data.dtype == np.float32
+
+
+def test_clear_called():
+    a = nn.NdArray(1)
+    assert a.clear_called == False
+    a.fill(3)
+    assert a.clear_called == False
+    a.clear()
+    assert a.clear_called == True
+
+    a.fill(3)
+    assert a.clear_called == False
+    a.clear()
+    assert a.clear_called == True
+    a.zero()
+    assert a.clear_called == False
+    a.clear()
+    assert a.clear_called == True
+
+    a.data[0] = -1
+    assert a.clear_called == False

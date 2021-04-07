@@ -52,6 +52,6 @@ http://arxiv.org/abs/1511.07289
 */
 NBLA_DEFINE_TRANSFORM_UNARY_1(ELU, x >= (T)0 ? x : (T)a0 * (std::exp(x) - (T)1),
                               x >= (T)0 ? dy : dy * (T)a0 * std::exp(x), false,
-                              double);
+                              true, double);
 }
 #endif

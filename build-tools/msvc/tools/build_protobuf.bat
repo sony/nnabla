@@ -47,6 +47,7 @@ CD build-folder
 cmake.exe -G "%generate_target%" -Dprotobuf_MSVC_STATIC_RUNTIME=OFF -Dprotobuf_BUILD_TESTS=OFF ..\cmake || GOTO :error
 cmake.exe --build . --config %build_type% || GOTO :error
 
+
 :error
 ECHO failed with error code %errorlevel%.
 
