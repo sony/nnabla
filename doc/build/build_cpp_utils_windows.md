@@ -6,12 +6,17 @@
 ### Chocolatey
 
 ```bat
-    choco install cmake git miniconda3 VisualCppBuildTools
+    choco install cmake git VisualCppBuildTools
 ```
 
 
 ```bat
-    choco install cmake git miniconda3 visualstudio2019-workload-vctools
+    choco install cmake git visualstudio2019-workload-vctools
+```
+
+
+```bat
+    choco install -y python3 --version=3.6.8
 ```
 
 ## Build
