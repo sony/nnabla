@@ -158,6 +158,15 @@ nnabla-install:
 	    pip install $$whl; \
 	fi;
 
+.PHONY: nnabla-converter-install
+nnabla-converter-install:
+	-pip uninstall -y nnabla-converter
+	whl='$(shell find $(BUILD_DIRECTORY_WHEEL)/dist/ -type f -name nnabla_converter-*.whl)'; \
+	if [ ! -z $$whl ] && [ -f $$whl ];\
+	then \
+	    pip install $$whl; \
+	fi;
+
 ########################################################################################################################
 # Shell (for rapid development)
 .PHONY: nnabla-shell
@@ -180,7 +189,7 @@ nnabla-test:
 			-f build-tools/make/build.mk, nnabla-test-local)
 
 .PHONY: nnabla-test-local
-nnabla-test-local: nnabla-install
+nnabla-test-local: nnabla-install nnabla-converter-install
 	@cd $(BUILD_DIRECTORY_WHEEL) \
 	&& PATH=$(PYTEST_PATH_EXTRA):$(PATH) \
 	LD_LIBRARY_PATH=$(PYTEST_LD_LIBRARY_PATH_EXTRA):$(LD_LIBRARY_PATH) \
