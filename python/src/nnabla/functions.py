@@ -187,7 +187,7 @@ def norm(x, p=None, axis=None, keepdims=False):
     return norm_base(x, p, axis, keepdims)
 
 
-def norm_normalization(x, p=None, axes=None, eps=None):
+def norm_normalization(x, p=None, axes=None, eps=1e-12):
     r"""
     Norm normalization.
 
