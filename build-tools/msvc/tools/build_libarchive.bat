@@ -34,7 +34,7 @@ IF EXIST %libarchive_folder%.zip (
 )
 
 
-powershell "iwr %nnabla_iwr_options% -Uri https://github.com/libarchive/libarchive/archive/v3.4.3.zip -OutFile %libarchive_folder%.zip" || GOTO :error
+powershell "[Net.ServicePointManager]::SecurityProtocol +='tls12'; iwr %nnabla_iwr_options% -Uri https://github.com/libarchive/libarchive/archive/v3.4.3.zip -OutFile %libarchive_folder%.zip" || GOTO :error
 
 RMDIR /S /Q %libarchive_folder%
 CD %third_party_folder%
