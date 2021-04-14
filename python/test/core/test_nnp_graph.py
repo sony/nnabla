@@ -57,7 +57,7 @@ def nnp_check(nnp, side, callback=None):
         for k in sorted(network.variables.keys()):
             print('variables', side, k, '{}, {}'.format(
                 network.variables[k].shape, network.variables[k].d.shape))
-            yield (k, network.variables[k])
+            yield (k, network.variables[k], network.variables[k].name)
 
         for k in sorted(network.inputs.keys()):
             print('inputs', side, k, '{}, {}'.format(
@@ -77,9 +77,10 @@ def compare_nn_variable_metadata(ref_v, v):
 
 
 def compare_nn_variable_with_name(ref_v, v):
-    ref_v_name, ref_var = ref_v
-    v_name, var = v
+    ref_v_name, ref_var, ref_v_dot_name = ref_v
+    v_name, var, v_dot_name = v
     assert ref_v_name == v_name
+    assert v_dot_name == ref_v_dot_name
     assert ref_var.d.shape == var.d.shape
     assert ref_var.need_grad == var.need_grad
     if ref_v_name[-2:] in ['/b', '/W']:
