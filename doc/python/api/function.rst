@@ -221,6 +221,7 @@ Array Manipulation
 .. autofunction:: broadcast
 .. autofunction:: broadcast_to
 .. autofunction:: tile
+.. autofunction:: meshgrid
 .. autofunction:: flip
 .. autofunction:: shift
 .. autofunction:: sort

@@ -361,6 +361,9 @@ BroadcastTo:
 Tile:
   float: [float]
   half: [Half]
+Meshgrid:
+  float: [float]
+  # half: [Half]
 OneHot:
   float: [int, float]
   half: [int, Half]

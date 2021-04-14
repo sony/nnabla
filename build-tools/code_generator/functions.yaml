@@ -4466,20 +4466,46 @@ Array Manipulation:
     function_ids:
       Empty: 85
     c_runtime: support
-  BatchInv:
-    snake_name: batch_inv
+  Meshgrid:
+    snake_name: meshgrid
     doc: |2
 
-      Returns an array of inverted matrix
+      Return coordinate matrices from coordinate vectors. Given N 1-D arrays, this function returns N-D coordinate arrays for vectorized evaluations on an N-D grid.
+      Example: 
+        >>> x,y = F.meshgrid(F.arange(0,3), F.arange(0,2))
+        >>> x.d
+        array([[0., 1., 2.],
+               [0., 1., 2.]], dtype=float32)
+       >>> y.d 
+       array([[0., 0., 0.],
+              [1., 1., 1.]], dtype=float32)
+
+       >>> i,j = F.meshgrid(F.arange(0,3), F.arange(0,2), ij_indexing=True)
+       >>> i.d 
+       array([[0., 0.],
+              [1., 1.],
+              [2., 2.]], dtype=float32)
+       >>> j.d 
+       array([[0., 1.],
+              [0., 1.],
+              [0., 1.]], dtype=float32)
     inputs:
       x:
-        doc: batched N-D array
+        doc: N-D arrays.
+        variadic: true
+    arguments:
+      ij_indexing:
+        doc: If set true (Matrix ('ij') indexing ), the broadcasting dimensions are
+          swapped. Default is False (Cartesian ('xy') indexing ).
+        type: bool
+        default: 'False'
     outputs:
       y:
-        doc: batched N-D array of inverted matrix
+        doc: N-D arrays
+        variadic: true
     c_runtime: not support
     function_ids:
-      Empty: 275
+      B: 334
   BatchDet:
     snake_name: batch_det
     doc: |2
@@ -4499,6 +4525,20 @@ Array Manipulation:
     c_runtime: not support
     function_ids:
       Empty: 276
+  BatchInv:
+    snake_name: batch_inv
+    doc: |2
+
+      Returns an array of inverted matrix
+    inputs:
+      x:
+        doc: batched N-D array
+    outputs:
+      y:
+        doc: batched N-D array of inverted matrix
+    c_runtime: not support
+    function_ids:
+      Empty: 275
   BatchLogdet:
     snake_name: batch_logdet
     doc: |2

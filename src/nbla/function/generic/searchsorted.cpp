@@ -60,7 +60,7 @@ size_t search(const T *sorted_sequence, const T value, int start, int end,
   if (value < sorted_sequence[start])
     return start;
 
-  if (!right_ and value == sorted_sequence[start])
+  if (!right_ && value == sorted_sequence[start])
     return start;
 
   if (end - start <= 1)
