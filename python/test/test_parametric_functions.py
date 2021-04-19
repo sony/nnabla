@@ -1611,7 +1611,7 @@ def test_pf_weight_norm_execution(g_rng, func):
 
     x = nn.Variable.from_numpy_array(g_rng.randn(2, 4, 5, 5))
     if func == "conv":
-        # assume channle first
+        # assume channel first
         y = PF.convolution(x, 8, (3, 3), apply_w=wn_clbk)
     elif func == "affine":
         y = PF.affine(x, 8, apply_w=wn_clbk)
