@@ -53,6 +53,7 @@ from .callback import (
 from .core.module import Module
 from .core import graph_def
 from .core.graph_def import ProtoVariable
+from .core.sequential import Sequential
 
 from .random import seed
 
