@@ -61,17 +61,16 @@ def auread(path, channel_first=False, raw_format_param=None):
     Returns:
          numpy.ndarray
     """
-    from io import BytesIO
-    if isinstance(path, str):
-        audio_format = os.path.splitext(path)[-1][1:]
-        if audio_format == 'raw':
-            audio = AudioSegment.from_file(
-                path, format=audio_format, **raw_format_param)
-        else:
-            audio = AudioSegment.from_file(path, format=audio_format)
-    elif isinstance(path, BytesIO):
-        # This is a temporary solution and will be refactored in the near future.
-        audio = AudioSegment.from_file(path, 'wav')
+
+    _auread_before(path, raw_format_param)
+
+    filepath = path if isinstance(path, str) else path.name
+    audio_format = os.path.splitext(filepath)[-1][1:]
+    if audio_format == 'raw':
+        audio = AudioSegment.from_file(
+            path, format=audio_format, **raw_format_param)
+    else:
+        audio = AudioSegment.from_file(path, format=audio_format)
 
     audio_arr = get_nparray_from_pydub(audio)
     if audio_arr.dtype.itemsize == 1 and audio_format == 'wav':
