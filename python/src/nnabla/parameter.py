@@ -35,6 +35,7 @@ warnings.simplefilter('ignore', category=FutureWarning)
 
 current_scope = OrderedDict()
 root_scope = current_scope
+current_no_grad = False
 
 
 def get_current_parameter_scope():
@@ -42,6 +43,56 @@ def get_current_parameter_scope():
     """
     global current_scope
     return current_scope
+
+
+@contextmanager
+def no_grad(no_grad_=True):
+    """No gradients for the whole network.
+
+    No gradients are required when creating a network, such that when the forward pass is executed,
+    all intermediate buffers except for the leafs in the network are gone at the same time, resulting in
+    memory optimization.
+
+    This is useful for example when an output of a pre-trained network is used for an input to
+    another network, where the first pre-trained network does not need to be fine-tuned, but the other
+    network is optimized.
+
+    Args:
+
+        no_grad_ (bool): No gradient flag. Default is True.
+
+    Example:
+
+    .. code-block:: python
+
+        with nn.no_grad():
+            output0 = <Network0>(<input0>)
+
+        output1 = <Network1>(<input1>, output0)
+        loss = <Loss>(output1, <ground_truth>)
+        loss.forward(clear_no_need_grad=True)
+
+
+    This context also works in the dynamic mode.
+
+    .. code-block:: python
+
+        with nn.auto_forward(), nn.no_grad():
+            output0 = <Network0>(<input0>)
+
+    Note:
+        When working with the static network, the need_grad property of the input (e.g., input image) must be False
+        and do not forget to add `<root>.forward(clear_no_need_grad=True)`; 
+        otherwise, all intermediate buffers are not gone as expected.
+    """
+
+    global current_no_grad
+    prev_no_grad = current_no_grad
+    current_no_grad = no_grad_
+    try:
+        yield
+    finally:
+        current_no_grad = prev_no_grad
 
 
 @contextmanager
@@ -259,6 +310,10 @@ def get_parameter_or_create(name, shape=None, initializer=None, need_grad=True,
     # Set need_grad if as_need_grad is not specified.
     if as_need_grad is None:
         as_need_grad = need_grad
+
+    # Overwrite as_need_grad if current_no_grad is True
+    global current_no_grad
+    as_need_grad = False if current_no_grad else as_need_grad
 
     # Try to find a existing parameter.
     param = get_parameter(names[0])

@@ -299,7 +299,14 @@ cdef class Function:
                 return self._proto_call(inputs, n_outputs, outputs)
             elif any([isinstance(inp, NdArray) for inp in inputs]):
                 return self._imperative_call(inputs, n_outputs, outputs)
-        return self._cg_call(inputs, n_outputs, outputs, auto_forward)
+        out = self._cg_call(inputs, n_outputs, outputs, auto_forward)
+
+        import nnabla
+        if not auto_forward or not nnabla.parameter.current_no_grad:
+            return out
+
+        return out.get_unlinked_variable(need_grad=False) if not isinstance(out, (tuple, list)) else \
+          tuple([o.get_unlinked_variable(need_grad=False) for o in out])
 
     @property
     def args(self):
