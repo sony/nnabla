@@ -64,11 +64,11 @@ def structure_tester(v_ref, v_act):
         assert f_ref.name == f_act.name
 
 
-def value_tester(v_ref, v_act, rtol=1e-04, atol=1e-05):
+def value_tester(v_ref, v_act, rtol=1e-04, atol=1e-05, clear_no_need_grad=False):
     from nbla_test_utils import ArrayDiffStats
 
-    v_ref.forward()
-    v_act.forward()
+    v_ref.forward(clear_no_need_grad)
+    v_act.forward(clear_no_need_grad)
     print(ArrayDiffStats(v_ref.d, v_act.d))
     assert_allclose(v_ref.d, v_act.d, rtol=rtol, atol=atol)
 
