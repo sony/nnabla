@@ -14,7 +14,6 @@
 
 import os
 import binascii
-from io import BytesIO
 from collections import OrderedDict
 
 
@@ -57,27 +56,25 @@ class ImageUtilsBackend(object):
     def get_file_extension(path):
         ext = ''
         file_signature = {
-            '.bmp': (['424d'], 0x0),
-            '.dib': (['424d'], 0x0),
-            '.pgm': (['50350a'], 0x0),
-            '.jpeg': (['ffd8ffe0'], 0x0),
-            '.jpg': (['ffd8ffe0'], 0x0),
-            '.png': (['89504e470d0a1a0a'], 0x0),
-            '.tif': (['492049'], 0x0),
-            '.tiff': (['492049'], 0x0),
-            '.eps': (['c5d0d3c6'], 0x0),
-            '.gif': (['474946383761', '474946383961'], 0x0),
-            '.ico': (['00000100'], 0x0),
-            '.dcm': (['4449434d'], 0x80),
+            '.bmp': ['424d'],
+            '.dib': ['424d'],
+            '.pgm': ['50350a'],
+            '.jpeg': ['ffd8ffe0'],
+            '.jpg': ['ffd8ffe0'],
+            '.png': ['89504e470d0a1a0a'],
+            '.tif': ['492049'],
+            '.tiff': ['492049'],
+            '.eps': ['c5d0d3c6'],
+            '.gif': ['474946383761', '474946383961'],
+            '.ico': ['00000100'],
         }
         if hasattr(path, "read"):
             if hasattr(path, "name"):
                 ext = os.path.splitext(path.name)[1].lower()
             else:
-                for extension, (signature, offset) in file_signature.items():
-                    path.seek(offset)
-                    data = binascii.hexlify(path.read()).decode('utf-8')
-                    path.seek(0)
+                data = binascii.hexlify(path.read()).decode('utf-8')
+                path.seek(0)
+                for extension, signature in file_signature.items():
                     for s in signature:
                         if data.startswith(s):
                             ext = extension
