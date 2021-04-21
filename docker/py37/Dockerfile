@@ -14,6 +14,11 @@
 
 FROM ubuntu:18.04
 
+ARG PIP_INS_OPTS
+ARG PYTHONWARNINGS
+ARG CURL_OPTS
+ARG WGET_OPTS
+
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
        bzip2 \
@@ -28,10 +33,10 @@ RUN apt-get update \
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.7 0
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 0
 
-RUN pip3 install --upgrade pip
-RUN pip install wheel setuptools
-RUN pip install opencv-python || true
+RUN pip3 install ${PIP_INS_OPTS} --upgrade pip
+RUN pip install ${PIP_INS_OPTS} wheel setuptools
+RUN pip install ${PIP_INS_OPTS} opencv-python || true
 
 ARG NNABLA_VER
-RUN pip install nnabla==${NNABLA_VER} nnabla_converter==${NNABLA_VER}
+RUN pip install ${PIP_INS_OPTS} nnabla==${NNABLA_VER} nnabla_converter==${NNABLA_VER}
 

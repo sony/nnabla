@@ -22,8 +22,8 @@ CALL %~dp0tools\env.bat %1 || GOTO :error
 REM Execute test
 
 FOR /f %%i IN ('dir /b /s %nnabla_build_wheel_folder%\dist\nnabla-*.whl') DO set WHL=%%~fi
-pip install %WHL% || GOTO :error
-pip install pytest
+pip install %PIP_INS_OPTS% %WHL% || GOTO :error
+pip install %PIP_INS_OPTS% pytest
 python -m pytest %~dp0..\..\python\test || GOTO :error
 
 CALL deactivate.bat  || GOTO :error

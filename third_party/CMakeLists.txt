@@ -13,7 +13,7 @@ function(download_and_extract_library NAME EXT URL)
       if(UNIX OR APPLE)
         message("Failed to download ${NAME}. Try to download with wget.")
         execute_process(
-          COMMAND wget ${URL} -O ${CMAKE_SOURCE_DIR}/third_party/${NAME}${EXT})
+          COMMAND wget ${WGET_OPTS} ${URL} -O ${CMAKE_SOURCE_DIR}/third_party/${NAME}${EXT})
       else()
         message(FATAL_ERROR "Failed to download ${NAME}. Please check network connection and proxy settings.
         status_code: ${status_code}
@@ -22,7 +22,7 @@ function(download_and_extract_library NAME EXT URL)
         ")
         error() # Place Unknown command to stop cmake process here.
       endif()
-      
+
     endif()
     execute_process(
       COMMAND ${CMAKE_COMMAND} -E

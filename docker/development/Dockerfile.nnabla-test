@@ -16,6 +16,11 @@
 
 FROM ubuntu:18.04
 
+ARG PIP_INS_OPTS
+ARG PYTHONWARNINGS
+ARG CURL_OPTS
+ARG WGET_OPTS
+
 ENV LC_ALL C
 ENV LANG C
 ENV LANGUAGE C
@@ -63,8 +68,8 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
-    && python${PYVERNAME} get-pip.py \
+RUN curl ${CURL_OPTS} https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
+    && python${PYVERNAME} get-pip.py ${PIP_INS_OPTS} \
     && rm get-pip.py
 
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python${PYVERNAME} 0
@@ -73,7 +78,7 @@ RUN update-alternatives --install /usr/bin/python python /usr/bin/python${PYVERN
 RUN mkdir /tmp/deps \
     && cd /tmp/deps \
     && PROTOVER=3.10.1 \
-    && curl -L https://github.com/google/protobuf/archive/v${PROTOVER}.tar.gz -o protobuf-v${PROTOVER}.tar.gz \
+    && curl ${CURL_OPTS} -L https://github.com/google/protobuf/archive/v${PROTOVER}.tar.gz -o protobuf-v${PROTOVER}.tar.gz \
     && tar xvf protobuf-v${PROTOVER}.tar.gz \
     && cd protobuf-${PROTOVER} \
     && mkdir build \
@@ -93,10 +98,10 @@ ADD python/setup_requirements.txt /tmp/deps/
 ADD python/requirements.txt /tmp/deps/
 ADD python/test_requirements.txt /tmp/deps/
 
-RUN pip install numpy \
-    && pip install -U -r /tmp/deps/setup_requirements.txt \
-    && pip install -U -r /tmp/deps/requirements.txt \
-    && pip install -U -r /tmp/deps/test_requirements.txt \
+RUN pip install ${PIP_INS_OPTS} numpy \
+    && pip install ${PIP_INS_OPTS} -U -r /tmp/deps/setup_requirements.txt \
+    && pip install ${PIP_INS_OPTS} -U -r /tmp/deps/requirements.txt \
+    && pip install ${PIP_INS_OPTS} -U -r /tmp/deps/test_requirements.txt \
     && rm -rf /tmp/*
 
 ENV PATH /tmp/.local/bin:$PATH

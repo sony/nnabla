@@ -16,14 +16,21 @@
 
 FROM centos:7
 
+ARG PIP_INS_OPTS
+ARG PYTHONWARNINGS
+ARG CURL_OPTS
+ARG WGET_OPTS
+ARG YUM_OPTS
+
 ENV LC_ALL C
 ENV LANG C
 ENV LANGUAGE C
 
 
-RUN yum install -y \
-    epel-release \
-    yum-utils \
+RUN eval ${YUM_OPTS} \
+    && yum install -y \
+       epel-release \
+       yum-utils \
     && yum install -y \
         curl \
         freetype-devel \
@@ -53,7 +60,7 @@ RUN yum install -y \
 ############################################################# gcc
 RUN mkdir /tmp/deps \
     && cd /tmp/deps \
-    && wget http://ftp.tsukuba.wide.ad.jp/software/gcc/releases/gcc-4.9.2/gcc-4.9.2.tar.bz2 \
+    && wget ${WGET_OPTS} http://ftp.tsukuba.wide.ad.jp/software/gcc/releases/gcc-4.9.2/gcc-4.9.2.tar.bz2 \
     && tar xvfj gcc-4.9.2.tar.bz2 \
     && cd gcc-4.9.2 \
     && ./configure --disable-multilib --enable-languages=c,c++ \
@@ -67,7 +74,7 @@ ARG CMAKEVER=3.14.3
 RUN mkdir /tmp/deps \
     && cd /tmp/deps \
     && yum install -y cmake3 \
-    && curl -L https://github.com/Kitware/CMake/releases/download/v${CMAKEVER}/cmake-${CMAKEVER}.tar.gz -o cmake-${CMAKEVER}.tar.gz \
+    && curl ${CURL_OPTS} -L https://github.com/Kitware/CMake/releases/download/v${CMAKEVER}/cmake-${CMAKEVER}.tar.gz -o cmake-${CMAKEVER}.tar.gz \
     && tar xf cmake-${CMAKEVER}.tar.gz \
     && cd cmake-${CMAKEVER} \
     && mkdir build \
@@ -85,7 +92,7 @@ RUN mkdir /tmp/deps \
 ARG PROTOVER=3.10.1
 RUN mkdir /tmp/deps \
     && cd /tmp/deps \
-    && curl -L https://github.com/google/protobuf/archive/v${PROTOVER}.tar.gz -o protobuf-v${PROTOVER}.tar.gz \
+    && curl ${CURL_OPTS} -L https://github.com/google/protobuf/archive/v${PROTOVER}.tar.gz -o protobuf-v${PROTOVER}.tar.gz \
     && tar xvf protobuf-v${PROTOVER}.tar.gz \
     && cd protobuf-${PROTOVER} \
     && mkdir build \
@@ -103,7 +110,7 @@ RUN mkdir /tmp/deps \
 ARG LIBARCHIVEVER=3.4.3
 RUN mkdir /tmp/deps \
     && cd /tmp/deps \
-    && curl -L https://github.com/libarchive/libarchive/archive/v${LIBARCHIVEVER}.tar.gz -o libarchive-${LIBARCHIVEVER}.tar.gz \
+    && curl ${CURL_OPTS} -L https://github.com/libarchive/libarchive/archive/v${LIBARCHIVEVER}.tar.gz -o libarchive-${LIBARCHIVEVER}.tar.gz \
     && tar xfa libarchive-${LIBARCHIVEVER}.tar.gz \
     && mkdir libarchive-build \
     && cd libarchive-build \
@@ -123,7 +130,7 @@ RUN mkdir /tmp/deps \
 ############################################################ patchelf
 RUN mkdir /tmp/deps \
     && cd /tmp/deps \
-    && wget http://nixos.org/releases/patchelf/patchelf-0.9/patchelf-0.9.tar.bz2 \
+    && wget ${WGET_OPTS} http://nixos.org/releases/patchelf/patchelf-0.9/patchelf-0.9.tar.bz2 \
     && tar xfa patchelf-0.9.tar.bz2 \
     && cd patchelf-0.9 \
     && ./configure \
@@ -141,19 +148,19 @@ ADD python/requirements.txt /tmp/deps/
 ADD python/test_requirements.txt /tmp/deps/
 
 ################################################## build python from source
-RUN if [ "${PYVERNAME}" == "3.6" ]; then wget https://www.python.org/ftp/python/3.6.12/Python-3.6.12.tgz; fi \
-	&& if [ "${PYVERNAME}" == "3.7" ]; then wget https://www.python.org/ftp/python/3.7.10/Python-3.7.10.tgz; fi \
-	&& if [ "${PYVERNAME}" == "3.8" ]; then wget https://www.python.org/ftp/python/3.8.8/Python-3.8.8.tgz; fi \
-	&& if [ "${PYVERNAME}" == "3.9" ]; then wget https://www.python.org/ftp/python/3.9.2/Python-3.9.2.tgz; fi \
+RUN if [ "${PYVERNAME}" == "3.6" ]; then wget ${WGET_OPTS} https://www.python.org/ftp/python/3.6.12/Python-3.6.12.tgz; fi \
+	&& if [ "${PYVERNAME}" == "3.7" ]; then wget ${WGET_OPTS} https://www.python.org/ftp/python/3.7.10/Python-3.7.10.tgz; fi \
+	&& if [ "${PYVERNAME}" == "3.8" ]; then wget ${WGET_OPTS} https://www.python.org/ftp/python/3.8.8/Python-3.8.8.tgz; fi \
+	&& if [ "${PYVERNAME}" == "3.9" ]; then wget ${WGET_OPTS} https://www.python.org/ftp/python/3.9.2/Python-3.9.2.tgz; fi \
 	&& tar -xzf Python-${PYVERNAME}*.tgz \
 	&& cd Python-${PYVERNAME}* \
 	&& ./configure --enable-optimizations \
 	&& make altinstall \
 	&& ln -s -f /usr/local/bin/python${PYVERNAME} /usr/bin/python \
 	&& ln -s /usr/local/bin/pip${PYVERNAME} /usr/local/bin/pip \
-	&& pip install -U -r /tmp/deps/setup_requirements.txt \
-	&& pip install -U -r /tmp/deps/requirements.txt \
-	&& pip install -U -r /tmp/deps/test_requirements.txt \
+	&& pip install ${PIP_INS_OPTS} -U -r /tmp/deps/setup_requirements.txt \
+	&& pip install ${PIP_INS_OPTS} -U -r /tmp/deps/requirements.txt \
+	&& pip install ${PIP_INS_OPTS} -U -r /tmp/deps/test_requirements.txt \
 	&& cd .. \
 	&& rm -rf Python-${PYVERNAME}* \
 	&& rm -rf /tmp/*

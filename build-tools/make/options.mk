@@ -23,11 +23,26 @@ DOCKER_RUN_OPTS += -w $$(pwd)
 DOCKER_RUN_OPTS += -u $$(id -u):$$(id -g)
 DOCKER_RUN_OPTS += -e HOME=/tmp
 DOCKER_RUN_OPTS += -e CMAKE_OPTS=$(CMAKE_OPTS)
+DOCKER_RUN_OPTS += -e PIP_INS_OPTS="${PIP_INS_OPTS}"
+DOCKER_RUN_OPTS += -e CURL_OPTS="${CURL_OPTS}"
+DOCKER_RUN_OPTS += -e WGET_OPTS="${WGET_OPTS}"
 
 DOCKER_RUN_OPTS += -v $(HOME)/.ccache:/tmp/.ccache
 
 ## If your environment is under proxy uncomment following lines.
-DOCKER_BUILD_ARGS = --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy}
+DOCKER_BUILD_ARGS = --build-arg HTTP_PROXY=${http_proxy} --build-arg HTTPS_PROXY=${https_proxy}
+DOCKER_BUILD_ARGS += --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy}
+DOCKER_BUILD_ARGS += --build-arg PIP_INS_OPTS='${PIP_INS_OPTS}' --build-arg PYTHONWARNINGS='${PYTHONWARNINGS}'
+DOCKER_BUILD_ARGS += --build-arg CURL_OPTS='${CURL_OPTS}' --build-arg WGET_OPTS='${WGET_OPTS}'
+DOCKER_BUILD_ARGS += --build-arg YUM_OPTS='${YUM_OPTS}'
+DOCKER_BUILD_ARGS += --build-arg APT_OPTS='${APT_OPTS}'
+
+# For --add-host while docker build/run
+ADD_HOST=$(shell echo ${http_proxy} | cut -d ':' -f2 | cut -d '/' -f3)
+ADD_HOST_IP=$(shell getent ahostsv4 ${ADD_HOST} | grep RAW | cut -d ' ' -f1)
+DOCKER_BUILD_ARGS += --add-host '${ADD_HOST}:${ADD_HOST_IP}'
+DOCKER_RUN_OPTS += --add-host '${ADD_HOST}:${ADD_HOST_IP}'
+
 # DOCKER_BUILD_ARGS += --no-cache
 
 DOCKER_RUN_OPTS += -e http_proxy=${http_proxy}
@@ -105,7 +120,7 @@ define with-venv
 	rm -rf $(2)
 	python$(PYTHON_VERSION_MAJOR).$(PYTHON_VERSION_MINOR) -m venv --system-site-packages $(2)
 	. $(2)/bin/activate \
-	&& python -m pip install -I pip \
+	&& python -m pip install ${PIP_INS_OPTS} -I pip \
 	&& $(MAKE) -C $(1) $(3) $(4) \
 	&& deactivate
 	rm -rf $(2)
