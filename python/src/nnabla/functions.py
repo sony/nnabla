@@ -260,6 +260,12 @@ def reduce(x, op='sum'):
     raise ValueError()
 
 
+def meshgrid(*x, ij_indexing=False):
+
+    from .function_bases import meshgrid as meshgrid_base
+    return meshgrid_base(*x, ij_indexing=ij_indexing, n_outputs=len(x))
+
+
 def split(x, axis=0):
     """
     Split arrays at the specified axis.

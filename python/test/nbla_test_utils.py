@@ -242,6 +242,8 @@ class ArrayDiffStats:
 def force_tuple(x):
     if isinstance(x, tuple):
         return x
+    if isinstance(x, list):
+        return tuple(x)
     return (x,)
 
 

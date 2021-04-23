@@ -265,6 +265,9 @@ LessEqual:
 Less:
   float: [float]
   half: [Half]
+SearchSorted:
+  float: [float]
+  half: [Half]
 LogicalAndScalar:
   float: [float]
   half: [Half]
@@ -358,6 +361,9 @@ BroadcastTo:
 Tile:
   float: [float]
   half: [Half]
+Meshgrid:
+  float: [float]
+  # half: [Half]
 OneHot:
   float: [int, float]
   half: [int, Half]
