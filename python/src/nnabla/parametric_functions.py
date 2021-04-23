@@ -20,7 +20,8 @@ import nnabla.functions as F
 from nnabla.parameter import get_parameter_or_create, get_parameter
 from nnabla.initializer import (
     calc_uniform_lim_glorot,
-    ConstantInitializer, NormalInitializer, UniformInitializer)
+    ConstantInitializer, NormalInitializer, UniformInitializer,
+    WeightNormalizationScaleInitializer)
 
 
 def parametric_function_api(scope_name=None, param_desc=None):
@@ -3735,16 +3736,16 @@ def _spectral_norm_outer_most_dim(w, dim, itr=1, eps=1e-12, test=False,
 @parametric_function_api("wn", [
     ('g', 'Weight Normalization adaptive scale scalar.', 'w.shape[dim]', True),
 ])
-def weight_normalization(w, dim=0, eps=1e-12, fix_parameters=False):
+def weight_normalization(w, dim=0, eps=1e-12, g_init=None, fix_parameters=False):
     """Weight Normalization.
 
     .. math::
         \mathbf{w}_{WN} = g \dfrac{\mathbf{w}}{\|\mathbf{w}\|}
 
-    where :math:`\mathbf{w}` is the input weights to be normalized.
-    and :math:`g` is learnable multiplication factors each of which is applied to each data at `dim`.
+    where :math:`\mathbf{w}` is the input weights to be normalized, 
+    and :math:`g` is learnable multiplication factors each of which is applied to each input weights at `dim`.
     This function is in general used as callback passed to apply_w for PF.convolution, PF.affine and so on.
-    According to the author`s original implementation (https://github.com/TimSalimans/weight_norm), :math:`v` should be initialized by :math:`N(0, 0.05)`.
+    According to the author`s `original implementation <https://github.com/TimSalimans/weight_norm>`_, :math:`v` should be initialized by :math:`N(0, 0.05)`.
     To meet this condition, initializer should be passed to convolution which Weight Normalization is applied, like an example below.
 
 
@@ -3758,6 +3759,8 @@ def weight_normalization(w, dim=0, eps=1e-12, fix_parameters=False):
             Output dimension. Default is 0.
             If the dimension is not 0, then the specified dimension becomes the most-left dimension by transposing.
         eps (`float`): Epsilon for the normalization. Default is 1e-12.
+        g_init (:obj:`nnabla.initializer.BaseInitializer` or :obj:`numpy.ndarray`): Initializer for the scale. By default, L2-norm of weights corresponding to `dim` are used.
+
 
     Returns:
         ~nnabla.Variable:  :math:`W` with the same shape as :math:`v`.
@@ -3784,8 +3787,10 @@ def weight_normalization(w, dim=0, eps=1e-12, fix_parameters=False):
 
     """
     outmaps = w.shape[dim]
+    if g_init is None:
+        g_init = WeightNormalizationScaleInitializer(w, dim, eps)
     g = get_parameter_or_create("g", (outmaps,),
-                                initializer=ConstantInitializer(1.), need_grad=True, as_need_grad=not fix_parameters)
+                                initializer=g_init, need_grad=True, as_need_grad=not fix_parameters)
     return F.weight_normalization(w, g, dim, eps)
 
 

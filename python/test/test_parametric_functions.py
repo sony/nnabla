@@ -1600,10 +1600,10 @@ def test_pf_transformer_decode_execution(g_rng, tgt_len, batch_size, embed_dim, 
 def test_pf_weight_norm_execution(g_rng, func):
     # python implementation
     def ref_weight_normalization(v, g, dim, eps=1e-12):
-        axis = tuple([i for i in range(len(v.shape)) if i != dim])
-        v_norm = np.sqrt(np.sum(v ** 2, axis=axis, keepdims=True) + eps)
-
-        return g * v / v_norm
+        # Use the same w in the initialization time.
+        # Since unless we use the same magnitude of weights,
+        # glorot/he initialization does not work as expected.
+        return v
 
     dim = {"conv": 0, "affine": 1}[func]
 
@@ -1611,7 +1611,7 @@ def test_pf_weight_norm_execution(g_rng, func):
 
     x = nn.Variable.from_numpy_array(g_rng.randn(2, 4, 5, 5))
     if func == "conv":
-        # assume channle first
+        # assume channel first
         y = PF.convolution(x, 8, (3, 3), apply_w=wn_clbk)
     elif func == "affine":
         y = PF.affine(x, 8, apply_w=wn_clbk)

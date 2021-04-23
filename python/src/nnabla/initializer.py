@@ -267,6 +267,32 @@ class OrthogonalInitializer(BaseInitializer):
         return random_float_type(q.reshape(shape) * self.gain)
 
 
+class WeightNormalizationScaleInitializer(BaseInitializer):
+
+    r"""Compute the L2-norm for each weight kernel.
+
+    This initializer is specific to the weight normalization scale to keep the same magnitude of the originally initialized weights even after the applicaiton of the weight normalization at only initialization.
+
+    Args:
+        w (:obj:`Variable`): Weight the weight normalization is applied.
+        dim (:obj:`int`): Output dimension of the weight normalization.
+        eps (:obj:`float`): Eplision of the weight normalization.
+    """
+
+    def __init__(self, w, dim=0, eps=1e-12):
+        self.w = w.get_unlinked_variable()
+        self.dim = dim
+        self.eps = eps
+
+    def __repr__(self):
+        return '{}({})'.format(self.__class__.__name__)
+
+    def __call__(self, shape):
+        axis = tuple([a for a in range(len(self.w.shape)) if a != self.dim])
+        w_norm_data = np.sqrt(np.sum(self.w.d ** 2, axis=axis) + self.eps)
+        return random_float_type(w_norm_data)
+
+
 def calc_normal_std_he_forward(inmaps, outmaps, kernel=(1, 1)):
     r"""Calculates the standard deviation proposed by He et al.
 

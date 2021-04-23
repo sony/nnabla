@@ -15,7 +15,7 @@
 import pytest
 import numpy as np
 
-
+import nnabla as nn
 import nnabla.initializer as I
 
 
@@ -28,6 +28,28 @@ def orthogonal_test(x):
     else:
         target = np.matmul(flattened, flattened.T)
         return np.allclose(target, np.eye(rows), atol=1e-6)
+
+
+@pytest.mark.parametrize('shape, dim', [((2, 3), 1),
+                                        ((2, 3, 4, 5), 0),
+                                        ((2, 3, 4, 5), 3),
+                                        ])
+@pytest.mark.parametrize('eps', [1e-12])
+def test_weight_normalization_initializaer(shape, dim, eps):
+    rng = np.random.RandomState(313)
+
+    # Same w returns same results
+    w = nn.Variable.from_numpy_array(rng.randn(*shape))
+    initializer = I.WeightNormalizationScaleInitializer(w, dim, eps)
+    ret0 = initializer(w.shape)
+    ret1 = initializer(w.shape)
+    np.testing.assert_allclose(ret0, ret1)
+
+    # Different w return different results
+    w = nn.Variable.from_numpy_array(rng.randn(*shape))
+    initializer = I.WeightNormalizationScaleInitializer(w, dim, eps)
+    ret1 = initializer(w.shape)
+    assert np.any(ret0 != ret1)
 
 
 @pytest.mark.parametrize('rng', [None, np.random.RandomState(313)])
