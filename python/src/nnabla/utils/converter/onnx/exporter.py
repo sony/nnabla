@@ -184,7 +184,7 @@ class ParameterState:
 
 # OnnxExporter class
 class OnnxExporter:
-    def __init__(self, nnp, batch_size, opset="7"):
+    def __init__(self, nnp, batch_size, opset="11"):
         self._nnp = nnp.protobuf
         self._batch_size = batch_size
         self._model_proto = None
@@ -614,7 +614,7 @@ class OnnxExporter:
 
     def BaseConvolution(self, func_name, func):
         nl = []
-        input_x_shape = np.array(
+        input_shape = np.array(
             [d for d in self._var_dict[func.input[0]].dim])
         weight_shape = [d for d in self._var_dict[func.input[1]].dim]
         weight_base = 2
@@ -631,7 +631,7 @@ class OnnxExporter:
         elif func_name == 'DepthwiseConvolution':
             cp = func.depthwise_convolution_param
             inputs = func.input[:]
-            group = input_x_shape[cp.base_axis]
+            group = input_shape[cp.base_axis]
             weight_shape.insert(1, 1)
             proto_weight_shape = self._var_dict[inputs[1]]
             del proto_weight_shape.dim[:]
@@ -650,8 +650,8 @@ class OnnxExporter:
             dilations += [1]
             strides += [1]
             pads += [0]
-            input_x_shape = np.array(np.concatenate(
-                ([np.prod(input_x_shape[:cp.base_axis])], input_x_shape[cp.base_axis:], [1])))
+            new_input_shape = np.array(np.concatenate(
+                ([np.prod(input_shape[:cp.base_axis])], input_shape[cp.base_axis:], [1])))
 
             input_w_shape = np.array(
                 [d for d in self._var_dict[func.input[1]].dim] + [1])
@@ -659,14 +659,14 @@ class OnnxExporter:
             del proto_w_shape.dim[:]
             proto_w_shape.dim.extend(input_w_shape)
         elif len(pads) > 1:  # N-D convolution:
-            input_x_shape = np.array(np.concatenate(
-                ([np.prod(input_x_shape[:cp.base_axis])], input_x_shape[cp.base_axis:])))
+            new_input_shape = np.array(np.concatenate(
+                ([np.prod(input_shape[:cp.base_axis])], input_shape[cp.base_axis:])))
 
-        if cp.base_axis > 1:
+        if new_input_shape != input_shape:
             # Reshape input[0]
             output_x_reshape_name = fork_name("output_x_reshape")
             n = generate_reshape(self._model_proto.graph, func.input[0], output_x_reshape_name,
-                                 input_x_shape)
+                                 new_input_shape)
             nl.append(n)
             inputs[0] = output_x_reshape_name
 
@@ -718,7 +718,7 @@ class OnnxExporter:
         dilations = cp.dilation.dim[:]
         strides = cp.stride.dim[:]
         pads = cp.pad.dim[:]
-        input_x_shape = np.array(
+        input_shape = np.array(
             [d for d in self._var_dict[func.input[0]].dim])
         output_y_shape = np.array(
             [d for d in self._var_dict[func.output[0]].dim])
@@ -728,8 +728,8 @@ class OnnxExporter:
             dilations += [1]
             strides += [1]
             pads += [0]
-            input_x_shape = np.array(np.concatenate(
-                ([np.prod(input_x_shape[:cp.base_axis])], input_x_shape[cp.base_axis:], [1])))
+            new_input_shape = np.array(np.concatenate(
+                ([np.prod(input_shape[:cp.base_axis])], input_shape[cp.base_axis:], [1])))
 
             # Reshape input[1]
             input_w_shape = np.array(
@@ -738,14 +738,14 @@ class OnnxExporter:
             del proto_w_shape.dim[:]
             proto_w_shape.dim.extend(input_w_shape)
         elif len(pads) > 1:  # N-D convolution:
-            input_x_shape = np.array(np.concatenate(
-                ([np.prod(input_x_shape[:cp.base_axis])], input_x_shape[cp.base_axis:])))
+            new_input_shape = np.array(np.concatenate(
+                ([np.prod(input_shape[:cp.base_axis])], input_shape[cp.base_axis:])))
 
-        if cp.base_axis > 1:
+        if new_input_shape != input_shape:
             # Reshape input[0]
             output_x_reshape_name = fork_name("output_x_reshape")
             n = generate_reshape(self._model_proto.graph, func.input[0], output_x_reshape_name,
-                                 input_x_shape)
+                                 new_input_shape)
             nl.append(n)
             inputs[0] = output_x_reshape_name
 
@@ -808,7 +808,7 @@ class OnnxExporter:
             nl.append(n)
             output = output_add
 
-        if cp.base_axis > 1:
+        if new_input_shape != input_shape:
             n = generate_reshape(self._model_proto.graph, output, func.output[0],
                                  output_y_shape)
             nl.append(n)
@@ -1363,10 +1363,8 @@ class OnnxExporter:
     def BaseDeconvolution(self, func_name, func):
         nl = []
         inputs = func.input[:]
-        input_x_shape = np.array(
+        input_shape = np.array(
             [d for d in self._var_dict[func.input[0]].dim])
-        output_y_shape = np.array(
-            [d for d in self._var_dict[func.output[0]].dim])
         weight_shape = [d for d in self._var_dict[func.input[1]].dim]
         if func_name == "Deconvolution":
             dp = func.deconvolution_param
@@ -1377,7 +1375,7 @@ class OnnxExporter:
             group = dp.group
         elif func_name == "DepthwiseDeconvolution":
             dp = func.depthwise_deconvolution_param
-            group = input_x_shape[dp.base_axis] // dp.divisor
+            group = input_shape[dp.base_axis] // dp.divisor
             output_padding = [0] * (len(weight_shape[1:]))
             weight_shape.insert(1, 1)
             proto_weight_shape = self._var_dict[inputs[1]]
@@ -1398,22 +1396,22 @@ class OnnxExporter:
             strides += [1]
             pads += [0]
             output_padding += [0]
-            input_x_shape = np.array(np.concatenate(
-                ([np.prod(input_x_shape[:dp.base_axis])], input_x_shape[dp.base_axis:], [1])))
+            new_input_shape = np.array(np.concatenate(
+                ([np.prod(input_shape[:dp.base_axis])], input_shape[dp.base_axis:], [1])))
 
             weight_shape += [1]
             proto_w_shape = self._var_dict[inputs[1]]
             del proto_w_shape.dim[:]
             proto_w_shape.dim.extend(weight_shape)
         elif len(pads) > 1:  # N-D Deconvolution
-            input_x_shape = np.array(np.concatenate(
-                ([np.prod(input_x_shape[:dp.base_axis])], input_x_shape[dp.base_axis:])))
+            new_input_shape = np.array(np.concatenate(
+                ([np.prod(input_shape[:dp.base_axis])], input_shape[dp.base_axis:])))
 
-        if dp.base_axis > 1:
+        if new_input_shape != input_shape:
             # Reshape input[0]
             output_x_reshape = fork_name("output_x_reshape")
             n = generate_reshape(self._model_proto.graph, func.input[0],
-                                 output_x_reshape, input_x_shape)
+                                 output_x_reshape, new_input_shape)
             nl.append(n)
             inputs[0] = output_x_reshape
 
