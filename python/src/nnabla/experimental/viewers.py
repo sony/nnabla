@@ -50,6 +50,41 @@ class SimpleGraph(object):
       graph.view(pred)
       graph.save(pred, "sample_grpah")
 
+
+    If the parameters are module-scoped, for example, the ``pred`` comes from a
+    module output, parameters should be obtained beforehand then passed to view():
+
+    Example:
+
+    .. code-block:: python
+
+      import nnabla as nn
+      import nnabla.functions as F
+      from nnabla.core.modules import ConvBn
+
+      import nnabla.experimental.viewers as V
+
+      class TSTNetNormal(nn.Module):
+          def __init__(self):
+              self.conv_bn_1 = ConvBn(1)
+              self.conv_bn_2 = ConvBn(1)
+
+          def call(self, x1, x2):
+              y1 = self.conv_bn_1(x1)
+              y2 = self.conv_bn_2(x2)
+              y = F.concatenate(y1, y2, axis=1)
+              return y
+
+      tnd = TSTNetNormal()
+
+      v1 = nn.Variable((4, 3, 32, 32))
+      v2 = nn.Variable((4, 3, 32, 32))
+
+      ya = tnd(v1, v2)
+
+      graph = V.SimpleGraph(verbose=False)
+      graph.view(ya, params=tnd.get_parameters(grad_only=False))
+
     """
 
     def __init__(self, format="png", verbose=False, fname_color_map=None, vname_color_map=None):
@@ -191,7 +226,7 @@ class SimpleGraph(object):
         graph = self.create_graphviz_digraph(vleaf, format=format)
         graph.render(fpath, cleanup=cleanup)
 
-    def view(self, vleaf, fpath=None, cleanup=True, format=None):
+    def view(self, vleaf, fpath=None, cleanup=True, format=None, params=None):
         """View the graph.
 
         Args:
@@ -200,12 +235,15 @@ class SimpleGraph(object):
           cleanup (`bool`): Clean up the source file after rendering. Default is True.
           format (str):
               Force overwrite ``format`` (``'pdf', 'png', ...)``) configuration.
+          params (dict):
+              Parameter dictionary, which can be obtained by get_parameters() function. Default is None.
+              If params is None, global parameters are obtained.
 
         """
-        graph = self.create_graphviz_digraph(vleaf, format=format)
+        graph = self.create_graphviz_digraph(vleaf, params, format=format)
         graph.view(fpath, cleanup=cleanup)
 
-    def create_graphviz_digraph(self, vleaf, format=None):
+    def create_graphviz_digraph(self, vleaf, params, format=None):
         '''
         Create a :obj:`graphviz.Digraph` object given the leaf variable of a
         computation graph.
@@ -218,6 +256,8 @@ class SimpleGraph(object):
             vleaf (`nnabla.Variable`):
                 End variable. All variables and functions which can be
                 traversed from this variable are shown in the reuslt.
+            params (dict):
+                The parameters dictionary, it can be obtained by nn.get_parameters().
             format (str):
                 Force overwrite ``format`` (``'pdf', 'png', ...)``) configuration.
 
@@ -235,7 +275,8 @@ class SimpleGraph(object):
         graph = Digraph(format=format)
         graph.attr("node", style="filled")
 
-        params = get_parameters(grad_only=False)
+        if params is None:
+            params = get_parameters(grad_only=False)
         var2name = {v.data: k for k, v in params.items()}
         fun2scope = {}
         var2postname = copy.copy(var2name)
@@ -243,10 +284,11 @@ class SimpleGraph(object):
         def fscope(f):
             names = [var2name[v.data] for v in f.inputs if v.data in var2name]
             if names:
-                c = os.path.commonprefix(names)
+                f_names = [os.path.dirname(names[0]), *names[1:]]
+                c = os.path.commonprefix(f_names)
                 fun2scope[f] = c
                 for n in names:
-                    var2postname[params[n].data] = n[len(c):]
+                    var2postname[params[n].data] = n[len(c)+1:]
         vleaf.visit(fscope)
         func = self.functor(graph, self._verbose,
                             fun2scope=fun2scope, var2name=var2postname)
