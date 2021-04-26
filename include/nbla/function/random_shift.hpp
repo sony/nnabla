@@ -70,8 +70,8 @@ public:
               const string &border_mode, float constant_value, int base_axis,
               int seed)
       : BaseFunction(ctx, shifts, border_mode, constant_value, base_axis, seed),
-        shifts_(shifts), border_mode_(border_mode),
-        constant_value_(constant_value), base_axis_(base_axis), seed_(seed) {}
+        shifts_(shifts), border_mode_(border_mode), base_axis_(base_axis),
+        constant_value_(constant_value),  seed_(seed) {}
   virtual ~RandomShift() {}
   virtual shared_ptr<Function> copy() const {
     return create_RandomShift(ctx_, shifts_, border_mode_, constant_value_,
