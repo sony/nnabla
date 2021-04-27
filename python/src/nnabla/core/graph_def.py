@@ -358,7 +358,10 @@ class ProtoNetwork:
         for pf in self.forward_sequence():
             if pf.type == 'Reshape':
                 arg_shape = pf.args['shape']
-                input_shape = self.variables[pf.inputs[0]].shape
+                input = self.variables.get(pf.inputs[0], None)
+                if input is None:
+                    input = self.parameters.get(pf.inputs[0], None)
+                input_shape = input.shape
                 shape_infer_index = -1
                 rest_size = 1
                 for i, s in enumerate(arg_shape):
@@ -1651,8 +1654,12 @@ class ProtoGraphGenerator:
                 self.variables[v.data] = pv
 
         self.outputs = func.outputs
-        outputs = func(*inputs, n_outputs=len(func.outputs),
-                       auto_forward=False)
+        if len(inputs) == 0:
+            outputs = ProtoFunction(func, func.name, func.arguments)(
+                inputs=[], outputs=len(func.outputs))
+        else:
+            outputs = func(*inputs, n_outputs=len(func.outputs),
+                           auto_forward=False)
         if not isinstance(outputs, tuple):
             outputs = (outputs,)
         for pv, v in zip(outputs, func.outputs):
@@ -1705,9 +1712,11 @@ def create_graph_from_variable(name, variables, names=None, parameter_scope=None
 
     if parameter_scope:
         with nn.parameter_scope('', parameter_scope):
-            params = {v.data: k for k, v in nn.get_parameters().items()}
+            params = {v.data: k for k, v in nn.get_parameters(
+                grad_only=False).items()}
     else:
-        params = {v.data: k for k, v in nn.get_parameters().items()}
+        params = {v.data: k for k, v in nn.get_parameters(
+            grad_only=False).items()}
 
     with graph(parameter_scope=parameter_scope, name=name) as g:
         with ProtoGraphGenerator(names, params) as pgg:
