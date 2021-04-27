@@ -24,4 +24,5 @@ Python API Reference
     api/lms
     api/module
     api/graph_def
+    api/sequential
     api/experimental
