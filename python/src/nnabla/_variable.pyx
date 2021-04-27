@@ -851,6 +851,27 @@ cdef class Variable:
             (< Variable > var).varp.set_need_grad(self.varp.need_grad_state())
         return var
 
+    def no_grad(self):
+        """No gradients for the whole network.
+
+        This method is like :obj:`nnabla.no_grad` but can be used for the static network only, and useful for 
+        the case where the network is loaded from NNP format.
+        
+        Example:
+
+            .. code-block:: python
+
+                x = nn.Variable.from_numpy_array([2, 3])
+                y = <Network>(x).no_grad()
+        """
+
+        import nnabla.experimental.graph_converters as GC
+        modifiers = [GC.NoGradModifier()]
+        gc = GC.GraphConverter(modifiers)
+        out = gc.convert(self)
+        return out
+        
+
     @property
     def persistent(self):
         """
