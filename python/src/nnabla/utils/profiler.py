@@ -237,6 +237,7 @@ class GraphProfiler:
 
         # warm-up
         execution(*execution_args)
+        self.ext_module.synchronize(device_id=self.device_id)
 
         start_0 = time.time()
         for i in range(self.n_run):
