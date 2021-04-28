@@ -34,7 +34,7 @@ import h5py
 import numpy
 import scipy.io.wavfile
 import os
-import requests
+import urllib.request as request
 import six
 import tempfile
 from shutil import rmtree
@@ -168,7 +168,7 @@ class FileReader:
             else:
                 f = BytesIO(self.read_s3_object(key))
         elif self._file_type == 'http':
-            f = requests.get(filename, stream=True)
+            f = request.urlopen(filename)
         else:
             if textmode:
                 f = open(filename, 'rt', encoding=encoding)

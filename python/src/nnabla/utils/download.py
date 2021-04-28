@@ -15,7 +15,7 @@
 
 from nnabla.logger import logger
 
-import requests
+import urllib.request as request
 from tqdm import tqdm
 import os
 
@@ -54,20 +54,22 @@ def download(url, output_file=None, open_file=True, allow_overwrite=False):
         logger.info("> If you have any issue when using this file, ")
         logger.info("> manually remove the file and try download again.")
     else:
-        r = requests.get(url, stream=True)
+        r = request.urlopen(url)
         try:
-            content_length = int(r.headers['Content-Length'])
+            content_length = int(r.headers.get('Content-Length'))
         except:
             content_length = 0
         unit = 1000000
         content = b''
         with tqdm(total=content_length, desc=filename, unit='B', unit_scale=True, unit_divisor=1024) as t:
-            for data in r.iter_content(chunk_size=unit):
+            while True:
+                data = r.read(unit)
                 l = len(data)
                 t.update(l)
                 if l == 0:
                     break
                 content += data
+        r.close()
         with open(cache, 'wb') as f:
             f.write(content)
     if not open_file:

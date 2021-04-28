@@ -6,8 +6,6 @@ numpy==1.19.5
 pillow
 protobuf
 pyyaml
-requests
-requests
 scipy
 six
 tqdm

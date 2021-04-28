@@ -34,7 +34,6 @@ install_requires = setup_requires + [
     'h5py<=3.1.0',
     'protobuf>=3.6',
     'pyyaml',
-    'requests',
     'scipy',
     'six',
     'tqdm',
