@@ -23,26 +23,21 @@
 
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_HEADER(SoftPlus);
-
 /** SoftPlus
 @brief SoftPlus defined as
 @f[
-y_i = \log(\exp(x)+1)
+y_i = \frac{1}{\beta} * \log(\exp(\beta * x)+1)
 @f]
-
 Inputs:
 - N-D array.
-
 Outputs:
 - N-D array.
-
 @tparam T Data type for computation.
 \ingroup FunctionImplGrp
  */
-NBLA_DEFINE_TRANSFORM_UNARY(SoftPlus,
-                            x > (T)0 ? x + std::log(std::exp(-x) + (T)1)
-                                     : std::log(std::exp(x) + (T)1),
-                            dy / ((T)1 + std::exp(-x)), false, true);
+NBLA_DEFINE_TRANSFORM_UNARY_1(
+    SoftPlus, x > (T)0 ? x + std::log(std::exp(-x * (T)a0) + (T)1) / (T)a0
+                       : (std::log(std::exp(x * (T)a0) + (T)1)) / (T)a0,
+    dy / ((T)1 + std::exp(-(T)a0 * x)), false, double);
 }
 #endif
