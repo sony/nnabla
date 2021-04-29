@@ -25,5 +25,5 @@ def softplus_backward(inputs, beta=1.0):
     """
     dy = inputs[0]
     x0 = inputs[1]
-    dx0 = dy / (1.0 + F.exp(-beta * x0))
+    dx0 = dy * F.sigmoid(beta * x0)
     return dx0

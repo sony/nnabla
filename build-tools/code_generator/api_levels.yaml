@@ -268,3 +268,5 @@
   SpectralNorm_iifB: 330
 32:
   Meshgrid_B: 334
+33:
+  SoftPlus_f: 335

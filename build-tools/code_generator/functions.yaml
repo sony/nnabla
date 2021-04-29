@@ -1479,8 +1479,7 @@ Neural Network Activation Functions:
     function_ids:
       ii: 252
       Empty: 262
-      i: 331
-      f: 332
+      f: 335
   SoftSign:
     snake_name: softsign
     doc: |2
