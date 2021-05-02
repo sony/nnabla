@@ -61,9 +61,11 @@ def get_file_handle_load(nnp, path, ext):
         else:
             raise ValueError("Currently, ext == {} is not support".format(ext))
 
-        yield f
-        if need_close:
-            f.close()
+        try:
+            yield f
+        finally:
+            if need_close:
+                f.close()
     else:
         if ext in ['.h5']:
             # if nnp is not None and extension is .h5
@@ -73,8 +75,10 @@ def get_file_handle_load(nnp, path, ext):
                 yield f
         else:
             f = nnp.open(path, 'r')
-            yield f
-            f.close()
+            try:
+                yield f
+            finally:
+                f.close()
 
 
 @contextlib.contextmanager
@@ -101,12 +105,13 @@ def get_file_handle_save(path, ext):
             f = open(path, 'wb')
     else:
         raise ValueError("Currently, ext == {} is not support".format(ext))
-
-    yield f
-    if need_close:
-        f.close()
-    if hasattr(path, 'seek'):
-        path.seek(0)
+    try:
+        yield f
+    finally:
+        if need_close:
+            f.close()
+        if hasattr(path, 'seek'):
+            path.seek(0)
 
 
 def get_buf_type(filename):
