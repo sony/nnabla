@@ -16,6 +16,7 @@ from __future__ import division
 
 import pytest
 import numpy as np
+from six import BytesIO, StringIO
 
 try:
     from nnabla.utils import audio_utils
@@ -100,7 +101,8 @@ def test_minmax_auto_scale(audio, out_datatype):
 @pytest.mark.parametrize("backend", ["pydub"])
 @pytest.mark.parametrize("channel_first", [False, True])
 @pytest.mark.parametrize("audio", audios)
-def test_ausave_and_auread(tmpdir, backend, channel_first, audio):
+@pytest.mark.parametrize("source_type", ['string', 'binaryFileHandler', 'BytesIO', 'StringIO', 'strFileHandler'])
+def test_ausave_and_auread(tmpdir, backend, channel_first, audio, source_type):
 
     _change_backend(backend)
 
@@ -112,22 +114,39 @@ def test_ausave_and_auread(tmpdir, backend, channel_first, audio):
         audio = audio.transpose((1, 0))
 
     # do ausave
-    def save_audio_function():
+    def save_audio_function(audio_file_path):
         audio_utils.ausave(audio_file_path, audio, channel_first=channel_first)
 
     if check_save_condition(backend, audio):
-        save_audio_function()
+        save_audio_function(audio_file_path)
     else:
         with pytest.raises(ValueError):
-            save_audio_function()
+            save_audio_function(audio_file_path)
 
         return True
 
     # do auread
-    def read_audio_function():
-        return audio_utils.auread(audio_file_path, channel_first=channel_first)
+    def read_audio_function(source):
+        return audio_utils.auread(source, channel_first=channel_first)
 
-    read_audio = read_audio_function()
+    # 'string', 'binaryFileHandler', 'BytesIO', 'StringIO', 'strFileHandler'
+    if source_type == 'string':
+        read_audio = read_audio_function(audio_file_path)
+    elif source_type == 'binaryFileHandler':
+        with open(audio_file_path, 'rb') as f:
+            read_audio = read_audio_function(f)
+    elif source_type == 'BytesIO':
+        with open(audio_file_path, 'rb') as f:
+            read_audio = read_audio_function(BytesIO(f.read()))
+    elif source_type == 'StringIO':
+        with pytest.raises(ValueError):
+            read_audio = read_audio_function(StringIO(audio_file_path))
+        return True
+    elif source_type == 'strFileHandler':
+        with pytest.raises(ValueError):
+            with open(audio_file_path, 'r') as f:
+                read_audio = read_audio_function(f)
+        return True
 
     logger.info(read_audio.shape)
     # ---check size and channels---

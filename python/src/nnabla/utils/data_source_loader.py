@@ -37,6 +37,7 @@ import os
 import urllib.request as request
 import six
 import tempfile
+import binascii
 from shutil import rmtree
 
 from nnabla.utils import image_utils
@@ -110,6 +111,7 @@ class FileReader:
 
     def __init__(self, base_uri):
         self._base_uri = base_uri
+        self.base_ext = os.path.splitext(self._base_uri)[1].lower()
         if base_uri[0:5].lower() == 's3://':
             self._file_type = 's3'
             uri_header, uri_body = self._base_uri.split('://', 1)
@@ -174,6 +176,7 @@ class FileReader:
                 f = open(filename, 'rt', encoding=encoding)
             else:
                 f = open(filename, 'rb')
+        f.ext = os.path.splitext(filename)[1].lower()
         yield f
         f.close()
 
@@ -207,6 +210,88 @@ class FileReader:
         elif self._file_type == 'http':
             return None
         return [f for f in sorted(os.listdir(self._base_uri)) if os.path.splitext(f)[1].lower() == ".h5"]
+
+
+def get_file_extension(source):
+    ext = ''
+    file_signature = {
+        '.bmp': (['424d'], 0x0),
+        '.dib': (['424d'], 0x0),
+        '.pgm': (['50350a'], 0x0),
+        '.jpeg': (['ffd8ff'], 0x0),
+        '.jpg': (['ffd8ff'], 0x0),
+        '.png': (['89504e470d0a1a0a'], 0x0),
+        '.tif': (['492049'], 0x0),
+        '.tiff': (['492049'], 0x0),
+        '.eps': (['c5d0d3c6'], 0x0),
+        '.gif': (['474946383761', '474946383961'], 0x0),
+        '.ico': (['00000100'], 0x0),
+        '.dcm': (['4449434d'], 0x80),
+        '.wav': (['52494646'], 0x0),
+    }
+    if hasattr(source, "read"):
+        if hasattr(source, "name"):
+            ext = os.path.splitext(source.name)[1].lower()
+        else:
+            for extension, (signature, offset) in file_signature.items():
+                source.seek(offset)
+                data = binascii.hexlify(source.read()).decode('utf-8')
+                source.seek(0)
+                for s in signature:
+                    if data.startswith(s):
+                        ext = extension
+    elif isinstance(source, str):
+        ext = os.path.splitext(source)[1].lower()
+    return ext
+
+
+class ResourceFileReader:
+    '''
+    arrange a file or BytesIO object with extension info appended
+
+    '''
+
+    def __init__(self, source):
+        self._source = source
+        self.handler = None
+        if isinstance(self._source, str):
+            self.handler = FileReader(self._source)
+            self.ext = self.handler.base_ext
+            if not self.ext:
+                with self.handler.open() as f:
+                    self.ext = get_file_extension(f)
+        elif hasattr(self._source, "read") and self._accepted_source_type(self._source):
+            self.handler = self._source
+            self.ext = get_file_extension(self._source)
+        else:
+            raise ValueError(
+                "ResourceFileReader only accept path str, binary file handler or BytesIO")
+
+    def _accepted_source_type(self, source):
+        if not hasattr(source, 'seek'):
+            return False
+        try:
+            source.seek(0)
+            c = source.read(1)
+            source.seek(0)
+        except Exception:
+            return False
+        if isinstance(c, str):
+            return False
+        return True
+
+    @contextlib.contextmanager
+    def open(self):
+        if isinstance(self.handler, FileReader):
+            with self.handler.open() as f:
+                if not f.ext:
+                    f.ext = self.ext
+                yield f
+        else:
+            self.handler.seek(0)
+            self.handler.ext = self.ext
+            yield self.handler
+            self.handler.seek(0)
 
 
 def load_image_imread(file, shape=None, max_range=1.0):

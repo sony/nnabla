@@ -69,18 +69,12 @@ def _auto_scale_before(audio_arr, datatype):
             "the itemsize of out_datatype for rescaling should not greater than 4.")
 
 
-def _auread_before(path, raw_format_param):
-    filepath = path if isinstance(path, str) else path.name
-
-    if not os.path.exists(filepath):
-        raise ValueError("path {} does not exist".format(path))
-
-    ext = os.path.splitext(filepath)[-1]
-    if ext not in ['.wav', '.raw']:
+def _auread_before(source, raw_format_param):
+    if source.ext not in ['.wav', '.raw']:
         raise ValueError("path should contains filename extension and"
                          " only .raw .wav formats are now supported.")
 
-    if ext == '.raw' and raw_format_param is None:
+    if source.ext == '.raw' and raw_format_param is None:
         raise ValueError("raw_format_param which contains sample_width, frame_rate, and channels"
                          " need to be provided when read raw format audio file.")
 
