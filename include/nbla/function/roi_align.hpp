@@ -22,7 +22,7 @@
 namespace nbla {
 
 NBLA_REGISTER_FUNCTION_HEADER(RoiAlign, const vector<int> &,
-                              const vector<float> &, int, bool, bool);
+                              const vector<float> &, int, bool);
 
 /**
     @todo Write doc.
@@ -35,27 +35,25 @@ Outputs:
  */
 template <typename T>
 class RoiAlign : public BaseFunction<const vector<int> &, const vector<float> &,
-                                     int, bool, bool> {
+                                     int, bool> {
 protected:
   const vector<int> output_size_;
   const vector<float> spatial_scale_;
   int sampling_ratio_;
-  bool aligned_;
   bool channel_last_;
 
 public:
   RoiAlign(const Context &ctx, const vector<int> &output_size,
-           const vector<float> &spatial_scale, int sampling_ratio, bool aligned,
+           const vector<float> &spatial_scale, int sampling_ratio,
            bool channel_last)
-      : BaseFunction(ctx, output_size, spatial_scale, sampling_ratio, aligned,
+      : BaseFunction(ctx, output_size, spatial_scale, sampling_ratio,
                      channel_last),
         output_size_(output_size), spatial_scale_(spatial_scale),
-        sampling_ratio_(sampling_ratio), aligned_(aligned),
-        channel_last_(channel_last) {}
+        sampling_ratio_(sampling_ratio), channel_last_(channel_last) {}
   virtual ~RoiAlign() {}
   virtual shared_ptr<Function> copy() const {
     return create_RoiAlign(ctx_, output_size_, spatial_scale_, sampling_ratio_,
-                           aligned_, channel_last_);
+                           channel_last_);
   }
   virtual int min_inputs() { return 2; }
   virtual int min_outputs() { return 1; }

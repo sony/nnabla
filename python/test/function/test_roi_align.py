@@ -21,7 +21,7 @@ ctxs = list_context('RoiAlign')
 
 
 def ref_roi_align(input, boxes, output_size, spatial_scale, sampling_ratio,
-                  aligned, channel_last):
+                  channel_last):
     assert len(input.shape) == 4
     assert len(boxes.shape) == 2
 
@@ -78,9 +78,7 @@ def ref_roi_align(input, boxes, output_size, spatial_scale, sampling_ratio,
     output = list()
     for box in boxes:
         img = input[int(box[0])]
-        roi = box[1:] * (2 * spatial_scale[::-1]) - 0.5 * aligned
-        if not aligned:
-            roi[2:] = roi[:2] + np.maximum(roi[2:] - roi[:2], 1)
+        roi = box[1:] * (2 * spatial_scale[::-1]) - 0.5
         if sampling_ratio > 0:
             _sampling_ratio = np.array([sampling_ratio, sampling_ratio])
         else:
@@ -103,11 +101,10 @@ def ref_roi_align(input, boxes, output_size, spatial_scale, sampling_ratio,
 @pytest.mark.parametrize('output_size', [(10, 10), (5, 15), (13, 8)])
 @pytest.mark.parametrize('spatial_scale', [(1.0, 1.5), (0.7, 1.0)])
 @pytest.mark.parametrize('sampling_ratio', [-1, 0, 1, 2])
-@pytest.mark.parametrize('aligned', [False, True])
 @pytest.mark.parametrize('channel_last', [False, True])
 @pytest.mark.parametrize("seed", [313])
 def test_roi_align_forward_backward(seed, inshape, boxes, output_size,
-                                    spatial_scale, sampling_ratio, aligned,
+                                    spatial_scale, sampling_ratio,
                                     channel_last, ctx, func_name):
     from nbla_test_utils import function_tester
     if channel_last and not func_name.endswith('Cuda'):
@@ -120,8 +117,7 @@ def test_roi_align_forward_backward(seed, inshape, boxes, output_size,
     if channel_last:
         inputs[0] = np.transpose(inputs[0], (0, 2, 3, 1))
     func_args = [
-        #output_size, 2 * [spatial_scale], sampling_ratio, aligned, channel_last,
-        output_size, spatial_scale, sampling_ratio, aligned, channel_last,
+        output_size, spatial_scale, sampling_ratio, channel_last,
     ]
     function_tester(rng, F.roi_align, ref_roi_align, inputs, func_args,
                     atol_f=1e-4, atol_b=1e-2, backward=[True, False],

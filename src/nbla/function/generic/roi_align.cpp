@@ -20,7 +20,7 @@
 namespace nbla {
 
 NBLA_REGISTER_FUNCTION_SOURCE(RoiAlign, const vector<int> &,
-                              const vector<float> &, int, bool, bool);
+                              const vector<float> &, int, bool);
 
 template <typename T>
 void RoiAlign<T>::setup_impl(const Variables &inputs,
@@ -59,19 +59,6 @@ void RoiAlign<T>::setup_impl(const Variables &inputs,
 template <typename T> struct Box {
   T batch_index, x1, y1, x2, y2;
 
-  inline void scale_and_shift(const vector<float> &scale, const float shift) {
-    x1 = x1 * scale.at(1) - shift;
-    y1 = y1 * scale.at(0) - shift;
-    x2 = x2 * scale.at(1) - shift;
-    y2 = y2 * scale.at(0) - shift;
-  }
-
-  inline T width(const bool aligned) {
-    return aligned ? x2 - x1 : std::max(x2 - x1, T(1));
-  };
-  inline T height(const bool aligned) {
-    return aligned ? y2 - y1 : std::max(y2 - y1, T(1));
-  };
   inline int index() { return std::max(static_cast<int>(batch_index), 0); }
 };
 
@@ -107,10 +94,13 @@ void RoiAlign<T>::forward_impl(const Variables &inputs,
 
   for (auto n = 0; n < roiboxes; n++) {
     auto roi = *reinterpret_cast<Box<T> const *>(boxes_data + n * 5);
-    roi.scale_and_shift(this->spatial_scale_, this->aligned_ ? T(0.5) : T(0));
+    auto const roi_x1 = static_cast<T>(roi.x1 * spatial_scale_.at(1) - 0.5f);
+    auto const roi_x2 = static_cast<T>(roi.x2 * spatial_scale_.at(1) - 0.5f);
+    auto const roi_y1 = static_cast<T>(roi.y1 * spatial_scale_.at(0) - 0.5f);
+    auto const roi_y2 = static_cast<T>(roi.y2 * spatial_scale_.at(0) - 0.5f);
 
-    auto const step_size_x = roi.width(this->aligned_) / output_cols;
-    auto const step_size_y = roi.height(this->aligned_) / output_rows;
+    auto const step_size_x = (roi_x2 - roi_x1) / output_cols;
+    auto const step_size_y = (roi_y2 - roi_y1) / output_rows;
 
     auto const grid_size_x = sampling_grid(this->sampling_ratio_, step_size_x);
     auto const grid_size_y = sampling_grid(this->sampling_ratio_, step_size_y);
@@ -129,10 +119,10 @@ void RoiAlign<T>::forward_impl(const Variables &inputs,
       auto output_index = (n * channels + c) * output_rows * output_cols;
 
       for (auto y = 0; y < output_rows; y++) {
-        auto yf = roi.y1 + static_cast<T>(y) * step_size_y;
+        auto yf = roi_y1 + static_cast<T>(y) * step_size_y;
 
         for (auto x = 0; x < output_cols; x++) {
-          auto xf = roi.x1 + static_cast<T>(x) * step_size_x;
+          auto xf = roi_x1 + static_cast<T>(x) * step_size_x;
           auto output_value = T(0);
 
           for (auto yy = 0; yy < grid_size_y; yy++) {
@@ -225,10 +215,13 @@ void RoiAlign<T>::backward_impl(const Variables &inputs,
 
   for (auto n = 0; n < roiboxes; n++) {
     auto roi = *reinterpret_cast<Box<T> const *>(boxes_data + n * 5);
-    roi.scale_and_shift(this->spatial_scale_, this->aligned_ ? T(0.5) : T(0));
+    auto const roi_x1 = static_cast<T>(roi.x1 * spatial_scale_.at(1) - 0.5f);
+    auto const roi_x2 = static_cast<T>(roi.x2 * spatial_scale_.at(1) - 0.5f);
+    auto const roi_y1 = static_cast<T>(roi.y1 * spatial_scale_.at(0) - 0.5f);
+    auto const roi_y2 = static_cast<T>(roi.y2 * spatial_scale_.at(0) - 0.5f);
 
-    auto const step_size_x = roi.width(this->aligned_) / output_cols;
-    auto const step_size_y = roi.height(this->aligned_) / output_rows;
+    auto const step_size_x = (roi_x2 - roi_x1) / output_cols;
+    auto const step_size_y = (roi_y2 - roi_y1) / output_rows;
 
     auto const grid_size_x = sampling_grid(this->sampling_ratio_, step_size_x);
     auto const grid_size_y = sampling_grid(this->sampling_ratio_, step_size_y);
@@ -247,10 +240,10 @@ void RoiAlign<T>::backward_impl(const Variables &inputs,
       auto output_index = (n * channels + c) * output_rows * output_cols;
 
       for (auto y = 0; y < output_rows; y++) {
-        auto yf = roi.y1 + static_cast<T>(y) * step_size_y;
+        auto yf = roi_y1 + static_cast<T>(y) * step_size_y;
 
         for (auto x = 0; x < output_cols; x++) {
-          auto xf = roi.x1 + static_cast<T>(x) * step_size_x;
+          auto xf = roi_x1 + static_cast<T>(x) * step_size_x;
           auto grad_value = output_grad[output_index++] * inverse_grid_count;
 
           for (auto yy = 0; yy < grid_size_y; yy++) {

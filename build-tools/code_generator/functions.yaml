@@ -7654,11 +7654,6 @@ Unsupported, Special Use:
           <= 0`.
         type: int64
         default: -1
-      aligned:
-        doc: If True, pixel shift by -0.5 for better alignment between two neighboring
-          pixel indices.
-        type: bool
-        default: true
       channel_last:
         doc: If True, the last dimension is considered as channel dimension, a.k.a
           NHWC order.
@@ -7672,4 +7667,4 @@ Unsupported, Special Use:
           or :math:`(K, output\_size[0], output\_size[1], C)`.
     c_runtime: not support
     function_ids:
-      iIfFiBB: 338
+      iIfFiB: 338
