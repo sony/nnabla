@@ -283,6 +283,7 @@ Geometric Neural Network Layers
 .. autofunction:: affine_grid
 .. autofunction:: warp_by_grid
 .. autofunction:: warp_by_flow
+.. autofunction:: roi_align
 
 Quantized Neural Network Layers
 ----------------------------------

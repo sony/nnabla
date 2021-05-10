@@ -629,3 +629,6 @@ PadPackedSequence:
 Norm:
   float: [float]
   half: [Half]
+RoiAlign:
+  float: [float]
+  half: [Half]
