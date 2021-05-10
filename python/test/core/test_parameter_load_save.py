@@ -23,7 +23,7 @@ from collections import OrderedDict
 from nnabla.testing import assert_allclose
 from nnabla.core.modules import ConvBn, ResUnit
 
-from helper import ModuleCreator, forward_variable_and_check_equal
+from helper import ModuleCreator, forward_variable_and_check_equal, create_temp_with_dir
 
 nnp_file = "t.nnp"
 protobuf_file = "t.protobuf"
@@ -157,6 +157,42 @@ def test_parameter_file_load_save_for_file_object(memory_buffer_format):
         with nn.parameter_scope('', another.parameter_scope):
             nn.load_parameters(param_file, extension=extension)
         another.update_parameter()
+
+    ref_outputs = another(*variable_inputs)
+
+    # should equal
+    forward_variable_and_check_equal(outputs, ref_outputs)
+
+
+@pytest.mark.parametrize("extension", ['.protobuf', '.h5'])
+@pytest.mark.parametrize("file_format", ['file_io', 'byte_io', 'str'])
+def test_module_load_save_parameter_file_io(extension, file_format):
+    module_creator = ModuleCreator(
+        TSTNetNormal(), [(4, 3, 32, 32), (4, 3, 32, 32)])
+    variable_inputs = module_creator.get_variable_inputs()
+    a_module = module_creator.module
+    outputs = a_module(*variable_inputs)
+    another = TSTNetNormal()
+    ref_outputs = another(*variable_inputs)
+
+    # Should not equal
+    with pytest.raises(AssertionError) as excinfo:
+        forward_variable_and_check_equal(outputs, ref_outputs)
+
+    if file_format == 'file_io':
+        with create_temp_with_dir("tmp{}".format(extension)) as param_file:
+            with open(param_file, "wb") as f:
+                a_module.save_parameters(f, extension=extension)
+            with open(param_file, "rb") as f:
+                another.load_parameters(f, extension=extension)
+    elif file_format == 'byte_io':
+        with io.BytesIO() as param_file:
+            a_module.save_parameters(param_file, extension=extension)
+            another.load_parameters(param_file, extension=extension)
+    elif file_format == 'str':
+        with create_temp_with_dir("tmp{}".format(extension)) as param_file:
+            a_module.save_parameters(param_file, extension=extension)
+            another.load_parameters(param_file, extension=extension)
 
     ref_outputs = another(*variable_inputs)
 
