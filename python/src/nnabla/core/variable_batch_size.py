@@ -82,7 +82,8 @@ def variable_batch_size(network):
             pf.args['shape'] = [-1] + arg_shape[1:]
 
     for var in network.variables.values():
-        if var.name not in special_variable and var.shape[0] == expect_batch_size:
-            var.shape = (-1,) + var.shape[1:]
+        if var.shape:
+            if var.name not in special_variable and var.shape[0] == expect_batch_size:
+                var.shape = (-1,) + var.shape[1:]
 
     network.batch_size = expect_batch_size
