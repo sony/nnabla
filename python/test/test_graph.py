@@ -20,6 +20,7 @@ import nnabla as nn
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
 from nnabla.testing import assert_allclose, clear_called_flag_recorder
+from nbla_test_utils import list_context
 
 
 @pytest.mark.parametrize("seed", [313])
@@ -753,13 +754,6 @@ class TestClearOutputGrad():
 
 
 class TestRecomputation():
-
-    def setup_method(self):
-        clear_called_flag_recorder.activate_clear_called_flag_recorder()
-
-    def teardown_method(self):
-        clear_called_flag_recorder.deactivate_clear_called_flag_recorder()
-
     def check_input_data_clear_called_flags(self, answer):
         result = clear_called_flag_recorder.get_input_clear_called_flags()
         print(result)
@@ -776,16 +770,8 @@ class TestRecomputation():
                 if input.need_grad:
                     input.grad.zero()
 
-            def check_recompute_data_cleared(nnabla_func):
-                inputs = nnabla_func.inputs
-                for input in inputs:
-                    if input.recompute:
-                        assert input.data.clear_called
-
             y.forward(clear_no_need_grad=clear_no_need_grad,
                       clear_buffer=clear_buffer)
-            if clear_no_need_grad:
-                y.visit(check_recompute_data_cleared)
             y.backward()
 
             # Get grads
@@ -801,19 +787,28 @@ class TestRecomputation():
         for input in inputs:
             input.d = rng.randn(*input.shape)
 
-        # Setup graph
-        y1 = graph(*inputs)
-        y2 = graph(*inputs)
-        y3 = graph(*inputs)
+        # Calculate reference grads
+        y_ref = graph(*inputs)
+        # Disable recompute flags for generating reference grads
 
-        grads_expected = forward_backward_and_get_grads(y1, False, False)
-        # Clear data which `recompute == True`. (Normal use)
-        grads_actual = forward_backward_and_get_grads(y2, True, False)
-        # Clear all data. (Test only)
-        grads_actual_all_clear = forward_backward_and_get_grads(y3, True, True)
+        def disable_recompute_flag(f):
+            for input in f.inputs:
+                input.apply(recompute=False)
+        y_ref.visit(disable_recompute_flag)
+        grads_expected = forward_backward_and_get_grads(y_ref, False, False)
 
-        assert_allclose(grads_actual, grads_expected, rtol=0, atol=0)
-        assert_allclose(grads_actual_all_clear, grads_expected, rtol=0, atol=0)
+        # Test grads' value under all combination of flags of `Variable::forward()`
+        for clear_no_need_grad in [False, True]:
+            for clear_buffer in [False, True]:
+                if clear_no_need_grad == False and clear_buffer == False:
+                    # Reference condition
+                    continue
+
+                y = graph(*inputs)
+                grads_actual = forward_backward_and_get_grads(
+                    y, clear_no_need_grad, clear_buffer)
+                for a, e in zip(grads_actual, grads_expected):
+                    assert_allclose(a, e, rtol=0, atol=0)
 
     # Check setting up recompute flag
     def test_recompute_flag(self):
@@ -828,7 +823,7 @@ class TestRecomputation():
         assert x3.recompute == False
 
     # Check whether input data is cleared when recompute flag is True
-    def test_recompute_clear_input(self):
+    def test_clear_input_data(self):
         x0 = nn.Variable((1, 1), need_grad=True)
         # `F.sin` input data is always needed for grad calculation
         x1 = F.sin(x0).apply(recompute=True)
@@ -839,12 +834,17 @@ class TestRecomputation():
         answer.append([False])  # x0
         answer.append([True])  # x1
         answer.append([False])  # x2
+
+        clear_called_flag_recorder.activate_clear_called_flag_recorder()
+
         x3.forward(clear_no_need_grad=True)
         self.check_input_data_clear_called_flags(answer)
 
+        clear_called_flag_recorder.deactivate_clear_called_flag_recorder()
+
     # Check recomputed data value
     @pytest.mark.parametrize("seed", [313])
-    def test_graph_recomputation_data_value(self, seed):
+    def test_recomputed_data_value(self, seed):
         rng = np.random.RandomState(seed)
         a0 = nn.Variable((2, 3), need_grad=True)
         b0 = nn.Variable((2, 3), need_grad=True)
@@ -893,7 +893,7 @@ class TestRecomputation():
             assert_allclose(act, ref, rtol=0, atol=0)
 
     @pytest.mark.parametrize("seed", [313])
-    def test_graph_recomputation_simple(self, seed):
+    def test_grad_value_simple(self, seed):
         x = nn.Variable((2, 3), need_grad=True)
 
         inputs = (x,)
@@ -905,8 +905,26 @@ class TestRecomputation():
 
         self.check_recomputation(seed, graph, inputs)
 
+    @pytest.mark.parametrize("seed", [313])
+    @pytest.mark.parametrize("need_grad_x1", [False, True])
+    @pytest.mark.parametrize("need_grad_x2", [False, True])
+    def test_grad_value_with_branch(self, seed, need_grad_x1, need_grad_x2):
+        x1 = nn.Variable((2, 3), need_grad=need_grad_x1)
+        x2 = nn.Variable((2, 3), need_grad=need_grad_x2)
+
+        inputs = (x1, x2)
+
+        def graph(x1, x2):
+            x1 = F.identity(x1).apply(recompute=True)
+            x2 = F.identity(x2).apply(recompute=True)
+            y = F.mul2(x1, x2)
+            y = F.identity(y)
+            return y
+
+        self.check_recomputation(seed, graph, inputs)
+
     # Check clear of data on outside of backward path
-    def test_graph_recomputation_clear_data_on_not_bwd_path(self):
+    def test_clear_data_on_not_bwd_path(self):
         a0 = nn.Variable((2, 3), need_grad=True)
         a1 = F.identity(a0).apply(recompute=True)
         a2 = F.sin(a1).apply(recompute=True)
@@ -955,7 +973,7 @@ class TestRecomputation():
         clear_called_flag_recorder.deactivate_clear_called_flag_recorder()
 
     # Check clear data not need for grad calculation during recomputation
-    def test_graph_recomputation_clear_no_need_grad_during_recomputation(self):
+    def test_clear_no_need_grad_during_recomputation(self):
         x0 = nn.Variable((2, 3), need_grad=True)
 
         x1 = F.identity(x0).apply(recompute=True)
@@ -994,26 +1012,8 @@ class TestRecomputation():
         self.check_input_data_clear_called_flags(expected)
         clear_called_flag_recorder.deactivate_clear_called_flag_recorder()
 
-    @pytest.mark.parametrize("seed", [313])
-    @pytest.mark.parametrize("need_grad_x1", [False, True])
-    @pytest.mark.parametrize("need_grad_x2", [False, True])
-    def test_graph_recomputation_with_branch(self, seed, need_grad_x1, need_grad_x2):
-        x1 = nn.Variable((2, 3), need_grad=need_grad_x1)
-        x2 = nn.Variable((2, 3), need_grad=need_grad_x2)
-
-        inputs = (x1, x2)
-
-        def graph(x1, x2):
-            x1 = F.identity(x1).apply(recompute=True)
-            x2 = F.identity(x2).apply(recompute=True)
-            y = F.mul2(x1, x2)
-            y = F.identity(y)
-            return y
-
-        self.check_recomputation(seed, graph, inputs)
-
     # Check recompute recursion stops at checkpoint
-    def test_graph_recomputation_checkpoint(self):
+    def test_checkpoint(self):
         x0 = nn.Variable((2, 3), need_grad=True)
 
         x1 = F.sin(x0).apply(recompute=True)
@@ -1050,7 +1050,7 @@ class TestRecomputation():
         assert(ref_flags == act_flags)
 
     # Test unnecessary recomputation with single recomputation recursion
-    def test_graph_recomputation_unnecessary_0(self):
+    def test_unnecessary_traverse_0(self):
         # No need grad path
         a0 = nn.Variable((2, 3), need_grad=False)
         a1 = F.sin(a0).apply(recompute=True)
@@ -1074,7 +1074,7 @@ class TestRecomputation():
         assert(b1.data.clear_called == False)
 
     # Test recomputation recursion depth
-    def test_graph_recomputation_unnecessary_1(self):
+    def test_unnecessary_traverse_1(self):
         a0 = nn.Variable((2, 3), need_grad=False)
         # `a1` will not be recomputed since `a2` will not be cleared.
         a1 = F.sin(a0).apply(recompute=True)
@@ -1099,7 +1099,7 @@ class TestRecomputation():
         assert(a1.data.clear_called == True)
 
     # Test unnecessary recomputation for whole graph
-    def test_graph_recomputation_unnecessary_2(self):
+    def test_unnecessary_traverse_2(self):
         def fail_with_not_cleared_data(nnabla_func):
             inputs = nnabla_func.inputs
             for input in inputs:

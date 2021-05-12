@@ -106,7 +106,7 @@ CgVariable::CgVariable(VariablePtr var, bool need_grad) : CgVariable(var) {
 class ForwardCallback {
   bool clear_buffer_{false};
   bool clear_no_need_grad_{false};
-  bool recomputation_{false};
+  bool as_recomputation_{false};
   function_hook_type function_pre_hook_;
   function_hook_type function_post_hook_;
   unordered_map<CgVariablePtr, unsigned int> vseen_;
@@ -117,10 +117,11 @@ class ForwardCallback {
 
 public:
   ForwardCallback(bool clear_buffer, bool clear_no_need_grad,
-                  bool recomputation, function_hook_type function_pre_hook,
+                  bool as_recomputation, function_hook_type function_pre_hook,
                   function_hook_type function_post_hook)
       : clear_buffer_(clear_buffer), clear_no_need_grad_(clear_no_need_grad),
-        recomputation_(recomputation), function_pre_hook_(function_pre_hook),
+        as_recomputation_(as_recomputation),
+        function_pre_hook_(function_pre_hook),
         function_post_hook_(function_post_hook) {}
 
   bool check_last_visit(CgVariablePtr v) {
@@ -167,8 +168,7 @@ public:
     return false;
   }
 
-  vector<bool> get_clear_flags(CgFunctionPtr func,
-                               const bool as_recomputation) {
+  vector<bool> get_clear_flags(CgFunctionPtr func) {
     auto outputs = func->outputs();
     auto inputs = func->inputs();
 
@@ -218,7 +218,7 @@ public:
       // Skip data clear during recomputation.
       // Data which will be recomputed must be cleared only during forwad
       // propagation.
-      if (!as_recomputation && vi->recompute()) {
+      if (!as_recomputation_ && vi->recompute()) {
         ret[i] = true;
         continue;
       }
@@ -310,7 +310,7 @@ public:
       }
     }
 
-    if (recomputation_) {
+    if (as_recomputation_) {
       try {
         func->function()->recompute(func->function_inputs(), voutputs,
                                     need_recompute);
@@ -364,7 +364,7 @@ public:
     this->on_outputs(func);
 
     // Clear input buffers where possible.
-    auto clear_flags = get_clear_flags(func, recomputation_);
+    auto clear_flags = get_clear_flags(func);
     clear_inputs(func->inputs(), clear_flags);
 
     // Record when inputs and outputs are cleared.
@@ -642,7 +642,7 @@ public:
 
 void CgVariable::visit_function_recursive(
     CgFunctionPtr func, unordered_set<CgFunctionPtr> &fclosed,
-    const bool recomputation,
+    const bool as_recomputation,
     std::function<void(CgFunctionPtr)> forward_callback) {
 
   // A. Push the function to the closed list.
@@ -657,7 +657,7 @@ void CgVariable::visit_function_recursive(
     auto parent = input->parent();
     // B-1. Input with no parent doesn't require
     if (!parent) {
-      if (recomputation) {
+      if (as_recomputation) {
         // No need to care about `need_grad`, `rank` or `need_setup` during
         // recomputation.
         continue;
@@ -674,21 +674,21 @@ void CgVariable::visit_function_recursive(
 
     // B-2. Visit functions recursively if parent is not closed.
     if (fclosed.find(parent) == fclosed.end()) {
-      if (recomputation) {
+      if (as_recomputation) {
         // Data recomputation is performed during backward propagation.
         // Only cleared data is a recomputation target.
         const bool cleared = input->variable()->data()->array()->clear_called();
         if (cleared) {
-          visit_function_recursive(parent, fclosed, recomputation,
+          visit_function_recursive(parent, fclosed, as_recomputation,
                                    forward_callback);
         }
       } else {
-        visit_function_recursive(parent, fclosed, recomputation,
+        visit_function_recursive(parent, fclosed, as_recomputation,
                                  forward_callback);
       }
     }
 
-    if (recomputation) {
+    if (as_recomputation) {
       // Skip B-3 and B-4.
       // No need to care about `need_grad`, `rank` or `need_setup` during
       // recomputation.
@@ -706,7 +706,7 @@ void CgVariable::visit_function_recursive(
     need_setup |= input->check_and_unmark_need_setup(func);
   }
 
-  if (recomputation) {
+  if (as_recomputation) {
     forward_callback(func);
     // Skip C. to F.
     // No need to update `need_grad`, `rank` or `need_setup` during
@@ -761,9 +761,9 @@ void CgVariable::visit_function_backward(
   open.insert(make_tuple(-p->rank(), get_id(p), p));
 
   // For forward recomputation
-  ForwardCallback forward_callback(false /* clear_buffer */,
-                                   true /* clear_no_need_grad */,
-                                   true /* recomputation */, nullptr, nullptr);
+  ForwardCallback forward_callback(
+      false /* clear_buffer */, true /* clear_no_need_grad */,
+      true /* as_recomputation */, nullptr, nullptr);
   unordered_set<CgFunctionPtr> fclosed;
 
   while (!open.empty()) {
@@ -810,7 +810,7 @@ void CgVariable::visit_function_backward(
 
       // Exec recomputation for i-th input data
       visit_function_recursive(
-          parent, fclosed, true /* recomputation */,
+          parent, fclosed, true /* as_recomputation */,
           [&forward_callback](CgFunctionPtr f) { forward_callback(f); });
     }
 
@@ -856,7 +856,7 @@ void CgVariable::forward(bool clear_buffer, bool clear_no_need_grad,
   }
   NBLA_CHECK(parent_, error_code::value, "The variable has no parent.");
   ForwardCallback forward_callback(clear_buffer, clear_no_need_grad,
-                                   false /* recompute */, function_pre_hook,
+                                   false /* as_recompute */, function_pre_hook,
                                    function_post_hook);
   visit_function_recursive(
       parent_, *fclosed, false /* recomputation */,
