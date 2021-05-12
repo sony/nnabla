@@ -37,8 +37,8 @@ protected:
   float sigma_;
   const vector<int> shape_;
   int seed_;
-  std::mt19937 rgen_;
-  std::shared_ptr<std::mt19937> rgen_for_recompute_;
+  bool save_rng_ = false;
+  std::mt19937 rgen_, rgen_for_recompute_;
 
 public:
   Randn(const Context &ctx, float mu, float sigma, const vector<int> &shape,

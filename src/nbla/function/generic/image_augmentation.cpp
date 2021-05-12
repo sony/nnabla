@@ -55,7 +55,7 @@ template <typename T>
 void ImageAugmentation<T>::setup_recompute_impl(
     const Variables &inputs, const Variables &outputs,
     const vector<bool> &need_recompute) {
-  rgen_for_recompute_.reset();
+  save_rng_ = true;
 }
 
 template <typename T>
@@ -297,8 +297,8 @@ void ImageAugmentation<T>::forward_impl(const Variables &inputs,
       seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
                   : rgen_;
   // Remember the random state for recomputation.
-  if (!rgen_for_recompute_) {
-    rgen_for_recompute_ = std::make_shared<std::mt19937>(rgen);
+  if (save_rng_) {
+    rgen_for_recompute_ = rgen;
   }
 
   image_augmentation(inputs, outputs, rgen);
@@ -308,8 +308,7 @@ template <typename T>
 void ImageAugmentation<T>::recompute_impl(const Variables &inputs,
                                           const Variables &outputs,
                                           const vector<bool> &need_recompute) {
-  std::mt19937 &rgen = *rgen_for_recompute_;
-
+  auto rgen = rgen_for_recompute_;
   image_augmentation(inputs, outputs, rgen);
 }
 

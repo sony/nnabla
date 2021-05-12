@@ -36,7 +36,7 @@ template <typename T>
 void RandGamma<T>::setup_recompute_impl(const Variables &inputs,
                                         const Variables &outputs,
                                         const vector<bool> &need_recompute) {
-  rgen_for_recompute_.reset();
+  save_rng_ = true;
 }
 
 template <typename T>
@@ -47,8 +47,8 @@ void RandGamma<T>::forward_impl(const Variables &inputs,
       seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
                   : rgen_;
   // Remember the random state for recomputation.
-  if (!rgen_for_recompute_) {
-    rgen_for_recompute_ = std::make_shared<std::mt19937>(rgen);
+  if (save_rng_) {
+    rgen_for_recompute_ = rgen;
   }
 
   T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
@@ -62,7 +62,7 @@ void RandGamma<T>::recompute_impl(const Variables &inputs,
                                   const Variables &outputs,
                                   const vector<bool> &need_recompute) {
   std::gamma_distribution<typename force_float<T>::type> rdist(k_, theta_);
-  std::mt19937 &rgen = *rgen_for_recompute_;
+  auto rgen = rgen_for_recompute_;
 
   T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   for (int s = 0; s < outputs[0]->size(); s++) {

@@ -60,8 +60,8 @@ protected:
   int seed_;
   float scale_; // = 1./(1.-p_)
   Variable mask_;
-  std::mt19937 rgen_;
-  std::shared_ptr<std::mt19937> rgen_for_recompute_;
+  bool save_rng_ = false;
+  std::mt19937 rgen_, rgen_for_recompute_;
   std::bernoulli_distribution rdist_;
 
 public:

@@ -37,8 +37,8 @@ protected:
   int high_;
   const vector<int> shape_;
   int seed_;
-  std::mt19937 rgen_;
-  std::shared_ptr<std::mt19937> rgen_for_recompute_;
+  bool save_rng_ = false;
+  std::mt19937 rgen_, rgen_for_recompute_;
 
 public:
   Randint(const Context &ctx, int low, int high, const vector<int> &shape,

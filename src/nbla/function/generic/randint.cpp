@@ -35,7 +35,7 @@ template <typename T>
 void Randint<T>::setup_recompute_impl(const Variables &inputs,
                                       const Variables &outputs,
                                       const vector<bool> &need_recompute) {
-  rgen_for_recompute_.reset();
+  save_rng_ = true;
 }
 
 template <typename T>
@@ -47,8 +47,8 @@ void Randint<T>::forward_impl(const Variables &inputs,
       seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
                   : rgen_;
   // Remember the random state for recomputation.
-  if (!rgen_for_recompute_) {
-    rgen_for_recompute_ = std::make_shared<std::mt19937>(rgen);
+  if (save_rng_) {
+    rgen_for_recompute_ = rgen;
   }
 
   int *y = outputs[0]->cast_data_and_get_pointer<int>(this->ctx_, true);
@@ -62,7 +62,7 @@ void Randint<T>::recompute_impl(const Variables &inputs,
                                 const Variables &outputs,
                                 const vector<bool> &need_recompute) {
   std::uniform_int_distribution<int> rdist(low_, high_ - 1);
-  std::mt19937 &rgen = *rgen_for_recompute_;
+  auto rgen = rgen_for_recompute_;
 
   int *y = outputs[0]->cast_data_and_get_pointer<int>(this->ctx_, true);
   for (int s = 0; s < outputs[0]->size(); s++) {

@@ -74,8 +74,8 @@ protected:
   bool channel_last_;
   bool ste_fine_grained_;
 
-  std::mt19937 rgen_;
-  std::shared_ptr<std::mt19937> rgen_for_recompute_;
+  bool save_rng_ = false;
+  std::mt19937 rgen_, rgen_for_recompute_;
 
   NdArrayPtr random_coordinates_;
 

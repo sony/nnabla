@@ -95,8 +95,8 @@ protected:
   const vector<int> shape_;
   bool replace_;
   int seed_;
-  std::mt19937 rgen_;
-  std::shared_ptr<std::mt19937> rgen_for_recompute_;
+  bool save_rng_ = false;
+  std::mt19937 rgen_, rgen_for_recompute_;
   Variable idxbuf_;   // stores chosen indices for backward
   Size_t outer_loop_; // product of batch dimensions
   Size_t inner_loop_; // product of shape dimensions

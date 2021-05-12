@@ -54,8 +54,8 @@ protected:
   vector<vector<int>> step_;
 
   int seed_;
-  std::mt19937 rgen_;
-  std::shared_ptr<std::mt19937> rgen_for_recompute_;
+  bool save_rng_ = false;
+  std::mt19937 rgen_, rgen_for_recompute_;
 
 public:
   RandomCrop(const Context &ctx, const vector<int> &shape, int base_axis,
