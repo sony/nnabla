@@ -167,7 +167,8 @@ public:
     return false;
   }
 
-  vector<bool> get_clear_flags(CgFunctionPtr func) {
+  vector<bool> get_clear_flags(CgFunctionPtr func,
+                               const bool as_recomputation) {
     auto outputs = func->outputs();
     auto inputs = func->inputs();
 
@@ -214,7 +215,10 @@ public:
         ret[i] = true;
         continue;
       }
-      if (vi->recompute()) {
+      // Skip data clear during recomputation.
+      // Data which will be recomputed must be cleared only during forwad
+      // propagation.
+      if (!as_recomputation && vi->recompute()) {
         ret[i] = true;
         continue;
       }
@@ -360,10 +364,8 @@ public:
     this->on_outputs(func);
 
     // Clear input buffers where possible.
-    auto clear_flags = get_clear_flags(func);
-    if (!recomputation_) {
-      clear_inputs(func->inputs(), clear_flags);
-    }
+    auto clear_flags = get_clear_flags(func, recomputation_);
+    clear_inputs(func->inputs(), clear_flags);
 
     // Record when inputs and outputs are cleared.
     // It is possible to move clear_inputs above function_post_hook and record
@@ -655,6 +657,11 @@ void CgVariable::visit_function_recursive(
     auto parent = input->parent();
     // B-1. Input with no parent doesn't require
     if (!parent) {
+      if (recomputation) {
+        // No need to care about `need_grad`, `rank` or `need_setup` during
+        // recomputation.
+        continue;
+      }
       // Same as B-3.
       input->set_rank_(0);
       input->unset_need_grad_state();
@@ -675,11 +682,17 @@ void CgVariable::visit_function_recursive(
           visit_function_recursive(parent, fclosed, recomputation,
                                    forward_callback);
         }
-        continue; // Skip B-3., B-4.
       } else {
         visit_function_recursive(parent, fclosed, recomputation,
                                  forward_callback);
       }
+    }
+
+    if (recomputation) {
+      // Skip B-3 and B-4.
+      // No need to care about `need_grad`, `rank` or `need_setup` during
+      // recomputation.
+      continue;
     }
 
     // B-3. Update rank and need_grad of this input by propagating from the
@@ -696,8 +709,8 @@ void CgVariable::visit_function_recursive(
   if (recomputation) {
     forward_callback(func);
     // Skip C. to F.
-    // Some information like `need_grad` are not propagated correctly because
-    // graph traverse is performed partially in recomputation.
+    // No need to update `need_grad`, `rank` or `need_setup` during
+    // recomputation.
     return;
   }
 

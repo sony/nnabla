@@ -762,6 +762,7 @@ class TestRecomputation():
 
     def check_input_data_clear_called_flags(self, answer):
         result = clear_called_flag_recorder.get_input_clear_called_flags()
+        print(result)
         assert len(result) == len(answer)
         for i, flags in enumerate(answer):
             assert len(result[i]) == len(flags)
@@ -903,6 +904,95 @@ class TestRecomputation():
             return y
 
         self.check_recomputation(seed, graph, inputs)
+
+    # Check clear of data on outside of backward path
+    def test_graph_recomputation_clear_data_on_not_bwd_path(self):
+        a0 = nn.Variable((2, 3), need_grad=True)
+        a1 = F.identity(a0).apply(recompute=True)
+        a2 = F.sin(a1).apply(recompute=True)
+
+        b0 = nn.Variable((2, 3), need_grad=False)
+        b1 = F.identity(b0).apply(recompute=True)
+        b2 = F.sin(b1).apply(recompute=True)
+
+        c1 = F.add2(a2, b2).apply(recompute=True)
+        c2 = F.sin(c1)
+
+        # Forward
+        clear_called_flag_recorder.activate_clear_called_flag_recorder()
+        c2.forward(clear_no_need_grad=True)
+        # Data which will be recomputed must be cleared during forward propagation
+        expected = [
+            [False],  # a0
+            [True],  # a1
+            [False],  # b0
+            [True],  # b1
+            [True, True],  # a2, b2
+            [True],  # c1
+        ]
+        self.check_input_data_clear_called_flags(expected)
+        clear_called_flag_recorder.deactivate_clear_called_flag_recorder()
+
+        # Backward
+        clear_called_flag_recorder.activate_clear_called_flag_recorder()
+        c2.backward(clear_buffer=True)
+        # Check clear of data not on bwd path.
+        # b1 is not on bwd path but must be cleared during recomputation.
+        expected = [
+            # Recomputation
+            [False],  # a0
+            [False],  # a1
+            [False],  # b0
+            [True],  # b1 (not on bwd path) must be cleared
+            [True, True],  # a2, b2
+            [False],  # c1
+            # Backward propagation
+            [True, True],  # a2, b2
+            [False],  # a1
+            [False],  # a0
+        ]
+        self.check_input_data_clear_called_flags(expected)
+        clear_called_flag_recorder.deactivate_clear_called_flag_recorder()
+
+    # Check clear data not need for grad calculation during recomputation
+    def test_graph_recomputation_clear_no_need_grad_during_recomputation(self):
+        x0 = nn.Variable((2, 3), need_grad=True)
+
+        x1 = F.identity(x0).apply(recompute=True)
+        # x2.data must be cleared just after recomputation because they are not need for backward propagation.
+        x2 = F.sin(x1).apply(recompute=True)
+        x3 = F.identity(x2).apply(recompute=True)
+        x4 = F.sin(x3)
+
+        # Forward
+        clear_called_flag_recorder.activate_clear_called_flag_recorder()
+        x4.forward(clear_no_need_grad=True)
+        # All intermediate data must be cleared.
+        expected = [
+            [False],  # x0
+            [True],  # x1
+            [True],  # x2
+            [True],  # x3
+        ]
+        self.check_input_data_clear_called_flags(expected)
+        clear_called_flag_recorder.deactivate_clear_called_flag_recorder()
+
+        # Backward
+        clear_called_flag_recorder.activate_clear_called_flag_recorder()
+        x4.backward(clear_buffer=True)
+        expected = [
+            # Recomputation
+            [False],  # x0
+            [False],  # x1
+            [True],  # x2: not need for grad calculation
+            # Backward propagation
+            [False],  # x3
+            [True],  # x2
+            [False],  # x1
+            [False],  # x0
+        ]
+        self.check_input_data_clear_called_flags(expected)
+        clear_called_flag_recorder.deactivate_clear_called_flag_recorder()
 
     @pytest.mark.parametrize("seed", [313])
     @pytest.mark.parametrize("need_grad_x1", [False, True])
