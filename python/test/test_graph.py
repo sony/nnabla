@@ -754,9 +754,11 @@ class TestClearOutputGrad():
 
 
 class TestRecomputation():
+    def teardown_method(self):
+        clear_called_flag_recorder.deactivate_clear_called_flag_recorder()
+
     def check_input_data_clear_called_flags(self, answer):
         result = clear_called_flag_recorder.get_input_clear_called_flags()
-        print(result)
         assert len(result) == len(answer)
         for i, flags in enumerate(answer):
             assert len(result[i]) == len(flags)
@@ -772,7 +774,7 @@ class TestRecomputation():
 
             y.forward(clear_no_need_grad=clear_no_need_grad,
                       clear_buffer=clear_buffer)
-            y.backward()
+            y.backward(clear_buffer=True)
 
             # Get grads
             grads = []
@@ -941,13 +943,13 @@ class TestRecomputation():
 
         self.check_recomputation(seed, graph, inputs)
 
-    # Check clear of recomputed data on the subgraph which does not be back-propagated.
+    # Check clear of recomputed data on the subgraph which is not back-propagated.
     def test_clear_data_on_not_bwd_path(self):
         a0 = nn.Variable((2, 3), need_grad=True)
         a1 = F.identity(a0).apply(recompute=True)
         a2 = F.sin(a1).apply(recompute=True)
 
-        # These three variables don't be back-propagated.
+        # These three variables are not back-propagated.
         b0 = nn.Variable((2, 3), need_grad=False)
         b1 = F.identity(b0).apply(recompute=True)
         b2 = F.sin(b1).apply(recompute=True)

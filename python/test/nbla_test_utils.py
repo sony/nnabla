@@ -324,12 +324,8 @@ def half_test(rng, func, finputs, hinputs, func_args, func_kwargs, backward, ctx
 
 def recomputation_test(rng, func, vinputs, func_args, func_kwargs, ctx):
     def copy_data(vinputs, voutputs):
-        i_data = []
-        o_data = []
-        for i in vinputs:
-            i_data.append(copy.deepcopy(i.d))
-        for o in voutputs:
-            o_data.append(copy.deepcopy(o.d))
+        i_data = [copy.deepcopy(i.d) for i in vinputs]
+        o_data = [copy.deepcopy(o.d) for o in voutputs]
         return i_data, o_data
 
     with nn.context_scope(ctx):
@@ -355,9 +351,9 @@ def recomputation_test(rng, func, vinputs, func_args, func_kwargs, ctx):
     f.forward(vinputs, voutputs)
     exp_is, exp_os = copy_data(vinputs, voutputs)
 
-    # Claer outputs by zeroing
+    # Claer outputs
     for o in voutputs:
-        o.data.zero()
+        o.data.clear()
 
     # Recompute
     f.recompute(vinputs, voutputs)
