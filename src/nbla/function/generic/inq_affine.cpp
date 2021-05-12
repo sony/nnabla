@@ -203,6 +203,18 @@ void INQAffine<T, T1>::forward_impl(const Variables &inputs,
 }
 
 template <typename T, typename T1>
+void INQAffine<T, T1>::recompute_impl(const Variables &inputs,
+                                      const Variables &outputs,
+                                      const vector<bool> &need_recompute) {
+  // Just exec affine with inputs which prepared in previous forward execution.
+  if (inputs.size() == 4) { // with bias
+    affine_->forward(Variables{inputs[0], inputs[1], inputs[3]}, outputs);
+  } else {
+    affine_->forward(Variables{inputs[0], inputs[1]}, outputs);
+  }
+}
+
+template <typename T, typename T1>
 void INQAffine<T, T1>::backward_impl(const Variables &inputs,
                                      const Variables &outputs,
                                      const vector<bool> &prop_down,

@@ -14,6 +14,7 @@
 
 import pytest
 import numpy as np
+import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context
 
@@ -141,3 +142,41 @@ def test_inq_affine_forward_backward(seed, base_axis, weight_shape, num_bits,
                                inq_iterations, selection_algorithm, seed],
                     atol_b=1e-2, backward=[True, True, False, True], ctx=ctx, func_name=func_name,
                     ref_grad=ref_grad_inq_affine)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("base_axis, weight_shape, num_bits",
+                         [(1, (12, 2, 3), 2), (2, (4, 4), 4)])
+@pytest.mark.parametrize("bias", [True, False])
+@pytest.mark.parametrize("inq_iterations", [(1,)])
+@pytest.mark.parametrize("selection_algorithm", ["largest_abs", "random"])
+@pytest.mark.parametrize("func_seed", [-1, 412])
+def test_inq_affine_recomputation(seed, base_axis, weight_shape, num_bits, bias,
+                                  inq_iterations, selection_algorithm, func_seed, ctx, func_name):
+    from nbla_test_utils import recomputation_test
+    rng = np.random.RandomState(seed)
+    # Input
+    inputs = [rng.randn(2, 3, 4).astype(np.float32)]
+    # Weights
+    inputs += [rng.randn(*weight_shape).astype(np.float32)]
+    # Indices
+    inputs += [np.random.randint(2, size=weight_shape)]
+    # Bias
+    if bias:
+        inputs += [rng.randn(*weight_shape[1:]).astype(np.float32)]
+    else:
+        inputs += [None]
+
+    func_args = [base_axis, num_bits,
+                 inq_iterations, selection_algorithm, func_seed]
+
+    vinputs = []
+    for i in inputs:
+        if i is None:
+            vinputs.append(None)
+        else:
+            vinputs.append(nn.Variable.from_numpy_array(i))
+
+    recomputation_test(rng=rng, func=F.inq_affine, vinputs=vinputs,
+                       func_args=func_args, func_kwargs={}, ctx=ctx)
