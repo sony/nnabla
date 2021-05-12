@@ -277,6 +277,7 @@ public:
   }
 
   void error_trace(const string &message, const string &name_on_error) {
+    // TODO: Optional verbosity
     std::cerr << message << std::endl;
     for (auto &name : history_) {
       std::cerr << "  " << name << std::endl;
@@ -746,7 +747,7 @@ void CgVariable::visit_function_backward(
   set<tuple<int, uint64_t, CgFunctionPtr>> open;
   open.insert(make_tuple(-p->rank(), get_id(p), p));
 
-  // for forward recomputation
+  // For forward recomputation
   ForwardCallback forward_callback(false /* clear_buffer */,
                                    true /* clear_no_need_grad */,
                                    true /* recomputation */, nullptr, nullptr);

@@ -359,7 +359,7 @@ cdef class Variable:
         Returns:
            bool: Whether this variable is recomputed during backward propagation.
         """
-        return self.varp.need_grad_state()
+        return self.varp.recompute()
 
     @recompute.setter
     def recompute(self, b):
