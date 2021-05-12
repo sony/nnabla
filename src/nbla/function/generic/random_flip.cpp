@@ -81,11 +81,15 @@ void RandomFlip<T>::flip_recursive(const Variable *inp, const T *x, T *y,
 }
 
 template <typename T>
-void RandomFlip<T>::forward_impl(const Variables &inputs,
-                                 const Variables &outputs) {
-  std::mt19937 &rgen =
-      seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
-                  : rgen_;
+void RandomFlip<T>::setup_recompute_impl(const Variables &inputs,
+                                         const Variables &outputs,
+                                         const vector<bool> &need_recompute) {
+  rgen_for_recompute_.reset();
+}
+
+template <typename T>
+void RandomFlip<T>::random_flip(const Variables &inputs,
+                                const Variables &outputs, std::mt19937 &rgen) {
   flip_.resize(size_);
   auto input0_shape_size = inputs[0]->shape().size();
   for (int i = 0; i < size_; i++) {
@@ -100,6 +104,29 @@ void RandomFlip<T>::forward_impl(const Variables &inputs,
   T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   int flip_index = 0;
   flip_recursive(inputs[0], x, y, false, 0, 0, 0, flip_index);
+}
+
+template <typename T>
+void RandomFlip<T>::forward_impl(const Variables &inputs,
+                                 const Variables &outputs) {
+  std::mt19937 &rgen =
+      seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
+                  : rgen_;
+  // Remember the random state for recomputation.
+  if (!rgen_for_recompute_) {
+    rgen_for_recompute_ = std::make_shared<std::mt19937>(rgen);
+  }
+
+  random_flip(inputs, outputs, rgen);
+}
+
+template <typename T>
+void RandomFlip<T>::recompute_impl(const Variables &inputs,
+                                   const Variables &outputs,
+                                   const vector<bool> &need_recompute) {
+  std::mt19937 &rgen = *rgen_for_recompute_;
+
+  random_flip(inputs, outputs, rgen);
 }
 
 template <typename T>

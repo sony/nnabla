@@ -126,11 +126,15 @@ void RandomCrop<T>::slice_backward_recursive(Variable *outp,
 }
 
 template <typename T>
-void RandomCrop<T>::forward_impl(const Variables &inputs,
-                                 const Variables &outputs) {
-  std::mt19937 &rgen =
-      seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
-                  : rgen_;
+void RandomCrop<T>::setup_recompute_impl(const Variables &inputs,
+                                         const Variables &outputs,
+                                         const vector<bool> &need_recompute) {
+  rgen_for_recompute_.reset();
+}
+
+template <typename T>
+void RandomCrop<T>::random_crop(const Variables &inputs,
+                                const Variables &outputs, std::mt19937 &rgen) {
   start_.resize(size_);
   stop_.resize(size_);
   step_.resize(size_);
@@ -156,6 +160,29 @@ void RandomCrop<T>::forward_impl(const Variables &inputs,
 
   int slice_index = 0;
   slice_forward_recursive(inputs[0], outputs[0], x, y, 0, 0, 0, slice_index);
+}
+
+template <typename T>
+void RandomCrop<T>::forward_impl(const Variables &inputs,
+                                 const Variables &outputs) {
+  std::mt19937 &rgen =
+      seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
+                  : rgen_;
+  // Remember the random state for recomputation.
+  if (!rgen_for_recompute_) {
+    rgen_for_recompute_ = std::make_shared<std::mt19937>(rgen);
+  }
+
+  random_crop(inputs, outputs, rgen);
+}
+
+template <typename T>
+void RandomCrop<T>::recompute_impl(const Variables &inputs,
+                                   const Variables &outputs,
+                                   const vector<bool> &need_recompute) {
+  std::mt19937 &rgen = *rgen_for_recompute_;
+
+  random_crop(inputs, outputs, rgen);
 }
 
 template <class T>

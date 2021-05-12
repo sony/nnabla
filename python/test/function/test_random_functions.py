@@ -16,7 +16,7 @@ import pytest
 import numpy as np
 import nnabla as nn
 import nnabla.functions as F
-from nbla_test_utils import list_context
+from nbla_test_utils import list_context, recomputation_test
 import platform
 
 ctxs_rand = list_context('Rand')
@@ -42,6 +42,11 @@ def test_rand_forward(seed, ctx, func_name, low, high, shape):
     assert np.all(o.d <= high)
     assert np.all(o.d >= low)
 
+    # Checking recomputation
+    func_args = [low, high, shape, seed]
+    recomputation_test(rng=None, func=F.rand, vinputs=[],
+                       func_args=func_args, func_kwargs={}, ctx=ctx)
+
 
 @pytest.mark.parametrize("ctx, func_name", ctxs_randint)
 @pytest.mark.parametrize("low, high", [(100, 50000), (-5, 100), (101, 102)])
@@ -57,6 +62,11 @@ def test_randint_forward(seed, ctx, func_name, low, high, shape):
     # but use <= high because std::uniform_random contains a bug.
     assert np.all(o.d <= high)
     assert np.all(o.d >= low)
+
+    # Checking recomputation
+    func_args = [low, high, shape, seed]
+    recomputation_test(rng=None, func=F.randint, vinputs=[],
+                       func_args=func_args, func_kwargs={}, ctx=ctx)
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs_randn)
@@ -83,6 +93,11 @@ def test_randn_forward_backward(seed, ctx, func_name, mu, sigma, shape):
         est_sigma = np.std(np.array(data))
         np.isclose(est_mu, mu, atol=sigma)
         np.isclose(est_sigma, sigma, atol=sigma)
+
+    # Checking recomputation
+    func_args = [mu, sigma, shape, seed]
+    recomputation_test(rng=None, func=F.randn, vinputs=[],
+                       func_args=func_args, func_kwargs={}, ctx=ctx)
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs_rand_beta)
@@ -113,6 +128,11 @@ def test_rand_beta_forward(seed, ctx, func_name, alpha, beta, shape):
     assert np.isclose(est_mu, mu, atol=5e-2)
     assert np.isclose(est_sigma, sigma, atol=5e-2)
 
+    # Checking recomputation
+    func_args = [alpha, beta, shape, seed]
+    recomputation_test(rng=None, func=F.rand_beta, vinputs=[],
+                       func_args=func_args, func_kwargs={}, ctx=ctx)
+
 
 @pytest.mark.parametrize("ctx, func_name", ctxs_rand_binomial)
 @pytest.mark.parametrize("n, p", [(1, 0.5), (1, 0.9), (5, 0.5), (5, 0.15), (10, 0.45)])
@@ -140,6 +160,11 @@ def test_rand_binomial_forward(seed, ctx, func_name, n, p, shape):
 
     assert np.isclose(est_mu, mu, atol=5e-2)
     assert np.isclose(est_sigma, sigma, atol=5e-2)
+
+    # Checking recomputation
+    func_args = [n, p, shape, seed]
+    recomputation_test(rng=None, func=F.rand_binomial, vinputs=[],
+                       func_args=func_args, func_kwargs={}, ctx=ctx)
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs_rand_gamma)
@@ -171,3 +196,8 @@ def test_rand_gamma_forward(seed, ctx, func_name, k, theta, shape):
 
     assert np.isclose(est_mu, mu, atol=5e-2)
     assert np.isclose(est_sigma, sigma, atol=5e-2)
+
+    # Checking recomputation
+    func_args = [k, theta, shape, seed]
+    recomputation_test(rng=None, func=F.rand_gamma, vinputs=[],
+                       func_args=func_args, func_kwargs={}, ctx=ctx)

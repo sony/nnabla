@@ -139,11 +139,16 @@ void RandomShift<T>::shift_backward_recursive(const Variable *inp, const T *dy,
 }
 
 template <typename T>
-void RandomShift<T>::forward_impl(const Variables &inputs,
-                                  const Variables &outputs) {
-  std::mt19937 &rgen =
-      seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
-                  : rgen_;
+void RandomShift<T>::setup_recompute_impl(const Variables &inputs,
+                                          const Variables &outputs,
+                                          const vector<bool> &need_recompute) {
+  rgen_for_recompute_.reset();
+}
+
+template <typename T>
+void RandomShift<T>::random_shift(const Variables &inputs,
+                                  const Variables &outputs,
+                                  std::mt19937 &rgen) {
   addr_table_.resize(size_);
   for (int i = 0; i < size_; i++) {
     vector<int> shifts;
@@ -157,6 +162,29 @@ void RandomShift<T>::forward_impl(const Variables &inputs,
   T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   int shift_index = 0;
   shift_recursive(inputs[0], x, y, 0, 0, 0, shift_index);
+}
+
+template <typename T>
+void RandomShift<T>::forward_impl(const Variables &inputs,
+                                  const Variables &outputs) {
+  std::mt19937 &rgen =
+      seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
+                  : rgen_;
+  // Remember the random state for recomputation.
+  if (!rgen_for_recompute_) {
+    rgen_for_recompute_ = std::make_shared<std::mt19937>(rgen);
+  }
+
+  random_shift(inputs, outputs, rgen);
+}
+
+template <typename T>
+void RandomShift<T>::recompute_impl(const Variables &inputs,
+                                    const Variables &outputs,
+                                    const vector<bool> &need_recompute) {
+  std::mt19937 &rgen = *rgen_for_recompute_;
+
+  random_shift(inputs, outputs, rgen);
 }
 
 template <typename T>

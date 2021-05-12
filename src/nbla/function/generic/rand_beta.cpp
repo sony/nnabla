@@ -34,14 +34,18 @@ void RandBeta<T>::setup_impl(const Variables &inputs,
 }
 
 template <typename T>
-void RandBeta<T>::forward_impl(const Variables &inputs,
-                               const Variables &outputs) {
+void RandBeta<T>::setup_recompute_impl(const Variables &inputs,
+                                       const Variables &outputs,
+                                       const vector<bool> &need_recompute) {
+  rgen_for_recompute_.reset();
+}
+
+template <typename T>
+void RandBeta<T>::random_beta(const Variables &inputs, const Variables &outputs,
+                              std::mt19937 &rgen) {
   std::uniform_real_distribution<typename force_float<T>::type> rdist(0.0, 1.0);
   std::gamma_distribution<typename force_float<T>::type> gdist1(alpha_, 1);
   std::gamma_distribution<typename force_float<T>::type> gdist2(beta_, 1);
-  std::mt19937 &rgen =
-      seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
-                  : rgen_;
 
   T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   if ((alpha_ <= 1.0) && (beta_ <= 1.0)) {
@@ -77,6 +81,29 @@ void RandBeta<T>::forward_impl(const Variables &inputs,
       y[s] = Ga / (Ga + Gb);
     }
   }
+}
+
+template <typename T>
+void RandBeta<T>::forward_impl(const Variables &inputs,
+                               const Variables &outputs) {
+  std::mt19937 &rgen =
+      seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
+                  : rgen_;
+  // Remember the random state for recomputation.
+  if (!rgen_for_recompute_) {
+    rgen_for_recompute_ = std::make_shared<std::mt19937>(rgen);
+  }
+
+  random_beta(inputs, outputs, rgen);
+}
+
+template <typename T>
+void RandBeta<T>::recompute_impl(const Variables &inputs,
+                                 const Variables &outputs,
+                                 const vector<bool> &need_recompute) {
+  std::mt19937 &rgen = *rgen_for_recompute_;
+
+  random_beta(inputs, outputs, rgen);
 }
 
 template <typename T>

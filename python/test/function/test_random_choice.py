@@ -48,6 +48,23 @@ def test_random_choice_with_replacement(ctx, func_name, seed):
         y = F.random_choice(x, w, shape=(10,), replace=True, seed=seed)
     assert y.shape == (2, 10) and np.all(y.d[0] > 0) and np.all(y.d[1] < 0)
 
+    # Check recomputation
+    from nbla_test_utils import recomputation_test
+
+    x = nn.Variable([100], need_grad=True)
+    x.d = np.random.random(x.size).astype(np.float32)
+    w = nn.Variable([x.size], need_grad=True)
+    w.d = np.random.randint(1, 100, w.size)
+    rng = np.random.RandomState(0)
+
+    vinputs = [x, w]
+    func_kwargs = {'shape': (trials,),
+                   'replace': True,
+                   'seed': seed}
+
+    recomputation_test(rng=rng, func=F.random_choice, vinputs=vinputs,
+                       func_args=[], func_kwargs=func_kwargs, ctx=ctx)
+
     return
     x = nn.Variable((3, 3), need_grad=True)
     w = nn.Variable((3, 3), need_grad=True)
@@ -76,3 +93,18 @@ def test_random_choice_without_replacement(ctx, func_name, seed):
         y.forward()
         r[i] = y.d.copy()
     assert np.all(np.bincount(r.flatten()) == x.size * [repeats])
+
+    # Check recomputation
+    from nbla_test_utils import recomputation_test
+    rng = np.random.RandomState(0)
+
+    x.d = np.random.random(*x.shape).astype(np.float32)
+    w.d = np.random.randint(1, 100, w.size)
+
+    vinputs = [x, w]
+    func_kwargs = {'shape': (w.size,),
+                   'replace': False,
+                   'seed': seed}
+
+    recomputation_test(rng=rng, func=F.random_choice, vinputs=vinputs,
+                       func_args=[], func_kwargs=func_kwargs, ctx=ctx)

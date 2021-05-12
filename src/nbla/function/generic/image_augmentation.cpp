@@ -52,8 +52,16 @@ void ImageAugmentation<T>::setup_impl(const Variables &inputs,
 }
 
 template <typename T>
-void ImageAugmentation<T>::forward_impl(const Variables &inputs,
-                                        const Variables &outputs) {
+void ImageAugmentation<T>::setup_recompute_impl(
+    const Variables &inputs, const Variables &outputs,
+    const vector<bool> &need_recompute) {
+  rgen_for_recompute_.reset();
+}
+
+template <typename T>
+void ImageAugmentation<T>::image_augmentation(const Variables &inputs,
+                                              const Variables &outputs,
+                                              std::mt19937 &rgen) {
   /*
   std::cout <<
     "min_scale=" << min_scale_ <<
@@ -89,9 +97,6 @@ void ImageAugmentation<T>::forward_impl(const Variables &inputs,
   const int ch_size_in = h_in * w_in;
   const int ch_size_out = h_out * w_out;
 
-  std::mt19937 &rgen =
-      seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
-                  : rgen_;
   std::normal_distribution<> norm(0.0, 1.0);
 
   const float w_out_half = w_out * 0.5f;
@@ -283,6 +288,29 @@ void ImageAugmentation<T>::forward_impl(const Variables &inputs,
   }
   delete[] channel_brightness_buf;
   delete[] channel_contrast_buf;
+}
+
+template <typename T>
+void ImageAugmentation<T>::forward_impl(const Variables &inputs,
+                                        const Variables &outputs) {
+  std::mt19937 &rgen =
+      seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
+                  : rgen_;
+  // Remember the random state for recomputation.
+  if (!rgen_for_recompute_) {
+    rgen_for_recompute_ = std::make_shared<std::mt19937>(rgen);
+  }
+
+  image_augmentation(inputs, outputs, rgen);
+}
+
+template <typename T>
+void ImageAugmentation<T>::recompute_impl(const Variables &inputs,
+                                          const Variables &outputs,
+                                          const vector<bool> &need_recompute) {
+  std::mt19937 &rgen = *rgen_for_recompute_;
+
+  image_augmentation(inputs, outputs, rgen);
 }
 
 template <typename T>

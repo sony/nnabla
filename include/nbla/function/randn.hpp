@@ -38,6 +38,7 @@ protected:
   const vector<int> shape_;
   int seed_;
   std::mt19937 rgen_;
+  std::shared_ptr<std::mt19937> rgen_for_recompute_;
 
 public:
   Randn(const Context &ctx, float mu, float sigma, const vector<int> &shape,
@@ -60,6 +61,7 @@ public:
   virtual vector<string> allowed_array_classes() {
     return SingletonManager::get<Cpu>()->array_classes();
   }
+  virtual bool need_setup_recompute(int o) const { return true; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,
@@ -70,6 +72,12 @@ protected:
                                       const Variables &outputs,
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
+  NBLA_API virtual void
+  setup_recompute_impl(const Variables &inputs, const Variables &outputs,
+                       const vector<bool> &need_recompute);
+  NBLA_API virtual void recompute_impl(const Variables &inputs,
+                                       const Variables &outputs,
+                                       const vector<bool> &need_recompute);
 };
 }
 #endif

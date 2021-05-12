@@ -35,12 +35,37 @@ void RandBinomial<T>::setup_impl(const Variables &inputs,
 }
 
 template <typename T>
+void RandBinomial<T>::setup_recompute_impl(const Variables &inputs,
+                                           const Variables &outputs,
+                                           const vector<bool> &need_recompute) {
+  rgen_for_recompute_.reset();
+}
+
+template <typename T>
 void RandBinomial<T>::forward_impl(const Variables &inputs,
                                    const Variables &outputs) {
   std::binomial_distribution<int> rdist(n_, p_);
   std::mt19937 &rgen =
       seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
                   : rgen_;
+  // Remember the random state for recomputation.
+  if (!rgen_for_recompute_) {
+    rgen_for_recompute_ = std::make_shared<std::mt19937>(rgen);
+  }
+
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
+  for (int s = 0; s < outputs[0]->size(); s++) {
+    y[s] = (T)rdist(rgen);
+  }
+}
+
+template <typename T>
+void RandBinomial<T>::recompute_impl(const Variables &inputs,
+                                     const Variables &outputs,
+                                     const vector<bool> &need_recompute) {
+  std::binomial_distribution<int> rdist(n_, p_);
+  std::mt19937 &rgen = *rgen_for_recompute_;
+
   T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   for (int s = 0; s < outputs[0]->size(); s++) {
     y[s] = (T)rdist(rgen);

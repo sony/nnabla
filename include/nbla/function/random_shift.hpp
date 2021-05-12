@@ -64,6 +64,7 @@ protected:
 
   int seed_;
   std::mt19937 rgen_;
+  std::shared_ptr<std::mt19937> rgen_for_recompute_;
 
 public:
   RandomShift(const Context &ctx, const vector<int> &shifts,
@@ -85,6 +86,7 @@ public:
   virtual vector<string> allowed_array_classes() {
     return SingletonManager::get<Cpu>()->array_classes();
   }
+  virtual bool need_setup_recompute(int o) const { return true; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,
@@ -95,6 +97,12 @@ protected:
                                       const Variables &outputs,
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
+  NBLA_API virtual void
+  setup_recompute_impl(const Variables &inputs, const Variables &outputs,
+                       const vector<bool> &need_recompute);
+  NBLA_API virtual void recompute_impl(const Variables &inputs,
+                                       const Variables &outputs,
+                                       const vector<bool> &need_recompute);
 
   vector<vector<int>> prepare_addr_table(const Variables &inputs,
                                          const vector<int> &shifts);
@@ -105,6 +113,8 @@ private:
   void shift_backward_recursive(const Variable *inp, const T *dy, T *dx,
                                 int x_offset, int y_offset, int dim,
                                 int &shift_index);
+  void random_shift(const Variables &inputs, const Variables &outputs,
+                    std::mt19937 &rgen);
 };
 }
 #endif

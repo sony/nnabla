@@ -58,8 +58,16 @@ void RandomChoice<T>::setup_impl(const Variables &inputs,
 }
 
 template <typename T>
-void RandomChoice<T>::forward_impl(const Variables &inputs,
-                                   const Variables &outputs) {
+void RandomChoice<T>::setup_recompute_impl(const Variables &inputs,
+                                           const Variables &outputs,
+                                           const vector<bool> &need_recompute) {
+  rgen_for_recompute_.reset();
+}
+
+template <typename T>
+void RandomChoice<T>::random_choice(const Variables &inputs,
+                                    const Variables &outputs,
+                                    std::mt19937 &rgen) {
   using std::uniform_real_distribution;
   using std::partial_sum;
   using std::count_if;
@@ -71,9 +79,6 @@ void RandomChoice<T>::forward_impl(const Variables &inputs,
   auto idxbuf = idxbuf_.cast_data_and_get_pointer<int>(this->ctx_, true);
   auto w_size = inputs[0]->shape().back(); // size of each weight vector
   auto less_0 = std::bind(std::less<T>(), std::placeholders::_1, (T)0);
-  std::mt19937 &rgen =
-      seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
-                  : rgen_;
 
   if (replace_ == true) {
     vector<T> w_sum(w_size);
@@ -131,6 +136,29 @@ void RandomChoice<T>::forward_impl(const Variables &inputs,
       x_data += w_size;
     }
   }
+}
+
+template <typename T>
+void RandomChoice<T>::forward_impl(const Variables &inputs,
+                                   const Variables &outputs) {
+  std::mt19937 &rgen =
+      seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
+                  : rgen_;
+  // Remember the random state for recomputation.
+  if (!rgen_for_recompute_) {
+    rgen_for_recompute_ = std::make_shared<std::mt19937>(rgen);
+  }
+
+  random_choice(inputs, outputs, rgen);
+}
+
+template <typename T>
+void RandomChoice<T>::recompute_impl(const Variables &inputs,
+                                     const Variables &outputs,
+                                     const vector<bool> &need_recompute) {
+  std::mt19937 &rgen = *rgen_for_recompute_;
+
+  random_choice(inputs, outputs, rgen);
 }
 
 template <typename T>

@@ -34,12 +34,34 @@ def test_image_augmentation_forward(seed, shape, ctx, func_name):
         o = F.image_augmentation(i)
     assert o.d.shape == inputs[0].shape
 
+    func_kargs = {
+        'shape': shape,
+        'pad': (2, 2),
+        'min_scale': 0.8,
+        'max_scale': 1.2,
+        'angle': 0.2,
+        'aspect_ratio': 1.1,
+        'distortion': 0.1,
+        'flip_lr': True,
+        'flip_ud': False,
+        'brightness': 0.1,
+        'brightness_each': True,
+        'contrast': 1.1,
+        'contrast_center': 0.5,
+        'contrast_each': True,
+        'noise': 0.1,
+        'seed': 0}
+
     with nn.context_scope(ctx), nn.auto_forward():
-        o = F.image_augmentation(i, shape=shape, pad=(2, 2),
-                                 min_scale=0.8, max_scale=1.2, angle=0.2,
-                                 aspect_ratio=1.1, distortion=0.1,
-                                 flip_lr=True, flip_ud=False,
-                                 brightness=0.1, brightness_each=True,
-                                 contrast=1.1, contrast_center=0.5, contrast_each=True,
-                                 noise=0.1, seed=0)
+        o = F.image_augmentation(i, **func_kargs)
     assert o.d.shape == (inputs[0].shape[0],) + shape
+
+    # Checking recomputation
+    from nbla_test_utils import recomputation_test
+
+    recomputation_test(rng=rng, func=F.image_augmentation, vinputs=[i],
+                       func_args=[], func_kwargs=func_kargs, ctx=ctx)
+
+    func_kargs['seed'] = -1
+    recomputation_test(rng=rng, func=F.image_augmentation, vinputs=[i],
+                       func_args=[], func_kwargs=func_kargs, ctx=ctx)

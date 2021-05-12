@@ -75,6 +75,7 @@ protected:
   bool ste_fine_grained_;
 
   std::mt19937 rgen_;
+  std::shared_ptr<std::mt19937> rgen_for_recompute_;
 
   NdArrayPtr random_coordinates_;
 
@@ -109,6 +110,7 @@ public:
     return inplace_ ? Function::INPLACE : Function::NOT_INPLACE;
   }
   virtual int inplace_data_with(int i) const { return 0; }
+  virtual bool need_setup_recompute(int o) const { return true; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,
@@ -119,6 +121,15 @@ protected:
                                       const Variables &outputs,
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
+  NBLA_API virtual void
+  setup_recompute_impl(const Variables &inputs, const Variables &outputs,
+                       const vector<bool> &need_recompute);
+  NBLA_API virtual void recompute_impl(const Variables &inputs,
+                                       const Variables &outputs,
+                                       const vector<bool> &need_recompute);
+
+  void random_erase(const Variables &inputs, const Variables &outputs,
+                    std::mt19937 &rgen);
 };
 }
 #endif

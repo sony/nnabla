@@ -149,3 +149,44 @@ def test_random_erase_backward(ctx, func_name, seed, prob,
         assert_allclose(y.g[np.where(z.d < lb)], 1.0)
     else:
         assert_allclose(y.g, 1.0)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("prob", [0.7, 1.0])
+@pytest.mark.parametrize("area_ratios", [(0.02, 0.04)])
+@pytest.mark.parametrize("aspect_ratios", [(0.3, 3.3333)])
+@pytest.mark.parametrize("replacements", [(2.0, 2.0), (3.0, 4.0)])
+@pytest.mark.parametrize("n", [1, 3])
+@pytest.mark.parametrize("share", [True, False])
+@pytest.mark.parametrize("inplace", [False])
+@pytest.mark.parametrize("base_axis", [1])
+@pytest.mark.parametrize("func_seed", [412, -1])
+@pytest.mark.parametrize("channel_last", [False, True])
+def test_random_erase_recomputation(ctx, func_name, seed, prob,
+                                    area_ratios, aspect_ratios, replacements,
+                                    n, share, inplace, base_axis, func_seed, channel_last):
+    if channel_last and func_name == "RandomErase":
+        pytest.skip(
+            "RandomErase with channel_last is only supported in CUDA.")
+
+    from nbla_test_utils import recomputation_test
+
+    rng = np.random.RandomState(seed)
+    b, c, h, w = 4, 3, 32, 32
+    ishape = [b, h, w, c] if channel_last else [b, c, h, w]
+    vinputs = [nn.Variable(ishape)]
+
+    func_kwargs = {'prob': prob,
+                   'area_ratios': area_ratios,
+                   'aspect_ratios': aspect_ratios,
+                   'replacements': replacements,
+                   'n': n,
+                   'share': share,
+                   'inplace': inplace,
+                   'base_axis': base_axis,
+                   'seed': seed,
+                   'channel_last': channel_last}
+
+    recomputation_test(rng=rng, func=F.random_erase, vinputs=vinputs,
+                       func_args=[], func_kwargs=func_kwargs, ctx=ctx)

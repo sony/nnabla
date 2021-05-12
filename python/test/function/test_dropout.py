@@ -80,3 +80,16 @@ def test_dropout_double_backward(p, seed, ctx, func_name):
     inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2]
     backward_function_tester(rng, F.dropout, inputs, func_args=[p, seed], ctx=ctx,
                              skip_backward_check=True)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [-1, 313])
+@pytest.mark.parametrize("p", [0.5])
+def test_dropout_recompute(p, seed, ctx, func_name):
+    from nbla_test_utils import recomputation_test
+
+    rng = np.random.RandomState(0)
+    x = nn.Variable((2, 3, 4))
+    func_args = [p, seed]
+    recomputation_test(rng=rng, func=F.dropout, vinputs=[x],
+                       func_args=func_args, func_kwargs={}, ctx=ctx)

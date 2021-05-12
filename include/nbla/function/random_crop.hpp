@@ -55,6 +55,7 @@ protected:
 
   int seed_;
   std::mt19937 rgen_;
+  std::shared_ptr<std::mt19937> rgen_for_recompute_;
 
 public:
   RandomCrop(const Context &ctx, const vector<int> &shape, int base_axis,
@@ -73,6 +74,7 @@ public:
   virtual vector<string> allowed_array_classes() {
     return vector<string>{"CpuArray"};
   }
+  virtual bool need_setup_recompute(int o) const { return true; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,
@@ -83,6 +85,12 @@ protected:
                                       const Variables &outputs,
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
+  NBLA_API virtual void
+  setup_recompute_impl(const Variables &inputs, const Variables &outputs,
+                       const vector<bool> &need_recompute);
+  NBLA_API virtual void recompute_impl(const Variables &inputs,
+                                       const Variables &outputs,
+                                       const vector<bool> &need_recompute);
 
 private:
   void slice_forward_recursive(const Variable *inp, Variable *outp, const T *x,
@@ -91,6 +99,9 @@ private:
   void slice_backward_recursive(Variable *outp, const Variable *inp, T *dx,
                                 const T *dy, int x_offset, int y_offset,
                                 int dim, int &slice_index);
+
+  void random_crop(const Variables &inputs, const Variables &outputs,
+                   std::mt19937 &rgen);
 };
 }
 #endif

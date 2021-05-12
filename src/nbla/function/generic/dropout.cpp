@@ -37,12 +37,16 @@ void Dropout<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   scale_ = 1. / (1. - p_);
 }
 
+template <typename T>
+void Dropout<T>::setup_recompute_impl(const Variables &inputs,
+                                      const Variables &outputs,
+                                      const vector<bool> &need_recompute) {
+  rgen_for_recompute_.reset();
+}
+
 template <class T>
-void Dropout<T>::forward_impl(const Variables &inputs,
-                              const Variables &outputs) {
-  std::mt19937 &rgen =
-      seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
-                  : rgen_;
+void Dropout<T>::dropout(const Variables &inputs, const Variables &outputs,
+                         std::mt19937 &rgen) {
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
   T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   T *m = mask_.cast_data_and_get_pointer<T>(this->ctx_, true);
@@ -50,6 +54,29 @@ void Dropout<T>::forward_impl(const Variables &inputs,
     m[s] = rdist_(rgen);
     y[s] = x[s] * m[s] * scale_;
   }
+}
+
+template <typename T>
+void Dropout<T>::forward_impl(const Variables &inputs,
+                              const Variables &outputs) {
+  std::mt19937 &rgen =
+      seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
+                  : rgen_;
+  // Remember the random state for recomputation.
+  if (!rgen_for_recompute_) {
+    rgen_for_recompute_ = std::make_shared<std::mt19937>(rgen);
+  }
+
+  dropout(inputs, outputs, rgen);
+}
+
+template <typename T>
+void Dropout<T>::recompute_impl(const Variables &inputs,
+                                const Variables &outputs,
+                                const vector<bool> &need_recompute) {
+  std::mt19937 &rgen = *rgen_for_recompute_;
+
+  dropout(inputs, outputs, rgen);
 }
 
 template <class T>
