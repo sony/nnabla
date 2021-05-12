@@ -343,6 +343,7 @@ public:
   void
   visit_function_recursive(CgFunctionPtr func,
                            unordered_set<CgFunctionPtr> &fclosed,
+                           const bool recomputation,
                            std::function<void(CgFunctionPtr)> forward_callback);
 
   /** Execute callback at functions in backward order in a graph.

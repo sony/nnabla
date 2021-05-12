@@ -219,6 +219,7 @@ void SpectralNorm<T>::setup_impl(const Variables &inputs,
   // array.
   std::unordered_set<CgFunctionPtr> fclosed;
   last_out->visit_function_recursive(last_out->parent(), fclosed,
+                                     false /* recomputation */,
                                      [](CgFunctionPtr fn) { fn->setup(); });
   this->last_output_cg_variable_ = last_out;
 }

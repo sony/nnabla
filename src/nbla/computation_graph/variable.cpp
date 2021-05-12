@@ -209,6 +209,10 @@ public:
       if (inplace_variable_set_.find(vi) != inplace_variable_set_.end()) {
         continue;
       }
+      if (vi->recompute()) {
+        ret[i] = true;
+        continue;
+      }
       if (clear_buffer_) {
         ret[i] = true;
         continue;
@@ -597,6 +601,7 @@ public:
 
 void CgVariable::visit_function_recursive(
     CgFunctionPtr func, unordered_set<CgFunctionPtr> &fclosed,
+    const bool recomputation,
     std::function<void(CgFunctionPtr)> forward_callback) {
 
   // A. Push the function to the closed list.
@@ -623,7 +628,19 @@ void CgVariable::visit_function_recursive(
 
     // B-2. Visit functions recursively if parent is not closed.
     if (fclosed.find(parent) == fclosed.end()) {
-      visit_function_recursive(parent, fclosed, forward_callback);
+      if (recomputation) {
+        // Data recomputation is performed during backward propagation.
+        // Only cleared data is the recomputation target.
+        const bool cleared = input->variable()->data()->array()->clear_called();
+        if (cleared) {
+          visit_function_recursive(parent, fclosed, recomputation,
+                                   forward_callback);
+        }
+        continue; // Skip B-3., B-4.
+      } else {
+        visit_function_recursive(parent, fclosed, recomputation,
+                                 forward_callback);
+      }
     }
 
     // B-3. Update rank and need_grad of this input by propagating from the
@@ -635,6 +652,14 @@ void CgVariable::visit_function_recursive(
     max_rank = std::max(parent->rank(), max_rank);
     need_grad |= input->need_grad_state();
     need_setup |= input->check_and_unmark_need_setup(func);
+  }
+
+  if (recomputation) {
+    forward_callback(func);
+    // Skip C. to F.
+    // Some information like `need_grad` are not propagated correctly because
+    // graph traverse is performed partially in recomputation.
+    return;
   }
 
   // C. Update rank and need_grad of func (backward with a rewired graph
@@ -682,6 +707,13 @@ void CgVariable::visit_function_backward(
   };
   set<tuple<int, uint64_t, CgFunctionPtr>> open;
   open.insert(make_tuple(-p->rank(), get_id(p), p));
+
+  // for forward recomputation
+  ForwardCallback forward_callback(false /* clear_buffer */,
+                                   true /* clear_no_need_grad */, nullptr,
+                                   nullptr);
+  unordered_set<CgFunctionPtr> fclosed;
+
   while (!open.empty()) {
     auto rank_func = open.begin();
     auto f = get<2>(*rank_func);
@@ -690,6 +722,44 @@ void CgVariable::visit_function_backward(
     // std::cout << " --> " << open.size() << std::endl;
     if (!f->need_grad())
       continue;
+
+    // Recompute cleared inputs' data
+    const int n_inputs = f->num_inputs();
+    const auto function = f->function();
+    const auto inputs = f->inputs();
+    for (int i = 0; i < n_inputs; i++) {
+      // Recompute i-th input data
+
+      // Whether a parent exists
+      const auto parent = inputs[i]->parent();
+      if (!parent)
+        continue;
+
+      // Whether i-th input data is cleared
+      if (!inputs[i]->variable()->data()->array()->clear_called())
+        continue;
+
+      // Whether i-th input data is needed for grad calculation
+      bool need_for_grad = false;
+      for (int j = 0; j < n_inputs; j++) {
+        // Whether j-th grad computation is needed
+        if (!inputs[j]->need_grad_state())
+          continue;
+
+        // Whether i-th input data is needed for j-th grad computation
+        if (!function->grad_depends_input_data(j, i))
+          continue;
+
+        need_for_grad = true;
+      }
+      if (!need_for_grad)
+        continue;
+
+      // Exec recomputation for i-th input data
+      visit_function_recursive(
+          parent, fclosed, true /* recomputation */,
+          [&forward_callback](CgFunctionPtr f) { forward_callback(f); });
+    }
 
     // Callback
     backward_callback(f);
@@ -704,7 +774,6 @@ void CgVariable::visit_function_backward(
     }
 
     // Propagate down.
-    auto inputs = f->inputs();
     for (size_t i = 0; i < f->num_inputs(); i++) {
       auto inp = inputs[i];
       if (!inp->need_grad_state())
@@ -736,7 +805,7 @@ void CgVariable::forward(bool clear_buffer, bool clear_no_need_grad,
   ForwardCallback forward_callback(clear_buffer, clear_no_need_grad,
                                    function_pre_hook, function_post_hook);
   visit_function_recursive(
-      parent_, *fclosed,
+      parent_, *fclosed, false /* recomputation */,
       [&forward_callback](CgFunctionPtr f) { forward_callback(f); });
 }
 
