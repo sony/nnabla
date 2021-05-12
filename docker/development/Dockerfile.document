@@ -74,7 +74,7 @@ RUN apt-get -yqq update \
         plantuml \
         unzip \
     && pip3 install -U \
-        Sphinx \
+        Sphinx==3.5.4 \
         pygments \
         tensorboardX \
         recommonmark==0.4.0 \
