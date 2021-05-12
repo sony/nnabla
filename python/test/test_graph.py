@@ -943,6 +943,68 @@ class TestRecomputation():
 
         self.check_recomputation(seed, graph, inputs)
 
+    @pytest.mark.parametrize("seed", [313])
+    def test_with_persistent_flag(self, seed):
+        x = nn.Variable((2, 3), need_grad=True)
+
+        inputs = (x,)
+
+        def graph(x0):
+            x1 = F.sin(x0).apply(recompute=True)
+            # Set `recompute` and `persistent` flag at the same time
+            x2 = F.sin(x1).apply(recompute=True, persistent=True)
+            x3 = F.sin(x2).apply(recompute=True)
+            y = F.sin(x3)
+            return y
+
+        y = graph(x)
+
+        # Trace data clearing during forward propagation.
+        clear_called_flag_recorder.activate_clear_called_flag_recorder()
+        y.forward(clear_no_need_grad=True)
+        expected = [
+            [False],  # x0: graph input
+            [True],  # x1: Cleared because `recompute=True`
+            [False],  # x2: Not cleared because `persistent=True`
+            [True],  # x3: Cleared because `recompute=True`
+        ]
+        self.check_input_data_clear_called_flags(expected)
+        clear_called_flag_recorder.deactivate_clear_called_flag_recorder()
+
+        # Check grad value
+        self.check_recomputation(seed, graph, inputs)
+
+    @pytest.mark.parametrize("seed", [313])
+    def test_with_inplacing(self, seed):
+        x = nn.Variable((2, 3), need_grad=True)
+
+        inputs = (x,)
+
+        def graph(x0):
+            x1 = F.sin(x0).apply(recompute=True)
+            # Set `recompute` flag to the inplaced variable.
+            x2 = F.reshape(x1, (3, 2), inplace=True).apply(recompute=True)
+            x3 = F.sin(x2).apply(recompute=True)
+            y = F.sin(x3)
+            return y
+
+        y = graph(x)
+
+        # Trace data clearing during forward propagation.
+        clear_called_flag_recorder.activate_clear_called_flag_recorder()
+        y.forward(clear_no_need_grad=True)
+        expected = [
+            [False],  # x0: graph input
+            [False],  # x1: Not cleared because inplaced data
+            [False],  # x2: Not cleared because inplaced data
+            [True],  # x3: Cleared because `recompute=True`
+        ]
+        self.check_input_data_clear_called_flags(expected)
+        clear_called_flag_recorder.deactivate_clear_called_flag_recorder()
+
+        # Check grad value
+        self.check_recomputation(seed, graph, inputs)
+
     # Check clear of recomputed data on the subgraph which is not back-propagated.
     def test_clear_data_on_not_bwd_path(self):
         a0 = nn.Variable((2, 3), need_grad=True)
