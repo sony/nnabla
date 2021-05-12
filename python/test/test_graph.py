@@ -923,6 +923,24 @@ class TestRecomputation():
 
         self.check_recomputation(seed, graph, inputs)
 
+    # Check `setup_recompute`
+    @pytest.mark.parametrize("seed", [313])
+    def test_grad_value_with_random_function(self, seed):
+        x1 = nn.Variable((2, 3), need_grad=True)
+
+        inputs = (x1,)
+
+        def graph(x1):
+            x1 = F.identity(x1).apply(recompute=True)
+            x2 = F.randn(shape=x1.shape, seed=123).apply(recompute=True)
+            x3 = F.rand(shape=x1.shape, seed=456).apply(recompute=True)
+            y = F.mul2(x1, x2).apply(recompute=True)
+            y = F.mul2(y, x3).apply(recompute=True)
+            y = F.identity(y)
+            return y
+
+        self.check_recomputation(seed, graph, inputs)
+
     # Check clear of data on outside of backward path
     def test_clear_data_on_not_bwd_path(self):
         a0 = nn.Variable((2, 3), need_grad=True)
