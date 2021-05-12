@@ -73,6 +73,8 @@ cdef extern from "nbla/computation_graph/variable.hpp" namespace "nbla":
         cpp_bool need_grad_state_is_set() const
         void set_need_grad_state(cpp_bool b)
         void unset_need_grad_state()
+        cpp_bool recompute() const
+        void set_recompute(cpp_bool b)
         void set_parent(CgFunctionPtr func) except+
         CgFunctionPtr parent()
         VariablePtr variable()

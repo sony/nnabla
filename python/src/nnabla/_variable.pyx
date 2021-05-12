@@ -348,6 +348,23 @@ cdef class Variable:
     def need_grad(self, b):
         self.varp.set_need_grad(b)
 
+    @property
+    def recompute(self):
+        """
+        Gets or sets a boolean indicating whether its data is cleared during forward propagation and recomputation is performed during backward propagation. 
+
+        Args:
+            b (bool): Whether recomputation is performed during backward propagation.
+
+        Returns:
+           bool: Whether this variable is recomputed during backward propagation.
+        """
+        return self.varp.need_grad_state()
+
+    @recompute.setter
+    def recompute(self, b):
+        self.varp.set_recompute(b)
+
     def rewire_on(self, var):
         '''Rewire a successor graph of this variable on top of ``var``.
 

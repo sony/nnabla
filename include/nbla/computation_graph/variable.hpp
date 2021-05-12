@@ -89,9 +89,12 @@ class CgVariable {
   };
   NeedGrad need_grad_{NG_NONE}; ///< Whether the variable requires gradients.
   NeedGrad need_grad_state_{
-      NG_NONE};     ///< Updated during graph construction or forward
-                    /// propagation.
-  VariablePtr var_; /// Variable instance.
+      NG_NONE};           ///< Updated during graph construction or forward
+                          /// propagation.
+  bool recompute_{false}; ///< Whether the data is cleared during forward
+                          /// propagation and recomputation is performed during
+  /// backward propagation.
+  VariablePtr var_;               /// Variable instance.
   CgFunctionPtr parent_{nullptr}; ///< Function created this variable.
   int rank_{0};                   ///< Longest path from root variable.
   ///< Holds weak function references. <https://stackoverflow.com/a/22110715>
@@ -185,6 +188,14 @@ public:
   /** Unset need grad state flag.
    */
   inline void unset_need_grad_state() { need_grad_state_ = NG_NONE; }
+
+  /** Get recompute flag.
+   */
+  inline bool recompute() const { return recompute_; }
+
+  /** Set recompute flag.
+   */
+  inline void set_recompute(bool b) { recompute_ = b; }
 
   /** Get prohibit_clear_data_ flag.
    */
