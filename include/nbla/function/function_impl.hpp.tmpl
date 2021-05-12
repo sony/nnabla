@@ -109,12 +109,8 @@ protected:
 				      const vector<bool> &propagate_down,
 				      const vector<bool> &accum);
   // TODO: This must be overridden if there are something need to be saved for recomputation. See doc in function.hpp.
-  // NBLA_API virtual void
-  // setup_recompute_impl(const Variables &inputs, const Variables &outputs,
-  //                      const vector<bool> &need_recompute);
-  // NBLA_API virtual void recompute_impl(const Variables &inputs,
-  //                                      const Variables &outputs,
-  //                                      const vector<bool> &need_recompute);
+  // NBLA_API virtual void setup_recompute_impl(const Variables &inputs, const Variables &outputs);
+  // NBLA_API virtual void recompute_impl(const Variables &inputs, const Variables &outputs);
   // TODO: This must be overridden if any of input grad depends on a input data. See doc in function.hpp.
   // virtual bool grad_depends_input_data_impl(int i, int j) const {
   // }

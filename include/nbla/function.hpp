@@ -136,8 +136,7 @@ public:
   @sa recompute()
   @sa need_setup_recompute()
   */
-  void setup_recompute(const Variables &inputs, const Variables &outputs,
-                       const vector<bool> &need_recompute);
+  void setup_recompute(const Variables &inputs, const Variables &outputs);
 
   /** Reproduce previous forward().
 
@@ -146,8 +145,7 @@ public:
 
   @sa setup_recompute()
   */
-  void recompute(const Variables &inputs, const Variables &outputs,
-                 const vector<bool> &need_recompute);
+  void recompute(const Variables &inputs, const Variables &outputs);
 
   /** Get Context used in this function.
   */
@@ -344,14 +342,10 @@ protected:
   recomputation. (e.g. Save random states for reproduction of forward execution
   during recomputation.)
 
-  @param need_recompute Boolean array that indicates whether recompute is needed
-  for an output corresponding to its index.
-
   @sa setup() arguments.
   */
   virtual void setup_recompute_impl(const Variables &inputs,
-                                    const Variables &outputs,
-                                    const vector<bool> &need_recompute) {
+                                    const Variables &outputs) {
     return;
   };
 
@@ -361,13 +355,10 @@ protected:
 
   - Reproduce the previous forward execution.
 
-  @param need_recompute Boolean array that indicates whether recompute is needed
-  for an output corresponding to its index.
-
   @sa setup() arguments.
   */
-  virtual void recompute_impl(const Variables &inputs, const Variables &outputs,
-                              const vector<bool> &need_recompute) {
+  virtual void recompute_impl(const Variables &inputs,
+                              const Variables &outputs) {
     this->forward_impl(inputs, outputs);
   };
 

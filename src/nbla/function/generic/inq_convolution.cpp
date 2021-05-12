@@ -207,8 +207,7 @@ void INQConvolution<T, T1>::forward_impl(const Variables &inputs,
 
 template <typename T, typename T1>
 void INQConvolution<T, T1>::recompute_impl(const Variables &inputs,
-                                           const Variables &outputs,
-                                           const vector<bool> &need_recompute) {
+                                           const Variables &outputs) {
   // Just exec convolution with inputs which prepared in previous forward
   // execution.
   if (inputs.size() == 4) { // with bias

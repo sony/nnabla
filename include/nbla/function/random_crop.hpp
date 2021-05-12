@@ -85,12 +85,10 @@ protected:
                                       const Variables &outputs,
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
-  NBLA_API virtual void
-  setup_recompute_impl(const Variables &inputs, const Variables &outputs,
-                       const vector<bool> &need_recompute);
+  NBLA_API virtual void setup_recompute_impl(const Variables &inputs,
+                                             const Variables &outputs);
   NBLA_API virtual void recompute_impl(const Variables &inputs,
-                                       const Variables &outputs,
-                                       const vector<bool> &need_recompute);
+                                       const Variables &outputs);
 
 private:
   void slice_forward_recursive(const Variable *inp, Variable *outp, const T *x,

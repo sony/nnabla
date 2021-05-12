@@ -36,8 +36,7 @@ void RandBinomial<T>::setup_impl(const Variables &inputs,
 
 template <typename T>
 void RandBinomial<T>::setup_recompute_impl(const Variables &inputs,
-                                           const Variables &outputs,
-                                           const vector<bool> &need_recompute) {
+                                           const Variables &outputs) {
   save_rng_ = true;
 }
 
@@ -61,8 +60,7 @@ void RandBinomial<T>::forward_impl(const Variables &inputs,
 
 template <typename T>
 void RandBinomial<T>::recompute_impl(const Variables &inputs,
-                                     const Variables &outputs,
-                                     const vector<bool> &need_recompute) {
+                                     const Variables &outputs) {
   std::binomial_distribution<int> rdist(n_, p_);
   auto rgen = rgen_for_recompute_;
 

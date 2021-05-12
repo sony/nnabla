@@ -39,8 +39,7 @@ void Dropout<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
 
 template <typename T>
 void Dropout<T>::setup_recompute_impl(const Variables &inputs,
-                                      const Variables &outputs,
-                                      const vector<bool> &need_recompute) {
+                                      const Variables &outputs) {
   save_rng_ = true;
 }
 
@@ -72,8 +71,7 @@ void Dropout<T>::forward_impl(const Variables &inputs,
 
 template <typename T>
 void Dropout<T>::recompute_impl(const Variables &inputs,
-                                const Variables &outputs,
-                                const vector<bool> &need_recompute) {
+                                const Variables &outputs) {
   auto rgen = rgen_for_recompute_;
   dropout(inputs, outputs, rgen);
 }

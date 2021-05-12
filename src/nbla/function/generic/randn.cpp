@@ -33,8 +33,7 @@ void Randn<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
 
 template <typename T>
 void Randn<T>::setup_recompute_impl(const Variables &inputs,
-                                    const Variables &outputs,
-                                    const vector<bool> &need_recompute) {
+                                    const Variables &outputs) {
   save_rng_ = true;
 }
 
@@ -56,8 +55,8 @@ void Randn<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
 }
 
 template <typename T>
-void Randn<T>::recompute_impl(const Variables &inputs, const Variables &outputs,
-                              const vector<bool> &need_recompute) {
+void Randn<T>::recompute_impl(const Variables &inputs,
+                              const Variables &outputs) {
   std::normal_distribution<typename force_float<T>::type> rdist(mu_, sigma_);
   auto rgen = rgen_for_recompute_;
 

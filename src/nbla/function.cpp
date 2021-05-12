@@ -163,19 +163,17 @@ void Function::backward(const Variables &inputs, const Variables &outputs,
 }
 
 void Function::setup_recompute(const Variables &inputs,
-                               const Variables &outputs,
-                               const vector<bool> &need_recompute) {
-  this->setup_recompute_impl(inputs, outputs, need_recompute);
+                               const Variables &outputs) {
+  this->setup_recompute_impl(inputs, outputs);
 }
 
-void Function::recompute(const Variables &inputs, const Variables &outputs,
-                         const vector<bool> &need_recompute) {
+void Function::recompute(const Variables &inputs, const Variables &outputs) {
   if (fall_back_func_) {
     // Fall back to the specified Function.
-    fall_back_func_->recompute(inputs, outputs, need_recompute);
+    fall_back_func_->recompute(inputs, outputs);
     return;
   }
-  this->recompute_impl(inputs, outputs, need_recompute);
+  this->recompute_impl(inputs, outputs);
 }
 
 Context Function::context() const { return ctx_; }

@@ -141,8 +141,7 @@ void BatchNormalization<T>::forward_impl(const Variables &inputs,
 
 template <class T>
 void BatchNormalization<T>::recompute_impl(const Variables &inputs,
-                                           const Variables &outputs,
-                                           const vector<bool> &need_recompute) {
+                                           const Variables &outputs) {
   if (batch_stat_) { // Training mode.
     // Prohibit updating running mean and running variance during recomputation
     forward_impl_batch(inputs, outputs,

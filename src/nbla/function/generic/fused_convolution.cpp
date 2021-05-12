@@ -239,8 +239,7 @@ void FusedConvolution<T>::forward_impl(const Variables &inputs,
 
 template <typename T>
 void FusedConvolution<T>::recompute_impl(const Variables &inputs,
-                                         const Variables &outputs,
-                                         const vector<bool> &need_recompute) {
+                                         const Variables &outputs) {
   // Prohibit updating running mean and running variance.
   // Use dummy buffers for rm and rv when batch_norm is fused and `batch_stat_
   // == true`.

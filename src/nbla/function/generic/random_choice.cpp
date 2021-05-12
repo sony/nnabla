@@ -59,8 +59,7 @@ void RandomChoice<T>::setup_impl(const Variables &inputs,
 
 template <typename T>
 void RandomChoice<T>::setup_recompute_impl(const Variables &inputs,
-                                           const Variables &outputs,
-                                           const vector<bool> &need_recompute) {
+                                           const Variables &outputs) {
   save_rng_ = true;
 }
 
@@ -154,8 +153,7 @@ void RandomChoice<T>::forward_impl(const Variables &inputs,
 
 template <typename T>
 void RandomChoice<T>::recompute_impl(const Variables &inputs,
-                                     const Variables &outputs,
-                                     const vector<bool> &need_recompute) {
+                                     const Variables &outputs) {
   auto rgen = rgen_for_recompute_;
   random_choice(inputs, outputs, rgen);
 }

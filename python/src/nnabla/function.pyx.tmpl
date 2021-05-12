@@ -112,14 +112,6 @@ cdef vector[cpp_bool] variables_to_prop_down_flags(varlist) except *:
         ret.push_back((<_Variable?>varlist[i]).varp.need_grad_state())
     return ret
 
-cdef vector[cpp_bool] variables_to_need_recompute_flags(varlist) except *:
-    cdef int i
-    cdef int size = len(varlist)
-    cdef vector[cpp_bool] ret
-    for i in range(size):
-        ret.push_back((<_Variable?>varlist[i]).varp.recompute())
-    return ret
-
 cdef tuple vector_to_tuple_nd_array(const vector[NdArrayPtr] &vec):
     cdef int i
     cdef list ret = []
@@ -227,19 +219,15 @@ cdef class Function:
 
     def setup_recompute(self, inputs, outputs):
         cdef int i
-        cdef vector[cpp_bool] need_recompute = variables_to_need_recompute_flags(outputs)
         self.funp.function().get().setup_recompute(
             list_to_vector_variable_p(inputs),
-            list_to_vector_variable_p(outputs),
-            need_recompute)
+            list_to_vector_variable_p(outputs))
 
     def recompute(self, inputs, outputs):
         cdef int i
-        cdef vector[cpp_bool] need_recompute = variables_to_need_recompute_flags(outputs)
         self.funp.function().get().recompute(
             list_to_vector_variable_p(inputs),
-            list_to_vector_variable_p(outputs),
-            need_recompute)
+            list_to_vector_variable_p(outputs))
 
     @property
     def context(self):

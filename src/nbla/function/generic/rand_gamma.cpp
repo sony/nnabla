@@ -34,8 +34,7 @@ void RandGamma<T>::setup_impl(const Variables &inputs,
 
 template <typename T>
 void RandGamma<T>::setup_recompute_impl(const Variables &inputs,
-                                        const Variables &outputs,
-                                        const vector<bool> &need_recompute) {
+                                        const Variables &outputs) {
   save_rng_ = true;
 }
 
@@ -59,8 +58,7 @@ void RandGamma<T>::forward_impl(const Variables &inputs,
 
 template <typename T>
 void RandGamma<T>::recompute_impl(const Variables &inputs,
-                                  const Variables &outputs,
-                                  const vector<bool> &need_recompute) {
+                                  const Variables &outputs) {
   std::gamma_distribution<typename force_float<T>::type> rdist(k_, theta_);
   auto rgen = rgen_for_recompute_;
 

@@ -301,19 +301,16 @@ public:
 
     bool need_setup_recompute = false;
     const int n_outputs = outputs.size();
-    vector<bool> need_recompute(n_outputs, false);
     for (int i = 0; i < n_outputs; i++) {
       if (outputs[i]->recompute() &&
           func->function()->need_setup_recompute(i)) {
-        need_recompute[i] = true;
         need_setup_recompute = true;
       }
     }
 
     if (as_recomputation_) {
       try {
-        func->function()->recompute(func->function_inputs(), voutputs,
-                                    need_recompute);
+        func->function()->recompute(func->function_inputs(), voutputs);
       } catch (...) {
         error_trace("Error during recomputation:", func->function()->name());
         throw;
@@ -322,8 +319,7 @@ public:
       // Setup for recomputation before forward execution
       if (need_setup_recompute) {
         try {
-          func->function()->setup_recompute(func->function_inputs(), voutputs,
-                                            need_recompute);
+          func->function()->setup_recompute(func->function_inputs(), voutputs);
         } catch (...) {
           error_trace(
               "Error setup for recomputation during forward propagation:",

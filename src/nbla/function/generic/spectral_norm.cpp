@@ -226,8 +226,7 @@ void SpectralNorm<T>::setup_impl(const Variables &inputs,
 
 template <typename T>
 void SpectralNorm<T>::setup_recompute_impl(const Variables &inputs,
-                                           const Variables &outputs,
-                                           const vector<bool> &need_recompute) {
+                                           const Variables &outputs) {
   // data region of `u` will be rewrited in forward prop.
   // On the other hand, we need original `u` for forward recalculation.
   // Therefore, we keep `u` into `u_org_`.
@@ -256,8 +255,7 @@ void SpectralNorm<T>::forward_impl(const Variables &inputs,
 
 template <typename T>
 void SpectralNorm<T>::recompute_impl(const Variables &inputs,
-                                     const Variables &outputs,
-                                     const vector<bool> &need_recompute) {
+                                     const Variables &outputs) {
   // Temporally restore `u` remembered in previous forward prop to prevent
   // double iteration of `u`
   u_->set_array(u_orig_->array());

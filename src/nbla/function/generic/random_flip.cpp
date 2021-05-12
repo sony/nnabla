@@ -82,8 +82,7 @@ void RandomFlip<T>::flip_recursive(const Variable *inp, const T *x, T *y,
 
 template <typename T>
 void RandomFlip<T>::setup_recompute_impl(const Variables &inputs,
-                                         const Variables &outputs,
-                                         const vector<bool> &need_recompute) {
+                                         const Variables &outputs) {
   save_rng_ = true;
 }
 
@@ -122,8 +121,7 @@ void RandomFlip<T>::forward_impl(const Variables &inputs,
 
 template <typename T>
 void RandomFlip<T>::recompute_impl(const Variables &inputs,
-                                   const Variables &outputs,
-                                   const vector<bool> &need_recompute) {
+                                   const Variables &outputs) {
   auto rgen = rgen_for_recompute_;
   random_flip(inputs, outputs, rgen);
 }

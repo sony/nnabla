@@ -33,8 +33,7 @@ void Rand<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
 
 template <typename T>
 void Rand<T>::setup_recompute_impl(const Variables &inputs,
-                                   const Variables &outputs,
-                                   const vector<bool> &need_recompute) {
+                                   const Variables &outputs) {
   save_rng_ = true;
 }
 
@@ -57,8 +56,8 @@ void Rand<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
 }
 
 template <typename T>
-void Rand<T>::recompute_impl(const Variables &inputs, const Variables &outputs,
-                             const vector<bool> &need_recompute) {
+void Rand<T>::recompute_impl(const Variables &inputs,
+                             const Variables &outputs) {
   std::uniform_real_distribution<typename force_float<T>::type> rdist(low_,
                                                                       high_);
   auto rgen = rgen_for_recompute_;

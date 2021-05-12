@@ -52,9 +52,8 @@ void ImageAugmentation<T>::setup_impl(const Variables &inputs,
 }
 
 template <typename T>
-void ImageAugmentation<T>::setup_recompute_impl(
-    const Variables &inputs, const Variables &outputs,
-    const vector<bool> &need_recompute) {
+void ImageAugmentation<T>::setup_recompute_impl(const Variables &inputs,
+                                                const Variables &outputs) {
   save_rng_ = true;
 }
 
@@ -306,8 +305,7 @@ void ImageAugmentation<T>::forward_impl(const Variables &inputs,
 
 template <typename T>
 void ImageAugmentation<T>::recompute_impl(const Variables &inputs,
-                                          const Variables &outputs,
-                                          const vector<bool> &need_recompute) {
+                                          const Variables &outputs) {
   auto rgen = rgen_for_recompute_;
   image_augmentation(inputs, outputs, rgen);
 }
