@@ -52,6 +52,7 @@ cdef extern from "nbla/function.hpp" namespace "nbla":
         string name()
         shared_ptr[CFunction] copy() except +
         cpp_bool grad_depends_output_data(int i, int o) except+
+        cpp_bool need_setup_recompute(int o) except+
         int inplace_data(int i) except+
         int inplace_data_with(int i) except+
 

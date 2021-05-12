@@ -257,6 +257,9 @@ cdef class Function:
     def grad_depends_output_data(self, int i, int o):
         return self.funp.function().get().grad_depends_output_data(i, o)
 
+    def need_setup_recompute(self, int o):
+        return self.funp.function().get().need_setup_recompute(o)
+
     def inplace_data(self, int i):
         return self.funp.function().get().inplace_data(i)
 
