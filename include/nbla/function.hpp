@@ -127,6 +127,28 @@ public:
   void backward(const Variables &inputs, const Variables &outputs,
                 const vector<bool> &propagate_down, const vector<bool> &acccum);
 
+  /** Setting up for recompute().
+
+  Setting up anything that needs to be done before forward execution for
+  recomputation. If any of outpus of need_setup_recompute is true, this method
+  is called just before forward().
+
+  @sa recompute()
+  @sa need_setup_recompute()
+  */
+  void setup_recompute(const Variables &inputs, const Variables &outputs,
+                       const vector<bool> &need_recompute);
+
+  /** Reproduce previous forward().
+
+  Reproduce previous forward() execution. This method is called during backward
+  execution.
+
+  @sa setup_recompute()
+  */
+  void recompute(const Variables &inputs, const Variables &outputs,
+                 const vector<bool> &need_recompute);
+
   /** Get Context used in this function.
   */
   Context context() const;
@@ -250,6 +272,17 @@ public:
    */
   virtual bool prohibit_zero_input_grad() const { return false; }
 
+  /** A flag for checking if setup_recompute() is needed.
+
+      Checking if o-th output' data requires setup_recompute().
+
+      @param[in] o Output variable index.
+
+      @note setup_recompute() will skipped during forward execution if none of
+     outputs requires setup_recompute().
+   */
+  virtual bool need_setup_recompute(int o) const { return false; }
+
   /** Copy another instance of Function with the same context.
   */
   virtual shared_ptr<Function> copy() const = 0;
@@ -302,6 +335,41 @@ protected:
   virtual void backward_impl(const Variables &inputs, const Variables &outputs,
                              const vector<bool> &propagate_down,
                              const vector<bool> &accum) = 0;
+
+  /** Implementation part of setup_recompute().
+
+  It must do:
+
+  - Any process that needs to be done before forward execution for
+  recomputation. (e.g. Save random states for reproduction of forward execution
+  during recomputation.)
+
+  @param need_recompute Boolean array that indicates whether recompute is needed
+  for an output corresponding to its index.
+
+  @sa setup() arguments.
+  */
+  virtual void setup_recompute_impl(const Variables &inputs,
+                                    const Variables &outputs,
+                                    const vector<bool> &need_recompute) {
+    return;
+  };
+
+  /** Implementation part of setup_recompute().
+
+  It must do:
+
+  - Reproduce the previous forward execution.
+
+  @param need_recompute Boolean array that indicates whether recompute is needed
+  for an output corresponding to its index.
+
+  @sa setup() arguments.
+  */
+  virtual void recompute_impl(const Variables &inputs, const Variables &outputs,
+                              const vector<bool> &need_recompute) {
+    this->forward_impl(inputs, outputs);
+  };
 
   /**
     If any of inputs requires an input variable data when computing its
