@@ -97,7 +97,8 @@ protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,
                                    const Variables &outputs) override;
   NBLA_API virtual void forward_impl_batch(const Variables &inputs,
-                                           const Variables &outputs) override;
+                                           const Variables &outputs,
+                                           const bool update_inputs) override;
   NBLA_API virtual void backward_impl_batch(const Variables &inputs,
                                             const Variables &outputs,
                                             const vector<bool> &propagate_down,

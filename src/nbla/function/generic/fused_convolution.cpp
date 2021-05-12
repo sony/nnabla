@@ -238,6 +238,30 @@ void FusedConvolution<T>::forward_impl(const Variables &inputs,
 }
 
 template <typename T>
+void FusedConvolution<T>::recompute_impl(const Variables &inputs,
+                                         const Variables &outputs,
+                                         const vector<bool> &need_recompute) {
+  // Prohibit updating running mean and running variance.
+  // Use dummy buffers for rm and rv when batch_norm is fused and `batch_stat_
+  // == true`.
+  auto inputs_with_dummy = inputs;
+  Variable mean_dummy, variance_dummy;
+  // Whether batch_normalization is fused.
+  if (input_cg_variables_[BETA] && batch_stat_) {
+    const auto m_idx = this->input_variables_[MEAN].first;
+    const auto v_idx = this->input_variables_[VARIANCE].first;
+    mean_dummy.reshape(inputs[m_idx]->shape(), true);
+    variance_dummy.reshape(inputs[v_idx]->shape(), true);
+    inputs_with_dummy[m_idx] = &mean_dummy;
+    inputs_with_dummy[v_idx] = &variance_dummy;
+  }
+  reset_cg_variables(inputs_with_dummy, outputs);
+  bool clear_buffer =
+      SingletonManager::get<GlobalClearBufferState>()->clear_buffer();
+  last_output_cg_variable_->forward(clear_buffer, false);
+}
+
+template <typename T>
 void FusedConvolution<T>::backward_impl(const Variables &inputs,
                                         const Variables &outputs,
                                         const vector<bool> &propagate_down,

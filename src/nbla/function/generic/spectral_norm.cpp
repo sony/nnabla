@@ -225,6 +225,18 @@ void SpectralNorm<T>::setup_impl(const Variables &inputs,
 }
 
 template <typename T>
+void SpectralNorm<T>::setup_recompute_impl(const Variables &inputs,
+                                           const Variables &outputs,
+                                           const vector<bool> &need_recompute) {
+  // data region of `u` will be rewrited in forward prop.
+  // On the other hand, we need original `u` for forward recalculation.
+  // Therefore, we keep `u` into `u_org_`.
+  const Array *u_array = inputs[1]->data()->get(get_dtype<T>(), this->ctx_);
+  Array *u_org_array = u_orig_->cast(get_dtype<T>(), this->ctx_, true);
+  u_org_array->copy_from(u_array);
+}
+
+template <typename T>
 void SpectralNorm<T>::forward_impl(const Variables &inputs,
                                    const Variables &outputs) {
   if (!test_) {
@@ -240,6 +252,20 @@ void SpectralNorm<T>::forward_impl(const Variables &inputs,
   // Buffers are cleard during forward prop for memory optimization.
   // Forward calculation will be performed again during backward.
   last_output_cg_variable_->forward(true, true);
+}
+
+template <typename T>
+void SpectralNorm<T>::recompute_impl(const Variables &inputs,
+                                     const Variables &outputs,
+                                     const vector<bool> &need_recompute) {
+  // Temporally restore `u` remembered in previous forward prop to prevent
+  // double iteration of `u`
+  u_->set_array(u_orig_->array());
+
+  last_output_cg_variable_->forward(true, true);
+
+  // Reset u_
+  u_->set_array(inputs[1]->data()->array());
 }
 
 template <typename T>

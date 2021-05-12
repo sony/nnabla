@@ -132,7 +132,21 @@ template <class T>
 void BatchNormalization<T>::forward_impl(const Variables &inputs,
                                          const Variables &outputs) {
   if (batch_stat_) { // Training mode.
-    forward_impl_batch(inputs, outputs);
+    forward_impl_batch(inputs, outputs,
+                       true /* update running mean and variance */);
+  } else { // Testing mode.
+    forward_impl_global(inputs, outputs);
+  }
+}
+
+template <class T>
+void BatchNormalization<T>::recompute_impl(const Variables &inputs,
+                                           const Variables &outputs,
+                                           const vector<bool> &need_recompute) {
+  if (batch_stat_) { // Training mode.
+    // Prohibit updating running mean and running variance during recomputation
+    forward_impl_batch(inputs, outputs,
+                       false /* update running mean and variance */);
   } else { // Testing mode.
     forward_impl_global(inputs, outputs);
   }
@@ -140,7 +154,8 @@ void BatchNormalization<T>::forward_impl(const Variables &inputs,
 
 template <class T>
 void BatchNormalization<T>::forward_impl_batch(const Variables &inputs,
-                                               const Variables &outputs) {
+                                               const Variables &outputs,
+                                               const bool update_inputs) {
   // Check whether it outputs batch mean and var.
   Variable *batch_mean = &mean_;
   Variable *batch_var = &var_;
@@ -186,9 +201,11 @@ void BatchNormalization<T>::forward_impl_batch(const Variables &inputs,
     v[i1] = v[i1] / size02_ - m[i1] * m[i1];
 
     // Moving mean and var
-    rm[i1] = decay_rate_ * rm[i1] + (1 - decay_rate_) * m[i1];
-    rv[i1] = decay_rate_ * rv[i1] +
-             (1 - decay_rate_) * v[i1] * size02_ / (size02_ - 1);
+    if (update_inputs) {
+      rm[i1] = decay_rate_ * rm[i1] + (1 - decay_rate_) * m[i1];
+      rv[i1] = decay_rate_ * rv[i1] +
+               (1 - decay_rate_) * v[i1] * size02_ / (size02_ - 1);
+    }
 
     // v[i1] = 1 / std::sqrt(v[i1] + (T)eps_);
     // Subtract mean and divide by std, and apply beta and gamma.
