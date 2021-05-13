@@ -790,11 +790,13 @@ def backward_function_tester(rng, func, inputs=None,
         return vinputs
 
     vinputs = create_variables(inputs, backward)
+    vinputs_identity = list(map(lambda x: F.identity(x) if x is not None else None, vinputs))
 
     # Forward and backward of the forward function
-    with nn.context_scope(ctx), nn.auto_forward():
-        outputs0 = func(*(vinputs + func_args), **func_kwargs)
+    with nn.context_scope(ctx), nn.auto_forward(False):
+        outputs0 = func(*(vinputs_identity + func_args), **func_kwargs)
         outputs0 = force_list(outputs0)
+        F.sink(*outputs0).forward(clear_no_need_grad=False)
     grad_voutputs = []
     for output in outputs0:
         ograd = rng.randn(*output.shape)
@@ -803,6 +805,7 @@ def backward_function_tester(rng, func, inputs=None,
         output.g = ograd
     F.sink(*outputs0, one_input_grad=False).backward()
     vinputs = list(filter(lambda x: x is not None, vinputs))
+    vinputs_identity = list(filter(lambda x: x is not None, vinputs_identity))
     grad_inputs0 = [inp.g.copy() for inp in vinputs]
 
     # Forward of the backward function
@@ -810,10 +813,13 @@ def backward_function_tester(rng, func, inputs=None,
     func_name = output.parent.info.type_name
     func_backward = registry[func_name]
     grad_vinputs = grad_voutputs + vinputs
+    grad_vinputs_identity = grad_voutputs + vinputs_identity
     func_info_args = output.parent.info.args
-    with nn.context_scope(ctx), nn.auto_forward():
-        ograds0 = func_backward(grad_vinputs, **func_info_args)
+    with nn.context_scope(ctx), nn.auto_forward(False):
+        ograds0 = func_backward(grad_vinputs_identity, **func_info_args)
         ograds0 = force_list(ograds0)
+        ograds0_ = list(filter(lambda o: o is not None, ograds0))
+        F.sink(*ograds0_).forward(clear_no_need_grad=False)
     outputs1 = []
     for i, ograd in enumerate(ograds0):
         outputs1.append(ograd.d.copy()) if ograd is not None else \
@@ -899,10 +905,13 @@ def backward_function_tester(rng, func, inputs=None,
     # Check the same results between backward_function and nn.grad
     vinputs = [v for b, v in zip(backward, vinputs) if b]
     vinputs = list(filter(lambda x: x is not None, vinputs))
+    vinputs_identity = [v for b, v in zip(backward, vinputs_identity) if b]
+    vinputs_identity = list(filter(lambda x: x is not None, vinputs_identity))
 
-    with nn.context_scope(ctx), nn.auto_forward():
-        ograds1 = nn.grad(outputs0, vinputs,
+    with nn.context_scope(ctx), nn.auto_forward(False):
+        ograds1 = nn.grad(outputs0, vinputs_identity,
                           grad_outputs=[g.d.copy() for g in grad_voutputs])
+        F.sink(*ograds1).forward(clear_no_need_grad=False)
     ograds0 = list(filter(lambda o: o is not None, ograds0))
     ograds1 = list(filter(lambda o: o is not None, ograds1))
     for i in range(len(ograds0)):
