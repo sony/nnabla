@@ -251,13 +251,18 @@ def test_batch_normalization_double_backward(seed, axis, decay_rate, eps,
     axes = [axis]
     func_args = [axes, decay_rate, eps, batch_stat, output_stat]
 
+    insert_identity = []
+    if batch_stat:
+        insert_identity = [True, True, True, False, False]
+
     # 2nd-order
     backward_function_tester(rng, F.batch_normalization,
                              inputs,
                              func_args=func_args,
                              backward=[True, not no_bias,
                                        not no_scale, False, False],
-                             ctx=ctx, atol_accum=1e-2, dstep=1e-3)
+                             ctx=ctx, atol_accum=1e-2, dstep=1e-3,
+                             insert_identity=insert_identity)
     # 3rd-order
     func_args = func_args[:-1] + [no_scale, no_bias]
     df = BatchNormalizationBackward(ctx, *func_args)

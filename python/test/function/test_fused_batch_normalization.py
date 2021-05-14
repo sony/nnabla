@@ -232,6 +232,10 @@ def test_fused_batch_normalization_double_backward(seed, axis, decay_rate, eps,
     func_args = [axes, decay_rate, eps, batch_stat, nonlinearity, output_stat]
     inputs = mask_inputs(inputs, no_scale, no_bias, no_mean, no_variance)
 
+    insert_identity = []
+    if batch_stat:
+        insert_identity = [True, True, True, False, False, False]
+
     # 2nd-order
     backward = [True, True, True, False, False, add] if batch_stat else \
         [False, False, False, False, False, False]
@@ -239,7 +243,8 @@ def test_fused_batch_normalization_double_backward(seed, axis, decay_rate, eps,
                              inputs,
                              func_args=func_args,
                              backward=backward,
-                             ctx=ctx)
+                             ctx=ctx,
+                             insert_identity=insert_identity)
     # 3rd-order
     func_args = func_args[:-1]
     fused_batch_normalization_backward, y = \
@@ -249,6 +254,7 @@ def test_fused_batch_normalization_double_backward(seed, axis, decay_rate, eps,
     fused_batch_normalization_backward.is_add = add
     ginputs = [rng.randn(*y.shape)] + inputs + [rng.randn(*y.shape)] if add else \
         [rng.randn(*y.shape)] + inputs[:-1] + [rng.randn(*y.shape)]
+
     backward_function_tester(rng, fused_batch_normalization_backward,
                              inputs=ginputs,
                              func_args=[],

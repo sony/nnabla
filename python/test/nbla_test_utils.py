@@ -764,7 +764,7 @@ def backward_function_tester(rng, func, inputs=None,
                              func_args=[], func_kwargs={},
                              atol_f=1e-4, atol_b=1e-3, atol_accum=5e-2,
                              dstep=1e-3, backward=None, backward_b=None,
-                             ctx=None, non_accum_check=False, skip_backward_check=False):
+                             ctx=None, non_accum_check=False, skip_backward_check=False, insert_identity=[]):
     """ Automatic testing of backward function and backward pass of `func` by comparing it.
     The backward pass of `func` is the reference; therefore, 
     the backward pass of `func` must be tested first!
@@ -791,10 +791,25 @@ def backward_function_tester(rng, func, inputs=None,
 
     vinputs = create_variables(inputs, backward)
     vinputs_for_clear_buffer = create_variables(inputs, backward)
-    vinputs_identity = list(map(lambda x: F.identity(x) if x is not None else None, vinputs))
-    vinputs_identity_for_clear_buffer = list(map(lambda x: F.identity(x) if x is not None else None, vinputs_for_clear_buffer))
 
-    # Forward and backward of the forward function
+    vinputs_identity = []
+    vinputs_identity_for_clear_buffer = []
+    if not insert_identity:
+        insert_identity = [True] * len(vinputs)
+
+    for idx, i in enumerate(zip(vinputs, vinputs_for_clear_buffer)):
+        i0, i1 = i
+        if i0 is None:
+            vinputs_identity += [None]
+            vinputs_identity_for_clear_buffer += [None]
+        elif insert_identity[idx]:
+            vinputs_identity += [F.identity(i0)]
+            vinputs_identity_for_clear_buffer += [F.identity(i1)]
+        else:
+            vinputs_identity += [i0]
+            vinputs_identity_for_clear_buffer += [i1]
+
+    # Forward and backward of the forward function with no buffer clear
     with nn.context_scope(ctx), nn.auto_forward(False):
         outputs0 = func(*(vinputs_identity + func_args), **func_kwargs)
         outputs0 = force_list(outputs0)
@@ -808,22 +823,28 @@ def backward_function_tester(rng, func, inputs=None,
     F.sink(*outputs0, one_input_grad=False).backward()
     vinputs = list(filter(lambda x: x is not None, vinputs))
     vinputs_identity = list(filter(lambda x: x is not None, vinputs_identity))
-    vinputs_for_clear_buffer = list(filter(lambda x: x is not None, vinputs_for_clear_buffer))
+    vinputs_for_clear_buffer = list(
+        filter(lambda x: x is not None, vinputs_for_clear_buffer))
     grad_inputs0 = [inp.g.copy() for inp in vinputs]
 
-    # Check backward(clear_buffer=True)
+    # Forward and backward of the forward function with clear redundant buffer
     with nn.context_scope(ctx), nn.auto_forward(False):
-        outputs_for_clear_buffer = func(*(vinputs_identity_for_clear_buffer + func_args), **func_kwargs)
+        outputs_for_clear_buffer = func(
+            *(vinputs_identity_for_clear_buffer + func_args), **func_kwargs)
         outputs_for_clear_buffer = force_list(outputs_for_clear_buffer)
-        outputs_for_clear_buffer = list(map(lambda x: F.identity(x) if x is not None else None, outputs_for_clear_buffer))
+        outputs_for_clear_buffer = list(map(lambda x: F.identity(
+            x) if x is not None else None, outputs_for_clear_buffer))
         F.sink(*outputs_for_clear_buffer).forward(clear_no_need_grad=True)
 
     for o, ref_o in zip(outputs_for_clear_buffer, outputs0):
         o.g = ref_o.g
 
-    F.sink(*outputs_for_clear_buffer, one_input_grad=False).backward(clear_buffer=True)
+    # Check backward
+    F.sink(*outputs_for_clear_buffer,
+           one_input_grad=False).backward(clear_buffer=True)
 
-    grad_inputs_for_clear_buffer = [inp.g.copy() for inp in vinputs_for_clear_buffer]
+    grad_inputs_for_clear_buffer = [inp.g.copy()
+                                    for inp in vinputs_for_clear_buffer]
     for grad_ref, grad_res in zip(grad_inputs0, grad_inputs_for_clear_buffer):
         if grad_ref is None or grad_res is None:
             continue
