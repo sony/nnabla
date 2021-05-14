@@ -816,7 +816,7 @@ def backward_function_tester(rng, func, inputs=None,
         outputs_for_clear_buffer = func(*(vinputs_identity_for_clear_buffer + func_args), **func_kwargs)
         outputs_for_clear_buffer = force_list(outputs_for_clear_buffer)
         outputs_for_clear_buffer = list(map(lambda x: F.identity(x) if x is not None else None, outputs_for_clear_buffer))
-        F.sink(*outputs_for_clear_buffer).forward(clear_no_need_grad=False)
+        F.sink(*outputs_for_clear_buffer).forward(clear_no_need_grad=True)
 
     for o, ref_o in zip(outputs_for_clear_buffer, outputs0):
         o.g = ref_o.g
@@ -841,7 +841,7 @@ def backward_function_tester(rng, func, inputs=None,
         ograds0 = func_backward(grad_vinputs_identity, **func_info_args)
         ograds0 = force_list(ograds0)
         ograds0_ = list(filter(lambda o: o is not None, ograds0))
-        F.sink(*ograds0_).forward(clear_no_need_grad=False)
+        F.sink(*ograds0_).forward(clear_no_need_grad=True)
     outputs1 = []
     for i, ograd in enumerate(ograds0):
         outputs1.append(ograd.d.copy()) if ograd is not None else \
@@ -901,7 +901,7 @@ def backward_function_tester(rng, func, inputs=None,
         sum_ograd = F.sum(ograd) * rgrad
         numerical_grads = approx_fprime(
             grad_inputs1, obj_func, dstep, sum_ograd, grad_vinputs)
-        sum_ograd.forward()
+        sum_ograd.forward(clear_no_need_grad=True)
         sum_ograd.backward()
         analytical_grads = np.concatenate(
             [v.g.flatten() for v in grad_vinputs])
@@ -933,7 +933,7 @@ def backward_function_tester(rng, func, inputs=None,
     with nn.context_scope(ctx), nn.auto_forward(False):
         ograds1 = nn.grad(outputs0, vinputs_identity,
                           grad_outputs=[g.d.copy() for g in grad_voutputs])
-        F.sink(*ograds1).forward(clear_no_need_grad=False)
+        F.sink(*ograds1).forward(clear_no_need_grad=True)
     ograds0 = list(filter(lambda o: o is not None, ograds0))
     ograds1 = list(filter(lambda o: o is not None, ograds1))
     for i in range(len(ograds0)):
