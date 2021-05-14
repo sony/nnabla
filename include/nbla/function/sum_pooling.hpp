@@ -54,6 +54,7 @@ public:
                              this->channel_last_);
   }
   virtual string name() { return "SumPooling"; }
+  virtual bool grad_depends_output_data(int i, int o) const { return false; }
 
 protected:
   NBLA_API virtual void forward_impl(const Variables &inputs,

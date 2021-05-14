@@ -66,10 +66,6 @@ public:
     return SingletonManager::get<Cpu>()->array_classes();
   }
   virtual string name() { return "CumProd"; }
-  // TODO: This must be overridden if any of input grad depends on a output
-  // data. See doc in function.hpp.
-  // virtual bool grad_depends_output_data(int i, int o) const {
-  // }
   // TODO: If any of data/grad storage is inplaced with any of output, you must
   // override some of these. See doc in function.hpp.
   // virtual int inplace_data(int i) const {
@@ -86,6 +82,7 @@ public:
   // virtual bool prohibit_zero_input_grad() const {
   //   return true;
   // }
+  virtual bool grad_depends_output_data(int i, int o) const { return true; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,

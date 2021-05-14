@@ -59,6 +59,7 @@ public:
                              this->channel_last_);
   }
   virtual string name() { return "MaxPooling"; }
+  virtual bool grad_depends_output_data(int i, int o) const { return false; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,

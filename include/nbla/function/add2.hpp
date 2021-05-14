@@ -71,6 +71,7 @@ public:
     // 0 is okay because never be called in the case of i != 0.
     return 0;
   }
+  virtual bool grad_depends_output_data(int i, int o) const { return false; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,

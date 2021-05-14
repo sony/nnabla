@@ -92,6 +92,7 @@ public:
   // virtual bool prohibit_zero_input_grad() const {
   //   return true;
   // }
+  virtual bool grad_depends_output_data(int i, int o) const { return false; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,

@@ -52,6 +52,7 @@ public:
   }
   virtual int inplace_data(int i) const { return Function::INPLACE_NOT_MODIFY; }
   virtual int inplace_data_with(int i) const { return 0; }
+  virtual bool grad_depends_output_data(int i, int o) const { return false; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,

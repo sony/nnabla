@@ -57,6 +57,7 @@ public:
   virtual vector<string> allowed_array_classes() {
     return vector<string>{"CpuArray"};
   }
+  virtual bool grad_depends_output_data(int i, int o) const { return false; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,

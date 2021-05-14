@@ -66,6 +66,7 @@ public:
   // }
   // virtual int inplace_data_with(int i) const {
   // }
+  virtual bool grad_depends_output_data(int i, int o) const { return false; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,

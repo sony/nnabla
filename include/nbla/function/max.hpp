@@ -51,6 +51,7 @@ public:
                       this->with_index_, this->only_index_);
   }
   virtual string name() { return "Max"; }
+  virtual bool grad_depends_output_data(int i, int o) const { return false; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,

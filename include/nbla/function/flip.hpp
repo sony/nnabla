@@ -66,6 +66,7 @@ public:
   }
 
   std::vector<int> &axes() { return axes_; }
+  virtual bool grad_depends_output_data(int i, int o) const { return false; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,
