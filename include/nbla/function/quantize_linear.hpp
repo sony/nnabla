@@ -83,10 +83,9 @@ protected:
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
   virtual bool grad_depends_input_data_impl(int i, int j) const {
-    if (i == 0 && j == 1) {
-      return true;
-    }
-    return false;
+    // Return true since backward for inputs[1,2] may be implemented in the
+    // future.
+    return true;
   }
   NBLA_API virtual void round(Variable *inp, std::string round_mode);
   NBLA_API virtual void saturate(Variable *inp, int min_range, int max_range);

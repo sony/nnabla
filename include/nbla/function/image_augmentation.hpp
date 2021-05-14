@@ -156,6 +156,9 @@ protected:
                                        const Variables &outputs);
   void image_augmentation(const Variables &inputs, const Variables &outputs,
                           std::mt19937 &rgen);
+  virtual bool grad_depends_input_data_impl(int i, int j) const {
+    return false;
+  }
 };
 }
 #endif

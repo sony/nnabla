@@ -77,6 +77,10 @@ protected:
                                       const Variables &outputs,
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
+  virtual bool grad_depends_input_data_impl(int i, int j) const {
+    // Because of STE (Straight Through Estimator)
+    return false;
+  }
 };
 }
 #endif

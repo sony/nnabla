@@ -102,6 +102,9 @@ protected:
                                              const Variables &outputs);
   NBLA_API virtual void recompute_impl(const Variables &inputs,
                                        const Variables &outputs);
+  virtual bool grad_depends_input_data_impl(int i, int j) const {
+    return false;
+  }
 
   vector<vector<int>> prepare_addr_table(const Variables &inputs,
                                          const vector<int> &shifts);

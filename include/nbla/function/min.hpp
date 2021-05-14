@@ -50,6 +50,9 @@ public:
 protected:
   NBLA_API virtual void forward_impl_reduce(const T *x, T *y, int outer_size,
                                             int reduction_size);
+  virtual bool grad_depends_input_data_impl(int i, int j) const {
+    return false;
+  }
 };
 }
 #endif
