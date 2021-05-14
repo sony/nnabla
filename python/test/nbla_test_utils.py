@@ -790,7 +790,9 @@ def backward_function_tester(rng, func, inputs=None,
         return vinputs
 
     vinputs = create_variables(inputs, backward)
+    vinputs_for_clear_buffer = create_variables(inputs, backward)
     vinputs_identity = list(map(lambda x: F.identity(x) if x is not None else None, vinputs))
+    vinputs_identity_for_clear_buffer = list(map(lambda x: F.identity(x) if x is not None else None, vinputs_for_clear_buffer))
 
     # Forward and backward of the forward function
     with nn.context_scope(ctx), nn.auto_forward(False):
@@ -806,7 +808,27 @@ def backward_function_tester(rng, func, inputs=None,
     F.sink(*outputs0, one_input_grad=False).backward()
     vinputs = list(filter(lambda x: x is not None, vinputs))
     vinputs_identity = list(filter(lambda x: x is not None, vinputs_identity))
+    vinputs_for_clear_buffer = list(filter(lambda x: x is not None, vinputs_for_clear_buffer))
     grad_inputs0 = [inp.g.copy() for inp in vinputs]
+
+    # Check backward(clear_buffer=True)
+    with nn.context_scope(ctx), nn.auto_forward(False):
+        outputs_for_clear_buffer = func(*(vinputs_identity_for_clear_buffer + func_args), **func_kwargs)
+        outputs_for_clear_buffer = force_list(outputs_for_clear_buffer)
+        outputs_for_clear_buffer = list(map(lambda x: F.identity(x) if x is not None else None, outputs_for_clear_buffer))
+        F.sink(*outputs_for_clear_buffer).forward(clear_no_need_grad=False)
+
+    for o, ref_o in zip(outputs_for_clear_buffer, outputs0):
+        o.g = ref_o.g
+
+    F.sink(*outputs_for_clear_buffer, one_input_grad=False).backward(clear_buffer=True)
+
+    grad_inputs_for_clear_buffer = [inp.g.copy() for inp in vinputs_for_clear_buffer]
+    for grad_ref, grad_res in zip(grad_inputs0, grad_inputs_for_clear_buffer):
+        if grad_ref is None or grad_res is None:
+            continue
+        assert_allclose(grad_ref, grad_res, atol=atol_f,
+                        err_msg="backward(clear_buffer=True) and backward(clear_buffer=False) results differ.")
 
     # Forward of the backward function
     from nnabla.backward_functions import registry
