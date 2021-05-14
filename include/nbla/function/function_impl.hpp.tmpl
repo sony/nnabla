@@ -81,7 +81,7 @@ public:
     return SingletonManager::get<Cpu>()->array_classes();
   }
   virtual string name() { return "${name}"; }
-  // TODO: This must be overridden if any of input grad depends on a output data. See doc in function.hpp.
+  // TODO: This must be overridden if any of input grad does not depend on a output data. See doc in function.hpp.
   // virtual bool grad_depends_output_data(int i, int o) const {
   // }
   // TODO: If any of data/grad storage is inplaced with any of output, you must override some of these. See doc in function.hpp.
@@ -111,7 +111,7 @@ protected:
   // TODO: This must be overridden if there are something need to be saved for recomputation. See doc in function.hpp.
   // NBLA_API virtual void setup_recompute_impl(const Variables &inputs, const Variables &outputs);
   // NBLA_API virtual void recompute_impl(const Variables &inputs, const Variables &outputs);
-  // TODO: This must be overridden if any of input grad depends on a input data. See doc in function.hpp.
+  // TODO: This must be overridden if any of input grad does not depend on a input data. See doc in function.hpp.
   // virtual bool grad_depends_input_data_impl(int i, int j) const {
   // }
   // TODO: This must be overridden if any of input will be overwritten duaring forward. See doc in function.hpp.
