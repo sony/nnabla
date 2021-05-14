@@ -119,7 +119,7 @@ MnistDataIterator::MnistDataIterator(string train)
   }
   vector<vector<uint8_t>> images = read_images(train, "./", image_gz);
   vector<uint8_t> labels = read_labels(train, "./", label_gz);
-  for (int i = 0; i < images.size(); i++) {
+  for (unsigned int i = 0; i < images.size(); i++) {
     Pair xt;
     xt.data = images[i];
     xt.label = labels[i];
