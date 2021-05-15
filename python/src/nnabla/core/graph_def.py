@@ -1656,7 +1656,7 @@ class ProtoGraphGenerator:
         self.outputs = func.outputs
         if len(inputs) == 0:
             outputs = ProtoFunction(func, func.name, func.arguments)(
-                inputs=[], outputs=len(func.outputs))
+                inputs=[], n_outputs=len(func.outputs))
         else:
             outputs = func(*inputs, n_outputs=len(func.outputs),
                            auto_forward=False)
