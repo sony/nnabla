@@ -47,8 +47,20 @@ def test_ndarray_arithmetic_ops2(seed, op, x_var, y_var, shape):
 
     # Inplace test
     vx_bak = vx
-    exec_("vx {0}= vy".format(op))
+    if op == '+':
+        vx += vy
+    elif op == '-':
+        vx -= vy
+    elif op == '*':
+        vx *= vy
+    elif op == '/':
+        vx /= vy
+    elif op == '**':
+        vx **= vy
     assert_allclose(vx.data, vz.data)
+    if op == '*' or op == '/' or op == '**':
+        # In-placing for `*`, `/` and `**` is obsoleted.
+        return
     assert vx is vx_bak
 
 
@@ -67,8 +79,20 @@ def test_ndarray_arithmetic_scalar_ops(seed, op, shape):
 
     # Inplace test
     vx_bak = vx
-    exec_("vx {0}= a".format(op))
+    if op == '+':
+        vx += a
+    elif op == '-':
+        vx -= a
+    elif op == '*':
+        vx *= a
+    elif op == '/':
+        vx /= a
+    elif op == '**':
+        vx **= a
     assert_allclose(vx.data, vz.data)
+    if op == "**":
+        # In-placing for `**` is obsoleted.
+        return
     assert vx is vx_bak
 
 

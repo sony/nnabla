@@ -14,7 +14,7 @@ import nnabla.functions as F
 from .utils import no_grad
 
 
-def pow2_backward(inputs, inplace=False):
+def pow2_backward(inputs, inplace=False):  # Inplacing is obsoleted.
     """
     Args:
       inputs (list of nn.Variable): Incomming grads/inputs to/of the forward function.
@@ -26,7 +26,6 @@ def pow2_backward(inputs, inplace=False):
     dy = inputs[0]
     x0 = inputs[1]
     x1 = inputs[2]
-    x0 = x0 ** (1 / x1) if inplace else x0
     dx0 = dy * x1 * x0 ** (x1 - 1)
     dx1 = dy * (x0 ** x1) * F.log(x0)
     return dx0, dx1

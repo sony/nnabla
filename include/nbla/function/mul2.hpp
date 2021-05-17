@@ -37,8 +37,8 @@ Outputs:
 @tparam T Data type for computation.
 \ingroup FunctionImplGrp
  */
-NBLA_DEFINE_TRANSFORM_BINARY_INPLACE(Mul2, x0 *x1, dy *x1,
-                                     inplace ? dy *y / x1 : dy *x0, false,
-                                     false, true, true);
+// Inplacing is obsoleted.
+NBLA_DEFINE_TRANSFORM_BINARY_INPLACE(Mul2, x0 *x1, dy *x1, dy *x0, false, false,
+                                     true, true, true);
 }
 #endif

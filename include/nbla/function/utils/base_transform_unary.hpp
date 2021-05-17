@@ -211,12 +211,14 @@ Note : If DEP_Y is true, the gradient computation depends on output data.
     }                                                                          \
   }
 
-#define NBLA_DEFINE_TRANSFORM_UNARY_CLASS_1_INPLACE(NAME, DEP_Y, DEP_X, A0)    \
+#define NBLA_DEFINE_TRANSFORM_UNARY_CLASS_1_INPLACE(NAME, DEP_Y, DEP_X, A0,    \
+                                                    IGNORE_INPLACE)            \
   template <typename T>                                                        \
   class NAME : public TransformUnary<T, NAME##UnaryOp, A0> {                   \
     NBLA_DEFINE_TRANSFORM_UNARY_CLASS_COMMON(NAME, DEP_Y, DEP_X)               \
     NAME(const Context &ctx, const A0 &a0, bool inplace)                       \
-        : TransformUnary<T, NAME##UnaryOp, A0>(ctx, inplace, a0) {}            \
+        : TransformUnary<T, NAME##UnaryOp, A0>(                                \
+              ctx, (IGNORE_INPLACE) ? false : inplace, a0) {}                  \
     virtual shared_ptr<Function> copy() const {                                \
       return create_##NAME(this->ctx_, std::get<0>(this->args_),               \
                            this->inplace_);                                    \
@@ -237,10 +239,12 @@ Note : If DEP_Y is true, the gradient computation depends on output data.
   NBLA_DEFINE_UNARY_OP_1(NAME, OP, GOP, A0);                                   \
   NBLA_DEFINE_TRANSFORM_UNARY_CLASS_1(NAME, DEP_Y, DEP_X, A0)
 
-#define NBLA_DEFINE_TRANSFORM_UNARY_1_INPLACE(NAME, OP, GOP, DEP_Y, DEP_X, A0) \
+#define NBLA_DEFINE_TRANSFORM_UNARY_1_INPLACE(NAME, OP, GOP, DEP_Y, DEP_X, A0, \
+                                              IGNORE_INPLACE)                  \
   NBLA_REGISTER_FUNCTION_HEADER(NAME, A0, bool);                               \
   NBLA_DEFINE_UNARY_OP_1(NAME, OP, GOP, A0);                                   \
-  NBLA_DEFINE_TRANSFORM_UNARY_CLASS_1_INPLACE(NAME, DEP_Y, DEP_X, A0)
+  NBLA_DEFINE_TRANSFORM_UNARY_CLASS_1_INPLACE(NAME, DEP_Y, DEP_X, A0,          \
+                                              IGNORE_INPLACE)
 
 #define NBLA_DEFINE_UNARY_OP_1_NO_GRAD(NAME, OP, A0)                           \
   NBLA_DEFINE_UNARY_OP_CLASS(NAME) {                                           \

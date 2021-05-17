@@ -486,7 +486,7 @@ cdef class NdArray:
     def __imul__(self, x):
         import nnabla.functions as F
         if isinstance(x, (NdArray, Variable)):
-            F.mul2(self, x, inplace=True)
+            return F.mul2(self, x)
         else:
             F.mul_scalar(self, x, inplace=True)
         return self
@@ -494,7 +494,7 @@ cdef class NdArray:
     def __idiv__(self, x):
         import nnabla.functions as F
         if isinstance(x, (NdArray, Variable)):
-            F.div2(self, x, inplace=True)
+            return F.div2(self, x)
         else:
             F.mul_scalar(self, 1. / x, inplace=True)
         return self
@@ -502,7 +502,7 @@ cdef class NdArray:
     def __itruediv__(self, x):
         import nnabla.functions as F
         if isinstance(x, (NdArray, Variable)):
-            F.div2(self, x, inplace=True)
+            return F.div2(self, x)
         else:
             F.mul_scalar(self, 1. / x, inplace=True)
         return self
@@ -510,10 +510,9 @@ cdef class NdArray:
     def __ipow__(self, x):
         import nnabla.functions as F
         if isinstance(x, (NdArray, Variable)):
-            F.pow2(self, x, inplace=True)
+            return F.pow2(self, x)
         else:
-            F.pow_scalar(self, x, inplace=True)
-        return self
+            return F.pow_scalar(self, x)
 
     def copy_from(self, NdArray arr, use_current_context=True):
         """
