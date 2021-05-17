@@ -41,12 +41,12 @@ void ReLU<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
   }
 }
 template <typename T, bool accum>
-void relu_backward_cpu(int size, T *dx, const T *dy, const T *x) {
+void relu_backward_cpu(int size, T *dx, const T *dy, const T *y) {
   for (int s = 0; s < size; ++s) {
     if (accum)
-      dx[s] += (x[s] > 0 ? dy[s] : (T)0);
+      dx[s] += (y[s] > 0 ? dy[s] : (T)0);
     else
-      dx[s] = (x[s] > 0 ? dy[s] : (T)0);
+      dx[s] = (y[s] > 0 ? dy[s] : (T)0);
   }
 }
 
@@ -57,12 +57,12 @@ void ReLU<T>::backward_impl(const Variables &inputs, const Variables &outputs,
   if (!propagate_down[0]) {
     return;
   }
-  const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
+  const T *y = outputs[0]->get_data_pointer<T>(this->ctx_);
   T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
   if (accum[0])
-    relu_backward_cpu<T, true>(inputs[0]->size(), dx, dy, x);
+    relu_backward_cpu<T, true>(inputs[0]->size(), dx, dy, y);
   else
-    relu_backward_cpu<T, false>(inputs[0]->size(), dx, dy, x);
+    relu_backward_cpu<T, false>(inputs[0]->size(), dx, dy, y);
 }
 }

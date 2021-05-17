@@ -25,7 +25,7 @@ def relu_backward(inputs, inplace=False):
     """
     dy = inputs[0]
     x0 = inputs[1]
-    x0 = get_output(x0, "ReLU") if inplace else x0
+    x0 = get_output(x0, "ReLU")
     m0 = F.greater_scalar(x0, 0)  # result is same even if inplace or not
     m0 = no_grad(m0)
     dx0 = dy * m0

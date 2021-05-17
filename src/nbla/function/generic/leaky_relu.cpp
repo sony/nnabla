@@ -52,15 +52,15 @@ void LeakyReLU<T>::forward_impl(const Variables &inputs,
 }
 template <typename T, bool accum>
 void leaky_relu_backward_cpu(int size, float alpha, T *dx, const T *dy,
-                             const T *x) {
+                             const T *sign) {
   for (int s = 0; s < size; ++s) {
     if (accum) {
-      if (x[s] > (T)0.)
+      if (sign[s] > (T)0.)
         dx[s] += dy[s];
       else
         dx[s] += alpha * dy[s];
     } else {
-      if (x[s] > (T)0.)
+      if (sign[s] > (T)0.)
         dx[s] = dy[s];
       else
         dx[s] = alpha * dy[s];
@@ -76,12 +76,13 @@ void LeakyReLU<T>::backward_impl(const Variables &inputs,
   if (!propagate_down[0]) {
     return;
   }
-  const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
+  const T *sign = inplace_ ? outputs[0]->get_data_pointer<T>(this->ctx_)
+                           : inputs[0]->get_data_pointer<T>(this->ctx_);
   T *dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
   const T *dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
   if (accum[0])
-    leaky_relu_backward_cpu<T, true>(inputs[0]->size(), alpha_, dx, dy, x);
+    leaky_relu_backward_cpu<T, true>(inputs[0]->size(), alpha_, dx, dy, sign);
   else
-    leaky_relu_backward_cpu<T, false>(inputs[0]->size(), alpha_, dx, dy, x);
+    leaky_relu_backward_cpu<T, false>(inputs[0]->size(), alpha_, dx, dy, sign);
 }
 }
