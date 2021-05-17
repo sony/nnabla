@@ -93,6 +93,18 @@ public:
     return SingletonManager::get<Cpu>()->array_classes();
   }
   virtual string name() { return "FusedConvolution"; }
+  virtual bool grad_depends_output_data(int i, int o) const {
+    if (nonlinearity_ == "relu") {
+      return true;
+    } else if (nonlinearity_ == "sigmoid") {
+      return true;
+    } else if (nonlinearity_ == "tanh") {
+      return true;
+    } else if (nonlinearity_ == "leaky_relu") {
+      return true;
+    }
+    return false;
+  }
 
 protected:
   /**
@@ -111,7 +123,11 @@ protected:
                                       const Variables &outputs,
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
+
+  std::unordered_map<InName, std::pair<int, Variable *>> input_variables_;
   virtual bool grad_depends_input_data_impl(int i, int j) const {
+    if (input_variables_.find(GAMMA) != input_variables_.end())
+      return true;
     if (i == X && j == WEIGHT) {
       return true;
     }
@@ -121,13 +137,12 @@ protected:
     return false;
   }
   virtual bool overwrite_input_data_in_forward_impl(int i) const {
-    if (i == MEAN || i == VARIANCE) {
+    // mean, variance
+    if (i == 4 || i == 5) {
       return true;
     }
     return false;
   }
-
-  std::unordered_map<InName, std::pair<int, Variable *>> input_variables_;
 
 private:
   // Members only used in a naive implementation with composite

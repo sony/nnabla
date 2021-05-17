@@ -110,8 +110,8 @@ public:
   }
   virtual string name() { return "FusedBatchNormalization"; }
   virtual bool grad_depends_output_data(int i, int o) const {
-    // Gradient computation always requires output mean and var.
-    return o > 0;
+    // Gradient computation always requires output y, mean and var.
+    return o >= 0;
   }
 
 protected:
