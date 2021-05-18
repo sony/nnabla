@@ -151,3 +151,47 @@ def test_convolution_2d_forward_backward(inshape, kernel, outmaps, pad, stride,
                                selection_algorithm, seed],
                     atol_f=1e-5, atol_b=1e-2, atol_accum=1e-5, backward=[True, True, False, True], ctx=ctx, func_name=func_name,
                     ref_grad=ref_grad_inq_convolution)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape, kernel, outmaps, pad, stride, dilation, num_bits",
+                         [((2, 2, 10, 10), (3, 2), 4, (3, 0), (1, 2), (2, 1), 3), ])
+@pytest.mark.parametrize("group", [1, 2])
+@pytest.mark.parametrize("with_bias", [True, False])
+@pytest.mark.parametrize("inq_iterations", [(1,)])
+@pytest.mark.parametrize("selection_algorithm", ["largest_abs", "random"])
+@pytest.mark.parametrize("func_seed", [-1, 412])
+def test_convolution_2d_recomputation(inshape, kernel, outmaps, pad, stride,
+                                      dilation, group, with_bias, seed,
+                                      num_bits, inq_iterations,
+                                      selection_algorithm, func_seed, ctx, func_name):
+    from nbla_test_utils import recomputation_test
+    rng = np.random.RandomState(seed)
+    # Input
+    inputs = [rng.randn(*inshape).astype(np.float32)]
+    # Weights
+    inmaps = inshape[-3]
+    kshape = (outmaps,) + (inmaps // group,) + kernel
+    inputs += [rng.randn(*kshape).astype(np.float32)]
+    # Indices
+    inputs += [np.random.randint(2, size=kshape)]
+    # Bias
+    if with_bias:
+        inputs += [rng.randn(outmaps).astype(np.float32)]
+    else:
+        inputs += [None]
+
+    base_axis = len(inshape) - 3
+    func_args = [base_axis, pad, stride, dilation, group, num_bits,
+                 inq_iterations, selection_algorithm, func_seed]
+
+    vinputs = []
+    for i in inputs:
+        if i is None:
+            vinputs.append(None)
+        else:
+            vinputs.append(nn.Variable.from_numpy_array(i))
+
+    recomputation_test(rng=rng, func=F.inq_convolution, vinputs=vinputs,
+                       func_args=func_args, func_kwargs={}, ctx=ctx)

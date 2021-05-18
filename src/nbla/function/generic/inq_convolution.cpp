@@ -206,6 +206,18 @@ void INQConvolution<T, T1>::forward_impl(const Variables &inputs,
 }
 
 template <typename T, typename T1>
+void INQConvolution<T, T1>::recompute_impl(const Variables &inputs,
+                                           const Variables &outputs) {
+  // Just exec convolution with inputs which prepared in previous forward
+  // execution.
+  if (inputs.size() == 4) { // with bias
+    convolution_->forward(Variables{inputs[0], inputs[1], inputs[3]}, outputs);
+  } else {
+    convolution_->forward(Variables{inputs[0], inputs[1]}, outputs);
+  }
+}
+
+template <typename T, typename T1>
 void INQConvolution<T, T1>::backward_impl(const Variables &inputs,
                                           const Variables &outputs,
                                           const vector<bool> &prop_down,

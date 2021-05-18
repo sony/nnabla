@@ -123,6 +123,8 @@ protected:
                                       const Variables &outputs,
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
+  NBLA_API virtual void recompute_impl(const Variables &inputs,
+                                       const Variables &outputs);
   virtual bool grad_depends_input_data_impl(int i, int j) const {
     if (batch_stat_) { // Training mode.
       if (i == 0) {

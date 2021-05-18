@@ -60,7 +60,8 @@ protected:
   int seed_;
   float scale_; // = 1./(1.-p_)
   Variable mask_;
-  std::mt19937 rgen_;
+  bool save_rng_ = false;
+  std::mt19937 rgen_, rgen_for_recompute_;
   std::bernoulli_distribution rdist_;
 
 public:
@@ -78,6 +79,7 @@ public:
   virtual vector<string> allowed_array_classes() {
     return SingletonManager::get<Cpu>()->array_classes();
   }
+  virtual bool need_setup_recompute(int o) const { return true; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,
@@ -88,6 +90,12 @@ protected:
                                       const Variables &outputs,
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
+  NBLA_API virtual void setup_recompute_impl(const Variables &inputs,
+                                             const Variables &outputs);
+  NBLA_API virtual void recompute_impl(const Variables &inputs,
+                                       const Variables &outputs);
+  void dropout(const Variables &inputs, const Variables &outputs,
+               std::mt19937 &rgen);
 };
 }
 #endif

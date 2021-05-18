@@ -82,6 +82,12 @@ void MeanSubtraction<T>::forward_impl(const Variables &inputs,
 }
 
 template <class T>
+void MeanSubtraction<T>::recompute_impl(const Variables &inputs,
+                                        const Variables &outputs) {
+  forward_impl_global(inputs, outputs);
+}
+
+template <class T>
 void MeanSubtraction<T>::forward_impl_batch(const Variables &inputs,
                                             const Variables &outputs) {
   // Inputs

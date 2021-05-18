@@ -84,6 +84,31 @@ void FusedBatchNormalization<T>::forward_impl(const Variables &inputs,
 }
 
 template <class T>
+void FusedBatchNormalization<T>::recompute_impl(const Variables &inputs,
+                                                const Variables &outputs) {
+
+  NBLA_CHECK(bn_, error_code::value, "setup is not called.");
+  // Naive non-fused implementation by layer composition.
+  // 1. Perform BatchNormalization
+  Variables inputs_bn(inputs.begin(), inputs.begin() + 5);
+  bn_->recompute(inputs_bn, outputs);
+
+  // 2. Perform Add2
+  // NOTE: Output buffer are re-used by inplacing.
+  if (inputs.size() == 6) {
+    auto add2 = create_Add2(this->ctx_, true);
+    add2->setup(Variables{outputs[0], inputs[5]}, Variables{outputs[0]});
+    add2->forward(Variables{outputs[0], inputs[5]}, Variables{outputs[0]});
+  }
+
+  // 3. Perform ReLU
+  // NOTE: Output buffer are re-used by inplacing.
+  auto relu = create_ReLU(this->ctx_, true);
+  relu->setup(Variables{outputs[0]}, Variables{outputs[0]});
+  relu->forward(Variables{outputs[0]}, Variables{outputs[0]});
+}
+
+template <class T>
 void FusedBatchNormalization<T>::backward_impl(
     const Variables &inputs, const Variables &outputs,
     const vector<bool> &propagate_down, const vector<bool> &accum) {

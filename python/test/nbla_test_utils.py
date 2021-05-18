@@ -322,6 +322,50 @@ def half_test(rng, func, finputs, hinputs, func_args, func_kwargs, backward, ctx
             ff, hh, atol=atol, err_msg="{} half backward test fails.".format(func_name))
 
 
+def recomputation_test(rng, func, vinputs, func_args, func_kwargs, ctx):
+    def copy_data(vinputs, voutputs):
+        i_data = [copy.deepcopy(i.d) for i in vinputs]
+        o_data = [copy.deepcopy(o.d) for o in voutputs]
+        return i_data, o_data
+
+    with nn.context_scope(ctx):
+        voutputs = func(*(vinputs + func_args), **func_kwargs)
+
+    voutputs = force_list(voutputs)
+
+    for o in voutputs:
+        o.recompute = True
+
+    f = voutputs[0].parent
+
+    need_setup_recompute = False
+    for o_idx in range(len(voutputs)):
+        need_setup_recompute |= f.need_setup_recompute(o_idx)
+
+    # Filter None inputs
+    vinputs = list(filter(lambda x: x is not None, vinputs))
+
+    # Forward
+    if need_setup_recompute:
+        f.setup_recompute(vinputs, voutputs)
+    f.forward(vinputs, voutputs)
+    exp_is, exp_os = copy_data(vinputs, voutputs)
+
+    # Claer outputs
+    for o in voutputs:
+        o.data.clear()
+
+    # Recompute
+    f.recompute(vinputs, voutputs)
+    act_is, act_os = copy_data(vinputs, voutputs)
+
+    for exp_i, act_i in zip(exp_is, act_is):
+        assert_allclose(exp_i, act_i)
+
+    for exp_o, act_o in zip(exp_os, act_os):
+        assert_allclose(exp_o, act_o)
+
+
 def create_function_nnp(inputs, outputs, func_name, func_args, func_kwargs):
     if func_name is None:
         return
@@ -543,6 +587,11 @@ def function_tester(rng, func, ref_func, inputs,
         res = o[i].d
         assert_allclose(ref, res, atol=atol_f,
                         err_msg="{} forward test fails".format(func_name))
+
+    # Checking recomputation
+    vinputs = create_variables(inputs, backward)
+    recomputation_test(rng, func, vinputs, func_args,
+                       func_kwargs, ctx)
 
     # Checking function name
     try:

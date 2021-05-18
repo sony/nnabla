@@ -219,8 +219,20 @@ void SpectralNorm<T>::setup_impl(const Variables &inputs,
   // array.
   std::unordered_set<CgFunctionPtr> fclosed;
   last_out->visit_function_recursive(last_out->parent(), fclosed,
+                                     false /* as_recomputation */,
                                      [](CgFunctionPtr fn) { fn->setup(); });
   this->last_output_cg_variable_ = last_out;
+}
+
+template <typename T>
+void SpectralNorm<T>::setup_recompute_impl(const Variables &inputs,
+                                           const Variables &outputs) {
+  // data region of `u` will be rewrited in forward prop.
+  // On the other hand, we need original `u` for forward recalculation.
+  // Therefore, we keep `u` into `u_org_`.
+  const Array *u_array = inputs[1]->data()->get(get_dtype<T>(), this->ctx_);
+  Array *u_org_array = u_orig_->cast(get_dtype<T>(), this->ctx_, true);
+  u_org_array->copy_from(u_array);
 }
 
 template <typename T>
@@ -239,6 +251,19 @@ void SpectralNorm<T>::forward_impl(const Variables &inputs,
   // Buffers are cleard during forward prop for memory optimization.
   // Forward calculation will be performed again during backward.
   last_output_cg_variable_->forward(true, true);
+}
+
+template <typename T>
+void SpectralNorm<T>::recompute_impl(const Variables &inputs,
+                                     const Variables &outputs) {
+  // Temporally restore `u` remembered in previous forward prop to prevent
+  // double iteration of `u`
+  u_->set_array(u_orig_->array());
+
+  last_output_cg_variable_->forward(true, true);
+
+  // Reset u_
+  u_->set_array(inputs[1]->data()->array());
 }
 
 template <typename T>

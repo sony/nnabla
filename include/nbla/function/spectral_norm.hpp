@@ -84,6 +84,7 @@ public:
   }
   virtual string name() { return "SpectralNorm"; }
   virtual bool grad_depends_output_data(int i, int o) const { return i == 0; }
+  virtual bool need_setup_recompute(int o) const { return true; }
 
 protected:
   NBLA_API virtual CgVariablePtr spectral_norm(const Variables &inputs,
@@ -99,6 +100,10 @@ protected:
                                       const Variables &outputs,
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
+  NBLA_API virtual void setup_recompute_impl(const Variables &inputs,
+                                             const Variables &outputs);
+  NBLA_API virtual void recompute_impl(const Variables &inputs,
+                                       const Variables &outputs);
   virtual bool grad_depends_input_data_impl(int i, int j) const { return true; }
   virtual bool overwrite_input_data_in_forward_impl(int i) const {
     if (i == 1) {

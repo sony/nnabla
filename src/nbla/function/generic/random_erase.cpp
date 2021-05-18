@@ -219,8 +219,15 @@ void RandomErase<T>::setup_impl(const Variables &inputs,
 }
 
 template <typename T>
-void RandomErase<T>::forward_impl(const Variables &inputs,
-                                  const Variables &outputs) {
+void RandomErase<T>::setup_recompute_impl(const Variables &inputs,
+                                          const Variables &outputs) {
+  save_rng_ = true;
+}
+
+template <typename T>
+void RandomErase<T>::random_erase(const Variables &inputs,
+                                  const Variables &outputs,
+                                  std::mt19937 &rgen) {
   NBLA_CHECK(!channel_last_, error_code::value,
              "Channel Last is not supported in CPU.");
 
@@ -232,9 +239,6 @@ void RandomErase<T>::forward_impl(const Variables &inputs,
   auto H = shape[base_axis_ + 1];
   auto W = shape[base_axis_ + 2];
   auto Bs = C * H * W;
-  std::mt19937 &rgen =
-      seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
-                  : rgen_;
 
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
   T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, !inplace_);
@@ -271,6 +275,27 @@ void RandomErase<T>::forward_impl(const Variables &inputs,
   if (!ste_fine_grained_) {
     this->random_coordinates_ = nullptr;
   }
+}
+
+template <typename T>
+void RandomErase<T>::forward_impl(const Variables &inputs,
+                                  const Variables &outputs) {
+  std::mt19937 &rgen =
+      seed_ == -1 ? SingletonManager::get<RandomManager>()->get_rand_generator()
+                  : rgen_;
+  // Remember the random state for recomputation.
+  if (save_rng_) {
+    rgen_for_recompute_ = rgen;
+  }
+
+  random_erase(inputs, outputs, rgen);
+}
+
+template <typename T>
+void RandomErase<T>::recompute_impl(const Variables &inputs,
+                                    const Variables &outputs) {
+  auto rgen = rgen_for_recompute_;
+  random_erase(inputs, outputs, rgen);
 }
 
 template <typename T>

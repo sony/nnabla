@@ -106,6 +106,7 @@ CgVariable::CgVariable(VariablePtr var, bool need_grad) : CgVariable(var) {
 class ForwardCallback {
   bool clear_buffer_{false};
   bool clear_no_need_grad_{false};
+  bool as_recomputation_{false};
   function_hook_type function_pre_hook_;
   function_hook_type function_post_hook_;
   unordered_map<CgVariablePtr, unsigned int> vseen_;
@@ -116,9 +117,10 @@ class ForwardCallback {
 
 public:
   ForwardCallback(bool clear_buffer, bool clear_no_need_grad,
-                  function_hook_type function_pre_hook,
+                  bool as_recomputation, function_hook_type function_pre_hook,
                   function_hook_type function_post_hook)
       : clear_buffer_(clear_buffer), clear_no_need_grad_(clear_no_need_grad),
+        as_recomputation_(as_recomputation),
         function_pre_hook_(function_pre_hook),
         function_post_hook_(function_post_hook) {}
 
@@ -213,6 +215,13 @@ public:
         ret[i] = true;
         continue;
       }
+      // Skip data clear during recomputation.
+      // Data which will be recomputed must be cleared only during forwad
+      // propagation.
+      if (!as_recomputation_ && vi->recompute()) {
+        ret[i] = true;
+        continue;
+      }
 
       if (clear_no_need_grad_) {
         if (need_grad_variable_set_.find(vi) != need_grad_variable_set_.end()) {
@@ -271,9 +280,9 @@ public:
 #endif
   }
 
-  void error_trace(const string &name_on_error) {
+  void error_trace(const string &message, const string &name_on_error) {
     // TODO: Optional verbosity
-    std::cerr << "Error during forward propagation:" << std::endl;
+    std::cerr << message << std::endl;
     for (auto &name : history_) {
       std::cerr << "  " << name << std::endl;
     }
@@ -289,29 +298,62 @@ public:
     vector<CgVariablePtr> outputs; // Get shared reference of outputs.
     vector<Variable *> voutputs;
     std::tie(outputs, voutputs) = func->function_outputs();
-    try {
-      auto call_callback = [func](function_hook_type &h) {
-        if (h) {
-          h(func);
+
+    bool need_setup_recompute = false;
+    const int n_outputs = outputs.size();
+    for (int i = 0; i < n_outputs; i++) {
+      if (outputs[i]->recompute() &&
+          func->function()->need_setup_recompute(i)) {
+        need_setup_recompute = true;
+      }
+    }
+
+    if (as_recomputation_) {
+      try {
+        func->function()->recompute(func->function_inputs(), voutputs);
+      } catch (...) {
+        error_trace("Error during recomputation:", func->function()->name());
+        throw;
+      }
+    } else {
+      // Setup for recomputation before forward execution
+      if (need_setup_recompute) {
+        try {
+          func->function()->setup_recompute(func->function_inputs(), voutputs);
+        } catch (...) {
+          error_trace(
+              "Error setup for recomputation during forward propagation:",
+              func->function()->name());
+          throw;
         }
-      };
+      }
 
-      // Call global pre_hooks first.
-      SingletonManager::get<GlobalFunctionCallback>()->call_pre_hooks(func);
+      // Forward
+      try {
+        auto call_callback = [func](function_hook_type &h) {
+          if (h) {
+            h(func);
+          }
+        };
 
-      // Call a pre_hook specified by user.
-      call_callback(function_pre_hook_);
+        // Call global pre_hooks first.
+        SingletonManager::get<GlobalFunctionCallback>()->call_pre_hooks(func);
 
-      func->function()->forward(func->function_inputs(), voutputs);
+        // Call a pre_hook specified by user.
+        call_callback(function_pre_hook_);
 
-      // Call a post_hook specified by user.
-      call_callback(function_post_hook_);
+        func->function()->forward(func->function_inputs(), voutputs);
 
-      // Call global post_hooks last.
-      SingletonManager::get<GlobalFunctionCallback>()->call_post_hooks(func);
-    } catch (...) {
-      error_trace(func->function()->name());
-      throw;
+        // Call a post_hook specified by user.
+        call_callback(function_post_hook_);
+
+        // Call global post_hooks last.
+        SingletonManager::get<GlobalFunctionCallback>()->call_post_hooks(func);
+      } catch (...) {
+        error_trace("Error during forward propagation:",
+                    func->function()->name());
+        throw;
+      }
     }
     history_.push_back(func->function()->name());
 
@@ -522,7 +564,6 @@ public:
   }
 
   void error_trace(const string &name_on_error) {
-    // TODO: Optional verbosity
     std::cerr << "Error during backward propagation:" << std::endl;
     for (auto &name : history_) {
       std::cerr << "  " << name << std::endl;
@@ -597,6 +638,7 @@ public:
 
 void CgVariable::visit_function_recursive(
     CgFunctionPtr func, unordered_set<CgFunctionPtr> &fclosed,
+    const bool as_recomputation,
     std::function<void(CgFunctionPtr)> forward_callback) {
 
   // A. Push the function to the closed list.
@@ -611,6 +653,11 @@ void CgVariable::visit_function_recursive(
     auto parent = input->parent();
     // B-1. Input with no parent doesn't require
     if (!parent) {
+      if (as_recomputation) {
+        // No need to care about `need_grad`, `rank` or `need_setup` during
+        // recomputation.
+        continue;
+      }
       // Same as B-3.
       input->set_rank_(0);
       input->unset_need_grad_state();
@@ -623,7 +670,25 @@ void CgVariable::visit_function_recursive(
 
     // B-2. Visit functions recursively if parent is not closed.
     if (fclosed.find(parent) == fclosed.end()) {
-      visit_function_recursive(parent, fclosed, forward_callback);
+      if (as_recomputation) {
+        // Data recomputation is performed during backward propagation.
+        // Only cleared data is a recomputation target.
+        const bool cleared = input->variable()->data()->array()->clear_called();
+        if (cleared) {
+          visit_function_recursive(parent, fclosed, as_recomputation,
+                                   forward_callback);
+        }
+      } else {
+        visit_function_recursive(parent, fclosed, as_recomputation,
+                                 forward_callback);
+      }
+    }
+
+    if (as_recomputation) {
+      // Skip B-3 and B-4.
+      // No need to care about `need_grad`, `rank` or `need_setup` during
+      // recomputation.
+      continue;
     }
 
     // B-3. Update rank and need_grad of this input by propagating from the
@@ -635,6 +700,14 @@ void CgVariable::visit_function_recursive(
     max_rank = std::max(parent->rank(), max_rank);
     need_grad |= input->need_grad_state();
     need_setup |= input->check_and_unmark_need_setup(func);
+  }
+
+  if (as_recomputation) {
+    forward_callback(func);
+    // Skip C. to F.
+    // No need to update `need_grad`, `rank` or `need_setup` during
+    // recomputation.
+    return;
   }
 
   // C. Update rank and need_grad of func (backward with a rewired graph
@@ -682,6 +755,13 @@ void CgVariable::visit_function_backward(
   };
   set<tuple<int, uint64_t, CgFunctionPtr>> open;
   open.insert(make_tuple(-p->rank(), get_id(p), p));
+
+  // For forward recomputation
+  ForwardCallback forward_callback(
+      false /* clear_buffer */, true /* clear_no_need_grad */,
+      true /* as_recomputation */, nullptr, nullptr);
+  unordered_set<CgFunctionPtr> fclosed;
+
   while (!open.empty()) {
     auto rank_func = open.begin();
     auto f = get<2>(*rank_func);
@@ -690,6 +770,45 @@ void CgVariable::visit_function_backward(
     // std::cout << " --> " << open.size() << std::endl;
     if (!f->need_grad())
       continue;
+
+    // Recompute cleared inputs' data
+    fclosed.clear();
+    const int n_inputs = f->num_inputs();
+    const auto function = f->function();
+    const auto inputs = f->inputs();
+    for (int i = 0; i < n_inputs; i++) {
+      // Recompute i-th input data
+
+      // Whether a parent exists
+      const auto parent = inputs[i]->parent();
+      if (!parent)
+        continue;
+
+      // Whether i-th input data is cleared
+      if (!inputs[i]->variable()->data()->array()->clear_called())
+        continue;
+
+      // Whether i-th input data is needed for grad calculation
+      bool need_for_grad = false;
+      for (int j = 0; j < n_inputs; j++) {
+        // Whether j-th grad computation is needed
+        if (!inputs[j]->need_grad_state())
+          continue;
+
+        // Whether i-th input data is needed for j-th grad computation
+        if (!function->grad_depends_input_data(j, i))
+          continue;
+
+        need_for_grad = true;
+      }
+      if (!need_for_grad)
+        continue;
+
+      // Exec recomputation for i-th input data
+      visit_function_recursive(
+          parent, fclosed, true /* as_recomputation */,
+          [&forward_callback](CgFunctionPtr f) { forward_callback(f); });
+    }
 
     // Callback
     backward_callback(f);
@@ -704,7 +823,6 @@ void CgVariable::visit_function_backward(
     }
 
     // Propagate down.
-    auto inputs = f->inputs();
     for (size_t i = 0; i < f->num_inputs(); i++) {
       auto inp = inputs[i];
       if (!inp->need_grad_state())
@@ -734,9 +852,10 @@ void CgVariable::forward(bool clear_buffer, bool clear_no_need_grad,
   }
   NBLA_CHECK(parent_, error_code::value, "The variable has no parent.");
   ForwardCallback forward_callback(clear_buffer, clear_no_need_grad,
-                                   function_pre_hook, function_post_hook);
+                                   false /* as_recompute */, function_pre_hook,
+                                   function_post_hook);
   visit_function_recursive(
-      parent_, *fclosed,
+      parent_, *fclosed, false /* recomputation */,
       [&forward_callback](CgFunctionPtr f) { forward_callback(f); });
 }
 

@@ -20,7 +20,7 @@ import pytest
 import numpy as np
 import nnabla as nn
 import nnabla.functions as F
-from nbla_test_utils import list_context
+from nbla_test_utils import list_context, recomputation_test
 from nnabla.testing import assert_allclose
 
 ctxs = list_context('Assign')
@@ -63,3 +63,14 @@ def test_assign_forward_backward(seed, ctx, func_name):
     f.backward([dst, src], [assign], accum=[False])
     assert np.all(dst.g == assign.g)
     assert np.all(src.g == np.zeros((2, 3, 4)))
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [314])
+def test_assign_recomputation(seed, ctx, func_name):
+    rng = np.random.RandomState(seed)
+    dst = nn.Variable((2, 3, 4))
+    src = nn.Variable((2, 3, 4))
+
+    recomputation_test(rng=rng, func=F.assign, vinputs=[dst, src],
+                       func_args=[], func_kwargs={}, ctx=ctx)

@@ -162,5 +162,19 @@ void Function::backward(const Variables &inputs, const Variables &outputs,
   this->backward_impl(inputs, outputs, propagate_down, accum);
 }
 
+void Function::setup_recompute(const Variables &inputs,
+                               const Variables &outputs) {
+  this->setup_recompute_impl(inputs, outputs);
+}
+
+void Function::recompute(const Variables &inputs, const Variables &outputs) {
+  if (fall_back_func_) {
+    // Fall back to the specified Function.
+    fall_back_func_->recompute(inputs, outputs);
+    return;
+  }
+  this->recompute_impl(inputs, outputs);
+}
+
 Context Function::context() const { return ctx_; }
 }

@@ -42,7 +42,8 @@ def test_random_crop_forward_backward(seed, inshape, shape, ctx, func_name):
         possible_crop_range = [
             input - output for output, input in zip(shape, inshape)]
         for crop_pos in itertools.product(*map(tuple, map(lambda x: range(*x), [(0, r + 1) for r in possible_crop_range]))):
-            r = inputs[0][crop_pos[0]:crop_pos[0] + shape[0], crop_pos[1]:crop_pos[1] + shape[1], crop_pos[2]:crop_pos[2] + shape[2]]
+            r = inputs[0][crop_pos[0]:crop_pos[0] + shape[0], crop_pos[1]
+                :crop_pos[1] + shape[1], crop_pos[2]:crop_pos[2] + shape[2]]
             assert(o.d.shape == r.shape)
             correl_and_p = pearsonr(o.d.flatten(), r.flatten())
             if correl_and_p[0] > max_correl:
@@ -79,3 +80,18 @@ def test_random_crop_forward_backward(seed, inshape, shape, ctx, func_name):
     o_diff = rng.randn(*o.shape).astype(i.d.dtype)
     o.backward(o_diff)
     assert np.all(i.g == 0)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [-1, 313])
+@pytest.mark.parametrize("inshape", [(8, 8, 8)])
+@pytest.mark.parametrize("shape", [None, (4, 4, 4,)])
+def test_random_crop_recomputation(seed, inshape, shape, ctx, func_name):
+    from nbla_test_utils import recomputation_test
+    rng = np.random.RandomState(0)
+    vinputs = [nn.Variable(inshape)]
+
+    base_axis = 0
+    func_args = [shape, base_axis, seed]
+    recomputation_test(rng=rng, func=F.random_crop, vinputs=vinputs,
+                       func_args=func_args, func_kwargs={}, ctx=ctx)

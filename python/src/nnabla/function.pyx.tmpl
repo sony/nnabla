@@ -217,6 +217,18 @@ cdef class Function:
 	    prop_down,
             caccum)
 
+    def setup_recompute(self, inputs, outputs):
+        cdef int i
+        self.funp.function().get().setup_recompute(
+            list_to_vector_variable_p(inputs),
+            list_to_vector_variable_p(outputs))
+
+    def recompute(self, inputs, outputs):
+        cdef int i
+        self.funp.function().get().recompute(
+            list_to_vector_variable_p(inputs),
+            list_to_vector_variable_p(outputs))
+
     @property
     def context(self):
         ccontext = self.funp.function().get().context()
@@ -232,6 +244,9 @@ cdef class Function:
 
     def grad_depends_output_data(self, int i, int o):
         return self.funp.function().get().grad_depends_output_data(i, o)
+
+    def need_setup_recompute(self, int o):
+        return self.funp.function().get().need_setup_recompute(o)
 
     def inplace_data(self, int i):
         return self.funp.function().get().inplace_data(i)

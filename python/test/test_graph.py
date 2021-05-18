@@ -13,12 +13,14 @@
 # limitations under the License.
 
 from six.moves import range
+import copy
 import pytest
 import numpy as np
 import nnabla as nn
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
 from nnabla.testing import assert_allclose, clear_called_flag_recorder
+from nbla_test_utils import list_context
 
 
 @pytest.mark.parametrize("seed", [313])
@@ -749,3 +751,454 @@ class TestClearOutputGrad():
         y3.backward(clear_buffer=True)
 
         self.check_grad_cleared_flags(answer_grad)
+
+
+class TestRecomputation():
+    def teardown_method(self):
+        clear_called_flag_recorder.deactivate_clear_called_flag_recorder()
+
+    def check_input_data_clear_called_flags(self, answer):
+        result = clear_called_flag_recorder.get_input_clear_called_flags()
+        assert len(result) == len(answer)
+        for i, flags in enumerate(answer):
+            assert len(result[i]) == len(flags)
+            for j, flag in enumerate(flags):
+                assert flag == result[i][j][0]
+
+    def check_recomputation(self, seed, graph, inputs):
+        def forward_backward_and_get_grads(y, clear_no_need_grad, clear_buffer):
+            # Initialize grads
+            for input in inputs:
+                if input.need_grad:
+                    input.grad.zero()
+
+            y.forward(clear_no_need_grad=clear_no_need_grad,
+                      clear_buffer=clear_buffer)
+            y.backward(clear_buffer=True)
+
+            # Get grads
+            grads = []
+            for input in inputs:
+                if input.need_grad:
+                    grads.append(copy.deepcopy(input.g))
+
+            return grads
+
+        # Set random input data.
+        rng = np.random.RandomState(seed)
+        for input in inputs:
+            input.d = rng.randn(*input.shape)
+
+        # Calculate reference grads.
+        y_ref = graph(*inputs)
+        # Disable recompute flags for generating reference grads.
+
+        def disable_recompute_flag(f):
+            for input in f.inputs:
+                input.apply(recompute=False)
+        y_ref.visit(disable_recompute_flag)
+        grads_expected = forward_backward_and_get_grads(y_ref, False, False)
+
+        # Test grads' value under all combination of flags of `Variable::forward()`.
+        for clear_no_need_grad in [False, True]:
+            for clear_buffer in [False, True]:
+                if clear_no_need_grad == False and clear_buffer == False:
+                    # Reference condition
+                    continue
+
+                y = graph(*inputs)
+                grads_actual = forward_backward_and_get_grads(
+                    y, clear_no_need_grad, clear_buffer)
+                for a, e in zip(grads_actual, grads_expected):
+                    assert_allclose(a, e, rtol=0, atol=0)
+
+    # Check setting up recompute flag.
+    def test_recompute_flag(self):
+        x0 = nn.Variable((1, 1), need_grad=True)
+        x1 = F.sin(x0).apply(recompute=True)
+        x2 = F.sin(x1).apply(recompute=False)
+        x3 = F.sin(x2)
+
+        assert x0.recompute == False
+        assert x1.recompute == True
+        assert x2.recompute == False
+        assert x3.recompute == False
+
+    # Check whether input data is cleared when recompute flag is True.
+    def test_clear_input_data(self):
+        x0 = nn.Variable((1, 1), need_grad=True)
+        # `F.sin` input data is always needed for grad calculation
+        x1 = F.sin(x0).apply(recompute=True)
+        x2 = F.sin(x1).apply(recompute=False)
+        x3 = F.sin(x2)
+
+        answer = []
+        answer.append([False])  # x0
+        answer.append([True])  # x1
+        answer.append([False])  # x2
+
+        clear_called_flag_recorder.activate_clear_called_flag_recorder()
+
+        x3.forward(clear_no_need_grad=True)
+        self.check_input_data_clear_called_flags(answer)
+
+        clear_called_flag_recorder.deactivate_clear_called_flag_recorder()
+
+    # Check recomputed data value.
+    @pytest.mark.parametrize("seed", [313])
+    def test_recomputed_data_value(self, seed):
+        rng = np.random.RandomState(seed)
+        a0 = nn.Variable((2, 3), need_grad=True)
+        b0 = nn.Variable((2, 3), need_grad=True)
+        a0.d = rng.randn(*a0.shape)
+        b0.d = rng.randn(*b0.shape)
+
+        a1 = F.sin(a0).apply(recompute=True)
+        a2 = F.sin(a1)
+        a3 = F.sin(a2)
+
+        b1 = F.sin(b0)
+        b2 = F.sin(b1).apply(recompute=True)
+        b3 = F.sin(b2)
+
+        c0 = F.mul2(a3, b3).apply(recompute=True)
+        c1 = F.sin(c0)
+
+        # Forward
+
+        # Get output data which will be recomputed.
+        ref_data = []  # data of a0, b2 and c0 will be stored.
+
+        def get_output_data(nnabla_func):
+            outputs = nnabla_func.outputs
+            for output in outputs:
+                if output.recompute:
+                    ref_data.append(copy.deepcopy(output.d))
+        c1.forward(function_post_hook=get_output_data)
+
+        # Backward
+
+        # Get recomputed data
+        act_data = []
+
+        def get_recomputed_data(nnabla_func):
+            inputs = nnabla_func.inputs
+            for input in inputs:
+                if input.recompute:
+                    act_data.append(copy.deepcopy(input.d))
+        c1.backward(function_pre_hook=get_recomputed_data)
+        # Make the order the same as `ref_data`.
+        act_data.reverse()
+
+        # Check recomputed data
+        for act, ref in zip(act_data, ref_data):
+            assert_allclose(act, ref, rtol=0, atol=0)
+
+    @pytest.mark.parametrize("seed", [313])
+    def test_grad_value_simple(self, seed):
+        x = nn.Variable((2, 3), need_grad=True)
+
+        inputs = (x,)
+
+        def graph(x):
+            y = F.sin(x).apply(recompute=True)
+            y = F.cos(y)
+            return y
+
+        self.check_recomputation(seed, graph, inputs)
+
+    @pytest.mark.parametrize("seed", [313])
+    @pytest.mark.parametrize("need_grad_x1", [False, True])
+    @pytest.mark.parametrize("need_grad_x2", [False, True])
+    def test_grad_value_with_branch(self, seed, need_grad_x1, need_grad_x2):
+        x1 = nn.Variable((2, 3), need_grad=need_grad_x1)
+        x2 = nn.Variable((2, 3), need_grad=need_grad_x2)
+
+        inputs = (x1, x2)
+
+        def graph(x1, x2):
+            x1 = F.identity(x1).apply(recompute=True)
+            x2 = F.identity(x2).apply(recompute=True)
+            y = F.mul2(x1, x2)
+            y = F.identity(y)
+            return y
+
+        self.check_recomputation(seed, graph, inputs)
+
+    # Check `setup_recompute`
+    @pytest.mark.parametrize("seed", [313])
+    def test_grad_value_with_random_function(self, seed):
+        x1 = nn.Variable((2, 3), need_grad=True)
+
+        inputs = (x1,)
+
+        def graph(x1):
+            x1 = F.identity(x1).apply(recompute=True)
+            x2 = F.randn(shape=x1.shape, seed=123).apply(recompute=True)
+            x3 = F.rand(shape=x1.shape, seed=456).apply(recompute=True)
+            y = F.mul2(x1, x2).apply(recompute=True)
+            y = F.mul2(y, x3).apply(recompute=True)
+            y = F.identity(y)
+            return y
+
+        self.check_recomputation(seed, graph, inputs)
+
+    @pytest.mark.parametrize("seed", [313])
+    def test_with_persistent_flag(self, seed):
+        x = nn.Variable((2, 3), need_grad=True)
+
+        inputs = (x,)
+
+        def graph(x0):
+            x1 = F.sin(x0).apply(recompute=True)
+            # Set `recompute` and `persistent` flag at the same time
+            x2 = F.sin(x1).apply(recompute=True, persistent=True)
+            x3 = F.sin(x2).apply(recompute=True)
+            y = F.sin(x3)
+            return y
+
+        y = graph(x)
+
+        # Trace data clearing during forward propagation.
+        clear_called_flag_recorder.activate_clear_called_flag_recorder()
+        y.forward(clear_no_need_grad=True)
+        expected = [
+            [False],  # x0: graph input
+            [True],  # x1: Cleared because `recompute=True`
+            [False],  # x2: Not cleared because `persistent=True`
+            [True],  # x3: Cleared because `recompute=True`
+        ]
+        self.check_input_data_clear_called_flags(expected)
+        clear_called_flag_recorder.deactivate_clear_called_flag_recorder()
+
+        # Check grad value
+        self.check_recomputation(seed, graph, inputs)
+
+    @pytest.mark.parametrize("seed", [313])
+    def test_with_inplacing(self, seed):
+        x = nn.Variable((2, 3), need_grad=True)
+
+        inputs = (x,)
+
+        def graph(x0):
+            x1 = F.sin(x0).apply(recompute=True)
+            # Set `recompute` flag to the inplaced variable.
+            x2 = F.reshape(x1, (3, 2), inplace=True).apply(recompute=True)
+            x3 = F.sin(x2).apply(recompute=True)
+            y = F.sin(x3)
+            return y
+
+        y = graph(x)
+
+        # Trace data clearing during forward propagation.
+        clear_called_flag_recorder.activate_clear_called_flag_recorder()
+        y.forward(clear_no_need_grad=True)
+        expected = [
+            [False],  # x0: graph input
+            [False],  # x1: Not cleared because inplaced data
+            [False],  # x2: Not cleared because inplaced data
+            [True],  # x3: Cleared because `recompute=True`
+        ]
+        self.check_input_data_clear_called_flags(expected)
+        clear_called_flag_recorder.deactivate_clear_called_flag_recorder()
+
+        # Check grad value
+        self.check_recomputation(seed, graph, inputs)
+
+    # Check clear of recomputed data on the subgraph which is not back-propagated.
+    def test_clear_data_on_not_bwd_path(self):
+        a0 = nn.Variable((2, 3), need_grad=True)
+        a1 = F.identity(a0).apply(recompute=True)
+        a2 = F.sin(a1).apply(recompute=True)
+
+        # These three variables are not back-propagated.
+        b0 = nn.Variable((2, 3), need_grad=False)
+        b1 = F.identity(b0).apply(recompute=True)
+        b2 = F.sin(b1).apply(recompute=True)
+
+        c1 = F.add2(a2, b2).apply(recompute=True)
+        c2 = F.sin(c1)
+
+        # Forward
+        clear_called_flag_recorder.activate_clear_called_flag_recorder()
+        c2.forward(clear_no_need_grad=True)
+        # Data which will be recomputed must be cleared during forward propagation.
+        expected = [
+            [False],  # a0
+            [True],  # a1
+            [False],  # b0
+            [True],  # b1
+            [True, True],  # a2, b2
+            [True],  # c1
+        ]
+        self.check_input_data_clear_called_flags(expected)
+        clear_called_flag_recorder.deactivate_clear_called_flag_recorder()
+
+        # Backward
+        clear_called_flag_recorder.activate_clear_called_flag_recorder()
+        c2.backward(clear_buffer=True)
+        # b1 is not on backward path and must be cleared during recomputation.
+        expected = [
+            # Recomputation
+            [False],  # a0
+            [False],  # a1
+            [False],  # b0
+            [True],  # b1 (not on backward path) must be cleared
+            [True, True],  # a2, b2
+            [False],  # c1
+            # Backward propagation
+            [True, True],  # a2, b2
+            [False],  # a1
+            [False],  # a0
+        ]
+        self.check_input_data_clear_called_flags(expected)
+        clear_called_flag_recorder.deactivate_clear_called_flag_recorder()
+
+    # Check clear of data not need for grad calculation during recomputation.
+    def test_clear_no_need_grad_during_recomputation(self):
+        x0 = nn.Variable((2, 3), need_grad=True)
+
+        x1 = F.identity(x0).apply(recompute=True)
+        # x2.data must be cleared just after recomputation because they are not need for backward propagation.
+        x2 = F.sin(x1).apply(recompute=True)
+        x3 = F.identity(x2).apply(recompute=True)
+        x4 = F.sin(x3)
+
+        # Forward
+        clear_called_flag_recorder.activate_clear_called_flag_recorder()
+        x4.forward(clear_no_need_grad=True)
+        # All intermediate data must be cleared.
+        expected = [
+            [False],  # x0
+            [True],  # x1
+            [True],  # x2
+            [True],  # x3
+        ]
+        self.check_input_data_clear_called_flags(expected)
+        clear_called_flag_recorder.deactivate_clear_called_flag_recorder()
+
+        # Backward
+        clear_called_flag_recorder.activate_clear_called_flag_recorder()
+        x4.backward(clear_buffer=True)
+        expected = [
+            # Recomputation
+            [False],  # x0
+            [False],  # x1
+            [True],  # x2: not need for grad calculation
+            # Backward propagation
+            [False],  # x3
+            [True],  # x2
+            [False],  # x1
+            [False],  # x0
+        ]
+        self.check_input_data_clear_called_flags(expected)
+        clear_called_flag_recorder.deactivate_clear_called_flag_recorder()
+
+    # Check recompute recursion stops at checkpoint.
+    def test_checkpoint(self):
+        x0 = nn.Variable((2, 3), need_grad=True)
+
+        x1 = F.sin(x0).apply(recompute=True)
+        x2 = F.sin(x1).apply(recompute=True)
+        x3 = F.sin(x2)  # Checkpoint 1 (recompute == False)
+        x4 = F.sin(x3).apply(recompute=True)
+        x5 = F.sin(x4).apply(recompute=True)
+        x6 = F.sin(x5)  # Checkpoint 2 (recompute == False)
+        x7 = F.sin(x6).apply(recompute=True)
+        x8 = F.sin(x7).apply(recompute=True)
+
+        # All intermediate data except checkpoints will be cleared during forward propagation.
+        x8.forward(clear_no_need_grad=True)
+
+        # Trace clear_called flags of `x2` and `x5` during backward propagation.
+        # clear_called flag changes True to False when the data is recomputed.
+        act_flags = []
+
+        def get_clear_called_flags(nnabla_func):
+            act_flags.append([x2.data.clear_called, x5.data.clear_called])
+        x8.backward(function_post_hook=get_clear_called_flags)
+        ref_flags = [
+                     # [x2, x5] clear_called flags
+                     [True, True],  # After F.sin(x7) backward
+                     [True, True],  # After F.sin(x6) backward
+                     [True, False],  # After F.sin(x5) backward
+                     [True, False],  # After F.sin(x4) backward
+                     [True, False],  # After F.sin(x3) backward
+                     [False, False],  # After F.sin(x2) backward
+                     [False, False],  # After F.sin(x1) backward
+                     [False, False],  # After F.sin(x0) backward
+                    ]
+
+        assert(ref_flags == act_flags)
+
+    # Test unnecessary recomputation with single recomputation recursion.
+    def test_unnecessary_traverse_0(self):
+        # No need grad path
+        a0 = nn.Variable((2, 3), need_grad=False)
+        a1 = F.sin(a0).apply(recompute=True)
+        # Need grad path
+        b0 = nn.Variable((2, 3), need_grad=True)
+        b1 = F.sin(b0).apply(recompute=True)
+        # branch
+        c = F.add2(a1, b1)
+
+        # Check whether unnecessary recomputation for `a1.data` is performed.
+
+        c.forward(clear_no_need_grad=True)
+        assert(a1.data.clear_called == True)
+        assert(b1.data.clear_called == True)
+
+        # Exec backward without clearing buffer to check whether recomputation is performed by seeing `clear_called` flag.
+        c.backward(clear_buffer=False)
+        # a1.data is still cleared. (Recalculation is not performed)
+        assert(a1.data.clear_called == True)
+        # b1.data is set. (Recalculation is performed)
+        assert(b1.data.clear_called == False)
+
+    # Test recomputation recursion depth.
+    def test_unnecessary_traverse_1(self):
+        a0 = nn.Variable((2, 3), need_grad=False)
+        # `a1` will not be recomputed since `a2` will not be cleared.
+        a1 = F.sin(a0).apply(recompute=True)
+        a2 = F.cos(a1)
+        a3 = F.sin(a2).apply(recompute=True)  # 'a3` will be recomputed.
+
+        b0 = nn.Variable((2, 3), need_grad=True).apply(recompute=True)
+        b1 = F.identity(b0).apply(recompute=True)
+
+        c = F.mul2(a3, b1).apply(recompute=True)
+
+        # Check recomputation recursion stops when `a3.data` is calculated.
+
+        c.forward(clear_buffer=False)
+        # `a1.data` is cleared because `recompute` flag is `true`.
+        assert(a1.data.clear_called == True)
+        # `a2.data` is not cleared because `recompute` flag is `false`.
+        assert(a2.data.clear_called == False)
+        c.backward(clear_buffer=False)
+        # If the recursive call reached to `a1`, `a1.data` should be set by recomputation.
+        # However, the recursive call stops at `a2` whose data is not cleared.
+        assert(a1.data.clear_called == True)
+
+    # Test unnecessary recomputation for whole graph.
+    def test_unnecessary_traverse_2(self):
+        def fail_with_not_cleared_data(nnabla_func):
+            inputs = nnabla_func.inputs
+            for input in inputs:
+                if input.parent is None:
+                    continue
+                if not input.data.clear_called:
+                    # Not cleared (recomputed) data is found.
+                    pytest.fail()
+
+        # Prepare graph does not need any recomputation.
+        x1 = nn.Variable((2, 3), need_grad=True)
+        x1 = F.identity(x1).apply(recompute=True)
+        x2 = nn.Variable((2, 3), need_grad=True)
+        x2 = F.identity(x2).apply(recompute=True)
+        y = F.add2(x1, x2).apply(recompute=True)
+        y = F.identity(y).apply(recompute=True)
+
+        # Check unnecessary recomputation.
+        y.forward(clear_no_need_grad=True)
+        y.backward(function_pre_hook=fail_with_not_cleared_data)
