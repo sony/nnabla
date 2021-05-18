@@ -511,7 +511,7 @@ cdef void forward_callback(void *cself, const Variables &cinputs,
     inputs = to_unsafe_variables(cinputs)
     outputs = to_unsafe_variables(coutputs)
 
-    # Call setup_impl in function.
+    # Call forward_impl in function.
     from nnabla import context_scope
     with context_scope(self.ctx):    
         self.forward_impl(inputs, outputs)
@@ -527,7 +527,7 @@ cdef void backward_callback(void *cself, const Variables &cinputs,
     inputs = to_unsafe_variables(cinputs)
     outputs = to_unsafe_variables(coutputs)
 
-    # Call setup_impl in function.
+    # Call backward_impl in function.
     from nnabla import context_scope
     with context_scope(self.ctx):    
         self.backward_impl(inputs, outputs,
@@ -539,6 +539,24 @@ cdef void cleanup_callback(void *cself) with gil:
     """
     Py_DECREF(<object> cself)
     
+
+cdef cpp_bool grad_depends_output_data_callback(void *cself, int i, int o) except+ with gil:
+    cdef object self
+    self = <object>cself
+
+    # Call grad_depends_output_data in function.
+    from nnabla import context_scope
+    with context_scope(self.ctx):
+        return self.grad_depends_output_data(i, o)
+
+cdef cpp_bool grad_depends_input_data_callback(void *cself, int i, int j) except+ with gil:
+    cdef object self
+    self = <object>cself
+
+    # Call grad_depends_input_data in function.
+    from nnabla import context_scope
+    with context_scope(self.ctx):
+        return self.grad_depends_input_data(i, j)
 
 class PythonFunction:
     """
@@ -603,6 +621,12 @@ class PythonFunction:
                         dx1 += F.mul2(dy, x0)
                     else:
                         dx1.copy_from(F.mul2(dy, x0))
+            
+            def grad_depends_output_data(self, i, o):
+                return False
+            
+            def grad_depends_input_data(self, i, j):
+                return True
 
         def mul2(x, y, ctx=None):
             func = Mul2(ctx)
@@ -635,7 +659,9 @@ class PythonFunction:
                             setup_callback,
                             forward_callback,
                             backward_callback,
-                            cleanup_callback), info)
+                            cleanup_callback,
+                            grad_depends_output_data_callback,
+                            grad_depends_input_data_callback), info)
         return f(*inputs, n_outputs=n_outputs,
                  auto_forward=get_auto_forward(), outputs=outputs)
 
@@ -663,6 +689,26 @@ class PythonFunction:
         Minimum number of outputs of the function.
         """
         raise NotImplementedError("Implement `min_outputs`.")
+
+    def grad_depends_output_data(self, i, o):
+        """
+        Checking if i-th input' gradient computation requires o-th output's data or not.
+
+        Args:
+            i: (list of :class:`nnabla.Variable`): Input variable index.
+            o: (list of :class:`nnabla.Variable`): Output variable index.
+        """
+        raise NotImplementedError("Implement `grad_depends_output_data`.")
+
+    def grad_depends_input_data(self, i, j):
+        """
+        Checking if i-th input' gradient computation requires j-th input's data or not.
+
+        Args:
+            i: (list of :class:`nnabla.Variable`): Input variable index.
+            i: (list of :class:`nnabla.Variable`): Input variable index.
+        """
+        raise NotImplementedError("Implement `grad_depends_input_data`.")
 
     def setup_impl(self, inputs, outputs):
         """
@@ -710,6 +756,12 @@ class Dummy(PythonFunction):
 
     def min_outputs(self):
         return 1
+    
+    def grad_depends_output_data(self, i, o):
+        return False
+
+    def grad_depends_input_data(self, i, j):
+        return False
 
     def setup_impl(self, inputs, outputs):
         pass

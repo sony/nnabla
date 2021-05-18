@@ -63,6 +63,12 @@ class MaxPoolingBackwardDataGrad(PythonFunction):
     def yshape(self, yshape):
         self._yshape = yshape
 
+    def grad_depends_output_data(self, i, o):
+        return False
+
+    def grad_depends_input_data(self, i, j):
+        return True
+
     def setup_impl(self, inputs, outputs):
         # inputs[0]:  gdx
         # inputs[1]:  x0

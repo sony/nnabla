@@ -170,6 +170,12 @@ class BatchNormalizationBackward(PythonFunction):
     def min_outputs(self):
         return self.rm_idx - 1
 
+    def grad_depends_output_data(self, i, o):
+        return False
+
+    def grad_depends_input_data(self, i, j):
+        return True
+
     def setup_impl(self, inputs, outputs):
         # inputs:  dy, x, beta, gamma, rmean, rvar
         # outputs: dx, dbeta, dgamma
