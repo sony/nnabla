@@ -39,7 +39,7 @@ void RoiAlign<T>::setup_impl(const Variables &inputs,
   CHECK(output_size_.at(1) > 0, "output width must be greater zero");
   CHECK(spatial_scale_.size() == 2, "spatial_scale must be an (y, x) tuple");
 
-  if (not this->channel_last_) {
+  if (!this->channel_last_) {
     auto const K = boxes->shape().at(0);
     auto const C = input->shape().at(1);
     auto const H = output_size_.at(0);
@@ -56,11 +56,11 @@ void RoiAlign<T>::setup_impl(const Variables &inputs,
 #undef CHECK
 }
 
-template <typename T> struct Box {
-  T batch_index, x1, y1, x2, y2;
+template <typename T> struct Box { T batch_index, x1, y1, x2, y2; };
 
-  inline int index() { return std::max(static_cast<int>(batch_index), 0); }
-};
+template <typename T> inline T clamp(const T x, const T low, const T high) {
+  return std::max(low, std::min(high, x));
+}
 
 template <typename T>
 inline int sampling_grid(const int sampling_ratio, const T step_size) {
@@ -82,22 +82,26 @@ void RoiAlign<T>::forward_impl(const Variables &inputs,
   auto boxes_data = boxes->get_data_pointer<T>(this->ctx_);
   auto output_data = output->cast_data_and_get_pointer<T>(this->ctx_, true);
 
-  auto roiboxes = boxes->shape().at(0);
-  auto channels = input->shape().at(1);
+  auto const samples = input->shape().at(0);
+  auto const channels = input->shape().at(1);
+  auto const roiboxes = boxes->shape().at(0);
 
-  auto image_rows = input->shape().at(2);
-  auto image_cols = input->shape().at(3);
-  auto image_size = image_rows * image_cols;
+  auto const image_rows = input->shape().at(2);
+  auto const image_cols = input->shape().at(3);
+  auto const image_size = image_rows * image_cols;
 
-  auto output_rows = output->shape().at(2);
-  auto output_cols = output->shape().at(3);
+  auto const output_rows = output->shape().at(2);
+  auto const output_cols = output->shape().at(3);
 
   for (auto n = 0; n < roiboxes; n++) {
-    auto roi = *reinterpret_cast<Box<T> const *>(boxes_data + n * 5);
+    auto const roi = *reinterpret_cast<Box<T> const *>(boxes_data + n * 5);
     auto const roi_x1 = static_cast<T>(roi.x1 * spatial_scale_.at(1) - 0.5f);
     auto const roi_x2 = static_cast<T>(roi.x2 * spatial_scale_.at(1) - 0.5f);
     auto const roi_y1 = static_cast<T>(roi.y1 * spatial_scale_.at(0) - 0.5f);
     auto const roi_y2 = static_cast<T>(roi.y2 * spatial_scale_.at(0) - 0.5f);
+    auto const roi_index = static_cast<int>(roi.batch_index);
+    NBLA_CHECK(roi_index >= 0 && roi_index < samples, error_code::value,
+               "Batch index must be within the number of input samples.");
 
     auto const step_size_x = (roi_x2 - roi_x1) / output_cols;
     auto const step_size_y = (roi_y2 - roi_y1) / output_rows;
@@ -113,7 +117,7 @@ void RoiAlign<T>::forward_impl(const Variables &inputs,
     auto const grid_size_xy = grid_size_x * grid_size_y;
     auto const inverse_grid_count = T(1) / grid_size_xy;
 
-    auto channel_data = input_data + roi.index() * channels * image_size;
+    auto channel_data = input_data + roi_index * channels * image_size;
 
     for (auto c = 0; c < channels; c++) {
       auto output_index = (n * channels + c) * output_rows * output_cols;
@@ -131,8 +135,11 @@ void RoiAlign<T>::forward_impl(const Variables &inputs,
             if (yyf < T(-1) || yyf > static_cast<T>(image_rows))
               continue;
 
-            if (yyf < T(0))
-              yyf = T(0);
+            yyf = clamp<T>(yyf, 0, image_rows - 1);
+            auto const y_lo = static_cast<Size_t>(yyf);
+            auto const y_hi = std::min(y_lo + 1, image_rows - 1);
+            auto const ly = yyf - std::floor(yyf);
+            auto const hy = T(1) - ly;
 
             for (auto xx = 0; xx < grid_size_x; xx++) {
               auto xxf = xf + static_cast<T>(xx) * step_size_xx + half_step_xx;
@@ -140,32 +147,16 @@ void RoiAlign<T>::forward_impl(const Variables &inputs,
               if (xxf < T(-1) || xxf > static_cast<T>(image_cols))
                 continue;
 
-              if (xxf < T(0))
-                xxf = T(0);
-
-              auto y_low = static_cast<int>(yyf);
-              auto x_low = static_cast<int>(xxf);
-              auto y_high = y_low + 1;
-              auto x_high = x_low + 1;
-
-              if (y_low >= image_rows - 1) {
-                y_high = y_low = image_rows - 1;
-                yyf = static_cast<T>(y_low);
-              }
-
-              if (x_low >= image_cols - 1) {
-                x_high = x_low = image_cols - 1;
-                xxf = static_cast<T>(x_low);
-              }
-
-              auto const ly = yyf - std::floor(yyf);
+              xxf = clamp<T>(xxf, 0, image_cols - 1);
+              auto const x_lo = static_cast<Size_t>(xxf);
+              auto const x_hi = std::min(x_lo + 1, image_cols - 1);
               auto const lx = xxf - std::floor(xxf);
-              auto const hy = T(1) - ly;
               auto const hx = T(1) - lx;
-              auto const p1 = y_low * image_cols + x_low;
-              auto const p2 = y_low * image_cols + x_high;
-              auto const p3 = y_high * image_cols + x_low;
-              auto const p4 = y_high * image_cols + x_high;
+
+              auto const p1 = y_lo * image_cols + x_lo;
+              auto const p2 = y_lo * image_cols + x_hi;
+              auto const p3 = y_hi * image_cols + x_lo;
+              auto const p4 = y_hi * image_cols + x_hi;
               output_value += hy * hx * channel_data[p1];
               output_value += hy * lx * channel_data[p2];
               output_value += ly * hx * channel_data[p3];
@@ -203,22 +194,26 @@ void RoiAlign<T>::backward_impl(const Variables &inputs,
   auto boxes_data = boxes->get_data_pointer<T>(this->ctx_);
   auto output_grad = output->get_grad_pointer<T>(this->ctx_);
 
-  auto roiboxes = boxes->shape().at(0);
-  auto channels = input->shape().at(1);
+  auto const samples = input->shape().at(0);
+  auto const channels = input->shape().at(1);
+  auto const roiboxes = boxes->shape().at(0);
 
-  auto image_rows = input->shape().at(2);
-  auto image_cols = input->shape().at(3);
-  auto image_size = image_rows * image_cols;
+  auto const image_rows = input->shape().at(2);
+  auto const image_cols = input->shape().at(3);
+  auto const image_size = image_rows * image_cols;
 
-  auto output_rows = output->shape().at(2);
-  auto output_cols = output->shape().at(3);
+  auto const output_rows = output->shape().at(2);
+  auto const output_cols = output->shape().at(3);
 
   for (auto n = 0; n < roiboxes; n++) {
-    auto roi = *reinterpret_cast<Box<T> const *>(boxes_data + n * 5);
+    auto const roi = *reinterpret_cast<Box<T> const *>(boxes_data + n * 5);
     auto const roi_x1 = static_cast<T>(roi.x1 * spatial_scale_.at(1) - 0.5f);
     auto const roi_x2 = static_cast<T>(roi.x2 * spatial_scale_.at(1) - 0.5f);
     auto const roi_y1 = static_cast<T>(roi.y1 * spatial_scale_.at(0) - 0.5f);
     auto const roi_y2 = static_cast<T>(roi.y2 * spatial_scale_.at(0) - 0.5f);
+    auto const roi_index = static_cast<int>(roi.batch_index);
+    NBLA_CHECK(roi_index >= 0 && roi_index < samples, error_code::value,
+               "Batch index must be within the number of input samples.");
 
     auto const step_size_x = (roi_x2 - roi_x1) / output_cols;
     auto const step_size_y = (roi_y2 - roi_y1) / output_rows;
@@ -234,7 +229,7 @@ void RoiAlign<T>::backward_impl(const Variables &inputs,
     auto const grid_size_xy = grid_size_x * grid_size_y;
     auto const inverse_grid_count = T(1) / grid_size_xy;
 
-    auto channel_grad = input_grad + roi.index() * channels * image_size;
+    auto channel_grad = input_grad + roi_index * channels * image_size;
 
     for (auto c = 0; c < channels; c++) {
       auto output_index = (n * channels + c) * output_rows * output_cols;
@@ -252,8 +247,11 @@ void RoiAlign<T>::backward_impl(const Variables &inputs,
             if (yyf < T(-1) || yyf > static_cast<T>(image_rows))
               continue;
 
-            if (yyf < T(0))
-              yyf = T(0);
+            yyf = clamp<T>(yyf, 0, image_rows - 1);
+            auto const y_lo = static_cast<Size_t>(yyf);
+            auto const y_hi = std::min(y_lo + 1, image_rows - 1);
+            auto const ly = yyf - std::floor(yyf);
+            auto const hy = T(1) - ly;
 
             for (auto xx = 0; xx < grid_size_x; xx++) {
               auto xxf = xf + static_cast<T>(xx) * step_size_xx + half_step_xx;
@@ -261,32 +259,16 @@ void RoiAlign<T>::backward_impl(const Variables &inputs,
               if (xxf < T(-1) || xxf > static_cast<T>(image_cols))
                 continue;
 
-              if (xxf < T(0))
-                xxf = T(0);
+              xxf = clamp<T>(xxf, 0, image_cols - 1);
+              auto const x_lo = static_cast<Size_t>(xxf);
+              auto const x_hi = std::min(x_lo + 1, image_cols - 1);
+              auto const lx = xxf - std::floor(xxf);
+              auto const hx = T(1) - lx;
 
-              auto y_low = static_cast<int>(yyf);
-              auto x_low = static_cast<int>(xxf);
-              auto y_high = y_low + 1;
-              auto x_high = x_low + 1;
-
-              if (y_low >= image_rows - 1) {
-                y_high = y_low = image_rows - 1;
-                yyf = static_cast<T>(y_low);
-              }
-
-              if (x_low >= image_cols - 1) {
-                x_high = x_low = image_cols - 1;
-                xxf = static_cast<T>(x_low);
-              }
-
-              T ly = yyf - std::floor(yyf);
-              T lx = xxf - std::floor(xxf);
-              T hy = T(1) - ly;
-              T hx = T(1) - lx;
-              auto const p1 = y_low * image_cols + x_low;
-              auto const p2 = y_low * image_cols + x_high;
-              auto const p3 = y_high * image_cols + x_low;
-              auto const p4 = y_high * image_cols + x_high;
+              auto const p1 = y_lo * image_cols + x_lo;
+              auto const p2 = y_lo * image_cols + x_hi;
+              auto const p3 = y_hi * image_cols + x_lo;
+              auto const p4 = y_hi * image_cols + x_hi;
               channel_grad[p1] += hy * hx * grad_value;
               channel_grad[p2] += hy * lx * grad_value;
               channel_grad[p3] += ly * hx * grad_value;

@@ -25,14 +25,31 @@ NBLA_REGISTER_FUNCTION_HEADER(RoiAlign, const vector<int> &,
                               const vector<float> &, int, bool);
 
 /**
-    @todo Write doc.
+  Map Regions of Interest (RoI) defined by bounding `boxes` to features
+  of `output_size` height and width using bilinear interpolation with
+  `sampling_ratio` points in the interpolation grid.
 
 Inputs:
+- Input array with shape \f$(N, H, W, C)\f$ or \f$(N, C, H, W)\f$.
+- Boxes array with shape \f$(K, 5)\f$ containing box coordinates in
+  (b, x1, y1, x2, y2) format where b is the batch index.
 
 Outputs:
+- N-D array with shape \f$(K, C, output\_size[0], output\_size[1])\f$
+  or \f$(K, output\_size[0], output\_size[1], C)\f$.
+
+@tparam T Data type for computation.
+@param output_size The height and width of the output feature maps.
+@param spatial_scale Scaling factor from box to input coordinates, as (x, y).
+@param sampling_ratio The number of sampling points used for interpolation.
+@param channel_last Whethe last dimension is considered as channel dimension.
+
+@sa Reference:
+- He et al., Mask R-CNN. <https://arxiv.org/abs/1703.06870v3>
 
 \ingroup FunctionImplGrp
  */
+
 template <typename T>
 class RoiAlign : public BaseFunction<const vector<int> &, const vector<float> &,
                                      int, bool> {
