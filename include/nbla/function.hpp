@@ -69,6 +69,9 @@ class NBLA_API Function {
   bool used_{false};
   // This flag turns true once Function::setup calls.
   bool called_setup_{false};
+  // This flag turns true when Function::setup_recompute called and turns false
+  // when Function::recompute called.
+  bool called_setup_recompute_{false};
 
 public:
   typedef shared_ptr<Function> Ptr;

@@ -785,7 +785,8 @@ void CgVariable::visit_function_backward(
         continue;
 
       // Whether i-th input data is cleared
-      if (!inputs[i]->variable()->data()->array()->clear_called())
+      if (!(inputs[i]->recompute() &&
+            inputs[i]->variable()->data()->array()->clear_called()))
         continue;
 
       // Whether i-th input data is needed for grad calculation
