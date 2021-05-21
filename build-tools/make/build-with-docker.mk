@@ -104,6 +104,16 @@ bwd-nnabla-auto-format: docker_image_auto_format
 	cd $(NNABLA_DIRECTORY) \
 	&& docker run $(DOCKER_RUN_OPTS) $(DOCKER_IMAGE_AUTO_FORMAT) make -f build-tools/make/build.mk nnabla-auto-format
 
+
+########################################################################################################################
+# Check copyright
+
+.PHONY: bwd-nnabla-check-copyright
+bwd-nnabla-check-copyright: docker_image_auto_format
+	cd $(NNABLA_DIRECTORY) \
+	&& docker run $(DOCKER_RUN_OPTS) -v $$(pwd)/..:$$(pwd)/.. $(DOCKER_IMAGE_AUTO_FORMAT) make -f build-tools/make/build.mk nnabla-check-copyright
+
+
 ########################################################################################################################
 # Doc
 .PHONY: bwd-nnabla-doc
