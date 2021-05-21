@@ -11,7 +11,7 @@
 
 
 import nnabla.functions as F
-from .utils import no_grad, positive_axis
+from .utils import no_grad, positive_axis, get_output
 
 
 def log_softmax_backward(inputs, axis=None):
@@ -25,8 +25,8 @@ def log_softmax_backward(inputs, axis=None):
     """
     dy = inputs[0]
     x0 = inputs[1]
-    y0 = F.softmax(x0, axis=axis)
+    y0 = get_output(x0, "LogSoftmax")
     D = len(x0.shape)
     axis = positive_axis(axis, D)
-    dx0 = dy - y0 * F.sum(dy, axis=axis, keepdims=True)
+    dx0 = dy - F.exp(y0) * F.sum(dy, axis=axis, keepdims=True)
     return dx0
