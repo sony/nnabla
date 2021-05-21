@@ -105,22 +105,3 @@ class TensorflowImporter:
         onnx_importer = OnnxImporter()
         onnx_importer.import_from_onnx_model(onnx_model)
         return onnx_importer.execute()
-
-
-class TensorflowLiteImporter:
-    """ Import tensorflow lite model to nnp model.
-    """
-
-    def __init__(self, file_path=''):
-        self._file_path = file_path
-
-    def execute(self):
-        with open(self._file_path, 'rb') as f:
-            data = f.read()
-            tflite_model = tflite.Model.GetRootAsModel(data, 0)
-
-        model = tflite2onnx.model.Model(tflite_model)
-        model.convert(dict())
-        onnx_importer = OnnxImporter()
-        onnx_importer.import_from_onnx_model(model.onnx)
-        return onnx_importer.execute()

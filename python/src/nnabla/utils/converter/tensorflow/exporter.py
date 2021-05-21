@@ -78,23 +78,3 @@ class TensorflowExporter:
                               as_text=False)
         else:
             tf_rep.export_graph(output)
-
-
-class TensorflowLiteExporter:
-    def __init__(self, nnp, batch_size, enable_optimize=False):
-        self._nnp = nnp
-        self._batch_size = batch_size
-        self._enable_optimize = enable_optimize
-
-    def execute(self, output):
-        onnx_model = OnnxExporter(
-            self._nnp, self._batch_size, opset="9").export_model_proto()
-        saved_model = output.split(".")[0]
-        tf_rep = prepare(onnx_model)
-        tf_rep.export_graph(saved_model)
-        converter = tf.lite.TFLiteConverter.from_saved_model(saved_model)
-        converter.optimizations = [tf.lite.Optimize.DEFAULT]
-        converter.target_spec.supported_ops = [tf.lite.OpsSet.SELECT_TF_OPS]
-        tflite_model = converter.convert()
-        with open(output, 'wb') as f:
-            f.write(tflite_model)

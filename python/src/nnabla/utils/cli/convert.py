@@ -205,6 +205,9 @@ def add_convert_command(subparsers):
                            '[export][NNB] define binary format version. e.g. nnb_3')
     subparser.add_argument('--enable-optimize-pb', action='store_true',
                            help='[export][tensorflow] enable optimization when export to pb or tflite.')
+    subparser.add_argument('--channel-last', action='store_true',
+                           help='[export][TFLite] Specify the data_format of the NNP network,\
+                           data_format default is channel_first')
 
     # For config function list
     subparser.add_argument('-c', '--config', type=str, default=None,

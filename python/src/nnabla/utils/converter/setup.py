@@ -39,6 +39,7 @@ if __name__ == '__main__':
         'tensorflow-addons',
         'onnx==1.8.0',
         'tflite2onnx',
+        'flatbuffers'
     ]
 
     ############################################################################
@@ -47,6 +48,11 @@ if __name__ == '__main__':
     pkg_name = "nnabla_converter"
     tensorflow_src_dir = os.path.join(root_dir, 'tensorflow')
     onnx_src_dir = os.path.join(root_dir, 'onnx')
+    tflite_src_dir = os.path.join(root_dir, "tflite")
+
+    package_data = {"nnabla.utils.converter.tflite": [
+        'schema.fbs',
+    ]}
 
     # Setup
     setup(
@@ -70,9 +76,12 @@ if __name__ == '__main__':
             'Programming Language :: Python :: 3.8'
         ],
         packages=['nnabla.utils.converter.tensorflow',
-                  'nnabla.utils.converter.onnx'],
+                  'nnabla.utils.converter.onnx',
+                  'nnabla.utils.converter.tflite'],
         package_dir={'nnabla.utils.converter.tensorflow': tensorflow_src_dir,
-                     'nnabla.utils.converter.onnx': onnx_src_dir},
+                     'nnabla.utils.converter.onnx': onnx_src_dir,
+                     'nnabla.utils.converter.tflite': tflite_src_dir},
+        package_data=package_data,
         install_requires=install_requires,
         keywords="NNabla File Format Converter",
         python_requires='>=3.6',
