@@ -135,3 +135,22 @@ def test_transform_binary_forward_backward(fname, ctx, func_name, broadcast_dims
     function_tester(rng, func, ref_func, inputs,
                     ctx=ctx, func_name=func_name,
                     atol_f=atol_f, atol_b=atol_b)
+
+
+# This is a test of grid-strided loop of CUDA kernels used in transform binary.
+# This test only cover a few cases to reduce test time. Therefore this does not
+# test some CUDA kernels which are called in specific conditions. Keep in mind
+# the risk of small test coverage.
+@pytest.mark.parametrize("fname, ctx, func_name",
+                         list_ctx_and_func_name(['mul2']))
+def test_large_transform_binary(fname, ctx, func_name):
+    if not func_name.endswith('Cuda'):
+        pytest.skip('Grid-strided loop is tested only for CUDA backend')
+
+    with nn.context_scope(ctx), nn.auto_forward(True):
+        a = nn.Variable.from_numpy_array(
+                np.random.randn(1024, 64, 1)).apply(need_grad=True)
+        b = nn.Variable.from_numpy_array(
+                np.random.randn(1024, 64, 3)).apply(need_grad=True)
+        c = F.mul2(a, b)
+        c.backward()
