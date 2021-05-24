@@ -136,6 +136,132 @@ def generate_value(type, dims, data_type, multiplier):
     return ret.astype(d).tostring()
 
 
+def get_matrix_variance(func_input, func_name, mean_out, axes, input_shape):
+    nl = []
+
+    # Sub
+    sub_out = fork_name(func_input + "_sub")
+    n = onnx.helper.make_node(
+        'Sub',
+        [func_input, mean_out],
+        [sub_out]
+    )
+    nl.append(n)
+
+    # Mul
+    mul_out = fork_name(func_input + "_mul")
+    n = onnx.helper.make_node(
+        'Mul',
+        [sub_out, sub_out],
+        [mul_out]
+    )
+    nl.append(n)
+
+    # ReduceSum
+    sum_out = fork_name(func_input + "_sum")
+    n = onnx.helper.make_node(
+        'ReduceSum',
+        [mul_out],
+        [sum_out],
+        axes=axes,
+        keepdims=True
+    )
+    nl.append(n)
+
+    count = [input_shape[i] for i in axes]
+
+    # Constant
+    constant = fork_name("constant")
+    c = generate_constant(constant, func_name + "_constant",
+                          TensorProto.FLOAT, [1],
+                          [np.prod(count)])
+    nl.append(c)
+
+    # Div
+    var_out = fork_name(func_input) + "_div"
+    n = onnx.helper.make_node(
+        'Div',
+        [sum_out, constant],
+        [var_out]
+    )
+    nl.append(n)
+
+    return nl, var_out
+
+
+def get_normalization_norm(func, mean_out, var_out, beta, gamma, constant0, constant1):
+    nl = []
+
+    # Sub, (x - x_mean)
+    sub_out = fork_name(func.input[0]) + "_sub"
+    n = onnx.helper.make_node("Sub",
+                              [func.input[0], mean_out],
+                              [sub_out]
+                              )
+    nl.append(n)
+
+    # Add, (x_var + eps)
+    add_out = fork_name(func.output[0]) + "_add"
+    n = onnx.helper.make_node("Add",
+                              [var_out, constant0],
+                              [add_out])
+    nl.append(n)
+
+    # Pow, (x_var + eps) ** 0.5
+    pow_out = fork_name(func.input[0]) + "_pow"
+    n = onnx.helper.make_node("Pow",
+                              [add_out, constant1],
+                              [pow_out])
+    nl.append(n)
+
+    # Div, norm = (x - x_mean) / (x_var + eps) ** 0.5
+    norm = fork_name(func.output[0]) + "_div"
+    n = onnx.helper.make_node("Div",
+                              [sub_out, pow_out],
+                              [norm])
+    nl.append(n)
+
+    if len(func.input) == 3:
+        mul_gamma_out = fork_name(func.output[0]) + "_mul"
+        # Mul
+        n = onnx.helper.make_node(
+            "Mul",
+            [norm, gamma],
+            [mul_gamma_out]
+        )
+        nl.append(n)
+        # Add
+        add_beta_out = fork_name(func.output[0]) + "_add"
+        n = onnx.helper.make_node(
+            "Add",
+            [mul_gamma_out, beta],
+            [add_beta_out]
+        )
+        nl.append(n)
+    elif len(func.input) == 2:
+        if func.input[1] == 'gamma':
+            # Mul
+            mul_gamma_out = fork_name(func.output[0]) + "_mul"
+            n = onnx.helper.make_node(
+                "Mul",
+                [norm, gamma],
+                [mul_gamma_out]
+            )
+            nl.append(n)
+        elif func.input[1] == 'beta':
+            # Add
+            add_beta_out = fork_name(func.output[0]) + "_add"
+            n = onnx.helper.make_node(
+                "Add",
+                [norm, beta],
+                [add_beta_out]
+            )
+            nl.append(n)
+
+    nl[-1].output[0] = func.output[0]
+    return nl
+
+
 def set_reduction_attrs(node, param):
     a = onnx.helper.make_attribute("axes", param.axes)
     k = onnx.helper.make_attribute("keepdims", param.keep_dims)
@@ -300,6 +426,9 @@ class OnnxExporter:
             "GreaterScalar": partial(self.GreaterScalar, '6'),
             "LessEqualScalar": partial(self.LessEqualScalar, '6'),
             "LessScalar": partial(self.LessScalar, '6'),
+            "WeightStandardization": self.WeightStandardization,
+            "LayerNormalization": self.LayerNormalization,
+            "InstanceNormalization": self.InstanceNormalization,
         }
 
         table_op_set_7 = {
@@ -3330,6 +3459,239 @@ class OnnxExporter:
             func.output
         )
         nl.append(n)
+        return nl
+
+    def WeightStandardization(self, func):
+        nl = []
+        pp = func.weight_standardization_param
+        eps = pp.eps
+        channel_axis = pp.channel_axis
+        w_shape = list(self._var_dict[func.input[0]].dim[:])
+        ndim = len(w_shape)
+
+        if not hasattr(channel_axis, "__iter__"):
+            channel_axis = [channel_axis]
+        axes = tuple([i for i in range(ndim) if i not in channel_axis])
+
+        # ReduceMean
+        mean_out = fork_name(func.input[0]) + "_reducemean"
+        n = onnx.helper.make_node(
+            'ReduceMean',
+            [func.input[0]],
+            [mean_out],
+            axes=axes,
+            keepdims=True
+        )
+        nl.append(n)
+
+        # w_var = w.var(axis=axes, keepdims=True)
+        var_nl, var_out = get_matrix_variance(
+            func.input[0], func.name, mean_out, axes, w_shape)
+        nl.extend(var_nl)
+
+        constant0 = fork_name("constant")
+        c = generate_constant(constant0, func.name + "_constant0",
+                              TensorProto.FLOAT, [1],
+                              [eps])
+        nl.append(c)
+
+        constant1 = fork_name("constant")
+        c = generate_constant(constant1, func.name + "_constant1",
+                              TensorProto.FLOAT, [1],
+                              [0.5])
+        nl.append(c)
+
+        # Sub, (w - w_mean)
+        sub_out = fork_name(func.input[0]) + "_sub"
+        n = onnx.helper.make_node("Sub",
+                                  [func.input[0], mean_out],
+                                  [sub_out]
+                                  )
+        nl.append(n)
+
+        # Add, (w_var + eps)
+        add_out = fork_name(func.output[0]) + "_add"
+        n = onnx.helper.make_node(
+            "Add",
+            [var_out, constant0],
+            [add_out]
+        )
+        nl.append(n)
+
+        # Pow, (w_var + eps) ** 0.5
+        pow_out = fork_name(func.input[0]) + "_pow"
+        n = onnx.helper.make_node("Pow",
+                                  [add_out, constant1],
+                                  [pow_out])
+        nl.append(n)
+
+        # Div, (w - w_mean) / (w_var + eps) ** 0.5
+        dout = fork_name(func.output[0]) + "_div"
+        n = onnx.helper.make_node("Div",
+                                  [sub_out, pow_out],
+                                  func.output)
+        nl.append(n)
+
+        return nl
+
+    def LayerNormalization(self, func):
+        nl = []
+        pp = func.layer_normalization_param
+        batch_axis = list(pp.batch_axis)
+        eps = pp.eps
+        no_scale = pp.no_scale
+        no_bias = pp.no_bias
+
+        if not hasattr(batch_axis, "__iter__"):
+            batch_axis = [batch_axis]
+
+        x_shape = list(self._var_dict[func.input[0]].dim[:])
+        ndim = len(x_shape)
+        axes = tuple([i for i in range(ndim) if i not in batch_axis])
+
+        beta = None
+        gamma = None
+
+        if len(func.input) == 2:
+            if func.input[1] == 'gamma':
+                gamma = func.input[1]
+            elif func.input[1] == 'beta':
+                beta = func.input[1]
+        elif len(func.input) == 3:
+            beta = func.input[1]
+            gamma = func.input[2]
+
+        constant0 = fork_name("constant")
+        c = generate_constant(constant0, func.name + "_constant0",
+                              TensorProto.FLOAT, [1],
+                              [eps])
+        nl.append(c)
+
+        constant1 = fork_name("constant")
+        c = generate_constant(constant1, func.name + "_constant1",
+                              TensorProto.FLOAT, [1],
+                              [0.5])
+        nl.append(c)
+
+        # ReduceMean
+        mean_out = fork_name(func.input[0]) + "_reducemean"
+        n = onnx.helper.make_node(
+            'ReduceMean',
+            [func.input[0]],
+            [mean_out],
+            axes=axes,
+            keepdims=True
+        )
+        nl.append(n)
+
+        # x_var = x.var(axis=axes, keepdims=True)
+        var_nl, var_out = get_matrix_variance(
+            func.input[0], func.name, mean_out, axes, x_shape)
+        nl.extend(var_nl)
+
+        norm_nl = get_normalization_norm(
+            func, mean_out, var_out, beta, gamma, constant0, constant1)
+        nl.extend(norm_nl)
+
+        return nl
+
+    def InstanceNormalization(self, func):
+        nl = []
+        pp = func.instance_normalization_param
+        channel_axis = pp.channel_axis
+        batch_axis = list(pp.batch_axis)
+        eps = pp.eps
+        no_scale = pp.no_scale
+        no_bias = pp.no_bias
+        beta = None
+        gamma = None
+
+        if len(func.input) == 2:
+            if func.input[1] == 'gamma':
+                gamma = func.input[1]
+            elif func.input[1] == 'beta':
+                beta = func.input[1]
+        elif len(func.input) == 3:
+            beta = func.input[1]
+            gamma = func.input[2]
+
+        # ignore_axes = _force_list(batch_axis) + [channel_axis, ]
+        if not hasattr(batch_axis, "__iter__"):
+            batch_axis = [batch_axis]
+        ignore_axes = batch_axis + [channel_axis, ]
+
+        # axes = tuple(_get_axes_excluding(len(x.shape), ignore_axes))
+        x_shape = list(self._var_dict[func.input[0]].dim[:])
+        ndim = len(x_shape)
+        axes = tuple([i for i in range(ndim) if i not in ignore_axes])
+
+        constant0 = fork_name("constant")
+        c = generate_constant(constant0, func.name + "_constant0",
+                              TensorProto.FLOAT, [1],
+                              [eps])
+        nl.append(c)
+
+        constant1 = fork_name("constant")
+        c = generate_constant(constant1, func.name + "_constant1",
+                              TensorProto.FLOAT, [1],
+                              [0.5])
+        nl.append(c)
+
+        if not axes:
+            # Reshape
+            rout = fork_name(func.input[0]) + "_reshape"
+            n = generate_reshape(self._model_proto.graph, func.input[0], rout,
+                                 np.array(x_shape + [1]))
+            nl.append(n)
+            axes = (ndim,)
+
+            # ReduceMean
+            mean_out_ = fork_name(func.input[0]) + "_reducemean"
+            n = onnx.helper.make_node(
+                'ReduceMean',
+                [rout],
+                [mean_out_],
+                axes=axes,
+                keepdims=True
+            )
+            nl.append(n)
+
+            mean_out = fork_name(func.input[0]) + "_reshape"
+            n = generate_reshape(self._model_proto.graph, mean_out_, mean_out,
+                                 np.array(x_shape))
+            nl.append(n)
+
+            # x_var = x.var(axis=axes, keepdims=True)
+            var_nl, var_out_ = get_matrix_variance(
+                rout, func.name, mean_out_, axes, (x_shape + [1]))
+            nl.extend(var_nl)
+
+            var_out = fork_name(func.input[0]) + "_reshape"
+            n = generate_reshape(self._model_proto.graph, var_out_, var_out,
+                                 np.array(x_shape))
+            nl.append(n)
+
+        else:
+            # ReduceMean
+            mean_out = fork_name(func.input[0]) + "_reducemean"
+            n = onnx.helper.make_node(
+                'ReduceMean',
+                [func.input[0]],
+                [mean_out],
+                axes=axes,
+                keepdims=True
+            )
+            nl.append(n)
+
+            # x_var = x.var(axis=axes, keepdims=True)
+            var_nl, var_out = get_matrix_variance(
+                func.input[0], func.name, mean_out, axes, x_shape)
+            nl.extend(var_nl)
+
+        norm_nl = get_normalization_norm(
+            func, mean_out, var_out, beta, gamma, constant0, constant1)
+        nl.extend(norm_nl)
+
         return nl
 
     def set_network(self):
