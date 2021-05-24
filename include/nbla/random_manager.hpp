@@ -25,7 +25,7 @@ Singleton class for storing global context.
 */
 class NBLA_API RandomManager {
   std::mt19937 rgen_;
-  unsigned int seed_;
+  unsigned seed_;
   int count_;
 
 public:
