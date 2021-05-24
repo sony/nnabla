@@ -157,13 +157,14 @@ def test_fused_batch_normalization_forward_backward(seed, axis, decay_rate, eps,
     axes = [axis]
     batch_stat = True
     inputs = mask_inputs(inputs, no_scale, no_bias, no_mean, no_variance)
+    insert_identity = [True, True, True, False, False, False]
     function_tester(rng, F.fused_batch_normalization, ref_fused_batch_normalization,
                     inputs,
                     ref_grad=ref_grad_fused_batch_normalization,
                     func_args=[axes, decay_rate, eps,
                                batch_stat, nonlinearity, output_stat],
                     backward=[True, True, True, False, False, add],
-                    ctx=ctx, func_name=func_name, dstep=1e-2, atol_b=1e-2)
+                    ctx=ctx, func_name=func_name, dstep=1e-2, atol_b=1e-2, insert_identity=insert_identity)
 
     # Check if running mean and var works.
     if no_mean and no_variance:

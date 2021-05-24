@@ -48,8 +48,15 @@ def ref_slice(x, start, stop, step):
 def test_slice_forward_backward(seed, inshape, start, stop, step, ctx, fname):
     rng = np.random.RandomState(seed)
     x = rng.randn(*inshape).astype(np.float32)
+
+    oshape = ref_slice(x, start, stop, step).shape
+    disable_clear_no_need_grad_test = False
+    # If oshape has a dimention of size 0, disable clear_no_need_grad_test.
+    if 0 in oshape:
+        disable_clear_no_need_grad_test = True
     function_tester(rng, F.slice, ref_slice, [x], ctx=ctx, func_name=fname,
-                    func_args=[start, stop, step], atol_f=1e-4, atol_b=1e-2)
+                    func_args=[start, stop, step], atol_f=1e-4, atol_b=1e-2,
+                    disable_clear_no_need_grad_test=disable_clear_no_need_grad_test)
 
 
 @pytest.mark.parametrize("ctx, fname", ctxs)

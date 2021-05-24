@@ -83,6 +83,7 @@ def test_binary_connect_affine_forward_backward(seed, base_axis, weight_shape, b
     else:
         inputs += [None]
 
+    insert_identity = [True, True, False, True]
     function_tester(rng, F.binary_connect_affine, ref_binary_connect_affine, inputs, func_args=[base_axis, quantize_zero_to],
                     atol_b=1e-2, backward=[True, True, False, True], ctx=ctx, func_name=func_name,
-                    ref_grad=ref_grad_binary_connect_affine)
+                    ref_grad=ref_grad_binary_connect_affine, insert_identity=insert_identity)

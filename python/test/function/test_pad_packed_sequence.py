@@ -72,10 +72,11 @@ def test_pad_packed_sequence_forward_backward(total_length, padding_value, batch
     batch_sizes = np.array(batch_sizes)
     inputs = [packed_sequence, batch_sizes]
     func_args = [batch_first, padding_value, total_length]
+    insert_identity = [True, False]
     function_tester(rng, F.pad_packed_sequence, ref_pad_packed_sequence, inputs,
                     ctx=ctx, func_name=func_name, func_args=func_args,
                     backward=[True, False], disable_half_test=False,
-                    atol_f=1e-3, atol_b=1e-2)
+                    atol_f=1e-3, atol_b=1e-2, insert_identity=insert_identity)
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
@@ -112,10 +113,11 @@ def test_pad_packed_long_sequence_forward_backward(total_length, padding_value,
             padded_sequence0, lengths, *func_args0)
     # Forward
     inputs = [packed_sequence0.d, batch_sizes.d]
+    insert_identity = [True, False]
     function_tester(rng, F.pad_packed_sequence, ref_pad_packed_sequence, inputs,
                     ctx=ctx, func_name=func_name, func_args=func_args1,
                     backward=[False, False],
-                    atol_f=1e-3, atol_b=1e-2)
+                    atol_f=1e-3, atol_b=1e-2, insert_identity=insert_identity)
 
     # Backward
     import nnabla as nn

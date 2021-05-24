@@ -52,10 +52,16 @@ def ref_top_k_grad_bw(x, g, k, abs, base_axis, **kw):
 def test_forward_backward(seed, ishape, k, abs, base_axis, ctx, fname):
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(*ishape).astype(np.float32)]
+    if fname.endswith('Cuda'):
+        # TopKGradCuda backward use unstable sort, so the result will change each run.
+        disable_clear_no_need_grad_test = True
+    else:
+        disable_clear_no_need_grad_test = False
     function_tester(rng, F.top_k_grad, ref_top_k_grad_fw, inputs, ctx=ctx,
                     func_name=fname, ref_grad=ref_top_k_grad_bw,
                     func_args=[k, abs, base_axis],
-                    disable_half_test=k > 10)
+                    disable_half_test=k > 10,
+                    disable_clear_no_need_grad_test=disable_clear_no_need_grad_test)
 
     # Note: FP16 has too many duplicate value for larger K to get the
     # same sort order as FP32 and this makes the function tester fail

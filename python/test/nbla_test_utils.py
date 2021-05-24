@@ -536,10 +536,102 @@ def create_function_nnp(inputs, outputs, func_name, func_args, func_kwargs):
     return nnp, input_data, output_data
 
 
+def clear_no_need_grad_tester(rng, func, inputs, func_args=[], func_kwargs={}, backward=None, atol_f=1e-6, ctx=None,
+                              func_name=None, insert_identity=[]):
+    if ctx is None:
+        ctx = nn.Context()
+    if backward is None:
+        backward = [True for _ in inputs]
+    if not True in backward:
+        return
+
+    state_rng = None
+    if rng is not None:
+        state_rng = rng.get_state()
+    else:
+        rng = rng = np.random.RandomState(313)
+
+    def create_variables(inputs, backward):
+        vinputs = []
+        for i, b in zip(inputs, backward):
+            if i is None:
+                vinputs += [None]
+                continue
+            vinputs += [nn.Variable(i.shape, need_grad=b)]
+            vinputs[-1].data.cast(i.dtype)[...] = i
+        return vinputs
+
+    vinputs = create_variables(inputs, backward)
+    vinputs_clear_buffer = create_variables(inputs, backward)
+    vinputs_identity_clear_buffer = []
+    if not insert_identity:
+        insert_identity = [True] * len(vinputs)
+
+    with nn.context_scope(ctx), nn.auto_forward(False):
+        for idx, i in enumerate(vinputs_clear_buffer):
+            if i is None:
+                vinputs_identity_clear_buffer += [None]
+            elif insert_identity[idx]:
+                vinputs_identity_clear_buffer += [F.identity(i)]
+            else:
+                vinputs_identity_clear_buffer += [i]
+
+    # Checking forward(clear_no_need_grad=True)
+    with nn.context_scope(ctx), nn.auto_forward(False):
+        o = func(*(vinputs + func_args), **func_kwargs)
+        o = force_tuple(o)
+        F.sink(*o).forward(clear_no_need_grad=False)
+
+        o_clear_buffer = func(
+            *(vinputs_identity_clear_buffer + func_args), **func_kwargs)
+        o_clear_buffer = force_tuple(o_clear_buffer)
+        o_identity_clear_buffer = list(map(lambda x: F.identity(
+            x) if x is not None else None, o_clear_buffer))
+        o_identity_clear_buffer = list(
+            filter(lambda x: x is not None, o_identity_clear_buffer))
+
+        F.sink(*o_identity_clear_buffer).forward(clear_no_need_grad=True)
+
+    for i in range(len(o)):
+        if o[i] is None:
+            continue
+        ref = o[i].d
+        res = o_identity_clear_buffer[i].d
+        assert_allclose(ref, res, atol=atol_f,
+                        err_msg="{} forward(clear_no_need_grad=True) test fails".format(func_name))
+
+    vinputs = list(filter(lambda x: x is not None, vinputs))
+    vinputs_clear_buffer = list(
+        filter(lambda x: x is not None, vinputs_clear_buffer))
+
+    for i in range(len(vinputs)):
+        vinputs[i].grad.zero()
+        vinputs_clear_buffer[i].grad.zero()
+
+    for i in range(len(o)):
+        if o[i] is None:
+            continue
+        o[i].g = randn(rng, *o[i].shape)
+        o_identity_clear_buffer[i].g = o[i].g
+
+    F.sink(*o).backward()
+    F.sink(*o_identity_clear_buffer).backward(clear_buffer=True)
+
+    for i in range(len(vinputs)):
+        ref = vinputs[i].g
+        res = vinputs_clear_buffer[i].g
+        assert_allclose(ref, res, atol=atol_f,
+                        err_msg="{} forward(clear_no_need_grad=True) and backward test fails".format(func_name))
+
+    if state_rng:
+        rng.set_state(state_rng)
+
+
 def function_tester(rng, func, ref_func, inputs,
                     func_args=[], func_kwargs={},
                     atol_f=1e-6, atol_b=1e-3, atol_accum=1e-6, dstep=1e-3, backward=None,
-                    ctx=None, func_name=None, ref_grad=None, disable_half_test=False, atol_half=1e-1):
+                    ctx=None, func_name=None, ref_grad=None, disable_half_test=False, atol_half=1e-1,
+                    insert_identity=[], disable_clear_no_need_grad_test=False):
     """ Automatic testing of forward/backward pass of `func` by comparing it
     to the reference implementation in `ref_func`.
 
@@ -592,6 +684,11 @@ def function_tester(rng, func, ref_func, inputs,
     vinputs = create_variables(inputs, backward)
     recomputation_test(rng, func, vinputs, func_args,
                        func_kwargs, ctx)
+
+    # Checking forward(clear_no_need_grad=True)
+    if not disable_clear_no_need_grad_test:
+        clear_no_need_grad_tester(rng, func, inputs, func_args, func_kwargs,
+                                  backward, atol_f, ctx, func_name, insert_identity)
 
     # Checking function name
     try:
