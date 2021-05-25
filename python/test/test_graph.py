@@ -766,14 +766,13 @@ class TestRecomputation():
                 assert flag == result[i][j][0]
 
     def check_recomputation(self, seed, graph, inputs):
-        def forward_backward_and_get_grads(y, clear_no_need_grad, clear_buffer):
+        def forward_backward_and_get_grads(y):
             # Initialize grads
             for input in inputs:
                 if input.need_grad:
                     input.grad.zero()
 
-            y.forward(clear_no_need_grad=clear_no_need_grad,
-                      clear_buffer=clear_buffer)
+            y.forward(clear_no_need_grad=True)
             y.backward(clear_buffer=True)
 
             # Get grads
@@ -797,20 +796,12 @@ class TestRecomputation():
             for input in f.inputs:
                 input.apply(recompute=False)
         y_ref.visit(disable_recompute_flag)
-        grads_expected = forward_backward_and_get_grads(y_ref, False, False)
+        grads_expected = forward_backward_and_get_grads(y_ref)
 
-        # Test grads' value under all combination of flags of `Variable::forward()`.
-        for clear_no_need_grad in [False, True]:
-            for clear_buffer in [False, True]:
-                if clear_no_need_grad == False and clear_buffer == False:
-                    # Reference condition
-                    continue
-
-                y = graph(*inputs)
-                grads_actual = forward_backward_and_get_grads(
-                    y, clear_no_need_grad, clear_buffer)
-                for a, e in zip(grads_actual, grads_expected):
-                    assert_allclose(a, e, rtol=0, atol=0)
+        y = graph(*inputs)
+        grads_actual = forward_backward_and_get_grads(y)
+        for a, e in zip(grads_actual, grads_expected):
+            assert_allclose(a, e, rtol=0, atol=0)
 
     # Check setting up recompute flag.
     def test_recompute_flag(self):
@@ -843,6 +834,22 @@ class TestRecomputation():
         self.check_input_data_clear_called_flags(answer)
 
         clear_called_flag_recorder.deactivate_clear_called_flag_recorder()
+
+    # Check claering output which needs `setup_recompute` for recomputation.
+    def test_clearing_without_recompute_flag(self):
+        x0 = nn.Variable((1, 128, 128), need_grad=True)
+        x1 = F.sin(x0).apply(recompute=True)
+        x2 = F.dropout(x1)
+        x3 = F.sin(x2).apply(recompute=True)
+        x4 = F.sin(x3).apply(recompute=True)
+        y = F.identity(x4)
+
+        y.forward(clear_no_need_grad=True)
+        x2.data.clear()
+        with pytest.raises(RuntimeError, match="Failed `called_setup_recompute_`"):
+            # x2.data cannot be recomputed correctly since `setup_recompute` is not called during forward propagation.
+            # Backward should raise when some intermediate variables are cleared by user.
+            y.backward()
 
     # Check recomputed data value.
     @pytest.mark.parametrize("seed", [313])

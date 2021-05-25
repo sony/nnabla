@@ -165,15 +165,27 @@ void Function::backward(const Variables &inputs, const Variables &outputs,
 void Function::setup_recompute(const Variables &inputs,
                                const Variables &outputs) {
   this->setup_recompute_impl(inputs, outputs);
+  called_setup_recompute_ = true;
 }
 
 void Function::recompute(const Variables &inputs, const Variables &outputs) {
+  // Check whether `setup_recompute` is called correctly.
+  for (Variables::size_type o = 0; o < outputs.size(); o++) {
+    if (need_setup_recompute(o)) {
+      NBLA_CHECK(called_setup_recompute_, error_code::runtime,
+                 "%s needs to execute `setup_recompute()` before calling "
+                 "`recompute()`.",
+                 name().c_str(), name().c_str());
+    }
+  }
+
   if (fall_back_func_) {
     // Fall back to the specified Function.
     fall_back_func_->recompute(inputs, outputs);
     return;
   }
   this->recompute_impl(inputs, outputs);
+  called_setup_recompute_ = false;
 }
 
 Context Function::context() const { return ctx_; }
