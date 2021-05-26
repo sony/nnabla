@@ -14,7 +14,7 @@ import nnabla.functions as F
 from .utils import no_grad, get_output
 
 
-def dropout_backward(inputs, p=0.5, seed=-1):
+def dropout_backward(inputs, p=0.5, seed=-1, output_mask=False):
     """
     Args:
       inputs (list of nn.Variable): Incomming grads/inputs to/of the forward function.
@@ -23,10 +23,15 @@ def dropout_backward(inputs, p=0.5, seed=-1):
     Return:
       list of Variable: Return the gradients wrt inputs of the corresponding function.
     """
-    dy = inputs[0]
-    x0 = inputs[1]
-    y0 = get_output(x0, "Dropout")
-    m0 = F.not_equal_scalar(y0, 0)
-    m0 = no_grad(m0)
-    dx0 = dy * m0 / (1 - p)
+
+    if not output_mask:
+        raise ValueError(
+            "dropout_backward is supported for output_mask=True.")
+    dy0 = inputs[0]
+    dy1 = inputs[1]
+    x0 = inputs[2]
+
+    y1 = get_output(x0, "Dropout", nth_output=1)
+    m0 = y1.get_unlinked_variable()  # mask
+    dx0 = dy0 * m0 / (1 - p)
     return dx0

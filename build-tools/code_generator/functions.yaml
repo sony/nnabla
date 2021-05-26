@@ -5175,11 +5175,16 @@ Stochasticity:
         doc: Random seed. When -1, seed is sampled from global random number generator.
         type: int64
         default: '-1'
+      output_mask:
+        doc: Whether or not to output mask.
+        type: bool
+        default: 'False'
     outputs:
       y:
         doc: N-D array with the same shape as x
     function_ids:
       fi: 86
+      fiB: 336
     c_runtime: support
   TopKData:
     snake_name: top_k_data

@@ -1130,6 +1130,45 @@ def _istft_v1(y_r, y_i, window_size, stride, fft_size, window_type='hanning', ce
     return x
 
 
+def dropout(x, p=0.5, seed=-1, output_mask=False):
+    """ Dropout.
+        Samples a number :math:`u` from a uniform distribution in :math:`[0, 1]` ,
+        and ignores the input if :math:`u \leq p`.
+
+        .. math::
+            y = \left\{
+            \begin{array}{ll}
+                \frac{x}{1 - p} & (u > p) \\
+                0 & ({\rm otherwise})
+            \end{array} \right.
+
+    Args:
+        x (Variable): An input variable.
+        p (float): math:`p` in definition. [default= `0.5` ]
+        seed (int): Random seed. When -1, seed is sampled from global random number generator. [default= `-1` ]
+        output_mask (bool): Whether or not to output mask. [default= `False` ]
+
+    Returns:
+        ~nnabla.Variable: N-D array.
+
+    Note:
+        Usually dropout only applied during training as below
+        (except `MC dropout`_). If you want to use dropout as an MC dropout, remove 'if train:'.
+
+        .. code-block:: python
+
+            h = PF.affine(x, num_hidden)
+            if train:
+                h = F.dropout(h, 0.5)
+
+    .. _MC dropout: https://arxiv.org/abs/1506.02142
+    """
+    from .function_bases import dropout as dropout_base
+
+    n_outputs = 2 if output_mask else 1
+    return dropout_base(x, p, seed, output_mask, n_outputs)
+
+
 def gather_nd(data, indices):
     """Gather elements or slices from `data` according to `indices`, which must
     be at least two-dimensional with the first dimension :math:`M` being less or

@@ -29,7 +29,7 @@ namespace nbla {
 
 using std::string;
 
-NBLA_REGISTER_FUNCTION_HEADER(Dropout, double, int);
+NBLA_REGISTER_FUNCTION_HEADER(Dropout, double, int, bool);
 
 /** Dropout defined as
 @f[
@@ -54,10 +54,11 @@ Outputs:
 \ingroup FunctionImplGrp
 
 */
-template <typename T> class Dropout : public BaseFunction<double, int> {
+template <typename T> class Dropout : public BaseFunction<double, int, bool> {
 protected:
   float p_;
   int seed_;
+  bool output_mask_;
   float scale_; // = 1./(1.-p_)
   Variable mask_;
   bool save_rng_ = false;
@@ -65,11 +66,12 @@ protected:
   std::bernoulli_distribution rdist_;
 
 public:
-  Dropout(const Context &ctx, double p, int seed = -1)
-      : BaseFunction(ctx, p, seed), p_(p), seed_(seed) {}
+  Dropout(const Context &ctx, double p, int seed = -1, bool output_mask = false)
+      : BaseFunction(ctx, p, seed, output_mask), p_(p), seed_(seed),
+        output_mask_(output_mask) {}
   virtual ~Dropout() {}
   virtual shared_ptr<Function> copy() const {
-    return create_Dropout(ctx_, p_, seed_);
+    return create_Dropout(ctx_, p_, seed_, output_mask_);
   }
   virtual int min_inputs() { return 1; }
   virtual int min_outputs() { return 1; }
@@ -80,7 +82,9 @@ public:
     return SingletonManager::get<Cpu>()->array_classes();
   }
   virtual bool need_setup_recompute(int o) const { return true; }
-  virtual bool grad_depends_output_data(int i, int o) const { return false; }
+  virtual bool grad_depends_output_data(int i, int o) const {
+    return (output_mask_ && (o > 0));
+  }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,

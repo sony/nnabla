@@ -888,23 +888,28 @@ def backward_function_tester(rng, func, inputs=None,
 
     vinputs = create_variables(inputs, backward)
     vinputs_for_clear_buffer = create_variables(inputs, backward)
+    vinputs_for_nn_grad = create_variables(inputs, backward)
 
     vinputs_identity = []
     vinputs_identity_for_clear_buffer = []
+    vinputs_identity_for_nn_grad = []
     if not insert_identity:
         insert_identity = [True] * len(vinputs)
 
-    for idx, i in enumerate(zip(vinputs, vinputs_for_clear_buffer)):
-        i0, i1 = i
+    for idx, i in enumerate(zip(vinputs, vinputs_for_clear_buffer, vinputs_for_nn_grad)):
+        i0, i1, i2 = i
         if i0 is None:
             vinputs_identity += [None]
             vinputs_identity_for_clear_buffer += [None]
+            vinputs_identity_for_nn_grad += [None]
         elif insert_identity[idx]:
             vinputs_identity += [F.identity(i0)]
             vinputs_identity_for_clear_buffer += [F.identity(i1)]
+            vinputs_identity_for_nn_grad += [F.identity(i2)]
         else:
             vinputs_identity += [i0]
             vinputs_identity_for_clear_buffer += [i1]
+            vinputs_identity_for_nn_grad += [i2]
 
     # Forward and backward of the forward function with no buffer clear
     with nn.context_scope(ctx), nn.auto_forward(False):
@@ -979,6 +984,30 @@ def backward_function_tester(rng, func, inputs=None,
                         err_msg="Forward of the backward function ({}) fails at {}-th output.".format(
                             func_backward.__name__, i))
 
+    # Check the same results between backward_function and nn.grad
+    vinputs = [v for b, v in zip(backward, vinputs) if b]
+    vinputs = list(filter(lambda x: x is not None, vinputs))
+
+    with nn.context_scope(ctx), nn.auto_forward(False):
+        outputs0_for_nn_grad = func(
+            *(vinputs_identity_for_nn_grad + func_args), **func_kwargs)
+        outputs0_for_nn_grad = force_list(outputs0_for_nn_grad)
+        vinputs_identity_for_nn_grad = list(
+            filter(lambda x: x is not None, vinputs_identity_for_nn_grad))
+        vinputs_identity_for_nn_grad = [v for b, v in zip(
+            backward, vinputs_identity_for_nn_grad) if b]
+
+        ograds1 = nn.grad(outputs0_for_nn_grad, vinputs_identity_for_nn_grad,
+                          grad_outputs=[g.d.copy() for g in grad_voutputs])
+        F.sink(*ograds1).forward(clear_no_need_grad=True)
+    ograds0 = list(filter(lambda o: o is not None, ograds0))
+    ograds1 = list(filter(lambda o: o is not None, ograds1))
+    for i in range(len(ograds0)):
+        if ograds0[i].parent is None:
+            continue
+        assert_allclose(ograds0[i].d, ograds1[i].d, atol=atol_f,
+                        err_msg="nn.grad and backward_functon results differ.")
+
     # Check backward
     # needed since we sometimes do need_grad=False for optimization, e.g., mask.
     def set_inputs(inputs0, vinputs):
@@ -1041,24 +1070,6 @@ def backward_function_tester(rng, func, inputs=None,
             assert_allclose(analytical_grad, numerical_grad, atol=atol_accum,
                             err_msg="Backward (accum) of the backward function ({}) wrt {}-th / {} input fails.".format(
                                 func_backward.__name__, k, ninputs))
-
-    # Check the same results between backward_function and nn.grad
-    vinputs = [v for b, v in zip(backward, vinputs) if b]
-    vinputs = list(filter(lambda x: x is not None, vinputs))
-    vinputs_identity = [v for b, v in zip(backward, vinputs_identity) if b]
-    vinputs_identity = list(filter(lambda x: x is not None, vinputs_identity))
-
-    with nn.context_scope(ctx), nn.auto_forward(False):
-        ograds1 = nn.grad(outputs0, vinputs_identity,
-                          grad_outputs=[g.d.copy() for g in grad_voutputs])
-        F.sink(*ograds1).forward(clear_no_need_grad=True)
-    ograds0 = list(filter(lambda o: o is not None, ograds0))
-    ograds1 = list(filter(lambda o: o is not None, ograds1))
-    for i in range(len(ograds0)):
-        if ograds0[i].parent is None:
-            continue
-        assert_allclose(ograds0[i].d, ograds1[i].d, atol=atol_f,
-                        err_msg="nn.grad and backward_functon results differ.")
 
     # Some functions backward like AffineDataGrad and AffineFilterGrad does not check non-accum anywhere
     # so check those non-accum backward method here.
