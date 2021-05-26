@@ -285,8 +285,7 @@ class Grad(object):
 
             # Propagate down
             for inp, grad_out in zip(f.inputs, grad_outputs):
-                # if inp not in child_nodes and not inp.need_grad or grad_out is None:
-                if inp not in child_nodes and not inp.need_grad or grad_out is None:
+                if inp not in child_nodes or not inp.need_grad or grad_out is None:
                     continue
                 p_i = inp.parent
                 if not p_i:
