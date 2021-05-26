@@ -965,7 +965,7 @@ def tile(x, reps):
     return tile_base(x, reps)
 
 
-def stft(x, window_size, stride, fft_size, window_type='hanning', center=True, pad_mode='reflect'):
+def stft(x, window_size, stride, fft_size, window_type='hanning', center=True, pad_mode='reflect', as_istft_backward=False):
     """Computes the short-time Fourier transform
 
     Args:
@@ -977,6 +977,9 @@ def stft(x, window_size, stride, fft_size, window_type='hanning', center=True, p
             For convenience, also `window_type=None` is supported which is equivalent to `window_type='rectangular'`.
         center (bool): If `True`, then the signal `x` is padded by half the FFT size using reflection padding.
         pad_mode (str): Padding mode, which can be `'constant'` or `'reflect'`. `'constant'` pads with `0`.
+        as_istft_backward: If `True`, then forward execution behaves as backward execution of ISTFT, 
+            treating input `x` as output gradient of ISTFT and outputs `y_r` and `y_i` as inputs gradient of ISTFT. 
+            This option is only used in nn.grad operator.
 
     Returns:
         Returns real and imaginary parts of STFT result.
@@ -987,7 +990,7 @@ def stft(x, window_size, stride, fft_size, window_type='hanning', center=True, p
     from .function_bases import stft as stft_base
     if window_type is None:
         window_type = "rectangular"
-    return stft_base(x, window_size, stride, fft_size, window_type, center, pad_mode)
+    return stft_base(x, window_size, stride, fft_size, window_type, center, pad_mode, as_istft_backward)
 
 
 def _stft_v1(x, window_size, stride, fft_size, window_type='hanning', center=True, pad_mode='reflect'):
@@ -1062,7 +1065,7 @@ def _stft_v1(x, window_size, stride, fft_size, window_type='hanning', center=Tru
     return y_r, y_i
 
 
-def istft(y_r, y_i, window_size, stride, fft_size, window_type='hanning', center=True):
+def istft(y_r, y_i, window_size, stride, fft_size, window_type='hanning', center=True, pad_mode='reflect', as_stft_backward=False):
     """Computes the inverse shoft-time Fourier transform
 
     Note: We use a constant square inverse window for the reconstruction
@@ -1078,6 +1081,11 @@ def istft(y_r, y_i, window_size, stride, fft_size, window_type='hanning', center
         window_type (str): Analysis window, can be either `hanning`, `hamming` or `rectangular`.
             For convenience, also `window_type=None` is supported which is equivalent to `window_type='rectangular'`.
         center (bool): If `True`, then it is assumed that the time-domain signal has centered frames.
+        pad_mode (str): Padding mode corresponding to STFT `pad_mode`, which can be `'constant'` or `'reflect'`. `'constant'` pads with `0`.
+            This option is ignored for the normal use of ISTFT. You need to set the same `pad_mode` only when `as_stft_backward == True`.
+        as_stft_backward (bool): If `True`, then forward execution behaves as backward execution of STFT,
+            treating inputs `y_r` and `y_i` as outputs gradient of STFT and output `x` as input gradient of STFT.
+            This option is only used in nn.grad operator.
 
     Returns:
         ~nnabla.Variable: Time domain sequence of size `batch_size x sample_size`.
@@ -1085,7 +1093,7 @@ def istft(y_r, y_i, window_size, stride, fft_size, window_type='hanning', center
     from .function_bases import istft as istft_base
     if window_type is None:
         window_type = "rectangular"
-    return istft_base(y_r, y_i, window_size, stride, fft_size, window_type, center)
+    return istft_base(y_r, y_i, window_size, stride, fft_size, window_type, center, pad_mode, as_stft_backward)
 
 
 def _istft_v1(y_r, y_i, window_size, stride, fft_size, window_type='hanning', center=True):
