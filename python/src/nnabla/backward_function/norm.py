@@ -21,6 +21,11 @@
 
 
 import nnabla.functions as F
+from .utils import force_list
+
+from .abs import abs_backward
+from .pow_scalar import pow_scalar_backward
+from .sum import sum_backward
 
 
 def norm_backward(inputs, p=None, axes=None, keep_dims=False):
@@ -34,4 +39,23 @@ def norm_backward(inputs, p=None, axes=None, keep_dims=False):
     """
     dy = inputs[0]
     x0 = inputs[1]
-    raise NotImplementedError("norm_backward is not implemented.")
+
+    if p is None:
+        p = 2.0
+    axes = list(range(x0.ndim)) if axes is None else force_list(axes)
+
+    # Recompute intermediate data of composite graph
+    # abs -> pow -> sum (-> pow)
+    y_abs = F.abs(x0)
+    y_pow = F.pow_scalar(y_abs, p)
+    y_sum = F.sum(y_pow, axes, keep_dims)
+    # y = F.pow_scalar(x0_sum, 1.0 / p) # No need for grad calculation
+
+    # Backprop composite functions
+    # abs <- pow <- sum <- pow
+    dx = pow_scalar_backward([dy, y_sum], 1.0 / p)
+    dx = sum_backward([dx, y_pow], axes, keep_dims)
+    dx = pow_scalar_backward([dx, y_abs], p)
+    dx = abs_backward([dx, x0])
+
+    return dx
