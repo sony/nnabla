@@ -279,9 +279,8 @@ def bsf_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1),
     with nn.parameter_scope(name):
         h = PF.convolution(x, maps, kernel=kernel, pad=pad,
                            stride=stride, with_bias=w_bias)
-        z = h
         h = PF.batch_normalization(h, batch_stat=False)
-    return F.relu(h + z)
+    return F.relu(h + x)
 
 
 def small_bsf_resnet(image, w_bias=False, name='bn-graph-ref'):
