@@ -31,6 +31,6 @@ broadcastable Add2. If Add2's inputs require broadcasting, it's fallback into
 BcAdd2 operation. See setup_impl of add2.cpp.
  */
 NBLA_DEFINE_TRANSFORM_BINARY_INPLACE(BcAdd2, x0 + x1, dy, dy, false, false,
-                                     false, false);
+                                     false, false, false);
 }
 #endif

@@ -48,6 +48,12 @@ class ConcatenateDataGrad(PythonFunction):
     def min_outputs(self):
         return len(self.xshapes)
 
+    def grad_depends_output_data(self, i, o):
+        return False
+
+    def grad_depends_input_data(self, i, j):
+        return False
+
     @property
     def xshapes(self):
         return self._xshapes

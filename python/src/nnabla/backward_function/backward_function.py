@@ -51,6 +51,12 @@ class UnaryDataGrad(PythonFunction):
     def min_outputs(self):
         return 1
 
+    def grad_depends_output_data(self, i, o):
+        return False
+
+    def grad_depends_input_data(self, i, j):
+        return False
+
     @property
     def xshape(self):
         return self._xshape
@@ -115,6 +121,12 @@ class LinearDataGrad(PythonFunction):
 
     def min_outputs(self):
         return 1
+
+    def grad_depends_output_data(self, i, o):
+        return False
+
+    def grad_depends_input_data(self, i, j):
+        return True
 
     @property
     def xshape(self):
@@ -207,6 +219,12 @@ class LinearFilterGrad(PythonFunction):
 
     def min_outputs(self):
         return 1
+
+    def grad_depends_output_data(self, i, o):
+        return False
+
+    def grad_depends_input_data(self, i, j):
+        return True
 
     @property
     def wshape(self):

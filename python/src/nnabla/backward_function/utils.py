@@ -61,10 +61,10 @@ def force_tuple(x):
     return x
 
 
-def get_output(x, func_name):
+def get_output(x, func_name, nth_output=0):
     for func in x.function_references:
         if func.info.type_name == func_name:
-            return func.outputs[0]
+            return func.outputs[nth_output]
     raise ValueError("{} is not found.".format(func_name))
 
 

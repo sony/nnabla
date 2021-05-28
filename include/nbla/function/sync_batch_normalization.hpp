@@ -92,6 +92,7 @@ public:
                                          this->eps_, this->batch_stat_);
   }
   virtual string name() override { return "SyncBatchNormalization"; }
+  virtual bool grad_depends_output_data(int i, int o) const { return o > 0; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,

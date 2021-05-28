@@ -64,6 +64,7 @@ public:
   virtual vector<string> allowed_array_classes() {
     return SingletonManager::get<Cpu>()->array_classes();
   }
+  virtual bool grad_depends_output_data(int i, int o) const { return false; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,
@@ -79,6 +80,10 @@ protected:
                                             int reduction_size);
   NBLA_API virtual void backward_impl_reduce(const T *dy, T *dx, int outer_size,
                                              int reduction_size, bool accum);
+
+  virtual bool grad_depends_input_data_impl(int i, int j) const {
+    return false;
+  }
 };
 }
 #endif

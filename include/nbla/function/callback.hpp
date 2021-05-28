@@ -47,6 +47,11 @@ public:
       backward_callback_type;
   typedef std::function<void(void *)> cleanup_callback_type;
 
+  typedef std::function<bool(void *, int, int)>
+      grad_depends_output_data_callback_type;
+  typedef std::function<bool(void *, int, int)>
+      grad_depends_input_data_callback_type;
+
 private:
   void *obj_;
   int min_outputs_;
@@ -54,6 +59,10 @@ private:
   forward_callback_type forward_callback_;
   backward_callback_type backward_callback_;
   cleanup_callback_type cleanup_callback_;
+  grad_depends_output_data_callback_type grad_depends_output_data_callback_ =
+      nullptr;
+  grad_depends_input_data_callback_type grad_depends_input_data_callback_ =
+      nullptr;
 
 public:
   Callback(const Context &ctx, void *obj, int min_outputs,
@@ -62,11 +71,21 @@ public:
       : BaseFunction(ctx), obj_(obj), min_outputs_(min_outputs),
         setup_callback_(s), forward_callback_(f), backward_callback_(b),
         cleanup_callback_(c) {}
+  Callback(const Context &ctx, void *obj, int min_outputs,
+           setup_callback_type s, forward_callback_type f,
+           backward_callback_type b, cleanup_callback_type c,
+           grad_depends_output_data_callback_type go,
+           grad_depends_input_data_callback_type gi)
+      : BaseFunction(ctx), obj_(obj), min_outputs_(min_outputs),
+        setup_callback_(s), forward_callback_(f), backward_callback_(b),
+        cleanup_callback_(c), grad_depends_output_data_callback_(go),
+        grad_depends_input_data_callback_(gi) {}
   virtual ~Callback() { cleanup_callback_(obj_); }
   virtual shared_ptr<Function> copy() const {
-    return std::make_shared<Callback>(ctx_, obj_, min_outputs_, setup_callback_,
-                                      forward_callback_, backward_callback_,
-                                      cleanup_callback_);
+    return std::make_shared<Callback>(
+        ctx_, obj_, min_outputs_, setup_callback_, forward_callback_,
+        backward_callback_, cleanup_callback_,
+        grad_depends_output_data_callback_, grad_depends_input_data_callback_);
   }
   virtual int min_inputs() { return 1; }
   virtual int min_outputs() { return min_outputs_; }
@@ -80,6 +99,11 @@ public:
   virtual vector<string> allowed_array_classes() {
     return SingletonManager::get<Cpu>()->array_classes();
   }
+  virtual bool grad_depends_output_data(int i, int o) const {
+    if (!grad_depends_output_data_callback_)
+      return true;
+    return grad_depends_output_data_callback_(obj_, i, o);
+  }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,
@@ -90,6 +114,11 @@ protected:
                                       const Variables &outputs,
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
+  virtual bool grad_depends_input_data_impl(int i, int j) const {
+    if (!grad_depends_input_data_callback_)
+      return true;
+    return grad_depends_input_data_callback_(obj_, i, j);
+  }
 };
 }
 #endif

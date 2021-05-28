@@ -41,12 +41,16 @@ public:
     return create_Mean(this->ctx_, this->axes_, this->keep_dims_);
   }
   virtual string name() { return "Mean"; }
+  virtual bool grad_depends_output_data(int i, int o) const { return false; }
 
 protected:
   NBLA_API virtual void forward_impl_reduce(const T *x, T *y, int outer_size,
                                             int reduction_size);
   NBLA_API virtual void backward_impl_reduce(const T *dy, T *dx, int outer_size,
                                              int reduction_size, bool accum);
+  virtual bool grad_depends_input_data_impl(int i, int j) const {
+    return false;
+  }
 };
 }
 #endif

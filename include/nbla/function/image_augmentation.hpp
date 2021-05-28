@@ -139,6 +139,7 @@ public:
     return vector<string>{"CpuArray"};
   }
   virtual bool need_setup_recompute(int o) const { return true; }
+  virtual bool grad_depends_output_data(int i, int o) const { return false; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,
@@ -155,6 +156,9 @@ protected:
                                        const Variables &outputs);
   void image_augmentation(const Variables &inputs, const Variables &outputs,
                           std::mt19937 &rgen);
+  virtual bool grad_depends_input_data_impl(int i, int j) const {
+    return false;
+  }
 };
 }
 #endif

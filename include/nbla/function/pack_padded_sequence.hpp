@@ -64,6 +64,7 @@ public:
     return SingletonManager::get<Cpu>()->array_classes();
   }
   virtual string name() { return "PackPaddedSequence"; }
+  virtual bool grad_depends_output_data(int i, int o) const { return o > 0; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,
@@ -74,6 +75,9 @@ protected:
                                       const Variables &outputs,
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
+  virtual bool grad_depends_input_data_impl(int i, int j) const {
+    return false;
+  }
 };
 }
 #endif

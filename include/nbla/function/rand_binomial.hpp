@@ -72,6 +72,7 @@ public:
   }
   virtual string name() { return "RandBinomial"; }
   virtual bool need_setup_recompute(int o) const { return true; }
+  virtual bool grad_depends_output_data(int i, int o) const { return false; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,
@@ -86,6 +87,9 @@ protected:
                                              const Variables &outputs);
   NBLA_API virtual void recompute_impl(const Variables &inputs,
                                        const Variables &outputs);
+  virtual bool grad_depends_input_data_impl(int i, int j) const {
+    return false;
+  }
 };
 }
 #endif

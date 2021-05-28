@@ -122,12 +122,15 @@ def test_batch_normalization_forward_backward(seed, axis, decay_rate, eps,
         return
     else:
         inputs = mask_inputs(inputs, no_scale, no_bias, no_mean, no_variance)
+        insert_identity = []
+        if batch_stat:
+            insert_identity = [True, True, True, False, False]
         function_tester(rng, F.batch_normalization, ref_batch_normalization,
                         inputs,
                         func_args=[axes, decay_rate, eps,
                                    batch_stat, output_stat],
                         backward=[True, True, True, False, False],
-                        ctx=ctx, func_name=func_name, dstep=1e-2, atol_b=1e-2)
+                        ctx=ctx, func_name=func_name, dstep=1e-2, atol_b=1e-2, insert_identity=insert_identity)
 
     # Check if running mean and var works.
     if no_mean and no_variance:
@@ -251,13 +254,18 @@ def test_batch_normalization_double_backward(seed, axis, decay_rate, eps,
     axes = [axis]
     func_args = [axes, decay_rate, eps, batch_stat, output_stat]
 
+    insert_identity = []
+    if batch_stat:
+        insert_identity = [True, True, True, False, False]
+
     # 2nd-order
     backward_function_tester(rng, F.batch_normalization,
                              inputs,
                              func_args=func_args,
                              backward=[True, not no_bias,
                                        not no_scale, False, False],
-                             ctx=ctx, atol_accum=1e-2, dstep=1e-3)
+                             ctx=ctx, atol_accum=1e-2, dstep=1e-3,
+                             insert_identity=insert_identity)
     # 3rd-order
     func_args = func_args[:-1] + [no_scale, no_bias]
     df = BatchNormalizationBackward(ctx, *func_args)

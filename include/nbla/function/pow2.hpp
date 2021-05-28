@@ -39,11 +39,10 @@ Outputs:
 @tparam T Data type for computation.
 \ingroup FunctionImplGrp
  */
-NBLA_DEFINE_TRANSFORM_BINARY_INPLACE(
-    Pow2, std::pow(x0, x1),
-    dy *x1 *std::pow(inplace ? std::pow(y, 1 / x1) : x0, x1 - (T)1),
-    dy *std::log(inplace ? std::pow(y, 1 / x1) : x0) *
-        std::pow(inplace ? std::pow(y, 1 / x1) : x0, x1),
-    false, false, true, true);
+// Inplacing is obsoleted.
+NBLA_DEFINE_TRANSFORM_BINARY_INPLACE(Pow2, std::pow(x0, x1),
+                                     dy *x1 *std::pow(x0, x1 - (T)1),
+                                     dy *std::log(x0) * std::pow(x0, x1), false,
+                                     false, true, true, true);
 }
 #endif

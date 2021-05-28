@@ -81,7 +81,9 @@ cdef extern from "nbla/function/callback.hpp":
         void(void *, const Variables&, const Variables &) nogil except+,
         void(void *, const Variables&, const Variables &,
              const vector[cpp_bool] &, const vector[cpp_bool] &) nogil except+,
-        void(void *) nogil) except +
+        void(void *) nogil,
+        cpp_bool(void *, int, int) nogil except+,
+        cpp_bool(void *, int, int) nogil except+) except +
 <%
 from utils.type_conv import type_from_proto
 %>    

@@ -14,7 +14,7 @@ import nnabla.functions as F
 from .utils import no_grad, sum_for_arithmetics
 
 
-def div2_backward(inputs, inplace=False):
+def div2_backward(inputs, inplace=False):  # Inplacing is obsoleted.
     """
     Args:
       inputs (list of nn.Variable): Incomming grads/inputs to/of the forward function.
@@ -27,7 +27,7 @@ def div2_backward(inputs, inplace=False):
     x0 = inputs[1]
     x1 = inputs[2]
     dx0 = dy / x1
-    dx1 = -dy * x0 / x1 if inplace else -dy * x0 / x1 ** 2
+    dx1 = -dy * x0 / x1 ** 2
     dx0 = sum_for_arithmetics(dx0, x0)
     dx1 = sum_for_arithmetics(dx1, x1)
     return dx0, dx1

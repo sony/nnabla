@@ -111,7 +111,12 @@ public:
   virtual string name() { return "FusedBatchNormalization"; }
   virtual bool grad_depends_output_data(int i, int o) const {
     // Gradient computation always requires output mean and var.
-    return o > 0;
+    // If nonlinearity is relu, then y is also needed.
+    if (nonlinearity_ == "relu") {
+      return o >= 0;
+    } else {
+      return o > 0;
+    }
   }
 
 protected:

@@ -32,6 +32,12 @@ class GradEndFunction(PythonFunction):
     def min_outputs(self):
         return 1
 
+    def grad_depends_output_data(self, i, o):
+        return False
+
+    def grad_depends_input_data(self, i, j):
+        return False
+
     def setup_impl(self, inputs, outputs):
         i = inputs[0]
         o = outputs[0]
@@ -279,8 +285,7 @@ class Grad(object):
 
             # Propagate down
             for inp, grad_out in zip(f.inputs, grad_outputs):
-                # if inp not in child_nodes and not inp.need_grad or grad_out is None:
-                if inp not in child_nodes and not inp.need_grad or grad_out is None:
+                if inp not in child_nodes or not inp.need_grad or grad_out is None:
                     continue
                 p_i = inp.parent
                 if not p_i:

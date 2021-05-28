@@ -459,14 +459,15 @@ public:                                                                        \
     }                                                                          \
   }
 
-#define NBLA_DEFINE_TRANSFORM_BINARY_CLASS_INPLACE(NAME, DEP_Y_0, DEP_Y_1,     \
-                                                   DEP_X_0, DEP_X_1)           \
+#define NBLA_DEFINE_TRANSFORM_BINARY_CLASS_INPLACE(                            \
+    NAME, DEP_Y_0, DEP_Y_1, DEP_X_0, DEP_X_1, IGNORE_INPLACE)                  \
   template <typename T>                                                        \
   class NAME : public TransformBinary<T, NAME##BinaryOp> {                     \
     NBLA_DEFINE_TRANSFORM_BINARY_CLASS_COMMON(NAME, DEP_Y_0, DEP_Y_1, DEP_X_0, \
                                               DEP_X_1)                         \
     NAME(const Context &ctx, bool inplace)                                     \
-        : TransformBinary<T, NAME##BinaryOp>(ctx, inplace) {}                  \
+        : TransformBinary<T, NAME##BinaryOp>(                                  \
+              ctx, (IGNORE_INPLACE) ? false : inplace) {}                      \
     virtual shared_ptr<Function> copy() const {                                \
       return create_##NAME(this->ctx_, this->inplace_);                        \
     }                                                                          \
@@ -483,12 +484,12 @@ public:                                                                        \
   NBLA_DEFINE_BINARY_OP(NAME, OP, GOP0, GOP1);                                 \
   NBLA_DEFINE_TRANSFORM_BINARY_CLASS(NAME, DEP_Y_0, DEP_Y_1, DEP_X_0, DEP_X_1)
 
-#define NBLA_DEFINE_TRANSFORM_BINARY_INPLACE(NAME, OP, GOP0, GOP1, DEP_Y_0,    \
-                                             DEP_Y_1, DEP_X_0, DEP_X_1)        \
+#define NBLA_DEFINE_TRANSFORM_BINARY_INPLACE(                                  \
+    NAME, OP, GOP0, GOP1, DEP_Y_0, DEP_Y_1, DEP_X_0, DEP_X_1, IGNORE_INPLACE)  \
   NBLA_REGISTER_FUNCTION_HEADER(NAME, bool);                                   \
   NBLA_DEFINE_BINARY_OP(NAME, OP, GOP0, GOP1);                                 \
   NBLA_DEFINE_TRANSFORM_BINARY_CLASS_INPLACE(NAME, DEP_Y_0, DEP_Y_1, DEP_X_0,  \
-                                             DEP_X_1)
+                                             DEP_X_1, IGNORE_INPLACE)
 
 // ----------------------------------------------------------------------------
 // One argument

@@ -21,6 +21,8 @@ import nnabla.initializer as I
 from nnabla.ext_utils import get_extension_context
 from nbla_test_utils import list_context
 from nnabla.testing import assert_allclose
+from nnabla.function import PythonFunction
+from nnabla.backward_functions import registry, register
 
 # Proxy to get the appropriate context
 ctx_list = [ctx_fname[0] for ctx_fname in list_context('Convolution')]
@@ -332,3 +334,54 @@ def test_compute_simple_hessian(ctx):
           2.]]
           )
     assert_allclose(actual, expected)
+
+
+class IdentityForwardOnlyFunction(PythonFunction):
+    @property
+    def name(self):
+        return self.__class__.__name__
+
+    def min_outputs(self):
+        return 1
+
+    def grad_depends_output_data(self, i, o):
+        return False
+
+    def grad_depends_input_data(self, i, j):
+        return False
+
+    def setup_impl(self, inputs, outputs):
+        i0 = inputs[0]
+        o0 = outputs[0]
+        o0.reset_shape(i0.shape, True)
+
+    def forward_impl(self, inputs, outputs):
+        x = inputs[0].data
+        y = outputs[0].data
+        y.copy_from(x)
+
+    def backward_impl(self, inputs, outputs, propagate_down, accum):
+        pass
+
+
+def IdentityForwardOnlyFunction_backward(inputs):
+    raise NotImplementedError(
+        "PassForwardOnlyFunction_backward is not implemented.\nThe expected behavior is that this function will not be called.")
+
+# This tests a previously existing bug where a "Propagate down" check in Grad.__call__
+
+
+def test_nn_grad_propagate_down_check():
+    register("IdentityForwardOnlyFunction",
+             IdentityForwardOnlyFunction_backward)
+    backward_func = registry["IdentityForwardOnlyFunction"]
+    assert backward_func is not None
+
+    x = nn.Variable.from_numpy_array(np.random.random((1, 1, 32, 32)))
+    y = PF.convolution(x, 1, kernel=(3, 3), pad=(1, 1), with_bias=False)
+    z = IdentityForwardOnlyFunction()(y)
+    w = F.identity(z)
+
+    # If IdentityForwardOnlyFunction_backward is called in nn.grad, an error will occur.
+    v = nn.grad(w, [z])
+    v[0].forward()

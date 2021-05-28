@@ -24,7 +24,5 @@ def mul_scalar_backward(inputs, val=1, inplace=False):
       list of Variable: Return the gradients wrt inputs of the corresponding function.
     """
     dy = inputs[0]
-    x0 = inputs[1]
-    x0 = x0 / val if inplace else x0
     dx0 = dy * val
     return dx0

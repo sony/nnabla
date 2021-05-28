@@ -202,7 +202,7 @@ public:
       its gradient, this function must be overridden to return appropriate
       boolean value. Otherwise, backward computation will be incorrect.
    */
-  virtual bool grad_depends_output_data(int i, int o) const { return false; }
+  virtual bool grad_depends_output_data(int i, int o) const { return true; }
   /** Dependency flag for checking if in-grad depends on in-data.
 
       Checking if i-th input' gradient computation requires j-th input's data or
@@ -366,13 +366,11 @@ protected:
   };
 
   /**
-    If any of inputs requires an input variable data when computing its
-    gradient, this function must be overridden to return appropriate boolean
-    value. Otherwise, backward computation will be incorrect.
+    If any of inputs does not require an input variable data when computing its
+    gradient, this function can be overridden to return appropriate boolean
+    value for memory optimization.
   */
-  virtual bool grad_depends_input_data_impl(int i, int j) const {
-    return false;
-  }
+  virtual bool grad_depends_input_data_impl(int i, int j) const { return true; }
 
   /**
     If any of inputs are overwritten in forward, this function must be

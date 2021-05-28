@@ -14,6 +14,7 @@ import nnabla.functions as F
 from .utils import no_grad
 
 
+# Inplacing is obsoleted.
 def pow_scalar_backward(inputs, val=1, inplace=False):
     """
     Args:
@@ -25,6 +26,5 @@ def pow_scalar_backward(inputs, val=1, inplace=False):
     """
     dy = inputs[0]
     x0 = inputs[1]
-    dx0 = dy * val * x0 ** ((val - 1.0) /
-                            val) if inplace else dy * val * x0 ** (val - 1)
+    dx0 = dy * val * x0 ** (val - 1)
     return dx0

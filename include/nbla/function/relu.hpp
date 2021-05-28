@@ -64,7 +64,7 @@ public:
   virtual vector<string> allowed_array_classes() {
     return SingletonManager::get<Cpu>()->array_classes();
   }
-  virtual bool grad_depends_output_data(int i, int o) const { return inplace_; }
+  virtual bool grad_depends_output_data(int i, int o) const { return true; }
   virtual int inplace_data(int i) const {
     return inplace_ ? Function::INPLACE : Function::NOT_INPLACE;
   }
@@ -79,7 +79,9 @@ protected:
                                       const Variables &outputs,
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
-  virtual bool grad_depends_input_data_impl(int i, int j) const { return true; }
+  virtual bool grad_depends_input_data_impl(int i, int j) const {
+    return false;
+  }
 };
 }
 #endif

@@ -203,6 +203,7 @@ def test_sync_batch_normalization_forward_backward(seed, axis, decay_rate, eps, 
 
     # TODO: enable test using function_tester when the backward is supported with batch_stat=True
     if batch_stat is True:
+        insert_identity = [True, True, True, False, False]
         function_tester(rng, F.sync_batch_normalization, ref_batch_normalization,
                         inputs,
                         ref_grad=ref_grad,
@@ -214,7 +215,8 @@ def test_sync_batch_normalization_forward_backward(seed, axis, decay_rate, eps, 
                             batch_stat=batch_stat,
                             output_stat=output_stat),
                         backward=[True, True, True, False, False],
-                        ctx=ctx, func_name=func_name, dstep=1e-2, atol_b=1e-2)
+                        ctx=ctx, func_name=func_name, dstep=1e-2, atol_b=1e-2,
+                        insert_identity=insert_identity)
     else:
         if no_mean or no_variance:
             return
