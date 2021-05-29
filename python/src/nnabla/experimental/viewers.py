@@ -243,7 +243,7 @@ class SimpleGraph(object):
         graph = self.create_graphviz_digraph(vleaf, params, format=format)
         graph.view(fpath, cleanup=cleanup)
 
-    def create_graphviz_digraph(self, vleaf, params, format=None):
+    def create_graphviz_digraph(self, vleaf, params=None, format=None):
         '''
         Create a :obj:`graphviz.Digraph` object given the leaf variable of a
         computation graph.
