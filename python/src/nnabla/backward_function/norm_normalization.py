@@ -21,6 +21,8 @@
 
 
 import nnabla.functions as F
+from .norm import norm_backward
+from .div2 import div2_backward
 
 
 def norm_normalization_backward(inputs, p=None, axes=None, eps=1e-12):
@@ -34,5 +36,10 @@ def norm_normalization_backward(inputs, p=None, axes=None, eps=1e-12):
     """
     dy = inputs[0]
     x0 = inputs[1]
-    raise NotImplementedError(
-        "norm_normalization_backward is not implemented.")
+
+    norm = F.norm(x0, p, axes, keepdims=True)
+
+    dx, dnorm = div2_backward([dy, x0, norm])
+    dx += norm_backward([dnorm, x0], p, axes, keep_dims=True)
+
+    return dx
