@@ -72,3 +72,24 @@ def test_large_weight_normalization(eps, dim, shape, seed, ctx, func_name):
                     ctx=ctx, func_name=func_name, func_args=func_args, backward=[
                         True, True],
                     atol_b=3e-3, atol_accum=3e-3)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("shape, dim", [
+    ((16, 8, 3, 3), 0), ((8, 3, 3, 16), 3), ((8, 16, 3, 3), 2),
+    ((16, 8, 3), 0), ((8, 3, 3), 2), ((8, 16, 3), 1),
+    ((16, 8), 0), ((8, 3), 1)
+])
+@pytest.mark.parametrize("eps", [1e-12])
+def test_weight_normalization_double_backward(eps, dim, shape, seed, ctx, func_name):
+    from nbla_test_utils import backward_function_tester
+    rng = np.random.RandomState(seed)
+    w = rng.randn(*shape)
+    g = rng.randn(shape[dim])
+    inputs = [w, g]
+    func_args = [dim, eps]
+    backward_function_tester(rng, F.weight_normalization,
+                             inputs=inputs,
+                             func_args=func_args,
+                             ctx=ctx)

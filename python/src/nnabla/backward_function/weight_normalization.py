@@ -22,6 +22,11 @@
 
 import nnabla.functions as F
 
+from .pow_scalar import pow_scalar_backward
+from .add_scalar import add_scalar_backward
+from .mul2 import mul2_backward
+from .sum import sum_backward
+
 
 def weight_normalization_backward(inputs, dim=0, eps=1e-12):
     """
@@ -33,6 +38,37 @@ def weight_normalization_backward(inputs, dim=0, eps=1e-12):
       list of Variable: Return the gradients wrt inputs of the corresponding function.
     """
     dy = inputs[0]
-    x0 = inputs[1]
-    raise NotImplementedError(
-        "weight_normalization_backward is not implemented.")
+    w = inputs[1]
+    g = inputs[2]
+
+    # Reshape for F.mul2 broadcasting
+    gshape = g.shape
+    rgshape = [1 if i != dim else w.shape[dim] for i in range(w.ndim)]
+    g = F.reshape(g, rgshape)
+
+    # Create axes for F.sum
+    sum_axes = list(filter(lambda x: x != dim, range(w.ndim)))
+
+    # Recompute intermediate data of composite graph
+    # pow -> sum -> add -> pow -> mul -> mul
+    w_pow = F.pow_scalar(w, 2.0)
+    w_sum = F.sum(w_pow, sum_axes, True)
+    w_add = F.add_scalar(w_sum, eps)
+    w_norm_inv = F.pow_scalar(w_add, -0.5)
+    w_wn = F.mul2(w, w_norm_inv)
+    # y = F.mul2(w_wn, g)
+
+    # Backprop composite functions
+    # pow <- sum <- add <- pow <- mul <- mul
+    dw, dg = mul2_backward([dy, w_wn, g])
+    dw, dw_mid = mul2_backward([dw, w, w_norm_inv])
+    dw_mid = pow_scalar_backward([dw_mid, w_add], -0.5)
+    dw_mid = add_scalar_backward([dw_mid, w_sum], eps)
+    dw_mid = sum_backward([dw_mid, w_pow], sum_axes, True)
+    dw_mid = pow_scalar_backward([dw_mid, w], 2.0)
+
+    dw += dw_mid
+
+    # Reshape to original shape of `g`
+    dg = F.reshape(dg, gshape)
+    return dw, dg
