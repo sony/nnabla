@@ -2092,12 +2092,18 @@ Normalization:
         doc: When in `True`, `u` will not be updated. Default is `False`.
         type: bool
         default: 'False'
+      output_u:
+        doc: Output original `u` or not. `u` is updated when `test == False` but you
+          can get original `u` as output with this option. Default is `False`.
+        type: bool
+        default: 'False'
     outputs:
       w_sn:
         doc: Spectrally normalized :math:`W_{sn}` with the same shape as :math:`W`.
     c_runtime: not support
     function_ids:
       iifB: 330
+      iifBB: 337
   MeanSubtraction:
     snake_name: mean_subtraction
     doc: |2

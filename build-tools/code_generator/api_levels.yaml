@@ -272,3 +272,5 @@
   SoftPlus_f: 335
 34:
   Dropout_fiB: 336
+35:
+  SpectralNorm_iifBB: 337

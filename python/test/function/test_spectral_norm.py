@@ -22,7 +22,7 @@ from nbla_test_utils import list_context
 ctxs = list_context('SpectralNorm')
 
 
-def ref_spectral_norm(w, u, dim=0, itr=1, eps=1e-12, test=False):
+def ref_spectral_norm(w, u, dim=0, itr=1, eps=1e-12, test=False, output_u=False):
     w_shape = w.shape
     if dim != 0:
         dims_transpose = [dim] + \
@@ -31,6 +31,7 @@ def ref_spectral_norm(w, u, dim=0, itr=1, eps=1e-12, test=False):
         w_shape = w.shape
     d0, d1 = w_shape[0], np.prod(w_shape[1:])  # [Out, In]
     w = w.reshape((d0, d1))
+    u_original = u
     for i in range(itr):
         v = np.dot(w.T, u)
         v = v / np.sqrt(np.sum(v ** 2) + eps)
@@ -43,10 +44,14 @@ def ref_spectral_norm(w, u, dim=0, itr=1, eps=1e-12, test=False):
         dims_transpose = [i for i in range(1, dim + 1)] \
                             + [0] + [i for i in range(dim + 1, len(w_shape))]
         w_sn = w_sn.transpose(*dims_transpose)
-    return w_sn
+
+    if output_u:
+        return w_sn, u_original
+    else:
+        return w_sn
 
 
-def ref_grad_spectral_norm(w, u, dy, dim, itr, eps, test, need_grad_flags):
+def ref_grad_spectral_norm(w, u, dy, du, dim, itr, eps, test, output_u, need_grad_flags):
     # We need this function for using `function_tester`
     # because the numerical gradient of `w` will not be calculated correctly.
     # The reason is there are some intermediate variables with `need_grad == false`
@@ -67,6 +72,10 @@ def ref_grad_spectral_norm(w, u, dy, dim, itr, eps, test, need_grad_flags):
     return w.grad.get_data('r').flatten()
 
 
+def ref_grad_spectral_norm_no_output_u(w, u, dy, dim, itr, eps, test, output_u, need_grad_flags):
+    return ref_grad_spectral_norm(w, u, dy, None, dim, itr, eps, test, output_u, need_grad_flags)
+
+
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("w_shape, dim", [((32, 16, 3, 3), 0),  # convolution
                                           ((16, 1), 1),         # affine
@@ -77,8 +86,9 @@ def ref_grad_spectral_norm(w, u, dy, dim, itr, eps, test, need_grad_flags):
 @pytest.mark.parametrize("itr", [1, 2, 3])
 @pytest.mark.parametrize("eps", [1e-12])
 @pytest.mark.parametrize("test", [False, True])
+@pytest.mark.parametrize("output_u", [False, True])
 @pytest.mark.parametrize("seed", [313])
-def test_spectral_norm_forward_backward(seed, test, eps, itr, w_shape, dim, ctx, func_name):
+def test_spectral_norm_forward_backward(seed, output_u, test, eps, itr, w_shape, dim, ctx, func_name):
     from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
 
@@ -87,6 +97,37 @@ def test_spectral_norm_forward_backward(seed, test, eps, itr, w_shape, dim, ctx,
     inputs = [w, u]
 
     backward = [False, False] if test else [True, False]
+    ref_grad = ref_grad_spectral_norm if output_u else ref_grad_spectral_norm_no_output_u
 
-    function_tester(rng, F.spectral_norm, ref_spectral_norm, inputs, func_args=[dim, itr, eps, test],
-                    backward=backward, ref_grad=ref_grad_spectral_norm, atol_accum=2e-2, ctx=ctx, func_name=func_name)
+    function_tester(rng, F.spectral_norm, ref_spectral_norm, inputs, func_args=[dim, itr, eps, test, output_u],
+                    backward=backward, ref_grad=ref_grad, atol_accum=3e-2, ctx=ctx, func_name=func_name)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("w_shape, dim", [((32, 16, 3, 3), 0),  # convolution
+                                          ((16, 1), 1),         # affine
+                                          ((16, 32), 1),        # affine
+                                          ((8, 8, 16), 2),      # affine
+                                          ((8, 4, 16), 1),      # affine
+                                          ])
+@pytest.mark.parametrize("itr", [1, 2, 3])
+@pytest.mark.parametrize("eps", [1e-12])
+# Backward for `test==True` is not supported.
+@pytest.mark.parametrize("test", [False])
+@pytest.mark.parametrize("output_u", [True])
+@pytest.mark.parametrize("seed", [313])
+def test_spectral_norm_double_backward(seed, output_u, test, eps, itr, w_shape, dim, ctx, func_name):
+    from nbla_test_utils import backward_function_tester
+    rng = np.random.RandomState(seed)
+    w = rng.randn(*w_shape).astype(np.float32)
+    u = rng.randn(*(w_shape[dim],)).astype(np.float32)
+    inputs = [w, u]
+    backward = [True, False]
+    # We need `skip_backward_check=True` because numerical gradient will not be calculated correctly.
+    # This is the same reason written in `ref_grad_spectral_norm`.
+    backward_function_tester(rng, F.spectral_norm,
+                             inputs=inputs,
+                             func_args=[dim, itr, eps, test, output_u],
+                             backward=backward,
+                             skip_backward_check=True,
+                             ctx=ctx)

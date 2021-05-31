@@ -26,7 +26,7 @@
 
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_SOURCE(SpectralNorm, int, int, float, bool);
+NBLA_REGISTER_FUNCTION_SOURCE(SpectralNorm, int, int, float, bool, bool);
 
 namespace {
 CgVariablePtr create_cgvariable_from_variable(Variable *var,
@@ -53,6 +53,14 @@ CgVariablePtr identity_with_inplace_output(Context &ctx, CgVariablePtr x,
                                            NdArrayPtr output) {
   return connect(make_shared<CgFunction>(create_Identity(ctx)), {x}, 1,
                  {output}, false)[0];
+}
+
+template <typename T>
+void copy_original_u_to_output(Context &ctx, NdArrayPtr input_u,
+                               Variable *output_u) {
+  const Array *input_u_array = input_u->get(get_dtype<T>(), ctx);
+  Array *output_u_array = output_u->data()->cast(get_dtype<T>(), ctx, true);
+  output_u_array->copy_from(input_u_array);
 }
 }
 
@@ -215,6 +223,11 @@ void SpectralNorm<T>::setup_impl(const Variables &inputs,
   last_out->variable()->set_data(outputs[0]->data());
   last_out->variable()->set_grad(outputs[0]->grad());
 
+  // Reshape output
+  if (output_u_) {
+    outputs[1]->reshape(inputs[1]->shape(), true);
+  }
+
   // Call all setup again to ensure inplaced variables refer to the correct
   // array.
   std::unordered_set<CgFunctionPtr> fclosed;
@@ -248,6 +261,11 @@ void SpectralNorm<T>::forward_impl(const Variables &inputs,
     u_org_array->copy_from(u_array);
   }
 
+  // Output u before updated.
+  if (output_u_) {
+    copy_original_u_to_output<T>(ctx_, inputs[1]->data(), outputs[1]);
+  }
+
   // Buffers are cleard during forward prop for memory optimization.
   // Forward calculation will be performed again during backward.
   last_output_cg_variable_->forward(true, true);
@@ -259,6 +277,11 @@ void SpectralNorm<T>::recompute_impl(const Variables &inputs,
   // Temporally restore `u` remembered in previous forward prop to prevent
   // double iteration of `u`
   u_->set_array(u_orig_->array());
+
+  // Output u before updated.
+  if (output_u_) {
+    copy_original_u_to_output<T>(ctx_, u_orig_, outputs[1]);
+  }
 
   last_output_cg_variable_->forward(true, true);
 
