@@ -1,4 +1,4 @@
-# Copyright (c) 2020 Sony Corporation. All Rights Reserved.
+# Copyright (c) 2020-2021 Sony Group Corporation. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -333,6 +333,28 @@ class Module(metaclass=MetaClass):
             filtered_params = memo.filter_and_update(found_params)
             params.update(filtered_params)
         return params
+
+    def load_parameters(self, path, extension=".h5"):
+        """Load parameters from a file into this module.
+
+        Args:
+            path: str or file-like object
+
+        """
+        scope = OrderedDict()
+        with nn.parameter_scope('', scope):
+            nn.load_parameters(path, extension=extension)
+            params = nn.get_parameters()
+        self.set_parameters(params)
+
+    def save_parameters(self, path, extension=".h5"):
+        """Save parameters of this module to a file.
+
+        Args:
+            path: str or file-like object
+        """
+        params = self.get_parameters()
+        nn.save_parameters(path, params=params, extension=extension)
 
     def set_parameter(self, key, param, raise_if_missing=False):
         if key.startswith('@'):
