@@ -63,6 +63,22 @@ def test_weight_standardization_forward_backward(rng, ctx, func_name, w_shape, c
                     func_name=func_name, dstep=1e-2, atol_b=1e-2)
 
 
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("w_shape , channel_axis", [((8, 4, 3, 3), 0),  # convolution
+                                                    ((16, 1), 1),  # affine
+                                                    ((4, 2, 8), 2),  # affine
+                                                    ])
+@pytest.mark.parametrize("eps", [1e-05])
+@pytest.mark.parametrize("output_stat", [False])
+def test_weight_standardization_double_backward(rng, ctx, func_name, w_shape, channel_axis, eps, output_stat):
+    from nbla_test_utils import backward_function_tester
+    w = np.array(rng.randn(*w_shape).astype(np.float32))
+    backward_function_tester(rng, F.weight_standardization,
+                             inputs=[w],
+                             func_args=[channel_axis, eps, output_stat],
+                             ctx=ctx)
+
+
 @pytest.mark.parametrize("function , channel_axis, kwargs, param_name",
                          [(PF.convolution, 0, {"outmaps": 10, "kernel": (2, 2)}, "conv/W"),
                           (PF.affine, 1, {"n_outmaps": 10}, "affine/W")])
