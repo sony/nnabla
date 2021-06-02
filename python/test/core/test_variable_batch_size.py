@@ -20,7 +20,7 @@ import nnabla.parametric_functions as PF
 from nnabla.utils import load
 from nnabla.utils import save
 from nnabla.utils import nnp_graph
-from helper import forward_variable
+from helper import forward_variable, create_temp_with_dir
 
 
 def base_axis_0_reshape_with_neg_1(x):
@@ -174,3 +174,22 @@ def test_variable_batch_size(tmpdir, batch_size, variable_batch_size, model_def,
     if expect_batch_size != -1:
         batch_size = expect_batch_size
     assert (batch_size == out.shape[0])
+
+
+def test_scalar_save_variable_batch_size():
+    x = nn.Variable((128, 1, 28, 28))
+    h = PF.convolution(x, 32, kernel=(3, 3))
+    loss = F.mean(h)
+    with create_temp_with_dir("tmp.nnp") as temp_nnp_file_name:
+        runtime_contents = {
+            'networks': [
+                {'name': 'runtime',
+                 'batch_size': 1,
+                 'outputs': {'loss': loss},
+                 'names': {'x': x}}],
+            'executors': [
+                {'name': 'runtime',
+                 'network': 'runtime',
+                 'data': ['x'],
+                 'output': ['loss']}]}
+        nn.utils.save.save(temp_nnp_file_name, runtime_contents)
