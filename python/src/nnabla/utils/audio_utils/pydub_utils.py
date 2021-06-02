@@ -43,14 +43,14 @@ def get_audiosegment_from_nparray(nparr, frame_rate=48000):
     return audio_segment
 
 
-def auread(path, channel_first=False, raw_format_param=None):
+def auread(source, channel_first=False, raw_format_param=None):
     """
     Read audio with pydub module.
+    Currently only support .wav format audio, .raw format audio could be read only when
+    additional params are provided.
 
     Args:
-        path (str or 'file object'): File path or object to read from.
-            Currently only support .wav format audio, .raw format audio could be read only when
-            additional params are provided.
+        source (class ResourceFileReader): source handler.
         channel_first (bool):
             This argument specifies the shape of audio is whether (samples, channels) or (channels, samples).
             Default value is False, which means the audio shape shall be (samples, channels).
@@ -61,18 +61,16 @@ def auread(path, channel_first=False, raw_format_param=None):
     Returns:
          numpy.ndarray
     """
-    from io import BytesIO
-    if isinstance(path, BytesIO):
-        # This is a temporary solution and will be refactored in the near future.
-        audio = AudioSegment.from_file(path, 'wav')
-    else:
-        filename = path if isinstance(path, str) else path.name
-        audio_format = os.path.splitext(filename)[-1][1:]
+
+    _auread_before(source, raw_format_param)
+
+    audio_format = source.ext[1:]
+    with source.open() as f:
         if audio_format == 'raw':
             audio = AudioSegment.from_file(
-                path, format=audio_format, **raw_format_param)
+                f, format=audio_format, **raw_format_param)
         else:
-            audio = AudioSegment.from_file(path, format=audio_format)
+            audio = AudioSegment.from_file(f, format=audio_format)
 
     audio_arr = get_nparray_from_pydub(audio)
     if audio_arr.dtype.itemsize == 1 and audio_format == 'wav':

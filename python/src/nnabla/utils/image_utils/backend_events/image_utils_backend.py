@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import os
-import binascii
 from io import BytesIO
 from collections import OrderedDict
 
@@ -53,44 +52,13 @@ class ImageUtilsBackend(object):
             raise ValueError("No available backend to resize image.")
         return backend.imresize(img, size, interpolate, channel_first)
 
-    @staticmethod
-    def get_file_extension(path):
-        ext = ''
-        file_signature = {
-            '.bmp': (['424d'], 0x0),
-            '.dib': (['424d'], 0x0),
-            '.pgm': (['50350a'], 0x0),
-            '.jpeg': (['ffd8ffe0'], 0x0),
-            '.jpg': (['ffd8ffe0'], 0x0),
-            '.png': (['89504e470d0a1a0a'], 0x0),
-            '.tif': (['492049'], 0x0),
-            '.tiff': (['492049'], 0x0),
-            '.eps': (['c5d0d3c6'], 0x0),
-            '.gif': (['474946383761', '474946383961'], 0x0),
-            '.ico': (['00000100'], 0x0),
-            '.dcm': (['4449434d'], 0x80),
-        }
-        if hasattr(path, "read"):
-            if hasattr(path, "name"):
-                ext = os.path.splitext(path.name)[1].lower()
-            else:
-                for extension, (signature, offset) in file_signature.items():
-                    path.seek(offset)
-                    data = binascii.hexlify(path.read()).decode('utf-8')
-                    path.seek(0)
-                    for s in signature:
-                        if data.startswith(s):
-                            ext = extension
-        elif isinstance(path, str):
-            ext = os.path.splitext(path)[1].lower()
-        return ext
-
     def get_best_backend(self, path, operator):
+        from nnabla.utils.data_source_loader import get_file_extension
         if self._default_backend:
             self._current_backend = self._default_backend
             return self._default_backend()
         else:
-            ext = self.get_file_extension(path)
+            ext = get_file_extension(path)
             if ext not in self._best_backend:
                 self._best_backend[ext] = None
                 self._best_backend_name[ext] = None
@@ -121,7 +89,8 @@ class ImageUtilsBackend(object):
                 raise ValueError("Currently, No backend available.")
 
     def next_available(self, path):
-        ext = self.get_file_extension(path)
+        from nnabla.utils.data_source_loader import get_file_extension
+        ext = get_file_extension(path)
         if ext not in self.next:
             raise ValueError("Currently, No backend available.")
         else:
