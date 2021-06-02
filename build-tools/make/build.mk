@@ -46,6 +46,11 @@ nnabla-auto-format:
 		'\./src/nbla_utils/nnabla\.pb\.(h|cc)' \
 		'\./include/third_party/.*'
 
+########################################################################################################################
+# check copyright
+.PHONY: nnabla-copyright-check
+nnabla-check-copyright:
+	python3 $(NNABLA_DIRECTORY)/build-tools/code_formatter/copyright_checker.py --rootdir=$(NNABLA_DIRECTORY)
 
 ########################################################################################################################
 # Doc
