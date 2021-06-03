@@ -1004,118 +1004,62 @@ class OnnxImporter:
         func_list.append(func)
 
     def BasePooling(self, func_name, func_list, n):
-        def get_pad_shape(auto_pad,  # type: Text
-                          input_spatial_shape,  # type: Sequence[int]
-                          kernel_spatial_shape,  # type: Sequence[int]
-                          strides_spatial,  # type: Sequence[int]
-                          output_spatial_shape  # type: Sequence[int]
-                          ):  # type: (...) -> Sequence[int]
-            pad_shape = [0] * len(input_spatial_shape)
-            if auto_pad in ('SAME_UPPER', 'SAME_LOWER'):
-                for i in range(len(input_spatial_shape)):
-                    pad_shape[i] = (output_spatial_shape[i] - 1) * strides_spatial[i] + \
-                        kernel_spatial_shape[i] - input_spatial_shape[i]
-            elif auto_pad == 'VALID':
-                pass
-            return pad_shape
+        def _compute_output_size(insize, stride, kernel, ceil_mode, pad_needed):
+            if not pad_needed:
+                pad_needed = [0] * len(insize)
+            out_shape = [0] * len(insize)
+            if ceil_mode:
+                for index in range(len(insize)):
+                    i = insize[index]
+                    s = stride[index]
+                    k = kernel[index]
+                    p = pad_needed[index]
+                    out_shape[index] = int(np.ceil((i + p - k) / s + 1))
+            else:
+                for index in range(len(insize)):
+                    i = insize[index]
+                    s = stride[index]
+                    k = kernel[index]
+                    p = pad_needed[index]
+                    out_shape[index] = int(np.floor((i + p - k) / s + 1))
 
-        def get_output_shape(auto_pad,  # type: Text
-                             input_spatial_shape,  # type: Sequence[int]
-                             kernel_spatial_shape,  # type: Sequence[int]
-                             strides_spatial  # type: Sequence[int]
-                             ):  # type: (...) -> Sequence[int]
-            out_shape = [0] * len(input_spatial_shape)
-            if auto_pad in ('SAME_UPPER', 'SAME_LOWER'):
-                for i in range(len(input_spatial_shape)):
-                    out_shape[i] = int(
-                        np.ceil(
-                            float(
-                                input_spatial_shape[i])
-                            / float(
-                                strides_spatial[i])))
-            elif auto_pad == 'VALID':
-                for i in range(len(input_spatial_shape)):
-                    out_shape[i] = int(np.ceil(float(
-                        input_spatial_shape[i] - (kernel_spatial_shape[i] - 1)) / float(strides_spatial[i])))
             return out_shape
 
-        def cal_pads(auto_pad, pad_shape):
-            spatial_size = len(pad_shape)
+        def _compute_pad_needed(insize, stride, kernel):
+            pad_needed = [0] * len(insize)
+            for index in range(len(insize)):
+                s = stride[index]
+                k = kernel[index]
+                i = insize[index]
+                target_output_shape = int((i + s - 1) / s)
+                pad_needed[index] = int((target_output_shape - 1) * s + k - i)
+            return pad_needed
+
+        def _get_pads(auto_pad, pad_needed):
+            spatial_size = len(pad_needed)
             pads = [0] * spatial_size * 2
             for i in range(spatial_size):
                 if auto_pad == "SAME_LOWER":
-                    pads[i + spatial_size] = pad_shape[i] // 2
-                    pads[i] = pad_shape[i] - pads[i + spatial_size]
+                    pads[i] = int((pad_needed[i] + 1) / 2)
+                    pads[i + spatial_size] = pad_needed[i] - pads[i]
                 elif auto_pad == "SAME_UPPER":
-                    pads[i] = pad_shape[i] // 2
-                    pads[i + spatial_size] = pad_shape[i] - pads[i]
-            return pads
-
-        def set_kernel_parameter_and_get_pads(node,
-                                              kp,
-                                              input_spatial_shape
-                                              ):
-            strides = []
-            pads = []
-            kernel = []
-            auto_pad = "NOTSET"
-
-            for attr in node.attribute:
-                if attr.name == "strides":
-                    if attr.type != AttributeProto.INTS:
-                        raise ValueError("Only INTS are supported for strides in {}"
-                                         .format(node.op_type))
-                    strides.extend(attr.ints)
-                elif attr.name == "pads":
-                    if attr.type != AttributeProto.INTS:
-                        raise ValueError("Only INTS are supported for pads in {}"
-                                         .format(node.op_type))
-                    pads.extend(attr.ints)
-                elif attr.name == "kernel_shape":
-                    if attr.type != AttributeProto.INTS:
-                        raise ValueError("Only INTS are supported for kernel_shape in {}"
-                                         .format(node.op_type))
-                    kernel.extend(attr.ints)
-                elif attr.name == "count_include_pad":
-                    if attr.type != AttributeProto.INT:
-                        raise ValueError("Only INT is supported for count_include_pad in {} op_type"
-                                         .format(node.op_type))
-                    kp.including_pad = bool(attr.i)
-                elif attr.name == "auto_pad":
-                    if attr.type != AttributeProto.STRING:
-                        raise ValueError("Only STRING is supported for auto_pad in {} op_type"
-                                         .format(node.op_type))
-                    auto_pad = attr.s.decode("utf-8")
-                else:
-                    raise ValueError("Unsupported attribute {} was specified at {}"
-                                     .format(attr.name, node.op_type))
-
-            if kernel:
-                kp.kernel.dim.extend(kernel[:])
-            else:
-                raise ValueError("kernel_shape is required")
-            if strides:
-                kp.stride.dim.extend(strides[:])
-            else:
-                kp.stride.dim.extend([1]*len(kp.kernel.dim))
-
-            if not pads and auto_pad != "NOTSET":
-                output_spatial_shape = get_output_shape(
-                    auto_pad, input_spatial_shape, kp.kernel.dim, kp.stride.dim)
-                pad_shape = get_pad_shape(
-                    auto_pad, input_spatial_shape, kp.kernel.dim, kp.stride.dim, output_spatial_shape)
-                pads = cal_pads(auto_pad, pad_shape)
-
+                    pads[i] = int(pad_needed[i] / 2)
+                    pads[i + spatial_size] = pad_needed[i] - pads[i]
             return pads
 
         input_shape = self.get_func_input_shape(n.input[0])
+        strides = []
+        kernel = []
+        pads = []
+        auto_pad = "NOTSET"
         pad_mode = "constant"
+        ceil_mode = 0
         value = 0.0
 
         if func_name == 'AveragePooling':
             func = self.generate_default_function("AveragePooling", n)
             kp = func.average_pooling_param
-            pad_mode = "replicate"
+            pad_mode = "repeat"
         elif func_name == 'MaxPooling':
             func = self.generate_default_function("MaxPooling", n)
             kp = func.max_pooling_param
@@ -1130,10 +1074,77 @@ class OnnxImporter:
             func_list.append(func)
             return
 
-        padval = []
-        pads = set_kernel_parameter_and_get_pads(n, kp, input_shape[2:])
         kp.ignore_border = True
+
+        for attr in n.attribute:
+            if attr.name == "strides":
+                if attr.type != AttributeProto.INTS:
+                    raise ValueError("Only INTS are supported for strides in {}"
+                                     .format(n.op_type))
+                strides.extend(attr.ints)
+            elif attr.name == "pads":
+                if attr.type != AttributeProto.INTS:
+                    raise ValueError("Only INTS are supported for pads in {}"
+                                     .format(n.op_type))
+                pads.extend(attr.ints)
+            elif attr.name == "kernel_shape":
+                if attr.type != AttributeProto.INTS:
+                    raise ValueError("Only INTS are supported for kernel_shape in {}"
+                                     .format(n.op_type))
+                kernel.extend(attr.ints)
+            elif attr.name == "count_include_pad":
+                if attr.type != AttributeProto.INT:
+                    raise ValueError("Only INT is supported for count_include_pad in {} op_type"
+                                     .format(n.op_type))
+                kp.including_pad = bool(attr.i)
+            elif attr.name == "auto_pad":
+                if attr.type != AttributeProto.STRING:
+                    raise ValueError("Only STRING is supported for auto_pad in {} op_type"
+                                     .format(n.op_type))
+                auto_pad = attr.s.decode("utf-8")
+            elif attr.name == "ceil_mode":
+                if attr.type != AttributeProto.INT:
+                    raise ValueError("Only INT is supported for ceil_mode in {} op_type"
+                                     .format(n.op_type))
+                ceil_mode = attr.i
+            else:
+                raise ValueError("Unsupported attribute {} was specified at {}"
+                                 .format(attr.name, n.op_type))
+
+        if kernel:
+            kp.kernel.dim.extend(kernel[:])
+        else:
+            raise ValueError("Kernel shape is required")
+        if strides:
+            kp.stride.dim.extend(strides[:])
+        else:
+            kp.stride.dim.extend([1] * len(kp.kernel.dim))
+
+        if auto_pad != "NOTSET":
+            if auto_pad == 'VALID':
+                pads = [0] * len(kernel) * 2
+                pad_needed = [0] * len(kernel)
+                out_shape = _compute_output_size(
+                    input_shape[2:], kp.stride.dim, kp.kernel.dim, ceil_mode, pad_needed)
+            elif auto_pad in ('SAME_LOWER', 'SAME_UPPER'):
+                pad_needed = _compute_pad_needed(
+                    input_shape[2:], kp.stride.dim, kp.kernel.dim)
+                pads = _get_pads(auto_pad, pad_needed)
+                out_shape = _compute_output_size(
+                    input_shape[2:], kp.stride.dim, kp.kernel.dim, ceil_mode, pad_needed)
+            else:
+                raise ValueError(
+                    "Unsupported auto_pad type: {}".format(auto_pad))
+        elif pads:
+            out_shape = _compute_output_size(
+                input_shape[2:], kp.stride.dim, kp.kernel.dim, ceil_mode, pads)
+        else:
+            out_shape = _compute_output_size(
+                input_shape[2:], kp.stride.dim, kp.kernel.dim, ceil_mode, pads)
+
+        padval = []
         dim = len(kp.kernel.dim)
+
         if func_name == "AveragePooling":
             if kp.including_pad:
                 pad_mode = "constant"
@@ -1155,12 +1166,9 @@ class OnnxImporter:
                 func.input.extend([pad_out])
             kp.pad.dim.extend(padval)
         else:
-            kp.pad.dim.extend([0]*dim)
-        output_shape = input_shape[:]
-        for i in range(dim):
-            output_shape[i + 2] = (input_shape[i + 2] + 2 *
-                                   kp.pad.dim[i] - kp.kernel.dim[i]) // kp.stride.dim[i] + 1
-        self._shape_output[func.output[0]] = output_shape
+            kp.pad.dim.extend([0] * dim)
+        out_shape = input_shape[:2] + out_shape
+        self._shape_output[func.output[0]] = out_shape
         func_list.append(func)
 
     def Concatenate(self, func_list, n):
