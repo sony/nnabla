@@ -20,9 +20,9 @@
 # 3. UPDATE THE MAPPING IF NECESSARY (see function_backward_functions.py.tmpl)
 
 
-import numpy as np
 import nnabla.functions as F
 from functools import partial
+from .instance_normalization import instance_normalization_backward
 
 
 def group_normalization_backward(inputs, num_groups=None, channel_axis=None, batch_axis=(0,), eps=1e-05, no_scale=False, no_bias=False):
@@ -36,58 +36,52 @@ def group_normalization_backward(inputs, num_groups=None, channel_axis=None, bat
     """
     dy = inputs[0]
     x = inputs[1]
-    b = inputs[2] if not no_bias else None       # beta
+    g = num_groups
     g_idx = 2 if no_bias else 3
-    g = inputs[g_idx] if not no_scale else None  # gamma
-
-    # Prerequisite
-    xs = list(x.shape)
-    xs_g = xs[:channel_axis] + [num_groups,
-                                xs[channel_axis] // num_groups] + xs[channel_axis+1:]
     if not no_scale:
-        gs = list(g.shape)
-        gs_g = gs[:channel_axis] + [num_groups,
-                                    gs[channel_axis] // num_groups] + gs[channel_axis+1:]
+        gamma = inputs[g_idx]
 
-    reduce_axes = list(set(range(len(xs_g))) -
-                       set(batch_axis + [channel_axis]))
-    F_sum = partial(F.sum, axis=reduce_axes, keepdims=True)
-    F_mean = partial(F.mean, axis=reduce_axes, keepdims=True)
+    # Original input shape: [B, C, H, W]
+    x_shape = list(x.shape)
 
-    x = F.reshape(x, xs_g)
-    dy = F.reshape(dy, xs_g)
-    if not no_scale:
-        g = F.reshape(g, gs_g)
+    # Grouped input shape: [B, num_groups, C / num_groups, H, W]
+    xg_shape = x_shape[:channel_axis] + [g, x_shape[channel_axis] // g]
+    if channel_axis < len(x_shape) - 1:
+        xg_shape += x_shape[channel_axis+1:]
 
-    # Common factors
-    de = np.prod([xs_g[i] for i in reduce_axes])  # Denominator
-    mu = F_mean(x)                                   # Mean
-    var = F_mean(x ** 2.00) - mu ** 2.0              # Variance
-    # Normalized x
-    xn = (x - mu) / ((var + eps) ** 0.5)
-    dxn = dy * g if not no_scale else dy
-    # Variance and mean grads
-    dvar = F_sum(dxn * (x - mu) * (-0.5) * ((var + eps) ** (-3.0/2.0)))
-    dmean = F_sum(dxn * -1 / ((var + eps) ** 0.5)) + \
-        dvar * F_sum(-2*(x-mu)) / de
+    # Sum operation for broadcast backward
+    axes = list(set(range(len(x_shape))) - set([channel_axis]))
+    F_sum = partial(F.sum, axis=axes, keepdims=True)
+    # Mean operation for calculating normalized x
+    axes = list(set(range(len(xg_shape))) - set(batch_axis + [channel_axis]))
+    F_mean = partial(F.mean, axis=axes, keepdims=True)
 
     # w.r.t. x
-    dx = dxn / ((var + eps) ** 0.5) + dvar * 2 * (x-mu) / de + dmean/de
-    dx = F.reshape(dx, xs)
+    # Affine backward
+    dyg = dy * gamma if not no_scale else dy
+    # Instance norm backward
+    dyg = dyg.reshape(xg_shape)
+    xg = x.reshape(xg_shape)
+    grads = instance_normalization_backward(
+        [dyg, xg], channel_axis, batch_axis, eps, True, True)
+    dx = grads[0].reshape(x_shape)  # Restore shape
+    res_grads = (dx,)
 
     # w.r.t. beta
-    dy = F.reshape(dy, xs)
-    db = F.sum(dy, axis=list(set(range(len(xs))) -
-               set([channel_axis])), keepdims=True)
+    if not no_bias:
+        # Sum as broadcast backward
+        db = F_sum(dy)
+        res_grads += (db,)
 
     # w.r.t. gamma
-    xn = F.reshape(xn, xs)
-    dg = F.sum(dy * xn, axis=list(set(range(len(xs))) -
-               set([channel_axis])), keepdims=True)
-
-    grads = (dx,)
-    if not no_bias:
-        grads += (db,)
     if not no_scale:
-        grads += (dg,)
-    return grads
+        # Calculate normalized x
+        mean = F_mean(xg)
+        var = F_mean(xg ** 2.00) - mean ** 2.0
+        xn = (xg - mean) / ((var + eps) ** 0.5)
+        xn = xn.reshape(x_shape)
+        # Sum as broadcast backward
+        dg = F_sum(dy * xn)
+        res_grads += (dg,)
+
+    return res_grads

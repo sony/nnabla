@@ -20,9 +20,7 @@
 # 3. UPDATE THE MAPPING IF NECESSARY (see function_backward_functions.py.tmpl)
 
 
-import numpy as np
-import nnabla.functions as F
-from functools import partial
+from .tensor_normalization import tensor_normalization_backward
 
 
 def weight_standardization_backward(inputs, channel_axis=None, eps=1e-05):
@@ -34,23 +32,8 @@ def weight_standardization_backward(inputs, channel_axis=None, eps=1e-05):
     Return:
       list of Variable: Return the gradients wrt inputs of the corresponding function.
     """
-    dy = inputs[0]
     x = inputs[1]
-
-    # Prerequisite
-    reduce_axes = list(set(range(x.ndim)) - set([channel_axis]))
-    F_sum = partial(F.sum, axis=reduce_axes, keepdims=True)
-    F_mean = partial(F.mean, axis=reduce_axes, keepdims=True)
-
-    # Common factors
-    de = np.prod([x.shape[i] for i in reduce_axes])  # Denominator
-    mu = F_mean(x)                                   # Mean
-    var = F_mean(x ** 2.00) - mu ** 2.0              # Variance
-    # Variance and mean grads
-    dvar = F_sum(dy * (x - mu) * (-0.5) * ((var + eps) ** (-3.0/2.0)))
-    dmean = F_sum(dy * -1 / ((var + eps) ** 0.5)) + \
-        dvar * F_sum(-2*(x-mu)) / de
-
-    dx = dy / ((var + eps) ** 0.5) + dvar * 2 * (x-mu) / de + dmean/de
-
-    return dx
+    axes = list(set(range(x.ndim)) - set([channel_axis]))
+    no_scale = True
+    no_bias = True
+    return tensor_normalization_backward(inputs, axes, eps, no_scale, no_bias)
