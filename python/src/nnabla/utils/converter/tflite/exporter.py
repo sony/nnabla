@@ -66,7 +66,12 @@ class DataFormat(Enum):
 
 
 class TFLiteExporter:
-    def __init__(self, nnp, batch_size, channel_last=False, data_type="float32", quantization=None):
+    def __init__(self, nnp, batch_size, channel_last=False, data_type="float32", quantization=None, dataset=None):
+        if quantization and dataset is None:
+            raise ValueError("No represent dataset was provided!")
+        if quantization and not os.path.exists(dataset):
+            raise ValueError(
+                'Represent dataset {} does not exist!'.format(dataset))
         self.nnp_proto = nnp.protobuf
         self.batch_size = batch_size
         self.variables = {}
@@ -74,6 +79,7 @@ class TFLiteExporter:
         self.global_data_format = DataFormat.channel_last if channel_last else DataFormat.channel_first
         self.data_type = data_type
         self.quantization = quantization
+        self.dataset = dataset
         self.models = None
         self.operator_codes_list = []
         self.operators_list = []
@@ -1089,45 +1095,51 @@ class TFLiteExporter:
         self.propagate_variable_semantic(pf)
 
     def Softmax(self, pf):
-        # Convert Softmax to ReduceMax, Sub, Exp, Sum, Div
-        _, _, axis = self.check_resolve_axis_attr(pf)
-        axis_name = fork_name(pf.inputs[0]) + "_axis"
-        self.create_parameter(axis_name, [1], [axis])
-        input_shape = self.variables[pf.inputs[0]][:]
-        tensor_type = {axis_name: 'INT32'}
+        if self.quantization:
+            _, _, axis = self.check_resolve_axis_attr(pf)
+            self.convert_generic_tflite_op(pf.inputs, pf.outputs, "SOFTMAX")
+            self.operators_list[-1]['builtin_options_type'] = 'SoftmaxOptions'
+            self.operators_list[-1]['builtin_options'] = {'beta': 1.0}
+        else:
+            # Convert Softmax to ReduceMax, Sub, Exp, Sum, Div
+            _, _, axis = self.check_resolve_axis_attr(pf)
+            axis_name = fork_name(pf.inputs[0]) + "_axis"
+            self.create_parameter(axis_name, [1], [axis])
+            input_shape = self.variables[pf.inputs[0]][:]
+            tensor_type = {axis_name: 'INT32'}
 
-        # ReduceMax
-        mout = fork_name(pf.inputs[0]) + "_reducemax"
-        mout_shape = input_shape.copy()
-        mout_shape[axis] = 1
-        self.variables[mout] = mout_shape
-        self.convert_generic_tflite_op([pf.inputs[0], axis_name], [
-                                       mout], "REDUCE_MAX", tensor_type=tensor_type)
-        self.operators_list[-1]['builtin_options_type'] = 'ReducerOptions'
-        self.operators_list[-1]['builtin_options'] = {'keep_dims': True}
+            # ReduceMax
+            mout = fork_name(pf.inputs[0]) + "_reducemax"
+            mout_shape = input_shape.copy()
+            mout_shape[axis] = 1
+            self.variables[mout] = mout_shape
+            self.convert_generic_tflite_op([pf.inputs[0], axis_name], [
+                                           mout], "REDUCE_MAX", tensor_type=tensor_type)
+            self.operators_list[-1]['builtin_options_type'] = 'ReducerOptions'
+            self.operators_list[-1]['builtin_options'] = {'keep_dims': True}
 
-        # Sub
-        sout = fork_name(pf.inputs[0]) + "_sub"
-        self.variables[sout] = input_shape
-        self.convert_generic_tflite_op([pf.inputs[0], mout], [sout], "SUB")
+            # Sub
+            sout = fork_name(pf.inputs[0]) + "_sub"
+            self.variables[sout] = input_shape
+            self.convert_generic_tflite_op([pf.inputs[0], mout], [sout], "SUB")
 
-        # Exp
-        expout = fork_name(pf.inputs[0]) + "_exp"
-        self.variables[expout] = input_shape
-        self.convert_generic_tflite_op([sout], [expout], "EXP")
+            # Exp
+            expout = fork_name(pf.inputs[0]) + "_exp"
+            self.variables[expout] = input_shape
+            self.convert_generic_tflite_op([sout], [expout], "EXP")
 
-        # Sum
-        sumout = fork_name(pf.inputs[0]) + "_sum"
-        sumout_shape = input_shape.copy()
-        sumout_shape[axis] = 1
-        self.variables[sumout] = sumout_shape
-        self.convert_generic_tflite_op(
-            [expout, axis_name], [sumout], "SUM", tensor_type=tensor_type)
-        self.operators_list[-1]['builtin_options_type'] = 'ReducerOptions'
-        self.operators_list[-1]['builtin_options'] = {'keep_dims': True}
+            # Sum
+            sumout = fork_name(pf.inputs[0]) + "_sum"
+            sumout_shape = input_shape.copy()
+            sumout_shape[axis] = 1
+            self.variables[sumout] = sumout_shape
+            self.convert_generic_tflite_op(
+                [expout, axis_name], [sumout], "SUM", tensor_type=tensor_type)
+            self.operators_list[-1]['builtin_options_type'] = 'ReducerOptions'
+            self.operators_list[-1]['builtin_options'] = {'keep_dims': True}
 
-        # Div
-        self.convert_generic_tflite_op([expout, sumout], pf.outputs, "DIV")
+            # Div
+            self.convert_generic_tflite_op([expout, sumout], pf.outputs, "DIV")
 
     def LogSoftmax(self, pf):
         # Convert LogSoftmax to ReduceMax, Sub, Exp, Sum, Log, Sub
@@ -1934,13 +1946,15 @@ class TFLiteExporter:
         self.create_tensors(self.inputs, {})
         self.create_tensors(self.outputs, {})
         self.check_and_preprocess_input()
+        precursor_function = None
         for pfid, pf in enumerate(self.network.forward_sequence()):
             self.child_of_relu = False
             if pfid > 0 and pf.type == 'MaxPooling':
-                if self.network.forward_sequence()[pfid-1].type == 'ReLU':
+                if precursor_function is not None and precursor_function.type == 'ReLU':
                     self.child_of_relu = True
             self.convert_to_tflite_op(pf)
             self.operators_sorting(pf)
+            precursor_function = pf
         if self.global_data_format == DataFormat.channel_first:
             for outp in self.outputs:
                 if self.network.variables[outp].data_format == DataFormat.channel_last:
@@ -2046,16 +2060,27 @@ class TFLiteExporter:
     def optimize_graph(self):
         self.fuse_activation_function()
 
-    def execute(self, output):
-        self.init_models()
+    def mark_all_buffers_as_output(self):
+        import copy
+        self.backup_output = copy.copy(self.models['subgraphs'][0]['outputs'])
+        for operator in self.models['subgraphs'][0]['operators']:
+            outputs = operator['outputs']
+            for output in outputs:
+                if output not in self.models['subgraphs'][0]['outputs']:
+                    self.models['subgraphs'][0]['outputs'].append(output)
+        inputs = self.models['subgraphs'][0]['inputs']
+        for inp in inputs:
+            if inp not in self.models['subgraphs'][0]['outputs']:
+                self.models['subgraphs'][0]['outputs'].append(inp)
 
-        self.export_graph()
-
-        self.optimize_graph()
-
+    def export_to_tflite(self, models, output):
+        """
+        :param output (str): file path of exported tflite
+        :return:
+        """
         json_file = output.replace("tflite", "json")
         with open(json_file, 'w') as f:
-            json.dump(self.models, f)
+            json.dump(models, f)
         schema_path = os.path.join(os.path.dirname(__file__), "schema.fbs")
         output_path = os.path.dirname(output)
         try:
@@ -2064,5 +2089,28 @@ class TFLiteExporter:
         except subprocess.CalledProcessError as e:
             print(e.returncode, e.output)
             raise ValueError("Convert nnp to tflite failed.")
+
+    def execute(self, output):
+        self.init_models()
+
+        self.export_graph()
+
+        self.optimize_graph()
+
+        if self.quantization:
+            self.mark_all_buffers_as_output()
+
+        self.export_to_tflite(self.models, output)
+
+        if self.quantization:
+            from .quantized_converter import QuantizationConverter
+            dataset = np.load(self.dataset)
+            quantization_converter = QuantizationConverter(
+                self.models, output, dataset)
+            quantized_model = quantization_converter.convert()
+            quantized_model['subgraphs'][0]['outputs'] = self.backup_output
+            self.export_to_tflite(quantized_model, output)
+
+        json_file = output.replace("tflite", "json")
         with open(json_file, 'w') as f:
             json.dump(self.tflite_model_info, f)

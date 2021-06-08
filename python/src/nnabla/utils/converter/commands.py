@@ -173,7 +173,8 @@ def _export_from_nnp(args, nnp, output):
     elif args.export_format == 'TFLITE':
         from .tflite import TFLiteExporter
         TFLiteExporter(nnp, args.batch_size,
-                       channel_last=args.channel_last).execute(output)
+                       channel_last=args.channel_last, quantization=args.quantization,
+                       dataset=args.dataset).execute(output)
     else:
         print('Output file ({})'.format(args.export_format) +
               ' is not supported or output directory does not exist.')

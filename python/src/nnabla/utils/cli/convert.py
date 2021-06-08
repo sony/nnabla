@@ -208,6 +208,10 @@ def add_convert_command(subparsers):
     subparser.add_argument('--channel-last', action='store_true',
                            help='[export][TFLite] Specify the data_format of the NNP network,\
                            data_format default is channel_first')
+    subparser.add_argument('--quantization', action='store_true',
+                           help='[export][TFLite] export to INT8 quantized tflite model.')
+    subparser.add_argument('--dataset', type=str, default=None,
+                           help='[export][TFLite] Specify the path of represent dataset which will be passed to INT8 quantized tflite converter.')
 
     # For config function list
     subparser.add_argument('-c', '--config', type=str, default=None,

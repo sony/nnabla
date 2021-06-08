@@ -373,6 +373,8 @@ File format converter
       --enable-optimize-pb  [export][tensorflow] enable optimization when export to pb.
       --channel_last        [export][TFLite] Specify the data_format of the NNP network,
                                              data_format default is channel_first.
+      --quantization        [export][TFLite] export to INT8 quantized tflite model.
+      --dataset             [export][TFLite] Specify the path of represent dataset which will be passed to INT8 quantized tflite converter.
 
 Optimize pb model
 -----------------
