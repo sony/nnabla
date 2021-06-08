@@ -33,3 +33,6 @@ RUN pip3 install -U \
     setuptools \
     six \
     wheel
+
+ENV PYTHONIOENCODING utf-8
+
