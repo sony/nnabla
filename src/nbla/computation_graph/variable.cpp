@@ -17,6 +17,7 @@
 #include <nbla/computation_graph/function.hpp>
 #include <nbla/computation_graph/variable.hpp>
 #include <nbla/global_function_callback.hpp>
+#include <nbla/recompute.hpp>
 #include <nbla/singleton_manager-internal.hpp>
 
 #include <cstdint>
@@ -89,19 +90,31 @@ void FunctionHookWithObject::operator()(const CgFunctionPtr &f) {
 }
 
 /** CgVariable Implementation **/
-CgVariable::CgVariable() { var_ = make_shared<Variable>(Shape_t{}); }
+CgVariable::CgVariable() {
+  var_ = make_shared<Variable>(Shape_t{});
+  set_recompute(get_global_recompute());
+}
 CgVariable::CgVariable(bool need_grad) : CgVariable() {
   set_need_grad(need_grad);
+  set_recompute(get_global_recompute());
 }
 
-CgVariable::CgVariable(Shape_t shape) { var_ = make_shared<Variable>(shape); }
+CgVariable::CgVariable(Shape_t shape) {
+  var_ = make_shared<Variable>(shape);
+  set_recompute(get_global_recompute());
+}
 CgVariable::CgVariable(Shape_t shape, bool need_grad) : CgVariable(shape) {
   set_need_grad(need_grad);
+  set_recompute(get_global_recompute());
 }
 
-CgVariable::CgVariable(VariablePtr var) { var_ = var; }
+CgVariable::CgVariable(VariablePtr var) {
+  var_ = var;
+  set_recompute(get_global_recompute());
+}
 CgVariable::CgVariable(VariablePtr var, bool need_grad) : CgVariable(var) {
   set_need_grad(need_grad);
+  set_recompute(get_global_recompute());
 }
 
 class ForwardCallback {
