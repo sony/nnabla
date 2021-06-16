@@ -49,20 +49,6 @@ from nnabla.logger import logger
 # Expose for backward compatibility
 from .download import download, get_data_home
 
-pypng_available = False
-try:
-    import png
-    pypng_available = True
-except ImportError:
-    pass
-cv2_available = False
-try:
-    import cv2
-    # TODO: Currently cv2 image reader doesn't work.
-    # cv2_available = True
-except ImportError:
-    pass
-
 pydub_available = False
 with warnings.catch_warnings():
     warnings.simplefilter('error', RuntimeWarning)
