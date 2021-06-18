@@ -16,6 +16,11 @@
 
 FROM gradle:4.10.0-jdk8
 
+ARG PIP_INS_OPTS
+ARG PYTHONWARNINGS
+ARG CURL_OPTS
+ARG WGET_OPTS
+
 USER root
 
 ENV SDK_URL="https://dl.google.com/android/repository/sdk-tools-linux-3859397.zip" \
@@ -28,7 +33,7 @@ RUN apt-get install curl
 # Download Android SDK
 RUN mkdir "$ANDROID_HOME" .android \
     && cd "$ANDROID_HOME" \
-    && curl -o sdk.zip $SDK_URL \
+    && curl ${CURL_OPTS} -o sdk.zip $SDK_URL \
     && unzip sdk.zip \
     && rm sdk.zip \
     && yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses --list --verbose --no_https --proxy=http --proxy_host=proxy.kanto.sony.co.jp --proxy_port=10080
