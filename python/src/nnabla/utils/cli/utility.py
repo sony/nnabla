@@ -36,8 +36,8 @@ except Exception:
 
 gpu_load_backend_ok = True
 try:
-    import pynvml
-    pynvml.nvmlInit()
+    from nnabla.utils import nvml
+    nvml.nvmlInit()
 except Exception:
     # measure gpu load only if nvml installed
     gpu_load_backend_ok = False
@@ -189,12 +189,12 @@ def measure_cpu_gpu_instant_load():
                 index = 0
             else:
                 raise Exception
-            handler = pynvml.nvmlDeviceGetHandleByIndex(index)
+            handler = nvml.nvmlDeviceGetHandleByIndex(index)
             gpu_load = [
-                [index, pynvml.nvmlDeviceGetUtilizationRates(handler).gpu]]
+                [index, nvml.nvmlDeviceGetUtilizationRates(handler).gpu]]
 
             if index in gpu_a_load.keys():
-                gpu_a_load[index]['name'] = pynvml.nvmlDeviceGetName(
+                gpu_a_load[index]['name'] = nvml.nvmlDeviceGetName(
                     handler).decode("utf-8")
                 o_load = gpu_a_load[index]['load']
                 n_load = gpu_load[0][1]
@@ -202,7 +202,7 @@ def measure_cpu_gpu_instant_load():
                     (gpu_m_count - 1) * o_load + n_load) / gpu_m_count
             else:
                 gpu_a_load[index] = {
-                    'name': pynvml.nvmlDeviceGetName(handler).decode("utf-8"),
+                    'name': nvml.nvmlDeviceGetName(handler).decode("utf-8"),
                     'load': gpu_load[0][1]
                 }
 
@@ -381,12 +381,11 @@ def lms_scheduler(ctx, use_lms, gpu_memory_size=None, window_length=None):
             logger.log(99, f'[OoC] OoC is only enabled for GPU training.')
             raise Exception
 
-        # It is better to use nvml to get GPU infomation but due to windows problem, temporarily get information with `nvidia-smi`.
         if gpu_memory_size is None or gpu_memory_size == 0:
             try:
-                import subprocess
-                gpu_memory_size = int(int(subprocess.check_output('nvidia-smi --query-gpu=index,memory.total --format=csv').decode(
-                ).splitlines()[1:][gpu_index].split(',')[1].strip().split()[0]) * (1024 ** 2) * 0.7)
+                handle = nvml.nvmlDeviceGetHandleByIndex(gpu_index)
+                total_memory = nvml.nvmlDeviceGetMemoryInfo(handle).total
+                gpu_memory_size = int(total_memory * 0.7)
             except:
                 logger.log(99, f'[OoC] Could not get GPU memory size using default value(6GB).')
                 gpu_memory_size = 6e9  # default 6 GiB

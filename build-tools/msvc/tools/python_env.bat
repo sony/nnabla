@@ -52,5 +52,3 @@ CALL pip install %PIP_INS_OPTS% ^
            tqdm ^
            virtualenv ^
            wheel
-
-CALL pip install %PIP_INS_OPTS% pynvml
