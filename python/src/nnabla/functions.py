@@ -353,14 +353,19 @@ def slice(ctx, x, start=None, stop=None, step=None, n_outputs=-1, outputs=None):
     step = list(step[:]) if step is not None else len(x.shape) * (1,)
 
     for i, (s0, s1, s2) in enumerate(zip(start, stop, step)):
-        # SPECIAL CASE: slice(-1, None, <0) or slice(None, None, <0)
-        SLICE_NONE = 0x7fffffff
-        if s0 == None:
-            start[i] = SLICE_NONE
-        if s1 == None:
-            stop[i] = SLICE_NONE
-        if s2 == None:
-            step[i] = SLICE_NONE
+        # Passing all logic to c++ side breaks the slice.args which is used in some cases; nn.grad and loading a nnp file, so handle special cases in python side.
+        if s0 is None:
+            if s2 is not None and s2 < 0:
+                start[i] = -1
+            else:
+                start[i] = 0
+        if s1 is None:
+            if s2 is not None and s2 < 0:
+                stop[i] = -x.shape[i] - 1
+            else:
+                stop[i] = x.shape[i]
+        if s2 is None:
+            step[i] = 1
 
     from .function_bases import slice as slice_base
     return slice_base(x, start, stop, step, n_outputs, outputs)
