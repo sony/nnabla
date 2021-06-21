@@ -81,6 +81,11 @@ void CategoricalCrossEntropy<T, Tl>::forward_impl(const Variables &inputs,
     for (int i2 = 0; i2 < size2_; ++i2) {
       const int j = i0 * size2_ + i2;
       Tl label = l[j];
+      if (label < 0) {
+        // Ignore the lables less than 0.
+        y[j] = 0;
+        continue;
+      }
       const int k = i0 * size1_ * size2_ + label * size2_ + i2;
       y[j] = -std::log(std::max(p[k], std::numeric_limits<T>::min()));
     }
@@ -95,6 +100,10 @@ void categorical_cross_entropy_backward_cpu(int size0, int size1, int size2,
     for (int i2 = 0; i2 < size2; ++i2) {
       const int j = i0 * size2 + i2;
       Tl label = l[j];
+      if (label < 0) {
+        // Ignore the lables less than 0.
+        continue;
+      }
       const int k = i0 * size1 * size2 + label * size2 + i2;
       dx[k] += -dy[j] / std::max(p[k], std::numeric_limits<T>::min());
     }

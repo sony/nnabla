@@ -5900,7 +5900,8 @@ Loss Functions:
         parameter: true
       target:
         doc: N-D array of labels. :math:`(D_1 \times ... \times 1 \times ... \times
-          D_N)`
+          D_N)` , each label should be the index from 0 to n-class, -1 if not belongs
+          any class.
         template: TI
         parameter: true
     arguments:
@@ -5932,7 +5933,8 @@ Loss Functions:
         parameter: true
       target:
         doc: N-D array of labels. :math:`(D_1 \times ... \times 1 \times ... \times
-          D_N)`
+          D_N)`, each label should be the index from 0 to n-class, -1 if not belongs
+          any class.
         template: TI
         parameter: true
     arguments:

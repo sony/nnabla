@@ -89,6 +89,11 @@ void SoftmaxCrossEntropy<T, Tl>::forward_impl(const Variables &inputs,
     for (int i2 = 0; i2 < size2_; ++i2) {
       const int j = i0 * size2_ + i2;
       Tl label = l[j];
+      if (label < 0) {
+        // Ignore the lables less than 0.
+        y[j] = 0;
+        continue;
+      }
       const int k = i0 * size1_ * size2_ + label * size2_ + i2;
       y[j] = -log_p[k];
     }
@@ -115,6 +120,9 @@ void SoftmaxCrossEntropy<T, Tl>::backward_impl(
       const int j = i0 * size2_ + i2;
       Tl label = l[j];
       T grad = dy[j];
+      if (label < 0) {
+        continue;
+      }
       for (int i1 = 0; i1 < size1_; ++i1) {
         const int k = i0 * size1_ * size2_ + i1 * size2_ + i2;
         // dx[k] = beta * dx[k] + grad * (std::exp(log_p[k]) -
