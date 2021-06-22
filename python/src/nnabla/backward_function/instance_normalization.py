@@ -36,4 +36,5 @@ def instance_normalization_backward(inputs, channel_axis=None, batch_axis=(0,), 
 
     # Reduce [H, W]
     axes = list(set(range(x.ndim)) - set(batch_axis + [channel_axis]))
-    return tensor_normalization_backward(inputs, axes, eps, no_scale, no_bias)
+    dx, _ = tensor_normalization_backward(inputs, axes, eps, no_scale, no_bias)
+    return dx

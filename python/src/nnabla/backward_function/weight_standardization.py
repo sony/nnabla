@@ -36,4 +36,5 @@ def weight_standardization_backward(inputs, channel_axis=None, eps=1e-05):
     axes = list(set(range(x.ndim)) - set([channel_axis]))
     no_scale = True
     no_bias = True
-    return tensor_normalization_backward(inputs, axes, eps, no_scale, no_bias)
+    dx, _ = tensor_normalization_backward(inputs, axes, eps, no_scale, no_bias)
+    return dx

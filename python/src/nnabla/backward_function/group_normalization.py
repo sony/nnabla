@@ -22,7 +22,7 @@
 
 import nnabla.functions as F
 from functools import partial
-from .instance_normalization import instance_normalization_backward
+from .tensor_normalization import tensor_normalization_backward
 
 
 def group_normalization_backward(inputs, num_groups=None, channel_axis=None, batch_axis=(0,), eps=1e-05, no_scale=False, no_bias=False):
@@ -52,18 +52,17 @@ def group_normalization_backward(inputs, num_groups=None, channel_axis=None, bat
     # Sum operation for broadcast backward
     axes = list(set(range(len(x_shape))) - set([channel_axis]))
     F_sum = partial(F.sum, axis=axes, keepdims=True)
-    # Mean operation for calculating normalized x
-    axes = list(set(range(len(xg_shape))) - set(batch_axis + [channel_axis]))
-    F_mean = partial(F.mean, axis=axes, keepdims=True)
 
     # w.r.t. x
     # Affine backward
     dyg = dy * gamma if not no_scale else dy
-    # Instance norm backward
+    # Tensor norm backward
     dyg = dyg.reshape(xg_shape)
     xg = x.reshape(xg_shape)
-    grads = instance_normalization_backward(
-        [dyg, xg], channel_axis, batch_axis, eps, True, True)
+
+    axes = list(set(range(xg.ndim)) - set(batch_axis + [channel_axis]))
+    grads, xn = tensor_normalization_backward([dyg, xg], axes, eps, True, True)
+
     dx = grads[0].reshape(x_shape)  # Restore shape
     res_grads = (dx,)
 
@@ -75,12 +74,8 @@ def group_normalization_backward(inputs, num_groups=None, channel_axis=None, bat
 
     # w.r.t. gamma
     if not no_scale:
-        # Calculate normalized x
-        mean = F_mean(xg)
-        var = F_mean(xg ** 2.00) - mean ** 2.0
-        xn = (xg - mean) / ((var + eps) ** 0.5)
-        xn = xn.reshape(x_shape)
         # Sum as broadcast backward
+        xn = xn.reshape(x_shape)
         dg = F_sum(dy * xn)
         res_grads += (dg,)
 

@@ -33,6 +33,7 @@ def tensor_normalization_backward(inputs, axes=(1,), eps=1e-05, no_scale=False, 
 
     Return:
       list of Variable: Return the gradients wrt inputs of the corresponding function.
+      Variable: Standardized `x`.
     """
     dy = inputs[0]
     x = inputs[1]
@@ -68,4 +69,4 @@ def tensor_normalization_backward(inputs, axes=(1,), eps=1e-05, no_scale=False, 
         grads += (db,)
     if not no_scale:
         grads += (dg,)
-    return grads
+    return grads, xn

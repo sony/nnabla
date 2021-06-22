@@ -21,7 +21,6 @@
 
 
 import nnabla.functions as F
-from functools import partial
 from .tensor_normalization import tensor_normalization_backward
 
 
@@ -40,18 +39,11 @@ def layer_normalization_backward(inputs, batch_axis=(0,), eps=1e-05, no_scale=Fa
     if not no_scale:
         gamma = inputs[g_idx]
 
-    # Common factors
-    reduce_axes = list(set(range(x.ndim)) - set(batch_axis))
-    F_mean = partial(F.mean, axis=reduce_axes, keepdims=True)
-    mean = F_mean(x)                                 # Mean
-    var = F_mean(x ** 2.00) - mean ** 2.0            # Variance
-    # Normalized x
-    xn = (x - mean) / ((var + eps) ** 0.5)
-
     # w.r.t. x
     axes = list(set(range(x.ndim)) - set(batch_axis))
     dy_tn = dy * gamma if not no_scale else dy
-    grads = tensor_normalization_backward([dy_tn, x], axes, eps, True, True)
+    grads, xn = tensor_normalization_backward(
+        [dy_tn, x], axes, eps, True, True)
     dx = grads[0]
     res_grads = (dx,)
 
