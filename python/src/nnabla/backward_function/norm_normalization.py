@@ -21,8 +21,7 @@
 
 
 import nnabla.functions as F
-from .norm import norm_backward
-from .div2 import div2_backward
+from .utils import force_list, no_grad, sum_for_arithmetics
 
 
 def norm_normalization_backward(inputs, p=None, axes=None, eps=1e-12):
@@ -37,9 +36,22 @@ def norm_normalization_backward(inputs, p=None, axes=None, eps=1e-12):
     dy = inputs[0]
     x0 = inputs[1]
 
-    norm = F.norm(x0, p, axes, keepdims=True)
+    if p is None:
+        p = 2.0
+    axes = list(range(x0.ndim)) if axes is None else force_list(axes)
 
-    dx, dnorm = div2_backward([dy, x0, norm])
-    dx += norm_backward([dnorm, x0], p, axes, keep_dims=True)
+    x_abs = F.abs(x0)
+    x_pow = F.pow_scalar(x_abs, p)
+    x_sum = F.sum(x_pow, axes, keepdims=True)
+    # x_norm = x_sum ** (1./p)
+
+    # Div2 backward
+    dx = dy * x_sum ** (-1./p)
+    dx_norm = -dy * x0 * x_sum ** (-2./p)
+    dx_norm = sum_for_arithmetics(dx_norm, x_sum)
+
+    # Norm backward
+    x_sign = no_grad(F.sign(x0))
+    dx += dx_norm * x_sum ** (1./p - 1.) * x_abs ** (p - 1.) * x_sign
 
     return dx
