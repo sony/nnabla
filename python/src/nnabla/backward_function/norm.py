@@ -21,11 +21,7 @@
 
 
 import nnabla.functions as F
-from .utils import force_list
-
-from .abs import abs_backward
-from .pow_scalar import pow_scalar_backward
-from .sum import sum_backward
+from .utils import force_list, no_grad
 
 
 def norm_backward(inputs, p=None, axes=None, keep_dims=False):
@@ -44,18 +40,18 @@ def norm_backward(inputs, p=None, axes=None, keep_dims=False):
         p = 2.0
     axes = list(range(x0.ndim)) if axes is None else force_list(axes)
 
-    # Recompute intermediate data of composite graph
-    # abs -> pow -> sum (-> pow)
-    y_abs = F.abs(x0)
-    y_pow = F.pow_scalar(y_abs, p)
-    y_sum = F.sum(y_pow, axes, keep_dims)
-    # y = F.pow_scalar(x0_sum, 1.0 / p) # No need for grad calculation
+    x_abs = F.abs(x0)
+    x_pow = F.pow_scalar(x_abs, p)
+    x_sum = F.sum(x_pow, axes, keepdims=True)
 
-    # Backprop composite functions
-    # abs <- pow <- sum <- pow
-    dx = pow_scalar_backward([dy, y_sum], 1.0 / p)
-    dx = sum_backward([dx, y_pow], axes, keep_dims)
-    dx = pow_scalar_backward([dx, y_abs], p)
-    dx = abs_backward([dx, x0])
+    # Add axis for mul2
+    if not keep_dims:
+        shape = list(x0.shape)
+        for a in axes:
+            shape[a] = 1
+        dy = dy.reshape(shape)
+
+    x_sign = no_grad(F.sign(x0))
+    dx = dy * x_sum ** (1./p - 1.) * x_abs ** (p - 1.) * x_sign
 
     return dx
