@@ -207,6 +207,7 @@ Math
 .. autofunction:: batch_inv
 .. autofunction:: batch_det
 .. autofunction:: batch_logdet
+.. autofunction:: batch_cholesky
 
 
 Array Manipulation

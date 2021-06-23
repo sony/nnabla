@@ -287,3 +287,5 @@
   STFT_iiiiBiB: 344
 40:
   FusedConvolution_iiIiIiIiBffBifFif: 346
+41:
+  BatchCholesky_B: 347
