@@ -1,5 +1,5 @@
-@ECHO OFF
 REM Copyright 2020,2021 Sony Corporation.
+REM Copyright 2021 Sony Group Corporation.
 REM
 REM Licensed under the Apache License, Version 2.0 (the "License");
 REM you may not use this file except in compliance with the License.
@@ -24,16 +24,21 @@ REM
 
 CALL %~dp0python_env.bat %1
 
+@ECHO ON
 SET VCVER=%2
 IF [%VCVER%] == [] (
-   SET VCVER=2015
+   SET VCVER=2019
+)
+
+if [%VS2019_ENV%] == [] (
+   SET VS2019_ENV=C:\VS\2019
 )
 
 REM Visual Studio 2015 Compiler
 IF NOT [%VCVER%] == [2015] GOTO :SKIP_VS2015
 CALL "%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
 cl >NUL 2>NUL && GOTO :CL2015_FOUND
-ECHO Visual Studio C++ compiler not found. Please check your installation.
+ECHO Visual Studio C++ 2015 compiler not found. Please check your installation.
 EXIT /b 255
 :CL2015_FOUND
 msbuild -version >NUL 2>NUL && GOTO :MSBUILD2015_FOUND
@@ -61,9 +66,14 @@ SET generate_target=Visual Studio 14 2015 Win64
 
 REM  Visual Studio 2019 Compiler
 IF NOT [%VCVER%] == [2019] GOTO :SKIP_VS2019
+IF [%SKIP_VC_SETUP%] == [True] GOTO :MSBUILD2019_FOUND
+IF NOT "%VS2019_ENV%" == "" GOTO :SHORT_VS_PATH
 CALL "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvars64.bat" >NUL 2>NUL
+GOTO :CL2019_FOUND
+:SHORT_VS_PATH
+call "%VS2019_ENV%\BuildTools\VC\Auxiliary\Build\vcvars64.bat" >NUL 2>NUL
 cl >NUL 2>NUL && GOTO :CL2019_FOUND
-ECHO Visual Studio C++ compiler not found. Please check your installation.
+ECHO Visual Studio C++ 2019 compiler not found. Please check your installation.
 EXIT /b 255
 :CL2019_FOUND
 msbuild -version >NUL 2>NUL && GOTO :MSBUILD2019_FOUND
@@ -72,7 +82,8 @@ EXIT /b 255
 :MSBUILD2019_FOUND
 
 SET generate_target=Visual Studio 16 2019
-SET nnabla_build_folder_name=build_vs2019
+SET nnabla_build_folder_name=build
+
 :SKIP_VS2019
 
 
@@ -101,7 +112,13 @@ IF NOT DEFINED nnabla_build_folder            SET nnabla_build_folder=%nnabla_ro
 IF NOT DEFINED nnabla_build_wheel_folder_name SET nnabla_build_wheel_folder_name=build_wheel
 IF NOT DEFINED nnabla_build_wheel_folder      SET nnabla_build_wheel_folder=%nnabla_root%\%nnabla_build_wheel_folder_name%%nnabla_build_wheel_folder_suffix%
 IF NOT DEFINED nnabla_test_venv_folder        SET nnabla_test_venv_folder=%nnabla_build_wheel_folder%\env
-IF NOT DEFINED generate_target                SET generate_target=Visual Studio 14 2015 Win64
+IF NOT DEFINED generate_target                SET generate_target=Visual Studio 16 2019
 IF NOT DEFINED build_type                     SET build_type=Release
 
-
+ECHO ==========================================================
+ECHO generate_target=%generate_target%
+ECHO nnabla_build_folder=%nnabla_build_folder%
+ECHO nnabla_build_wheel_folder=%nnabla_build_wheel_folder%
+ECHO nnabla_test_venv_folder=%nnabla_test_venv_folder%
+ECHO build_type=%build_type%
+ECHO ==========================================================

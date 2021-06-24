@@ -29,6 +29,8 @@ CD ..
 DEL %LZ4_PACKAGE%.zip
 RMDIR /s /q %LZ4_PACKAGE%
 
+exit /b
+
 :error
 ECHO failed with error code %errorlevel%.
 

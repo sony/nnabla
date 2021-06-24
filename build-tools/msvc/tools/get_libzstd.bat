@@ -29,6 +29,8 @@ CD ..
 DEL %ZSTD_PACKAGE%.zip
 RMDIR /s /q %ZSTD_PACKAGE%
 
+exit /b
+
 :error
 ECHO failed with error code %errorlevel%.
 

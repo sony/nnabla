@@ -1,6 +1,5 @@
-@ECHO OFF
-
 REM Copyright 2018,2019,2020,2021 Sony Corporation.
+REM Copyright 2021 Sony Group Corporation.
 REM
 REM Licensed under the Apache License, Version 2.0 (the "License");
 REM you may not use this file except in compliance with the License.
@@ -26,8 +25,10 @@ REM     (optional) VISUAL_STUDIO_ EDITION: 2015 or 2019(experimental)
 REM
 SETLOCAL
 
-REM Environment
-CALL %~dp0tools\env.bat %1 || GOTO :error
+SET SKIP_VC_SETUP=True
+CALL %~dp0tools\env.bat %1 2019|| GOTO :error
+
+@ECHO ON
 
 REM Build Wheel
 IF NOT EXIST %nnabla_build_wheel_folder%\ MD %nnabla_build_wheel_folder%
@@ -35,6 +36,8 @@ CD %nnabla_build_wheel_folder%
 
 SET third_party_folder=%nnabla_root%\third_party
 CALL %~dp0tools\build_protobuf.bat   || GOTO :error
+
+CD %nnabla_build_wheel_folder%
 
 cmake -G "%generate_target%" ^
       -DBUILD_CPP_LIB=OFF ^
@@ -47,7 +50,7 @@ cmake -G "%generate_target%" ^
       -DPROTOC_COMMAND=%protobuf_protoc_executable% ^
       %nnabla_root% || GOTO :error
 
-msbuild wheel.vcxproj /p:Configuration=%build_type% || GOTO :error
+cmake --build . --config %build_type% --target wheel || GOTO :error
 
 GOTO :end
 :error
