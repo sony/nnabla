@@ -96,6 +96,13 @@ This converter can specify both inputs and outputs for ONNX file, but if ONNX fi
 
 This converter also provides some intermediate process functionalities. See :ref:`Process`.
 
+Installation
+++++++++++
+
+Before using this converter, please use command `pip install nnabla_converter` to install nnabla_converter.
+
+Note that, flatbuffer package is necessary for TFLite export, please check Tensorflow Lite section in this page for more details.
+
 Conversion
 ++++++++++
 
@@ -125,7 +132,6 @@ Limitation
 - Support operator set 7,9,10,11.
 - Not all functions are supported. See :any:`Function-Level_Support_Status`.
 - Only limited Neural Network Console projects supported.  See :any:`Model_Support_Status`.
-- Before using this converter, please use command `pip install nnabla_converter` to install nnabla_converter.
 
 NNB
 """
@@ -167,7 +173,6 @@ As for the importer, 4 formats tends to be supported:
 As for the exporter, some of Neural Network Console projects are supported. See :any:`Model_Support_Status`.
 The output of converter is tensorflow saved_model format.
 
-Before using this converter, please use command `pip install nnabla_converter` to install nnabla_converter.
 
 
 Tensorflow Lite
@@ -178,7 +183,7 @@ Limitation
 
 For export to tensorflow lite, please install `flatbuffers` package:
   - For Windows platform, download package from `FlatBuffers`_ and extract.
-  - For Linux platform, use command `snap install nnabla_converter` to install flatbuffers.
+  - For Linux platform, use command `snap install flatbuffers` to install flatbuffers.
   - For MaxOS platform, use command `brew install flatbuffers` to install flatbuffers.
 and add the executable file `flatc` to the system PATH.
 
