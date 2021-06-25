@@ -22,9 +22,7 @@
 import numpy as np
 import nnabla as nn
 import nnabla.functions as F
-from .utils import get_output, no_grad
-from .div2 import div2_backward
-from .affine import affine_backward
+from .utils import get_output, no_grad, sum_for_arithmetics
 
 
 def _spectral_norm_backward(dw_sn, w, u, dim=0, itr=1, eps=1e-12):
@@ -56,8 +54,8 @@ def _spectral_norm_backward(dw_sn, w, u, dim=0, itr=1, eps=1e-12):
     # Spectral normalization
     wv = F.affine(w, v)
     sigma = F.affine(u, wv)
+    w_sn = w / sigma
     # The fowllowing process is not necessary for gradient calculation
-    # w_sn = w / sigma
     # w_sn = F.reshape(w_sn, w_shape)
     # # Transpose again if the output dimension is not the most-left dimension.
     # if dim != 0:
@@ -72,11 +70,20 @@ def _spectral_norm_backward(dw_sn, w, u, dim=0, itr=1, eps=1e-12):
         dims_transpose = [dim] + [i for i in range(len(w_shape)) if i != dim]
         dw_sn = F.transpose(dw_sn, dims_transpose)
     dw_sn = dw_sn.reshape(w.shape)
-    # Backward for normalization
-    dw, dsigma = div2_backward([dw_sn, w, sigma])
-    du, dwv = affine_backward([dsigma, u, wv])
-    dw_, dv = affine_backward([dwv, w, v])
-    dw += dw_
+
+    # Backward for spectral norm
+    # Sum for broadcast backward
+    S = sum_for_arithmetics(dw_sn * w_sn, sigma)
+    # Add batch axis
+    S = S.reshape((1,) + S.shape)
+    u = u.reshape((1,) + u.shape)
+    v = v.reshape((1,) + v.shape)
+    m = F.batch_matmul(u, S, transpose_a=True)
+    m = F.batch_matmul(m, v, transpose_b=True)
+    # Remove batch axis
+    m = m.reshape((m.shape[1], m.shape[2]))
+    dw = (dw_sn - m) / sigma
+
     # Backward for pre-transpose
     dw = dw.reshape(w_shape)
     if dim != 0:
@@ -111,18 +118,26 @@ def _spectral_norm_outer_most_dim_backward(dw_sn, w, u, itr=1, eps=1e-12):
     # Spectral normalization
     vw = F.affine(v, w)
     sigma = F.affine(vw, u)
+    w_sn = w / sigma
     # The fowllowing process is not necessary for gradient calculation
-    # w_sn = w / sigma
     # w_sn = F.reshape(w_sn, w_shape)
 
-    # Backward
-
+    # Backward for spectral norm
     dw_sn = dw_sn.reshape(w.shape)
-    dw, dsigma = div2_backward([dw_sn, w, sigma])
-    dvw, du = affine_backward([dsigma, vw, u])
-    dv, dw_ = affine_backward([dvw, v, w])
-    dw += dw_
+    # Sum for broadcast backward
+    S = sum_for_arithmetics(dw_sn * w_sn, sigma)
+    print(S.shape, sigma.shape)
+    # Add batch axis
+    S = S.reshape((1,) + S.shape)
+    u = u.reshape((1,) + u.shape)
+    v = v.reshape((1,) + v.shape)
+    m = F.batch_matmul(v, S, transpose_a=True)
+    m = F.batch_matmul(m, u, transpose_b=True)
+    # Remove batch axis
+    m = m.reshape((m.shape[1], m.shape[2]))
+    dw = (dw_sn - m) / sigma
     dw = dw.reshape(w_shape)
+
     return dw, None
 
 
