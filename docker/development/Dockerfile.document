@@ -81,6 +81,7 @@ RUN apt-get -yqq update \
     && pip3 install ${PIP_INS_OPTS} -U \
         Sphinx \
         pygments \
+        tensorflow \
         tensorboardX \
         recommonmark==0.4.0 \
         sphinx-rtd-theme \
