@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Sony Corporation. All Rights Reserved.
+// Copyright (c) 2019-2021 Sony Corporation. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -35,27 +35,50 @@ namespace functions {
 <%
 fi = function_info[name]
 
+inputs_list_variadic = []
 inputs_list = []
-inputs_info = fi.get("inputs", [])
+inputs_info = fi.get('inputs', [])
 if 0 < len(inputs_info):
-    inputs_list += ['CgVariablePtr ' + x for x in inputs_info]
+    for x in inputs_info:
+        if inputs_info[x].get('variadic', False):
+            inputs_list_variadic += ['vector<CgVariablePtr> ' + x]
+        inputs_list += ['CgVariablePtr ' + x]
 
-args_info = fi.get("arguments", [])
+args_info = fi.get('arguments', [])
+argument_list = []
 if 0 < len(args_info):
-    inputs_list += [x[0] + ' ' + x[1] for x in zip(arg_types, args_info)]
+    argument_list += [x[0] + ' ' + x[1] for x in zip(arg_types, args_info)]
 
-inputs_types = ", ".join(inputs_list)
+def generate_inputs(inputs_list):
+    inputs_types = ', '.join(inputs_list + argument_list)
+    context_and_inputs = "Context &ctx"
+    if 0 < len(inputs_list + argument_list) :
+        context_and_inputs += ", " + inputs_types
+    return inputs_types, context_and_inputs
 
-context_and_inputs = "Context &ctx"
-if 0 < len(inputs_list) : context_and_inputs += ", " + inputs_types
+inputs_types, context_and_inputs = generate_inputs(inputs_list)
+inputs_types_v, context_and_inputs_v = generate_inputs(inputs_list_variadic)
+
+inputs = ', '.join(inputs_info)
+
+args = ', '.join(args_info)
+if args != '':
+   args = ', ' + args
 
 output_type = 'CgVariablePtr'
+output_index = '[0]'
 for x in fi['outputs'].values():
-    if x['doc'] == 'list of N-D arrays': output_type = 'vector<CgVariablePtr>'
+    if x['doc'] == 'list of N-D arrays':
+       output_type = 'vector<CgVariablePtr>'
+       output_index = ''
 
 %>
 NBLA_API vector<CgVariablePtr> ${snake_name}(${context_and_inputs});
 NBLA_API ${output_type} ${snake_name}(${inputs_types});
+% if inputs_list_variadic:
+NBLA_API vector<CgVariablePtr> ${snake_name}(${context_and_inputs_v});
+NBLA_API ${output_type} ${snake_name}(${inputs_types_v});
+% endif
 % endfor
 
 class NBLA_API ConvolutionOpts {
