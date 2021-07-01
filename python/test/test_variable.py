@@ -365,3 +365,41 @@ def test_prohibit_clear_data():
     nn.forward_all([y12, y2], clear_buffer=True)
     assert_allclose(p_x11.d, p_x2.d)
     assert_allclose(y12.d, y2.d)
+
+
+def test_leaf_indexing_access():
+    import nnabla.functions as F
+    nn.set_auto_forward(False)
+
+    shape_x = (3, 2)
+    dx = np.random.rand(*shape_x)
+
+    shape_y = (2, 2)
+    dy = np.random.rand(*shape_y)
+
+    x = nn.Variable.from_numpy_array(dx)
+    y = nn.Variable.from_numpy_array(dy)
+    x[0:2, :] = y
+    z = F.identity(x)
+    z.forward()
+    d1 = x.d.copy()
+
+    nn.set_auto_forward(True)
+    x = nn.Variable.from_numpy_array(dx)
+    y = nn.Variable.from_numpy_array(dy)
+    x[0:2, :] = y
+    z2 = F.identity(x)
+    d2 = x.d.copy()
+
+    nn.set_auto_forward(False)
+    x = nn.Variable.from_numpy_array(dx)
+    y = nn.Variable.from_numpy_array(dy)
+    x[0:2, :] = y
+    z3 = F.identity(x)
+    z3.forward()
+    d3 = x.d.copy()
+    d4 = z3.d.copy()
+
+    assert_allclose(d1, d2)
+    assert_allclose(d2, d3)
+    assert_allclose(d3, d4)
