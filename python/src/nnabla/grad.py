@@ -70,8 +70,8 @@ class Grad(object):
         for o in f.outputs:
             # address `floating` variables; no function takes it as input.
             # e.g., when dx, db, dg = dBN(...), (db, dg) are not used afterwards.
-            #v = vf_vb_map[o] if o in vf_vb_map else [None]
-            v = vf_vb_map[o] if o in vf_vb_map else [0]
+            # [0] is not enough, e.g., F.concatenate
+            v = vf_vb_map[o] if o in vf_vb_map else [F.constant(0.0, o.shape)]
             if len(v) > 1:
                 grad_inputs += [sum(v)]
                 #grad_inputs += [F.add_n(v)]
