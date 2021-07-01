@@ -209,3 +209,26 @@ cdef object pow(object x, object y, object z):
             return F.r_pow_scalar(y, x)
         else:
             return x ** y
+
+
+cdef object matmul(object x, object y):
+    """
+    Matlix multiplication
+
+    Implements the matmul operator expression ``x @ y``.
+    When both of ``x`` and ``y`` are either :obj:`~nnabla.Variable` or
+    :obj:`~nnabla.NdArray`, :func:`~nnabla.functions.affine`` is
+    internally called.
+
+    Args:
+        x (~nnabla.Variable or ~nnabla.NdArray): Left operand. It must be 2-dimensional.
+        y (~nnabla.Variable or ~nnabla.NdArray): Right operand. It must be 2-dimensional.
+
+    Returns: :class:`~nnabla.Variable` or :class:`~nnabla.NdArray`.
+
+    """
+    import nnabla.functions as F
+    assert x.ndim == 2 and y.ndim == 2, "Both of x and y must be matrices."
+    assert isinstance(x, (NdArray, Variable))
+    assert isinstance(y, (NdArray, Variable))
+    return F.affine(x, y)
