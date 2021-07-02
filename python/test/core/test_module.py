@@ -775,3 +775,20 @@ def test_training_property():
 
 # TODO:
 #   - binary-operator of ProtoVariable testing
+
+
+def test_reshape_input_from_parameters(tmpdir):
+    v = nn.parameter.get_parameter_or_create(
+        "reshape_input_0", (2, 3, 4, 5), need_grad=False)
+    h = F.reshape(v, (-1, 4, 5))
+    ref_g = nn.graph_def.create_graph_from_variable("te_module", h)
+    fn = str(tmpdir.join("tmp.nnp"))
+    ref_g.save(fn)
+    assert True
+
+
+def test_0_function_input(tmpdir):
+    v = F.constant(10)
+    g = nn.graph_def.create_graph_from_variable("te_module", v)
+    fn = str(tmpdir.join("tmp.nnp"))
+    g.save(fn)

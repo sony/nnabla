@@ -15,6 +15,11 @@
 
 FROM multiarch/debian-debootstrap:armhf-buster
 
+ARG PIP_INS_OPTS
+ARG PYTHONWARNINGS
+ARG CURL_OPTS
+ARG WGET_OPTS
+
 ENV LC_ALL C
 ENV LANG C
 ENV LANGUAGE C
@@ -36,12 +41,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-RUN python3 -m pip install --upgrade pip
+RUN python3 -m pip install ${PIP_INS_OPTS} --upgrade pip
 RUN echo "[global]" >/etc/pip.conf
 RUN echo "extra-index-url=https://www.piwheels.org/simple" >> /etc/pip.conf
-RUN python3 -m pip install --no-cache-dir numpy
-RUN python3 -m pip install --no-cache-dir scipy\<1.4
-RUN python3 -m pip install --no-cache-dir \
+RUN python3 -m pip install ${PIP_INS_OPTS} --no-cache-dir numpy
+RUN python3 -m pip install ${PIP_INS_OPTS} --no-cache-dir scipy\<1.4
+RUN python3 -m pip install ${PIP_INS_OPTS} --no-cache-dir \
     boto3 \
     cython \
     h5py \
@@ -50,7 +55,7 @@ RUN python3 -m pip install --no-cache-dir \
     pyyaml \
     tqdm
 
-RUN python3 -m pip install ipython
+RUN python3 -m pip install ${PIP_INS_OPTS} ipython
 
 ARG NNABLA_VER
-RUN pip install nnabla==${NNABLA_VER}
+RUN pip install ${PIP_INS_OPTS} nnabla==${NNABLA_VER}

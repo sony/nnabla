@@ -105,7 +105,7 @@ def get_file_handle_save(path, ext):
     yield f
     if need_close:
         f.close()
-    if hasattr(path, 'write'):
+    if hasattr(path, 'seek'):
         path.seek(0)
 
 

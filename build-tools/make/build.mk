@@ -149,7 +149,7 @@ nnabla-wheel-dependencies:
 		then \
 			cp -v $$whl $(BUILD_DIRECTORY_WHEEL)/dependencies/;\
 		fi; \
-	done	
+	done
 
 .PHONY: nnabla-install-cpplib
 nnabla-install-cpplib:
@@ -161,7 +161,7 @@ nnabla-install:
 	whl='$(shell find $(BUILD_DIRECTORY_WHEEL)/dist/ -type f -name nnabla$(shell echo $(WHEEL_SUFFIX) | sed -e 's/-/_/g')-*.whl)'; \
 	if [ ! -z $$whl ] && [ -f $$whl ];\
 	then \
-	    pip install $$whl; \
+	    pip install ${PIP_INS_OPTS} $$whl; \
 	fi;
 
 .PHONY: nnabla-converter-install
@@ -170,7 +170,7 @@ nnabla-converter-install:
 	whl='$(shell find $(BUILD_DIRECTORY_WHEEL)/dist/ -type f -name nnabla_converter-*.whl)'; \
 	if [ ! -z $$whl ] && [ -f $$whl ];\
 	then \
-	    pip install $$whl; \
+	    pip install ${PIP_INS_OPTS} $$whl; \
 	fi;
 
 ########################################################################################################################

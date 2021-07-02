@@ -5302,8 +5302,9 @@ Stochasticity:
     doc: |2
 
       Samples integer numbers from a uniform distribution :math:`x \sim U(low, high)`
-      given lowest value :math:`low`, upper bound :math:`high`,
-      and shape of the returned Variable.
+      given lowest value :math:`low`, upper bound :math:`high`, and the shape of the returned Variable. The lowest
+      value :math:`low` is included in the range, while the upper bound :math:`high` is excluded, corresponding to the half-open
+      interval :math:`[low, high)`.
     inputs: {}
     arguments:
       low:

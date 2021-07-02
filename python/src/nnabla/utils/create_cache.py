@@ -26,6 +26,7 @@ from nnabla.utils.data_source_loader import FileReader
 from nnabla.config import nnabla_config
 from nnabla.logger import logger
 from nnabla.utils.progress import progress
+from nnabla.utils.communicator_util import single_or_rankzero
 
 
 class CreateCache(CsvDataSource):
@@ -93,6 +94,10 @@ class CreateCache(CsvDataSource):
                             k, size, d.shape))
             raise
 
+        self.current_cache_position += 1
+        if single_or_rankzero():
+            progress('Create cache', self.current_cache_position /
+                     self.num_of_cache_file)
         return cache_filename, len(cache_data)
 
     def __init__(self, input_csv_filename, rng=None, shuffle=False, num_of_threads=None):
@@ -162,11 +167,15 @@ class CreateCache(CsvDataSource):
         if len(csv_row):
             csv_position_and_data.append((self._size-1, csv_row))
 
-        progress('Create cache', 0)
+        self.num_of_cache_file = len(csv_position_and_data)
+        self.current_cache_position = 0
+        if single_or_rankzero():
+            progress('Create cache', 0)
         with closing(ThreadPool(processes=self._num_of_threads)) as pool:
             cache_index_rows = pool.map(
                 self._save_cache, csv_position_and_data)
-        progress('Create cache', 1.0)
+        if single_or_rankzero():
+            progress('Create cache', 1.0)
 
         # Create Index
         index_filename = os.path.join(output_cache_dirname, "cache_index.csv")

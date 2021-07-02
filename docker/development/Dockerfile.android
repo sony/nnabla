@@ -16,6 +16,11 @@
 
 FROM ubuntu:16.04
 
+ARG PIP_INS_OPTS
+ARG PYTHONWARNINGS
+ARG CURL_OPTS
+ARG WGET_OPTS
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
         bzip2 \
         ca-certificates \
@@ -35,17 +40,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && cd / \
     && rm -rf /tmp/*
 
-RUN pip install setuptools
-RUN pip install --upgrade pip
-RUN pip install six
-RUN pip install PyYAML
-RUN pip install Mako
+RUN pip install ${PIP_INS_OPTS} setuptools
+RUN pip install ${PIP_INS_OPTS} --upgrade pip
+RUN pip install ${PIP_INS_OPTS} six
+RUN pip install ${PIP_INS_OPTS} PyYAML
+RUN pip install ${PIP_INS_OPTS} Mako
 
 ENV BUILD_DIR /usr/local/src
 
 ##### Install CMAKE #####
 ENV CMAKE_URL https://cmake.org/files/v3.11/cmake-3.11.3.tar.gz
-RUN cd ${BUILD_DIR} && curl -O ${CMAKE_URL} \
+RUN cd ${BUILD_DIR} && curl ${CURL_OPTS} -O ${CMAKE_URL} \
   && tar zxvf cmake*.tar.gz \
   && rm cmake*.tar.gz \
   && cd cmake* \
@@ -58,7 +63,7 @@ RUN cd ${BUILD_DIR} && curl -O ${CMAKE_URL} \
 ENV NDK_NAME android-ndk-r16b
 ENV NDK_URL https://dl.google.com/android/repository/${NDK_NAME}-linux-x86_64.zip
 RUN cd ${BUILD_DIR} \
-  && curl -O ${NDK_URL} \
+  && curl ${CURL_OPTS} -O ${NDK_URL} \
   && unzip ${NDK_NAME}-linux-x86_64.zip \
   && rm -f ${NDK_NAME}-linux-x86_64.zip \
   && mv ${NDK_NAME} android-ndk
@@ -68,7 +73,7 @@ ENV PROTOVER 3.1.0
 ################################################## protobuf
 RUN mkdir /tmp/deps \
     && cd /tmp/deps \
-    && curl -L https://github.com/google/protobuf/archive/v${PROTOVER}.tar.gz -o protobuf-v${PROTOVER}.tar.gz \
+    && curl ${CURL_OPTS} -L https://github.com/google/protobuf/archive/v${PROTOVER}.tar.gz -o protobuf-v${PROTOVER}.tar.gz \
     && tar xvf protobuf-v${PROTOVER}.tar.gz \
     && cd protobuf-${PROTOVER} \
     && mkdir build \
@@ -110,7 +115,7 @@ ENV CXX ${GCXX}
 ENV PATH ${TOOLCHAIN_INSTALL_DIR}/bin:${PATH}
 
 RUN cd /tmp \
-    && curl -L https://github.com/google/protobuf/archive/v${PROTOVER}.tar.gz -o protobuf-v${PROTOVER}.tar.gz \
+    && curl ${CURL_OPTS} -L https://github.com/google/protobuf/archive/v${PROTOVER}.tar.gz -o protobuf-v${PROTOVER}.tar.gz \
     && tar xvf protobuf-v${PROTOVER}.tar.gz \
     && cd protobuf-${PROTOVER} \
     && mkdir build \
@@ -130,7 +135,7 @@ RUN cd /tmp \
 
 RUN cd /tmp \
     && set -xe \
-    && curl -L https://www.libarchive.org/downloads/libarchive-3.3.2.tar.gz -o libarchive-3.3.2.tar.gz \
+    && curl ${CURL_OPTS} -L https://www.libarchive.org/downloads/libarchive-3.3.2.tar.gz -o libarchive-3.3.2.tar.gz \
     && tar xf libarchive-3.3.2.tar.gz \
     && cd libarchive-3.3.2 \
     && sed -i "/INCLUDE(CheckTypeSize)/aINCLUDE_DIRECTORIES(/tmp/libarchive-3.3.2/contrib/android/include/)" \

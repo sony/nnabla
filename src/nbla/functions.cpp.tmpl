@@ -41,24 +41,34 @@ namespace functions {
 <%
 fi = function_info[name]
 
+inputs_list_variadic = []
 inputs_list = []
 inputs_info = fi.get('inputs', [])
 if 0 < len(inputs_info):
-    inputs_list += ['CgVariablePtr ' + x for x in inputs_info]
+    for x in inputs_info:
+        if inputs_info[x].get('variadic', False):
+            inputs_list_variadic += ['vector<CgVariablePtr> ' + x]
+        inputs_list += ['CgVariablePtr ' + x]
 
 args_info = fi.get('arguments', [])
+argument_list = []
 if 0 < len(args_info):
-    inputs_list += [x[0] + ' ' + x[1] for x in zip(arg_types, args_info)]
+    argument_list += [x[0] + ' ' + x[1] for x in zip(arg_types, args_info)]
 
-inputs_types = ', '.join(inputs_list)
+def generate_inputs(inputs_list):
+    inputs_types = ', '.join(inputs_list + argument_list)
+    context_and_inputs = "Context &ctx"
+    if 0 < len(inputs_list + argument_list) :
+        context_and_inputs += ", " + inputs_types
+    return inputs_types, context_and_inputs
 
-context_and_inputs = "Context &ctx"
-if 0 < len(inputs_list) : context_and_inputs += ", " + inputs_types
+inputs_types, context_and_inputs = generate_inputs(inputs_list)
+inputs_types_v, context_and_inputs_v = generate_inputs(inputs_list_variadic)
 
 inputs = ', '.join(inputs_info)
 
 args = ', '.join(args_info)
-if args is not '':
+if args != '':
    args = ', ' + args
 
 output_type = 'CgVariablePtr'
@@ -79,6 +89,20 @@ ${output_type} ${snake_name}(${inputs_types}){
   bool auto_forward = SingletonManager::get<AutoForward>()->get_auto_forward();
   return connect(make_shared<CgFunction>(create_${name}(global_ctx${args})), {${inputs}}, 1, {}, auto_forward)${output_index};
 }
+
+% if inputs_list_variadic:
+vector<CgVariablePtr> ${snake_name}(${context_and_inputs_v}){
+  bool auto_forward = SingletonManager::get<AutoForward>()->get_auto_forward();
+  return connect(make_shared<CgFunction>(create_${name}(ctx${args})), ${inputs}, 1, {}, auto_forward);
+}
+
+${output_type} ${snake_name}(${inputs_types_v}){
+  auto global_ctx = SingletonManager::get<GlobalContext>()->get_current_context();
+  bool auto_forward = SingletonManager::get<AutoForward>()->get_auto_forward();
+  return connect(make_shared<CgFunction>(create_${name}(global_ctx${args})), ${inputs}, 1, {}, auto_forward)${output_index};
+}
+% endif
+
 % endfor
 
 

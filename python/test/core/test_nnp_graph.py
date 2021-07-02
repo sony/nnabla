@@ -464,3 +464,13 @@ def test_nnp_graph_broadcast(tmpdir, variable_batch_size, batch_size):
     y = F.broadcast(h, shape=[10, 4, 2, 5])
     x2, y2 = check_nnp_graph_save_load(
         tmpdir, x, y, batch_size, variable_batch_size)
+
+
+def test_save_module_grad_only_false():
+    x = nn.Variable.from_numpy_array(np.random.random([1, 2, 10, 10]))
+    ref_y = PF.convolution(x, 4, kernel=(3, 3), stride=(1, 1))
+    for v in nn.get_parameters().values():
+        v.need_grad = False
+    ref_g = nn.graph_def.create_graph_from_variable("te_module", ref_y)
+    y = ref_g(x)
+    forward_variable_and_check_equal(ref_y, y)

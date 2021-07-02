@@ -45,9 +45,9 @@ if [%VENV_PYTHON_PKG_DIR%] == [] (
 
 CALL %VENV%\Scripts\activate.bat
 
-CALL python -m pip install --upgrade pip
+CALL python -m pip install %PIP_INS_OPTS% --upgrade pip
 
-CALL pip install ^
+CALL pip install %PIP_INS_OPTS% ^
            Cython ^
            boto3 ^
            h5py ^
@@ -65,5 +65,3 @@ CALL pip install ^
            tqdm ^
            virtualenv ^
            wheel
-
-CALL pip install pynvml
