@@ -120,7 +120,6 @@ def _spectral_norm_outer_most_dim_backward(dw_sn, w, u, itr=1, eps=1e-12):
     dw_sn = dw_sn.reshape(w.shape)
     # Sum for broadcast backward
     S = sum_for_arithmetics(dw_sn * w_sn, sigma)
-    print(S.shape, sigma.shape)
     # Add batch axis
     S = S.reshape((1,) + S.shape)
     u = u.reshape((1,) + u.shape)
