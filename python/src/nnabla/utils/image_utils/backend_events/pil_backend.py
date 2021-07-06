@@ -80,7 +80,7 @@ class PilBackend(ImageUtilsBackend):
     def pil_image_to_ndarray(pil_image, grayscale, num_channels, return_palette_indices):
         ret = PilBackend.convert_pil(pil_image, grayscale, num_channels,
                                      return_palette_indices)
-        return np.asarray(ret, dtype=np.uint8)
+        return np.asarray(ret).astype(np.uint8)
 
     @staticmethod
     def pil_resize_from_ndarray(arr, size, resample):
