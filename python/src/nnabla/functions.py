@@ -215,6 +215,44 @@ def norm_normalization(x, p=None, axes=None, eps=1e-12):
     return norm_normalization_base(x, p, axes, eps)
 
 
+def spectral_norm(w, u, dim=0, itr=1, eps=1e-12, test=False, output_u=False):
+    r"""
+    Spectral Normalization.
+
+    .. math::
+
+        W_{sn} = \\frac{W}{\\sigma(W)}.
+
+    where :math:`W` is the input matrix, and the :math:`\\sigma(W)` is the spectral norm of :math:`W`. The spectral norm is approximately computed by the power iteration.
+
+    References:
+
+        Takeru Miyato, Toshiki Kataoka, Masanori Koyama, Yuichi Yoshida, 
+        "Spectral Normalization for Generative Adversarial Networks", 
+        International Conference on Learning Representations. 2018.
+
+    Args:
+        w(~nnabla.Variable): N-D array of learnable weights. This is normally network parameter.
+        u(~nnabla.Variable): 1-D array of singular vector. When `test == False`, the data region of `u` will be updated during forward calculation.
+        dim(int): Output dimension. Default is 0. If the dimension is not 0, then the specified dimension becomes the most-left dimension by transposing.
+            [default= `0` ]
+        itr(int): Number of power iterations. Default is 1.
+            [default= `1` ]
+        eps(float): Epsilon for the normalization. This `eps` is added before taking the sqrt in the norm computation.
+            [default= `1e-12` ]
+        test(bool): When in `True`, `u` will not be updated. Default is `False`.
+            [default= `False` ]
+        output_u(bool): Output original `u` or not. `u` is updated when `test == True` but you can get original `u` as output with this option. Default is `False`.
+            [default= `False` ]
+
+    Returns:
+        ~nnabla.Variable: Spectrally normalized :math:`W_{sn}` with the same shape as :math:`W`.
+    """
+    from .function_bases import spectral_norm as spectral_norm_base
+    n_outputs = 2 if output_u else 1
+    return spectral_norm_base(w, u, dim, itr, eps, test, output_u, n_outputs)
+
+
 def prod(x, axis=None, keepdims=False):
     """Reduction along axes with product operation.
 

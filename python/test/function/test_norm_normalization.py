@@ -59,3 +59,26 @@ def test_norm_normalization_forward_backward(eps, axis, p, shape, seed, ctx, fun
                     # the different results on different platforms?
                     # atol_b=3e-3,
                     atol_b=1e-2, atol_accum=1e-2)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("p", [None, 1.0, 1.3, 3.0])  # None -> 2.0
+@pytest.mark.parametrize("shape, axis", [
+    ((2, 3, 5, 7), (0, 2)), ((13,), 0), ((7, 3, 1), None), ((2, 1, 4, 5), (0, 2))
+])
+@pytest.mark.parametrize("eps", [1e-12])
+def test_norm_normalization_double_backward(eps, axis, p, shape, seed, ctx, func_name):
+    from sys import platform
+    if platform == "darwin":
+        pytest.skip("NormNormalization is not supported in macOS.")
+
+    from nbla_test_utils import cap_ignore_region, backward_function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [cap_ignore_region(
+        rng.randn(*shape).astype(np.float32) * 2, (-1e-3, 1e-3))]
+    func_args = [p, axis, eps]
+    backward_function_tester(rng, F.norm_normalization,
+                             inputs=inputs,
+                             func_args=func_args,
+                             ctx=ctx)

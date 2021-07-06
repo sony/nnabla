@@ -117,3 +117,32 @@ def test_group_normalization_forward_backward(ctx, func_name, seed, num_groups, 
 
     function_tester(rng, F.group_normalization, ref_group_normalization, [x, beta, gamma], [num_groups, channel_axis, batch_axis, eps, output_stat], ctx=ctx,
                     func_name=func_name, dstep=1e-2, atol_b=4e-2, atol_accum=1e-5, backward=[True, not no_bias, not no_scale], disable_half_test=True)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("num_groups", [2, 3])
+@pytest.mark.parametrize("x_shape , batch_axis, channel_axis",
+                         [((2, 6, 3, 3), 0, 1),  # convolution (NCHW)
+                          ((2, 3, 3, 6), 0, 3),  # convolution (NHWC)
+                          ((8, 6), 0, 1),  # affine
+                          # time-series (T, B, C) or (B, T, C)
+                          ((4, 3, 6), [0, 1], 2)
+                          ])
+@pytest.mark.parametrize("eps", [1e-05])
+@pytest.mark.parametrize("output_stat", [False])
+@pytest.mark.parametrize("no_scale", [False, True])
+@pytest.mark.parametrize("no_bias", [False, True])
+def test_group_normalization_double_backward(ctx, func_name, seed, num_groups, x_shape, batch_axis, channel_axis, eps, output_stat, no_scale, no_bias):
+    from nbla_test_utils import backward_function_tester
+    rng = np.random.RandomState(seed)
+    x, beta, gamma = create_inputs(
+        rng, x_shape, channel_axis, no_scale, no_bias)
+    backward = [True, not no_bias, not no_scale]
+    backward_function_tester(rng, F.group_normalization,
+                             inputs=[x, beta, gamma],
+                             func_args=[num_groups, channel_axis,
+                                        batch_axis, eps, output_stat],
+                             atol_f=2e-4,
+                             backward=backward,
+                             ctx=ctx)

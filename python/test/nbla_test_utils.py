@@ -993,10 +993,10 @@ def backward_function_tester(rng, func, inputs=None,
         outputs0_for_nn_grad = func(
             *(vinputs_identity_for_nn_grad + func_args), **func_kwargs)
         outputs0_for_nn_grad = force_list(outputs0_for_nn_grad)
-        vinputs_identity_for_nn_grad = list(
-            filter(lambda x: x is not None, vinputs_identity_for_nn_grad))
         vinputs_identity_for_nn_grad = [v for b, v in zip(
             backward, vinputs_identity_for_nn_grad) if b]
+        vinputs_identity_for_nn_grad = list(
+            filter(lambda x: x is not None, vinputs_identity_for_nn_grad))
 
         ograds1 = nn.grad(outputs0_for_nn_grad, vinputs_identity_for_nn_grad,
                           grad_outputs=[g.d.copy() for g in grad_voutputs])

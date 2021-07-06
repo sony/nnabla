@@ -22,6 +22,7 @@ def sum_backward(inputs, axes=None, keep_dims=False):
     dy = inputs[0]
     x0 = inputs[1]
     axes = [i for i in range(x0.ndim)] if axes is None else force_list(axes)
+    axes = [a if a >= 0 else a + x0.ndim for a in axes]  # Negative axis
     if keep_dims:
         dx0 = F.broadcast(dy, x0.shape)
     else:

@@ -24,7 +24,7 @@
 
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_HEADER(SpectralNorm, int, int, float, bool);
+NBLA_REGISTER_FUNCTION_HEADER(SpectralNorm, int, int, float, bool, bool);
 
 /** Spectral Normalization.
 
@@ -56,23 +56,25 @@ Learning Representations. 2018.
 \ingroup FunctionImplGrp
  */
 template <typename T>
-class SpectralNorm : public BaseFunction<int, int, float, bool> {
+class SpectralNorm : public BaseFunction<int, int, float, bool, bool> {
 protected:
   int dim_;
   int itr_;
   float eps_;
   bool test_;
+  bool output_u_;
 
   // Variables for shape of reshaped `w` and `u`
   int d0_, d1_;
 
 public:
-  SpectralNorm(const Context &ctx, int dim, int itr, float eps, bool test)
-      : BaseFunction(ctx, dim, itr, eps, test), dim_(dim), itr_(itr), eps_(eps),
-        test_(test) {}
+  SpectralNorm(const Context &ctx, int dim, int itr, float eps, bool test,
+               bool output_u)
+      : BaseFunction(ctx, dim, itr, eps, test, output_u), dim_(dim), itr_(itr),
+        eps_(eps), test_(test), output_u_(output_u) {}
   virtual ~SpectralNorm() {}
   virtual shared_ptr<Function> copy() const {
-    return create_SpectralNorm(ctx_, dim_, itr_, eps_, test_);
+    return create_SpectralNorm(ctx_, dim_, itr_, eps_, test_, output_u_);
   }
   virtual int min_inputs() { return 2; }
   virtual int min_outputs() { return 1; }
