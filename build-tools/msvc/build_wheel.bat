@@ -1,6 +1,6 @@
 @ECHO OFF
 
-REM Copyright (c) 2017 Sony Corporation. All Rights Reserved.
+REM Copyright 2018,2019,2020,2021 Sony Corporation.
 REM
 REM Licensed under the Apache License, Version 2.0 (the "License");
 REM you may not use this file except in compliance with the License.
