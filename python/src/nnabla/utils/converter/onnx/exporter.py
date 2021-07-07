@@ -301,6 +301,7 @@ class OnnxExporter:
             "GreaterScalar": partial(self.GreaterScalar, '6'),
             "LessEqualScalar": partial(self.LessEqualScalar, '6'),
             "LessScalar": partial(self.LessScalar, '6'),
+            "SpectralNorm": self.SpectralNorm,
         }
 
         table_op_set_7 = {
@@ -3331,6 +3332,245 @@ class OnnxExporter:
             func.output
         )
         nl.append(n)
+        return nl
+
+    def SpectralNorm(self, func):
+        nl = []
+        pp = func.spectral_norm_param
+        dim = pp.dim
+        itr = pp.itr
+        eps = pp.eps
+        test = pp.test
+        w_shape = list(self._var_dict[func.input[0]].dim[:])
+        u_shape = list(self._var_dict[func.input[1]].dim[:])
+
+        constant0 = fork_name("constant")
+        c = generate_constant(constant0, func.name + "_constant0",
+                              TensorProto.FLOAT, [1],
+                              [2])
+        nl.append(c)
+
+        constant1 = fork_name("constant")
+        c = generate_constant(constant1, func.name + "_constant1",
+                              TensorProto.FLOAT, [1],
+                              [eps])
+        nl.append(c)
+
+        constant2 = fork_name("constant")
+        c = generate_constant(constant2, func.name + "_constant2",
+                              TensorProto.FLOAT, [1], [0])
+        nl.append(c)
+
+        if dim != 0:
+            dims_transpose = [dim] + \
+                [i for i in range(len(w_shape)) if i != dim]
+            transpose_out = fork_name(func.input[0]) + "_transpose"
+            n = onnx.helper.make_node(
+                'Transpose',
+                [func.input[0]],
+                [transpose_out],
+                perm=dims_transpose
+            )
+            nl.append(n)
+            func.input[0] = transpose_out
+            w_data = np.random.randn(*w_shape)
+            w_data = w_data.transpose(*dims_transpose)
+            w_shape = w_data.shape
+
+        d0, d1 = w_shape[0], np.prod(w_shape[1:])
+        reshape_w_out = fork_name(func.input[0]) + "_reshape"
+        w_shape_ = [d0, d1]
+        n = generate_reshape(self._model_proto.graph,
+                             func.input[0], reshape_w_out, np.array(w_shape_))
+        nl.append(n)
+        func.input[0] = reshape_w_out
+
+        for i in range(itr):
+            # v = np.dot(w.T, u)
+            bias3_shape = [int(np.prod(w_shape_) / w_shape_[0]), 1]
+            bias3 = np.zeros(bias3_shape)
+            constant3 = fork_name("constant")
+            c = generate_constant(constant3, func.name + "_constant3",
+                                  TensorProto.FLOAT, bias3_shape,
+                                  bias3)
+            nl.append(c)
+
+            reshape_u_out = fork_name(func.input[1]) + "_reshape"
+            reshape_u_shape = [u_shape[0], 1]
+            n = generate_reshape(
+                self._model_proto.graph, func.input[1], reshape_u_out, np.array(reshape_u_shape))
+            nl.append(n)
+
+            gemm_out1 = fork_name(func.output[0]) + "_gemm"
+            n = onnx.helper.make_node(
+                "Gemm",
+                [func.input[0], reshape_u_out, constant3],
+                [gemm_out1],
+                transA=1,
+                transB=0,
+            )
+            nl.append(n)
+
+            # v ** 2
+            pow_out1 = fork_name(func.input[0]) + "_pow"
+            n = onnx.helper.make_node(
+                'Pow',
+                [gemm_out1, constant0],
+                [pow_out1]
+            )
+            nl.append(n)
+
+            # np.sum(v ** 2)
+            sum_out1 = fork_name(func.input[0]) + "_sum"
+            n = onnx.helper.make_node(
+                'ReduceSum',
+                [pow_out1],
+                [sum_out1]
+            )
+            nl.append(n)
+
+            # Add, np.sum(v ** 2) + eps
+            add_out1 = fork_name(func.output[0]) + "_add"
+            n = onnx.helper.make_node(
+                "Add",
+                [sum_out1, constant1],
+                [add_out1]
+            )
+            nl.append(n)
+
+            # np.sqrt(np.sum(v ** 2) + eps)
+            sqrt_out1 = fork_name(func.input[0]) + "_sqrt"
+            n = onnx.helper.make_node(
+                'Sqrt',
+                [add_out1],
+                [sqrt_out1]
+            )
+            nl.append(n)
+
+            # v = v / np.sqrt(np.sum(v ** 2) + eps)
+            div_out1 = fork_name(func.input[0]) + "_div"
+            n = onnx.helper.make_node(
+                'Div',
+                [gemm_out1, sqrt_out1],
+                [div_out1]
+            )
+            nl.append(n)
+
+            # u = np.dot(w, v)
+            constant4 = fork_name("constant")
+            bias4_shape = [int(np.prod(np.prod(w_shape_)) / w_shape_[-1]), 1]
+            bias4 = np.zeros(bias4_shape)
+            c = generate_constant(constant4, func.name + "_constant4",
+                                  TensorProto.FLOAT, bias4_shape,
+                                  bias4)
+            nl.append(c)
+
+            reshape_v_out = fork_name(func.input[1]) + "_reshape"
+            reshape_v_shape = bias3_shape
+            n = generate_reshape(
+                self._model_proto.graph, div_out1, reshape_v_out, np.array(reshape_v_shape))
+            nl.append(n)
+
+            gemm_out2 = fork_name(func.input[0]) + "_gemm"
+            n = onnx.helper.make_node(
+                'Gemm',
+                [func.input[0], reshape_v_out, constant4],
+                [gemm_out2])
+            nl.append(n)
+
+            # u ** 2
+            pow_out2 = fork_name(func.input[0]) + "_pow"
+            n = onnx.helper.make_node(
+                'Pow',
+                [gemm_out2, constant0],
+                [pow_out2]
+            )
+            nl.append(n)
+
+            # np.sum(u ** 2)
+            sum_out2 = fork_name(func.input[0]) + "_sum"
+            n = onnx.helper.make_node(
+                'ReduceSum',
+                [pow_out2],
+                [sum_out2]
+            )
+            nl.append(n)
+
+            # Add, (w_var + eps)
+            add_out2 = fork_name(func.output[0]) + "_add"
+            n = onnx.helper.make_node(
+                "Add",
+                [sum_out2, constant1],
+                [add_out2]
+            )
+            nl.append(n)
+
+            # np.sqrt(np.sum(u ** 2) + eps)
+            sqrt_out2 = fork_name(func.input[0]) + "_sqrt"
+            n = onnx.helper.make_node(
+                'Sqrt',
+                [add_out2],
+                [sqrt_out2]
+            )
+            nl.append(n)
+
+            # u = u / np.sqrt(np.sum(u ** 2) + eps)
+            div_out2 = fork_name(func.input[0]) + "_div"
+            n = onnx.helper.make_node(
+                'Div',
+                [gemm_out2, sqrt_out2],
+                [div_out2]
+            )
+            nl.append(n)
+
+            func.input[1] = div_out2
+
+        # np.dot(w, v)
+        gemm_out3 = fork_name(func.input[0]) + "_gemm"
+        n = onnx.helper.make_node(
+            'Gemm',
+            [func.input[0], reshape_v_out, constant4],
+            [gemm_out3]
+        )
+        nl.append(n)
+
+        gemm_out4 = fork_name(func.input[0]) + "_gemm"
+        n = onnx.helper.make_node(
+            'Gemm',
+            [div_out2, gemm_out3, constant2],
+            [gemm_out4],
+            transA=1,
+            transB=0
+        )
+        nl.append(n)
+
+        # w_sn = w / sigma
+        div_out3 = fork_name(func.input[0]) + "_div"
+        n = onnx.helper.make_node(
+            'Div',
+            [func.input[0], gemm_out4],
+            [div_out3]
+        )
+        nl.append(n)
+
+        reshape_out = fork_name(func.input[0]) + "_reshape"
+        reshape = np.array(w_shape)
+        n = generate_reshape(self._model_proto.graph,
+                             div_out3, reshape_out, reshape)
+        nl.append(n)
+
+        if dim != 0:
+            dims_transpose = [i for i in range(1, dim + 1)] \
+                             + [0] + [i for i in range(dim + 1, len(w_shape))]
+            n = onnx.helper.make_node(
+                'Transpose',
+                [reshape_out],
+                [func.output[0]],
+                perm=dims_transpose
+            )
+            nl.append(n)
+        else:
+            nl[-1].output[0] = func.output[0]
         return nl
 
     def set_network(self):
