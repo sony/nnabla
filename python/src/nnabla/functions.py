@@ -1170,16 +1170,19 @@ def _istft_v1(y_r, y_i, window_size, stride, fft_size, window_type='hanning', ce
 
 
 def dropout(x, p=0.5, seed=-1, output_mask=False):
-    """ Dropout.
-        Samples a number :math:`u` from a uniform distribution in :math:`[0, 1]` ,
-        and ignores the input if :math:`u \leq p`.
+    r"""Dropout.
+    Samples a number :math:`u` from a uniform distribution in :math:`[0, 1]`,
+    and ignores the input if :math:`u \leq p`.
 
-        .. math::
+    .. math::
+
+        \begin{equation}
             y = \left\{
             \begin{array}{ll}
                 \frac{x}{1 - p} & (u > p) \\
                 0 & ({\rm otherwise})
             \end{array} \right.
+        \end{equation}
 
     Args:
         x (Variable): An input variable.
@@ -1192,7 +1195,7 @@ def dropout(x, p=0.5, seed=-1, output_mask=False):
 
     Note:
         Usually dropout only applied during training as below
-        (except `MC dropout`_). If you want to use dropout as an MC dropout, remove 'if train:'.
+        (except `MC dropout`_). If you want to use dropout as an MC dropout, remove `if train:`.
 
         .. code-block:: python
 
@@ -1200,7 +1203,21 @@ def dropout(x, p=0.5, seed=-1, output_mask=False):
             if train:
                 h = F.dropout(h, 0.5)
 
-    .. _MC dropout: https://arxiv.org/abs/1506.02142
+        reference: https://arxiv.org/abs/1506.02142
+
+    Note:
+        If you use nn.grad to a graph having dropout, you must set output_mask=True for all dropouts.
+        Otherwise, backward function of dropout raises ValueError when you call nn.grad.
+
+        .. code-block:: python
+
+            h = PF.affine(x, num_hidden)
+            h, mask = F.dropout(h, p=0.1, output_mask=True)
+            y = PF.affine(h, num_hidden)
+
+            grad = nn.grad([y], nn.get_parameters().values())
+
+
     """
     from .function_bases import dropout as dropout_base
 
