@@ -4792,6 +4792,43 @@ Array Manipulation:
     c_runtime: not support
     function_ids:
       Empty: 264
+  BoolGather:
+    snake_name: bool_gather
+    doc: |
+      Gather from the input data according to the mask. 
+
+      Given an input of :math:`(B_1, \ldots, B_N, D_1, \ldots, D_M)` shape and mask of :math:`(B_1, \ldots, B_N)` shape, the function returns an output of :math:`(nnz, D_1, \ldots, D_M)` shape and :math:`nnz` is the number of non-zero elements in mask.
+
+      .. code-block:: python
+
+        import numpy as np
+        import nnabla as nn
+        import nnabla.functions as F
+
+        nn.set_auto_forward(True)
+
+        input = nn.Variable.from_numpy_array([[1, 2], [3, 4], [5, 6]])
+        mask = nn.Variable.from_numpy_array([1, 0, 1])
+        output = F.bool_gather(input, mask)
+        
+        print(output.d) # [[1, 2], [5, 6]]
+
+
+      Note that this function is normally used with the dynamic graph 
+      since this function outputs a variable-length output. If used with the static graph, 
+      a network has to be constructed all time in iteration.
+    inputs:
+      input:
+        doc: Data from which to gather.
+      mask:
+        doc: Mask with which to gather. Non-zero/zero elements are supposed to be
+          a binary mask as 1/0. No gradients are computed with respect to mask.
+    outputs:
+      output:
+        doc: Gathered output.
+    c_runtime: not support
+    function_ids:
+      Empty: 339
   ScatterNd:
     snake_name: scatter_nd
     doc: |2
@@ -4891,6 +4928,82 @@ Array Manipulation:
     c_runtime: not support
     function_ids:
       i: 315
+  BoolScatter:
+    snake_name: bool_scatter
+    doc: |
+      Scatter the `input` according to the `mask`.
+
+      Given an input of :math:`(nnz, D_1, \ldots, D_M)` shape and mask of :math:`(B_1, \ldots, B_N)` shape, the function returns an output :math:`(B_1, \ldots, B_N, D_1, \ldots, D_M)` and :math:`nnz` is the number of non-zero elements in the mask.
+
+      .. code-block:: python
+
+        import numpy as np
+        import nnabla as nn
+        import nnabla.functions as F
+
+        nn.set_auto_forward(True)
+
+        input0 = nn.Variable.from_numpy_array([[1, 2], [3, 4], [5, 6]])
+        mask = nn.Variable.from_numpy_array([1, 0, 1])
+        output0 = F.bool_gather(input0, mask)
+        
+        input1 = output0 + 10
+        output1 = F.bool_scatter(input1, mask)
+        
+        print(output1.d)  # [[11, 12], [0, 0], [15, 16]] 
+
+      Note that the higher-order gradients of this function relies on F.gather, thus 
+      the higher-order gradients of this function is normally used with the dynamic graph.
+    inputs:
+      input:
+        doc: Data to be scattered.
+      mask:
+        doc: Mask with which to scatter. Non-zero/zero elements are supposed to be
+          a binary mask as 1/0. No gradients are computed with respect to mask.
+      output:
+        doc: Distination of output. If specified, data are inplaced.
+        optional: true
+    outputs:
+      y:
+        doc: Scattered output.
+    c_runtime: not support
+    function_ids:
+      Empty: 340
+  BoolFill:
+    snake_name: bool_fill
+    doc: |
+      Fill the data with the value to according to the mask.
+
+      .. code-block:: python
+
+        import numpy as np
+        import nnabla as nn
+        import nnabla.functions as F
+
+        nn.set_auto_forward(True)
+
+        input = nn.Variable.from_numpy_array([[np.inf, 2], [3, np.nan]])
+        mask = nn.Variable.from_numpy_array([[1, 0], [0, 1]])
+        output = F.bool_fill(input, mask, -1)
+        
+        print(output.d)  # [[-1, 2], [3, -1]]
+    inputs:
+      data:
+        doc: Data to be filled.
+      mask:
+        doc: Mask with which to fill. Non-zero/zero elements are supposed to be a
+          binary mask as 1/0. No gradients are computed with respect to mask.
+    arguments:
+      value:
+        doc: Value to fill.
+        type: float
+        default: '0'
+    outputs:
+      y:
+        doc: Filled output.
+    c_runtime: not support
+    function_ids:
+      f: 341
   PackPaddedSequence:
     snake_name: pack_padded_sequence
     doc: |
