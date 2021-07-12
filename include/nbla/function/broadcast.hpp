@@ -29,6 +29,17 @@
 
 namespace nbla {
 
+inline Shape_t expand_shape(Shape_t source_shape, int target_ndim) {
+  Shape_t expanded_shape(target_ndim);
+  std::fill(expanded_shape.begin(), expanded_shape.end(), 1);
+  for (int i = 0; i < source_shape.size(); ++i) {
+    // insert from the end
+    expanded_shape[expanded_shape.size() - 1 - i] =
+        source_shape[source_shape.size() - 1 - i];
+  }
+  return expanded_shape;
+}
+
 NBLA_REGISTER_FUNCTION_HEADER(Broadcast, const vector<int> &);
 
 /** Broadcast N-D array to shape.
