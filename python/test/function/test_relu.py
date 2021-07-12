@@ -25,14 +25,20 @@ def ref_relu(x):
     return np.maximum(x, 0)
 
 
+shapes = [(2, 3, 4),
+          (3, 3, 3),  # The odd size can check the behavior of ReLUCuda.
+          ]
+
+
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
-def test_relu_forward_backward(seed, ctx, func_name):
+@pytest.mark.parametrize("shape", shapes)
+def test_relu_forward_backward(seed, ctx, func_name, shape):
     from nbla_test_utils import cap_ignore_region, function_tester
     rng = np.random.RandomState(seed)
     inputs = [
         cap_ignore_region(
-            rng.randn(2, 3, 4).astype(np.float32) * 2,
+            rng.randn(*shape).astype(np.float32) * 2,
             (-1e-3, 1e-3))]
     function_tester(rng, F.relu, ref_relu, inputs,
                     ctx=ctx, func_name=func_name)
@@ -40,22 +46,24 @@ def test_relu_forward_backward(seed, ctx, func_name):
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
-def test_relu_inplace(seed, ctx, func_name):
+@pytest.mark.parametrize("shape", shapes)
+def test_relu_inplace(seed, ctx, func_name, shape):
     from nbla_test_utils import inplace_function_test_helper
-    x = nn.Variable([2, 3, 4], need_grad=True)
+    x = nn.Variable(shape, need_grad=True)
     inplace_function_test_helper(
         [x], F.relu, ctx=ctx, func_name=func_name, rng=np.random.RandomState(seed))
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("shape", shapes)
 @pytest.mark.parametrize("inplace", [False, True])
-def test_relu_double_backward(seed, ctx, func_name, inplace):
+def test_relu_double_backward(seed, ctx, func_name, shape, inplace):
     from nbla_test_utils import cap_ignore_region, backward_function_tester
     rng = np.random.RandomState(seed)
     inputs = [
         cap_ignore_region(
-            rng.randn(2, 3, 4).astype(np.float32) * 2,
+            rng.randn(*shape).astype(np.float32) * 2,
             (-1e-3, 1e-3))]
     backward_function_tester(rng, F.relu,
                              inputs=inputs,
