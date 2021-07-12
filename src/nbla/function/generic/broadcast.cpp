@@ -36,15 +36,15 @@ void Broadcast<T>::setup_impl(const Variables &inputs,
                shape_.size(), ndim);
   }
   // X Stride and Y shape.
-  stride_x_.reshape({shape_.size()}, true);
-  shape_y_.reshape({shape_.size()}, true);
+  stride_x_.reshape({(Size_t)(shape_.size())}, true);
+  shape_y_.reshape({(Size_t)(shape_.size())}, true);
   Context cpu = Context().set_array_class("CpuCachedArray");
   int *stride_x = stride_x_.cast_data_and_get_pointer<int>(cpu, true);
   int *shape_y = shape_y_.cast_data_and_get_pointer<int>(cpu, true);
   // Check shape, and store variables.
   auto eshape = expand_shape(inputs[0]->shape(), shape_.size());
   auto estride_x_in = get_c_contiguous_strides(eshape);
-  for (int d = 0; d < eshape.size(); ++d) {
+  for (unsigned int d = 0; d < eshape.size(); ++d) {
     NBLA_CHECK(eshape[d] == shape_[d] || eshape[d] == 1, error_code::value,
                "Trailing shapes must be same or dimension of trailing shape of "
                "input has 1."
