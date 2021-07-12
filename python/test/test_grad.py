@@ -386,3 +386,13 @@ def test_nn_grad_propagate_down_check():
     # If IdentityForwardOnlyFunction_backward is called in nn.grad, an error will occur.
     v = nn.grad(w, [z])
     v[0].forward()
+
+
+def test_double_backward_floating_variables():
+    x = nn.Variable((2, 2), need_grad=True)
+    y = nn.Variable((2, 3), need_grad=True)
+    z = nn.Variable((2, 4), need_grad=True)
+    w = F.concatenate(*[x, y, z], axis=-1)
+    o = F.sin(w)
+    dx = nn.grad([o], [x])[0]
+    ddx = nn.grad([dx], [x])[0]  # Error must not happen
