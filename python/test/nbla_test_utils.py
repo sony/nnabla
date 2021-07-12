@@ -1047,17 +1047,23 @@ def backward_function_tester(rng, func, inputs=None,
             continue
         for ig, v in zip(initial_grads, grad_vinputs):
             v.g = ig
-        from scipy.optimize import approx_fprime
+
+        # This must be first since approx_fprime destroys the input values
+        # analytical grad.
         rgrad = rng.randn()
-        sum_ograd = F.sum(ograd) * rgrad
-        numerical_grads = approx_fprime(
-            grad_inputs1, obj_func, dstep, sum_ograd, grad_vinputs)
+        with nn.auto_forward(auto_forward):
+            sum_ograd = F.sum(ograd) * rgrad
         sum_ograd.forward(clear_no_need_grad=True)
         sum_ograd.backward()
         analytical_grads = np.concatenate(
             [v.g.flatten() for v in grad_vinputs])
         analytical_grads -= np.concatenate([g.flatten()
                                             for g in initial_grads])
+        # numerical grad
+        from scipy.optimize import approx_fprime
+        numerical_grads = approx_fprime(
+            grad_inputs1, obj_func, dstep, sum_ograd, grad_vinputs)
+
         # grad_vinputs: dy_1, ..., dy_n, x_1, ..., x_n
         # grad_voutputs: dy_1, ..., dy_n
         seps = [0] + np.cumsum([int(np.prod(v.shape))
