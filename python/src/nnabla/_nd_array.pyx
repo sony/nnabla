@@ -406,6 +406,19 @@ cdef class NdArray:
         """
         self.arrp.fill(value)
 
+    def bool_fill(self, mask, value):
+        """Return a new but inplaced :obj:`nnabla.NdArray` filled with value where mask is non-zero.
+
+        Args:
+            mask (:obj:`nnabla.NdArray`): Mask with which to fill. Non-zero/zero elements are supposed to be a binary mask as 1/0. No gradients are computed with respect to mask.
+            value (float): The value to fill.
+        
+        """
+        import nnabla.functions as F
+        return F.bool_fill(self, mask, value, outputs=[self])
+
+    masked_fill = bool_fill
+
     def clear(self):
         """
         Clear memories which this NdArray has and return them to allocator.
