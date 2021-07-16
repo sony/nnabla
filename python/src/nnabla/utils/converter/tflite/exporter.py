@@ -66,7 +66,12 @@ class DataFormat(Enum):
 
 
 class TFLiteExporter:
-    def __init__(self, nnp, batch_size, channel_last=False, data_type="float32", quantization=None):
+    def __init__(self, nnp, batch_size, channel_last=False, data_type="float32", quantization=None, dataset=None):
+        if quantization and dataset is None:
+            raise ValueError("No represent dataset was provided!")
+        if quantization and not os.path.exists(dataset):
+            raise ValueError(
+                'Represent dataset {} does not exist!'.format(dataset))
         self.nnp_proto = nnp.protobuf
         self.batch_size = batch_size
         self.variables = {}
@@ -74,6 +79,7 @@ class TFLiteExporter:
         self.global_data_format = DataFormat.channel_last if channel_last else DataFormat.channel_first
         self.data_type = data_type
         self.quantization = quantization
+        self.dataset = dataset
         self.models = None
         self.operator_codes_list = []
         self.operators_list = []
@@ -252,33 +258,61 @@ class TFLiteExporter:
                 [sum_out, reduce_size], [div_out], 'DIV')
             inputs[4] = div_out
 
-        sub_out = fork_name(inputs[0]) + "_sub"
-        self.variables[sub_out] = input_shape
-        self.convert_generic_tflite_op(
-            [inputs[0], inputs[3]], [sub_out], 'SUB')
+        if self.quantization:
+            mean = self.parameters[inputs[3]]
+            var = self.parameters[inputs[4]]
+            beta = self.parameters[inputs[1]]
+            gamma = self.parameters[inputs[2]]
+            var_data = np.array(list(var.data), dtype=np.float32)
+            std_data = np.sqrt(var_data + eps)
+            gamma_data = np.array(list(gamma.data), dtype=np.float32)
+            _gamma_data = gamma_data / std_data
+            # clean data
+            for _ in range(len(gamma.data)):
+                gamma.data.pop()
+            gamma.data.extend(_gamma_data.tolist())
+            beta_data = np.array(list(beta.data), dtype=np.float32)
+            mean_data = np.array(list(mean.data), dtype=np.float32)
+            _beta_data = -(gamma_data * mean_data / std_data) + beta_data
+            # clean data
+            for _ in range(len(beta.data)):
+                beta.data.pop()
+            beta.data.extend(_beta_data.tolist())
+            mul_out = fork_name(inputs[0]) + "_mul"
+            self.variables[mul_out] = input_shape
+            self.convert_generic_tflite_op(
+                [inputs[0], inputs[2]], [mul_out], 'MUL')
+            self.convert_generic_tflite_op(
+                [mul_out, inputs[1]], outputs, 'ADD')
+        else:
+            sub_out = fork_name(inputs[0]) + "_sub"
+            self.variables[sub_out] = input_shape
+            self.convert_generic_tflite_op(
+                [inputs[0], inputs[3]], [sub_out], 'SUB')
 
-        eps_name = fork_name(inputs[0]) + "_eps"
-        self.create_parameter(eps_name, [1], [eps])
+            eps_name = fork_name(inputs[0]) + "_eps"
+            self.create_parameter(eps_name, [1], [eps])
 
-        add_out = fork_name(inputs[0]) + "_sub"
-        self.variables[add_out] = self.variables[inputs[4]]
-        self.convert_generic_tflite_op(
-            [inputs[4], eps_name], [add_out], 'ADD')
+            add_out = fork_name(inputs[0]) + "_sub"
+            self.variables[add_out] = self.variables[inputs[4]]
+            self.convert_generic_tflite_op(
+                [inputs[4], eps_name], [add_out], 'ADD')
 
-        sqrt_out = fork_name(inputs[0]) + "_sqrt"
-        self.variables[sqrt_out] = self.variables[inputs[4]]
-        self.convert_generic_tflite_op([add_out], [sqrt_out], 'SQRT')
+            sqrt_out = fork_name(inputs[0]) + "_sqrt"
+            self.variables[sqrt_out] = self.variables[inputs[4]]
+            self.convert_generic_tflite_op([add_out], [sqrt_out], 'SQRT')
 
-        div_out = fork_name(inputs[0]) + "_div"
-        self.variables[div_out] = input_shape
-        self.convert_generic_tflite_op([sub_out, sqrt_out], [div_out], 'DIV')
+            div_out = fork_name(inputs[0]) + "_div"
+            self.variables[div_out] = input_shape
+            self.convert_generic_tflite_op(
+                [sub_out, sqrt_out], [div_out], 'DIV')
 
-        mul_out = fork_name(inputs[0]) + "_mul"
-        self.variables[mul_out] = input_shape
-        self.convert_generic_tflite_op(
-            [div_out, inputs[2]], [mul_out], 'MUL')
-        self.convert_generic_tflite_op(
-            [mul_out, inputs[1]], outputs, 'ADD')
+            mul_out = fork_name(inputs[0]) + "_mul"
+            self.variables[mul_out] = input_shape
+            self.convert_generic_tflite_op(
+                [div_out, inputs[2]], [mul_out], 'MUL')
+            self.convert_generic_tflite_op(
+                [mul_out, inputs[1]], outputs, 'ADD')
 
     def format_nn_function(self, input, output, to_2d=True):
         input_shape = self.variables[input][:]
@@ -883,7 +917,7 @@ class TFLiteExporter:
         s = pf.args.get('stride', [1] * len(k))
         pads = pf.args.get('pad', [0] * len(k))
         ignore_border = pf.args.get('ignore_border', True)
-        if tflite_op == 'MAX_POOL_2D':
+        if tflite_op == 'MAX_POOL_2D' and not self.child_of_relu:
             value = 1.17e-38
         elif tflite_op == 'AVERAGE_POOL_2D':
             including_pad = pf.args.get('including_pad', True)
@@ -939,8 +973,11 @@ class TFLiteExporter:
             pad_out = fork_name(inputs[0]) + "_pad"
             self.variables[pad_out] = [self.variables[inputs[0]]
                                        [i] + pads[i*2] + pads[i*2+1] for i in range(2 + len_kernel)]
-            self.convert_generic_tflite_op(
-                [inputs[0], padding_name, value_name], [pad_out], 'PADV2', tensor_type=tensor_type)
+            if value == 0.0:
+                self.generate_pad_op(inputs[0], pad_out, padding)
+            else:
+                self.convert_generic_tflite_op(
+                    [inputs[0], padding_name, value_name], [pad_out], 'PADV2', tensor_type=tensor_type)
             inputs[0] = pad_out
 
         if pf.type == 'SumPooling':
@@ -1058,45 +1095,51 @@ class TFLiteExporter:
         self.propagate_variable_semantic(pf)
 
     def Softmax(self, pf):
-        # Convert Softmax to ReduceMax, Sub, Exp, Sum, Div
-        _, _, axis = self.check_resolve_axis_attr(pf)
-        axis_name = fork_name(pf.inputs[0]) + "_axis"
-        self.create_parameter(axis_name, [1], [axis])
-        input_shape = self.variables[pf.inputs[0]][:]
-        tensor_type = {axis_name: 'INT32'}
+        if self.quantization:
+            _, _, axis = self.check_resolve_axis_attr(pf)
+            self.convert_generic_tflite_op(pf.inputs, pf.outputs, "SOFTMAX")
+            self.operators_list[-1]['builtin_options_type'] = 'SoftmaxOptions'
+            self.operators_list[-1]['builtin_options'] = {'beta': 1.0}
+        else:
+            # Convert Softmax to ReduceMax, Sub, Exp, Sum, Div
+            _, _, axis = self.check_resolve_axis_attr(pf)
+            axis_name = fork_name(pf.inputs[0]) + "_axis"
+            self.create_parameter(axis_name, [1], [axis])
+            input_shape = self.variables[pf.inputs[0]][:]
+            tensor_type = {axis_name: 'INT32'}
 
-        # ReduceMax
-        mout = fork_name(pf.inputs[0]) + "_reducemax"
-        mout_shape = input_shape.copy()
-        mout_shape[axis] = 1
-        self.variables[mout] = mout_shape
-        self.convert_generic_tflite_op([pf.inputs[0], axis_name], [
-                                       mout], "REDUCE_MAX", tensor_type=tensor_type)
-        self.operators_list[-1]['builtin_options_type'] = 'ReducerOptions'
-        self.operators_list[-1]['builtin_options'] = {'keep_dims': True}
+            # ReduceMax
+            mout = fork_name(pf.inputs[0]) + "_reducemax"
+            mout_shape = input_shape.copy()
+            mout_shape[axis] = 1
+            self.variables[mout] = mout_shape
+            self.convert_generic_tflite_op([pf.inputs[0], axis_name], [
+                                           mout], "REDUCE_MAX", tensor_type=tensor_type)
+            self.operators_list[-1]['builtin_options_type'] = 'ReducerOptions'
+            self.operators_list[-1]['builtin_options'] = {'keep_dims': True}
 
-        # Sub
-        sout = fork_name(pf.inputs[0]) + "_sub"
-        self.variables[sout] = input_shape
-        self.convert_generic_tflite_op([pf.inputs[0], mout], [sout], "SUB")
+            # Sub
+            sout = fork_name(pf.inputs[0]) + "_sub"
+            self.variables[sout] = input_shape
+            self.convert_generic_tflite_op([pf.inputs[0], mout], [sout], "SUB")
 
-        # Exp
-        expout = fork_name(pf.inputs[0]) + "_exp"
-        self.variables[expout] = input_shape
-        self.convert_generic_tflite_op([sout], [expout], "EXP")
+            # Exp
+            expout = fork_name(pf.inputs[0]) + "_exp"
+            self.variables[expout] = input_shape
+            self.convert_generic_tflite_op([sout], [expout], "EXP")
 
-        # Sum
-        sumout = fork_name(pf.inputs[0]) + "_sum"
-        sumout_shape = input_shape.copy()
-        sumout_shape[axis] = 1
-        self.variables[sumout] = sumout_shape
-        self.convert_generic_tflite_op(
-            [expout, axis_name], [sumout], "SUM", tensor_type=tensor_type)
-        self.operators_list[-1]['builtin_options_type'] = 'ReducerOptions'
-        self.operators_list[-1]['builtin_options'] = {'keep_dims': True}
+            # Sum
+            sumout = fork_name(pf.inputs[0]) + "_sum"
+            sumout_shape = input_shape.copy()
+            sumout_shape[axis] = 1
+            self.variables[sumout] = sumout_shape
+            self.convert_generic_tflite_op(
+                [expout, axis_name], [sumout], "SUM", tensor_type=tensor_type)
+            self.operators_list[-1]['builtin_options_type'] = 'ReducerOptions'
+            self.operators_list[-1]['builtin_options'] = {'keep_dims': True}
 
-        # Div
-        self.convert_generic_tflite_op([expout, sumout], pf.outputs, "DIV")
+            # Div
+            self.convert_generic_tflite_op([expout, sumout], pf.outputs, "DIV")
 
     def LogSoftmax(self, pf):
         # Convert LogSoftmax to ReduceMax, Sub, Exp, Sum, Log, Sub
@@ -1434,7 +1477,7 @@ class TFLiteExporter:
             positions_name = fork_name(inputs[0]) + "_positions"
             gather_out = fork_name(inputs[0]) + "_gather"
             raw_data = np.arange(input_shape[axis])[
-                                 ::-1].astype(np.int32).flatten().tolist()
+                ::-1].astype(np.int32).flatten().tolist()
             positions_shape = [input_shape[axis]]
             self.create_parameter(positions_name, positions_shape, raw_data)
             self.variables[gather_out] = self.variables[transpose_out]
@@ -1903,9 +1946,15 @@ class TFLiteExporter:
         self.create_tensors(self.inputs, {})
         self.create_tensors(self.outputs, {})
         self.check_and_preprocess_input()
-        for pf in self.network.forward_sequence():
+        precursor_function = None
+        for pfid, pf in enumerate(self.network.forward_sequence()):
+            self.child_of_relu = False
+            if pfid > 0 and pf.type == 'MaxPooling':
+                if precursor_function is not None and precursor_function.type == 'ReLU':
+                    self.child_of_relu = True
             self.convert_to_tflite_op(pf)
             self.operators_sorting(pf)
+            precursor_function = pf
         if self.global_data_format == DataFormat.channel_first:
             for outp in self.outputs:
                 if self.network.variables[outp].data_format == DataFormat.channel_last:
@@ -1922,13 +1971,116 @@ class TFLiteExporter:
         self.models['subgraphs'][0]['inputs'] = [
             index for index in self.models['subgraphs'][0]['inputs'] if index != -1]
 
-    def execute(self, output):
-        self.init_models()
+    def get_operator_name(self, operator):
+        opcode_index = operator['opcode_index']
+        op_name = self.models['operator_codes'][opcode_index]['builtin_code']
+        return op_name
 
-        self.export_graph()
+    def get_number_of_children_op(self, output):
+        children_number = 0
+        for child_operator in self.models['subgraphs'][0]['operators']:
+            inputs_of_child_operator = child_operator['inputs']
+            if output in inputs_of_child_operator:
+                children_number += 1
+        return children_number
+
+    def fuse_activation_function(self):
+        ops_can_fused_with_act = ['CONV_2D', 'ADD']
+        acts_can_be_fused = ['RELU']
+        for operator in self.models['subgraphs'][0]['operators']:
+            op_name = self.get_operator_name(operator)
+            if op_name in ops_can_fused_with_act:
+                outpus = operator['outputs']
+                if len(outpus) > 1:
+                    continue
+                children_number = self.get_number_of_children_op(outpus[0])
+                if children_number == 0 or children_number > 1:  # Leaf node or has more than one children
+                    continue
+                for operator_index, child_operator in enumerate(self.models['subgraphs'][0]['operators']):
+                    inputs_of_child_operator = child_operator['inputs']
+                    op_name_of_child_operator = self.get_operator_name(
+                        child_operator)
+                    if outpus[0] in inputs_of_child_operator and op_name_of_child_operator in acts_can_be_fused:
+                        # fuse act function
+                        outputs_of_child_operator = child_operator['outputs']
+                        # search the child of child node
+                        for grandson_operator in self.models['subgraphs'][0]['operators']:
+                            inputs_of_grandson_op = grandson_operator['inputs']
+                            # set grandfather's output as grandson's input
+                            if outputs_of_child_operator[0] in inputs_of_grandson_op:
+                                grandson_operator['inputs'][inputs_of_grandson_op.index(
+                                    outputs_of_child_operator[0])] = outpus[0]
+
+                        # set grandfather's fused_activate_function
+                        if operator.get('builtin_options') is None:
+                            if op_name == 'CONV_2D':
+                                operator['builtin_options_type'] = 'Conv2DOptions'
+                            if op_name == 'ADD':
+                                operator['builtin_options_type'] = 'AddOptions'
+                            operator['builtin_options'] = {}
+                        operator['builtin_options']['fused_activation_function'] = op_name_of_child_operator
+
+                        # pop activation op
+                        self.models['subgraphs'][0]['operators'].pop(
+                            operator_index)
+
+                        # pop output tensor and buffer of act op
+                        for act_output in outputs_of_child_operator:
+                            tensor_of_act = self.models['subgraphs'][0]['tensors'].pop(
+                                act_output)
+                            buffer_index_of_act = tensor_of_act['buffer']
+                            self.models['buffers'].pop(buffer_index_of_act)
+                            for tensor in self.models['subgraphs'][0]['tensors']:
+                                buffer_index = tensor['buffer']
+                                if buffer_index > buffer_index_of_act:
+                                    tensor['buffer'] = buffer_index - 1
+                            for _operator in self.models['subgraphs'][0]['operators']:
+                                _inputs = _operator['inputs']
+                                updated_inputs = []
+                                for tensor_index in _inputs:
+                                    if tensor_index > act_output:
+                                        tensor_index -= 1
+                                    updated_inputs.append(tensor_index)
+                                _operator['inputs'] = updated_inputs
+                                _outputs = _operator['outputs']
+                                updated_outputs = []
+                                for tensor_index in _outputs:
+                                    if tensor_index > act_output:
+                                        tensor_index -= 1
+                                    updated_outputs.append(tensor_index)
+                                _operator['outputs'] = updated_outputs
+                                _outputs = self.models['subgraphs'][0]['outputs']
+                                updated_outputs = []
+                                for tensor_index in _outputs:
+                                    if tensor_index > act_output:
+                                        tensor_index -= 1
+                                    updated_outputs.append(tensor_index)
+                                self.models['subgraphs'][0]['outputs'] = updated_outputs
+
+    def optimize_graph(self):
+        self.fuse_activation_function()
+
+    def mark_all_buffers_as_output(self):
+        import copy
+        self.backup_output = copy.copy(self.models['subgraphs'][0]['outputs'])
+        for operator in self.models['subgraphs'][0]['operators']:
+            outputs = operator['outputs']
+            for output in outputs:
+                if output not in self.models['subgraphs'][0]['outputs']:
+                    self.models['subgraphs'][0]['outputs'].append(output)
+        inputs = self.models['subgraphs'][0]['inputs']
+        for inp in inputs:
+            if inp not in self.models['subgraphs'][0]['outputs']:
+                self.models['subgraphs'][0]['outputs'].append(inp)
+
+    def export_to_tflite(self, models, output):
+        """
+        :param output (str): file path of exported tflite
+        :return:
+        """
         json_file = output.replace("tflite", "json")
         with open(json_file, 'w') as f:
-            json.dump(self.models, f)
+            json.dump(models, f)
         schema_path = os.path.join(os.path.dirname(__file__), "schema.fbs")
         output_path = os.path.dirname(output)
         try:
@@ -1937,5 +2089,28 @@ class TFLiteExporter:
         except subprocess.CalledProcessError as e:
             print(e.returncode, e.output)
             raise ValueError("Convert nnp to tflite failed.")
+
+    def execute(self, output):
+        self.init_models()
+
+        self.export_graph()
+
+        self.optimize_graph()
+
+        if self.quantization:
+            self.mark_all_buffers_as_output()
+
+        self.export_to_tflite(self.models, output)
+
+        if self.quantization:
+            from .quantized_converter import QuantizationConverter
+            dataset = np.load(self.dataset)
+            quantization_converter = QuantizationConverter(
+                self.models, output, dataset)
+            quantized_model = quantization_converter.convert()
+            quantized_model['subgraphs'][0]['outputs'] = self.backup_output
+            self.export_to_tflite(quantized_model, output)
+
+        json_file = output.replace("tflite", "json")
         with open(json_file, 'w') as f:
             json.dump(self.tflite_model_info, f)
