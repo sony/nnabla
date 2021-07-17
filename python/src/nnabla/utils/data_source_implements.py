@@ -63,6 +63,7 @@ class SimpleDataSource(DataSource):
 
 class CachePrefetcher(object):
     def __init__(self, cachedir, variables):
+        self._lock = threading.Lock()
         self._q = queue.Queue()
         self.file_name = None
         self._cachedir = cachedir
@@ -114,12 +115,21 @@ class CachePrefetcher(object):
                 self._q.task_done()
                 break
             self._current_data = self.read_cache(
-                self.file_name, self._variables)
+                cache_file_name, self._variables)
             self._q.task_done()
 
     def request(self, cache_file_name):
         self.file_name = cache_file_name
         self._q.put(cache_file_name)
+
+    def check_if_hit(self, fn):
+        self._lock.acquire()
+        if fn == self.file_name:
+            self.file_name = None
+            self._lock.release()
+            return True
+        self._lock.release()
+        return False
 
     def read(self):
         self._q.join()
@@ -149,7 +159,7 @@ class CacheReaderWithPrefetch(object):
         # print('cp files', cp_file_names)
         result = None
         for cf in self._cache_prefetchers:
-            if cf.file_name == file_name:
+            if cf.check_if_hit(file_name):
                 result = cf.read()
                 break
         if not result:

@@ -20,6 +20,7 @@ from nnabla.utils.data_source_loader import load_image
 from nnabla.utils.data_iterator import data_iterator_simple
 
 from .test_data_iterator import check_data_iterator_result
+from .conftest import generate_cache_dir
 
 
 @pytest.mark.parametrize("num_of_slices", [2, 3, 5])
@@ -77,3 +78,20 @@ def test_sliced_data_iterator(test_data_csv_png_10, num_of_slices, size, batch_s
             acceptable_size = amount
         for dup in [x0 & x for x in epochs[epoch][1:]]:
             assert len(dup) < amount
+
+
+@pytest.mark.parametrize("num_of_slices", [2, 3, 5])
+@pytest.mark.parametrize("size", [197, 124])
+@pytest.mark.parametrize("batch_size", [1, 20])
+@pytest.mark.parametrize("shuffle", [False, True])
+def test_sliced_data_iterator_race_condition(num_of_slices, size, batch_size, shuffle):
+    from nnabla.utils.data_source_implements import CacheDataSource
+    from nnabla.utils.data_iterator import data_iterator_cache
+
+    with generate_cache_dir(size) as cache_dir:
+        rng = np.random.RandomState(313)
+        iterator = data_iterator_cache(cache_dir, batch_size, shuffle=True)
+        sliced_it = iterator.slice(rng, num_of_slices, 1)
+
+        for i in range(size + 5):
+            d = sliced_it.next()
