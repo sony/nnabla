@@ -431,6 +431,7 @@ class OnnxExporter:
             "WeightStandardization": self.WeightStandardization,
             "LayerNormalization": self.LayerNormalization,
             "InstanceNormalization": self.InstanceNormalization,
+            "WeightNormalization": self.WeightNormalization
         }
 
         table_op_set_7 = {
@@ -3693,6 +3694,92 @@ class OnnxExporter:
         norm_nl = get_normalization_norm(
             func, mean_out, var_out, beta, gamma, constant0, constant1)
         nl.extend(norm_nl)
+
+        return nl
+
+    def WeightNormalization(self, func):
+        nl = []
+        w_shape = list(self._var_dict[func.input[0]].dim[:])
+        pp = func.weight_normalization_param
+        dim = pp.dim
+        eps = pp.eps
+        axes = tuple([a for a in range(len(w_shape)) if a != dim])
+
+        constant0 = fork_name("constant")
+        c = generate_constant(constant0, func.name + "_constant0",
+                              TensorProto.FLOAT, [1],
+                              [2])
+        nl.append(c)
+
+        constant1 = fork_name("constant")
+        c = generate_constant(constant1, func.name + "_constant1",
+                              TensorProto.FLOAT, [1],
+                              [eps])
+        nl.append(c)
+
+        constant2 = fork_name("constant")
+        c = generate_constant(constant2, func.name + "_constant2",
+                              TensorProto.FLOAT, [1],
+                              [-0.5])
+        nl.append(c)
+
+        # Pow, w ** 2
+        pow_out1 = fork_name(func.input[0]) + "_pow"
+        n = onnx.helper.make_node("Pow",
+                                  [func.input[0], constant0],
+                                  [pow_out1])
+        nl.append(n)
+
+        # ReduceSum, np.sum(w ** 2, axes, keepdims=True)
+        sum_out = fork_name(func.input[0]) + "_sum"
+        n = onnx.helper.make_node(
+            'ReduceSum',
+            [pow_out1],
+            [sum_out],
+            axes=axes,
+            keepdims=True
+        )
+        nl.append(n)
+
+        # Add, (np.sum(w ** 2, axes, keepdims=True) + eps)
+        add_out = fork_name(func.input[0]) + "_add"
+        n = onnx.helper.make_node(
+            "Add",
+            [sum_out, constant1],
+            [add_out]
+        )
+        nl.append(n)
+
+        # Pow, (np.sum(w ** 2, axes, keepdims=True) + eps) ** (-0.5)
+        pow_out2 = fork_name(func.input[0]) + "_pow"
+        n = onnx.helper.make_node("Pow",
+                                  [add_out, constant2],
+                                  [pow_out2])
+        nl.append(n)
+
+        # Reshape, g.reshape(rshape)
+        input_shape = [1 if i != dim else s for i, s in enumerate(w_shape)]
+        input_shape_reshape = np.array(input_shape)
+        rout = fork_name(func.input[1]) + "_reshape"
+        n = generate_reshape(self._model_proto.graph, func.input[1], rout,
+                             input_shape_reshape)
+        nl.append(n)
+
+        # Mul, g * w * n
+        mul_out1 = fork_name(func.input[0]) + "_mul"
+        n = onnx.helper.make_node(
+            "Mul",
+            [rout, func.input[0]],
+            [mul_out1]
+        )
+        nl.append(n)
+
+        n = onnx.helper.make_node(
+            "Mul",
+            [mul_out1, pow_out2],
+            func.output
+        )
+        nl.append(n)
 
         return nl
 
