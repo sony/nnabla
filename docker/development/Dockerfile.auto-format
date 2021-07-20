@@ -40,3 +40,6 @@ RUN pip3 install ${PIP_INS_OPTS} -U \
     setuptools \
     six \
     wheel
+
+ENV PYTHONIOENCODING utf-8
+

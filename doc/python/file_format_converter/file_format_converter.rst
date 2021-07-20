@@ -54,6 +54,7 @@ File format converter has following functions.
 - Convert NNP to Tensorflow saved_model
 - Convert Tensorflow checkpoint, frozen graph or saved_model to NNP
 - Convert NNP to Tensorflow Lite
+- Convert NNP to INT8 quantized Tensorflow Lite
 - Convert Tensorflow Lite to NNP
 - Experimental: Convert NNP to C Source code for NNabla C Runtime
 
@@ -191,6 +192,33 @@ and add the executable file `flatc` to the system PATH.
 
 After exporting TFLite, a json file with the same name will be generated,
 recording whether the input and output of the TFLite network need to be transposed to channel_last according to base_axis.
+
+INT8 quantized Tensorflow Lite
+"""""""""""""""
+
+Limitation
+**********
+
+You should also install `flatbuffers` package. Please refer to the installation above.
+You need provide a represent dataset to the converter if you want to convert nnp to int8 quantized tflite.
+Represent dataset is a subset of training dataset, about 2% - 10% of training data.
+You can collect represent dataset in your training loop. It should be saved as numpy's `.npy` format.
+Here's an example:
+
+.. code-block:: python
+
+    rdataset = []
+    # suppose this is your training loop
+    for step in range(max_step):
+        image, label = dataset.next()
+        x.d = image
+        rdataset.append(image)
+        # your code
+        # ...
+    rdataset = np.array(rdataset).astype(np.float32)
+    np.save('represent_dataset.npy', rdataset)
+
+Of course, you can create represent dataset by any way you like, but please ensure the shape of each item is equal with the shape of network's input and you have finished the necessary preprocess.
 
 Process
 +++++++
@@ -394,7 +422,15 @@ Convert NNP to Tensorflow Lite
 
 .. code-block:: none
 
-   $ nnabla_cli convert input.nnp output.tflite
+   $ nnabla_cli convert -b 1 input.nnp output.tflite
+
+
+Convert NNP to INT8 quantized Tensorflow Lite
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: none
+
+   $ nnabla_cli convert -b 1 input.nnp output.tflite --quantization --dataset represent_dataset.npy
 
 
 Convert Tensorflow Lite to NNP

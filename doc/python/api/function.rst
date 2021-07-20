@@ -235,6 +235,7 @@ Array Manipulation
 .. autofunction:: top_k_grad
 .. autofunction:: pack_padded_sequence
 .. autofunction:: pad_packed_sequence
+.. autofunction:: searchsorted
 
 
 Stochasticity
