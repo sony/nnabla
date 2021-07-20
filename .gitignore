@@ -98,3 +98,6 @@
 *.h5
 tmp.*/
 *.zip
+
+# macOS
+.DS_store

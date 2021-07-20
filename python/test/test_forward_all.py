@@ -270,6 +270,38 @@ def test_graph_forward_clear_buffer(seed, clear_buffer):
 
 @pytest.mark.parametrize("seed", [311])
 @pytest.mark.parametrize("clear_buffer", [True, False])
+def test_graph_more_than_2_outputs(seed, clear_buffer):
+    count = 0
+
+    def func_hook(f):
+        nonlocal count
+        if f.name == 'Split':
+            count += 1
+    nn.clear_parameters()
+
+    a = nn.Variable.from_numpy_array(np.ones((10, )))
+    b = nn.Variable.from_numpy_array(np.ones((10, )))
+    c = F.add2(a, b, inplace=True, outputs=[a.data])
+    y = F.split(c, axis=0)
+    nn.forward_all(y, function_pre_hook=func_hook)
+
+    assert count == 1
+
+    res = [x.d for x in y]
+    assert_allclose(res, [2.0] * 10)
+
+    a = nn.Variable.from_numpy_array(np.ones((10, )))
+    b = nn.Variable.from_numpy_array(np.ones((10, )))
+    c = F.add2(a, b, inplace=True, outputs=[a.data])
+    y = F.split(c, axis=0)
+    for yy in y:
+        yy.forward()
+    res = [x.d for x in y]
+    assert_allclose(res, [11.0] * 10)
+
+
+@pytest.mark.parametrize("seed", [311])
+@pytest.mark.parametrize("clear_buffer", [True, False])
 def test_graph_rewire(seed, clear_buffer):
     nn.clear_parameters()
 
