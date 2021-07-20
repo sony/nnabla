@@ -59,6 +59,7 @@ Neural Network Layers
 .. autofunction:: gru
 .. autofunction:: multi_head_attention
 .. autofunction:: patch_correlation
+.. autofunction:: roi_align
 
 
 Neural Network Activation
