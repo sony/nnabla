@@ -21,9 +21,10 @@ ARG PIP_INS_OPTS
 ARG PYTHONWARNINGS
 ARG CURL_OPTS
 ARG WGET_OPTS
+ARG APT_OPTS
 
-RUN echo ${HTTP_PROXY} ${PIP_INS_OPTS}
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN eval ${APT_OPTS} \
+    && apt-get update && apt-get install -y --no-install-recommends \
     clang-format-3.8 \
     make \
     git \
