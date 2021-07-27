@@ -399,7 +399,9 @@ def _create_dataset(
             cache_index = os.path.join(cache_dir, "cache_index.csv")
             if not os.path.exists(cache_index) or overwrite_cache:
                 if single_or_rankzero():
-                    logger.log(99, 'Creating cache data for "' + uri + '"')
+                    log_uri = (uri.split("/", 3)[-1]
+                               if uri.startswith("s3") else uri)
+                    logger.log(99, 'Creating cache data for "' + log_uri + '"')
 
                     try:
                         os.makedirs(cache_dir)
