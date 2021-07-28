@@ -41,7 +41,8 @@ RUN eval ${APT_OPTS} \
     zip \
     zlib1g-dev \
     libhdf5-dev \
-    libarchive-dev
+    libarchive-dev \
+    liblzma-dev
 
 ADD python/setup_requirements.txt /tmp/deps/
 RUN pip3 install ${PIP_INS_OPTS} -U -r /tmp/deps/setup_requirements.txt

@@ -330,3 +330,85 @@ Now you should have an understanding of how to use
 2. **multi\_device\_multi\_process\_classification.py**
 
 for more details.
+
+
+Advanced Topics
+~~~~~~~~~~~~~~~
+
+When working with multiple nodes with multiple devices (e.g. GPUs),
+one or a few of them might stop response for some special cases.
+When your training process originally takes time, it is hard to
+identify the elapsed time is in training or for dead device.
+
+In current implementation, we introduced the watch dog in all_reduce().
+When any node or any device stop response, the watch dog will raise an exception.
+The typical time for all_reduce() is 60 seconds. It means the process in any
+node or any device cannot wait at all_reduce() for more than 60 seconds, otherwise,
+some node or device might highly definitely stop response.
+
+The watch dog is default disabled, if want to enable it, please set environment variable
+``NNABLA_MPI_WATCH_DOG_ENABLE`` to any none-zero value:
+
+.. code-block:: shell
+
+     export NNABLA_MPI_WATCH_DOG_ENABLE=1
+
+
+But in pratice, some task required to be performed on one a few of nodes,
+and let other nodes wait there. If no explicitly sychronization, the watch dog might
+be unexpectedly triggered. As the following:
+
+.. code:: python
+
+    extension_module = "cudnn"
+    type_config = "float"
+    ctx = get_extension_context(extension_module, type_config=type_config)
+    comm = C.MultiProcessDataParalellCommunicator(ctx)
+    comm.init()
+
+    if comm.rank == 0:
+       ...  # Here, we do some task on node 0
+
+    if comm.rank != 0:
+       ...  # here, we do some task on other nodes
+
+     # Till here, multiple nodes has different progress
+
+     for d in data_iterator():
+         ...
+         comm.all_reduce(...)  # Here, since different nodes has different
+                               # start points, all_reduce() might trigger
+                               # watch dog timeout exception.
+
+
+In order to avoid above unexpected exception, we have to explicitly set the
+synchronization point.
+
+.. code:: python
+
+    extension_module = "cudnn"
+    type_config = "float"
+    ctx = get_extension_context(extension_module, type_config=type_config)
+    comm = C.MultiProcessDataParalellCommunicator(ctx)
+    comm.init()
+
+    if comm.rank == 0:
+       ...  # Here, we do some task on node 0
+
+    if comm.rank != 0:
+       ...  # here, we do some task on other nodes
+
+     comm.barrier()  # we placed the synchronization point immediate before
+                     # comm.all_reduce().
+
+     for d in data_iterator():
+         ...
+         comm.all_reduce(...) # The wait time at all_reduce() should be strictly
+                              # limited in a relative short time.
+
+We placed the synchronization point immediately before comm.all_reduce(), which means
+that we knew comm.all_reduce() should be perform synchronously after this point.
+Thus, we may ensure the whole training can be performed stably and not need to wait
+forever due to a corrupted process.
+
+
