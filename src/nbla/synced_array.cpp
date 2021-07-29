@@ -200,8 +200,8 @@ SyncedArray::ArrayDesc SyncedArray::sync(dtypes dtype, const Context &ctx_orig,
                                      desc.array_class, array, async_flags);
       SYNC_DEBUG("SYNC: %s<%s> --[%ld elements (%ld bytes in %s)]--> %s<%s>.",
                  head_.array_class.c_str(),
-                 dtype_to_string(head_.dtype).c_str(),
-                 size() / sizeof_dtype(head_.dtype), size(),
+                 dtype_to_string(head_.dtype).c_str(), this->size(),
+                 this->size() * sizeof_dtype(head_.dtype),
                  dtype_to_string(head_.dtype).c_str(), desc.array_class.c_str(),
                  dtype_to_string(desc.dtype).c_str());
     }
