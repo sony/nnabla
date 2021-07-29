@@ -20,6 +20,7 @@ ARG PIP_INS_OPTS
 ARG PYTHONWARNINGS
 ARG CURL_OPTS
 ARG WGET_OPTS
+ARG APT_OPTS
 
 USER root
 
@@ -28,7 +29,7 @@ ENV SDK_URL="https://dl.google.com/android/repository/sdk-tools-linux-3859397.zi
     ANDROID_VERSION=28 \
     ANDROID_BUILD_TOOLS_VERSION=27.0.3
 
-RUN apt-get install curl
+RUN eval ${APT_OPTS} && apt-get install curl
 
 # Download Android SDK
 RUN mkdir "$ANDROID_HOME" .android \
