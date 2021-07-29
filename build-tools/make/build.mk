@@ -163,7 +163,7 @@ nnabla-install:
 	then \
 	    pip install ${PIP_INS_OPTS} $$whl; \
 	fi;
-	pip install ${PIP_INS_OPTS} -r python/test_requirements.txt
+	-pip install ${PIP_INS_OPTS} -r python/test_requirements.txt
 
 .PHONY: nnabla-converter-install
 nnabla-converter-install:
