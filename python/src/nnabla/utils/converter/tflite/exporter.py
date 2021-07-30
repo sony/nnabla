@@ -67,6 +67,13 @@ class DataFormat(Enum):
 
 class TFLiteExporter:
     def __init__(self, nnp, batch_size, channel_last=False, data_type="float32", quantization=None, dataset=None):
+        # check flatc installation
+        try:
+            subprocess.check_output(['flatc', '--version'])
+        except subprocess.CalledProcessError:
+            raise ValueError(
+                "Can't find the flatbuffers package. Please refer to the Tensorflow Lite section of this website to install flatbuffers.\n"
+                + "https://nnabla.readthedocs.io/en/latest/python/file_format_converter/file_format_converter.html#overview")
         if quantization and dataset is None:
             raise ValueError("No represent dataset was provided!")
         if quantization and not os.path.exists(dataset):
