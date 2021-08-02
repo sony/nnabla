@@ -482,6 +482,23 @@ cdef class Variable:
     def g(self, value):
         self.grad.data = value
 
+    def bool_fill_(self, mask, value):
+        """
+        Return a new but inplaced :obj:`nnabla.Variable` filled with value where mask is non-zero.
+
+        Args:
+            mask (:obj:`nnabla.NdArray`): Mask with which to fill. Non-zero/zero elements are supposed to be a binary mask as 1/0. No gradients are computed with respect to mask.
+            value (float): The value to fill.
+
+        Returns:
+            :obj:`nnabla.Variable`
+
+        """
+        import nnabla.functions as F
+        return F.bool_fill(self, mask, value, outputs=[self.data])
+
+    masked_fill_ = bool_fill_
+
     @property
     def parent(self):
         """

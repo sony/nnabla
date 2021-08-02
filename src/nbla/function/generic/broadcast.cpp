@@ -29,31 +29,34 @@ NBLA_REGISTER_FUNCTION_SOURCE(Broadcast, const vector<int> &);
 template <typename T>
 void Broadcast<T>::setup_impl(const Variables &inputs,
                               const Variables &outputs) {
-  auto inshape = inputs[0]->shape();
   auto ndim = inputs[0]->ndim();
   if (ndim > 0) {
-    NBLA_CHECK(shape_.size() == static_cast<unsigned>(ndim), error_code::value,
-               "Number of dimension must match. Shape: %d != input: %d.",
+    NBLA_CHECK(shape_.size() >= static_cast<unsigned>(ndim), error_code::value,
+               "Target shape dimension (%d) >= input dimension (%d) must hold.",
                shape_.size(), ndim);
   }
   // X Stride and Y shape.
-  stride_x_.reshape({ndim}, true);
-  shape_y_.reshape({ndim}, true);
+  stride_x_.reshape({(Size_t)(shape_.size())}, true);
+  shape_y_.reshape({(Size_t)(shape_.size())}, true);
   Context cpu = Context().set_array_class("CpuCachedArray");
   int *stride_x = stride_x_.cast_data_and_get_pointer<int>(cpu, true);
   int *shape_y = shape_y_.cast_data_and_get_pointer<int>(cpu, true);
-  auto stride_x_in = inputs[0]->strides();
   // Check shape, and store variables.
-  for (int d = 0; d < ndim; ++d) {
+  auto eshape = expand_shape(inputs[0]->shape(), shape_.size());
+  auto estride_x_in = get_c_contiguous_strides(eshape);
+  for (unsigned int d = 0; d < eshape.size(); ++d) {
+    NBLA_CHECK(eshape[d] == shape_[d] || eshape[d] == 1, error_code::value,
+               "Trailing shapes must be same or dimension of trailing shape of "
+               "input has 1."
+               "Input shpae = (%s), Target shape = (%s)",
+               string_join(inputs[0]->shape(), string(", ")).c_str(),
+               string_join(shape_, string(", ")).c_str());
+
     shape_y[d] = shape_[d];
-    if (inshape[d] == shape_[d]) {
-      stride_x[d] = stride_x_in[d];
+    if (eshape[d] == shape_[d]) {
+      stride_x[d] = estride_x_in[d];
       continue;
     }
-    NBLA_CHECK(
-        inshape[d] == 1, error_code::value,
-        "Size of a dimension broadcasted must be 1 (%d at the dimension %d).",
-        inshape[d], d);
     stride_x[d] = 0;
   }
   Shape_t outshape(shape_.begin(), shape_.end());
@@ -167,7 +170,7 @@ void Broadcast<T>::forward_impl(const Variables &inputs,
   T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   const int *stride_x = stride_x_.get_data_pointer<int>(this->ctx_);
   const int *shape_y = shape_y_.get_data_pointer<int>(this->ctx_);
-  int ndim = inputs[0]->ndim();
+  int ndim = outputs[0]->ndim();
   int size = outputs[0]->size();
   switch_broadcast<NBLA_BROADCAST_MAX_DIM, T>::call(ndim, size, x, stride_x,
                                                     shape_y, y);
@@ -187,7 +190,7 @@ void Broadcast<T>::backward_impl(const Variables &inputs,
   T *g = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
   const int *stride_x = stride_x_.get_data_pointer<int>(this->ctx_);
   const int *shape_y = shape_y_.get_data_pointer<int>(this->ctx_);
-  int ndim = inputs[0]->ndim();
+  int ndim = outputs[0]->ndim();
   int size = outputs[0]->size();
   if (!accum[0])
     memset((void *)g, 0, sizeof(*g) * inputs[0]->size());

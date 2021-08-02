@@ -274,3 +274,7 @@
   Dropout_fiB: 336
 35:
   SpectralNorm_iifBB: 337
+36:
+  BoolFill_f: 341
+  BoolGather_Empty: 339
+  BoolScatter_Empty: 340

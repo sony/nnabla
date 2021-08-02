@@ -538,7 +538,7 @@ def create_function_nnp(inputs, outputs, func_name, func_args, func_kwargs):
 
 
 def clear_no_need_grad_tester(rng, func, inputs, func_args=[], func_kwargs={}, backward=None, atol_f=1e-6, ctx=None,
-                              func_name=None, insert_identity=[]):
+                              func_name=None, insert_identity=[], auto_forward=False):
     if ctx is None:
         ctx = nn.Context()
     if backward is None:
@@ -568,7 +568,7 @@ def clear_no_need_grad_tester(rng, func, inputs, func_args=[], func_kwargs={}, b
     if not insert_identity:
         insert_identity = [True] * len(vinputs)
 
-    with nn.context_scope(ctx), nn.auto_forward(False):
+    with nn.context_scope(ctx), nn.auto_forward(auto_forward):
         for idx, i in enumerate(vinputs_clear_buffer):
             if i is None:
                 vinputs_identity_clear_buffer += [None]
@@ -578,7 +578,7 @@ def clear_no_need_grad_tester(rng, func, inputs, func_args=[], func_kwargs={}, b
                 vinputs_identity_clear_buffer += [i]
 
     # Checking forward(clear_no_need_grad=True)
-    with nn.context_scope(ctx), nn.auto_forward(False):
+    with nn.context_scope(ctx), nn.auto_forward(auto_forward):
         o = func(*(vinputs + func_args), **func_kwargs)
         o = force_tuple(o)
         F.sink(*o).forward(clear_no_need_grad=False)
@@ -632,7 +632,7 @@ def function_tester(rng, func, ref_func, inputs,
                     func_args=[], func_kwargs={},
                     atol_f=1e-6, atol_b=1e-3, atol_accum=1e-6, dstep=1e-3, backward=None,
                     ctx=None, func_name=None, ref_grad=None, disable_half_test=False, atol_half=1e-1,
-                    insert_identity=[], disable_clear_no_need_grad_test=False):
+                    insert_identity=[], disable_clear_no_need_grad_test=False, auto_forward=False):
     """ Automatic testing of forward/backward pass of `func` by comparing it
     to the reference implementation in `ref_func`.
 
@@ -689,7 +689,8 @@ def function_tester(rng, func, ref_func, inputs,
     # Checking forward(clear_no_need_grad=True)
     if not disable_clear_no_need_grad_test:
         clear_no_need_grad_tester(rng, func, inputs, func_args, func_kwargs,
-                                  backward, atol_f, ctx, func_name, insert_identity)
+                                  backward, atol_f, ctx, func_name, insert_identity,
+                                  auto_forward)
 
     # Checking function name
     try:
@@ -862,7 +863,8 @@ def backward_function_tester(rng, func, inputs=None,
                              func_args=[], func_kwargs={},
                              atol_f=1e-4, atol_b=1e-3, atol_accum=5e-2,
                              dstep=1e-3, backward=None, backward_b=None,
-                             ctx=None, non_accum_check=False, skip_backward_check=False, insert_identity=[]):
+                             ctx=None, non_accum_check=False, skip_backward_check=False, insert_identity=[],
+                             auto_forward=False):
     """ Automatic testing of backward function and backward pass of `func` by comparing it.
     The backward pass of `func` is the reference; therefore, 
     the backward pass of `func` must be tested first!
@@ -898,22 +900,23 @@ def backward_function_tester(rng, func, inputs=None,
         insert_identity = [True] * len(vinputs)
 
     for idx, i in enumerate(zip(vinputs, vinputs_for_clear_buffer, vinputs_for_nn_grad)):
-        i0, i1, i2 = i
-        if i0 is None:
-            vinputs_identity += [None]
-            vinputs_identity_for_clear_buffer += [None]
-            vinputs_identity_for_nn_grad += [None]
-        elif insert_identity[idx]:
-            vinputs_identity += [F.identity(i0)]
-            vinputs_identity_for_clear_buffer += [F.identity(i1)]
-            vinputs_identity_for_nn_grad += [F.identity(i2)]
-        else:
-            vinputs_identity += [i0]
-            vinputs_identity_for_clear_buffer += [i1]
-            vinputs_identity_for_nn_grad += [i2]
+        with nn.auto_forward(auto_forward):
+            i0, i1, i2 = i
+            if i0 is None:
+                vinputs_identity += [None]
+                vinputs_identity_for_clear_buffer += [None]
+                vinputs_identity_for_nn_grad += [None]
+            elif insert_identity[idx]:
+                vinputs_identity += [F.identity(i0)]
+                vinputs_identity_for_clear_buffer += [F.identity(i1)]
+                vinputs_identity_for_nn_grad += [F.identity(i2)]
+            else:
+                vinputs_identity += [i0]
+                vinputs_identity_for_clear_buffer += [i1]
+                vinputs_identity_for_nn_grad += [i2]
 
     # Forward and backward of the forward function with no buffer clear
-    with nn.context_scope(ctx), nn.auto_forward(False):
+    with nn.context_scope(ctx), nn.auto_forward(auto_forward):
         outputs0 = func(*(vinputs_identity + func_args), **func_kwargs)
         outputs0 = force_list(outputs0)
         F.sink(*outputs0).forward(clear_no_need_grad=False)
@@ -931,7 +934,7 @@ def backward_function_tester(rng, func, inputs=None,
     grad_inputs0 = [inp.g.copy() for inp in vinputs]
 
     # Forward and backward of the forward function with clear redundant buffer
-    with nn.context_scope(ctx), nn.auto_forward(False):
+    with nn.context_scope(ctx), nn.auto_forward(auto_forward):
         outputs_for_clear_buffer = func(
             *(vinputs_identity_for_clear_buffer + func_args), **func_kwargs)
         outputs_for_clear_buffer = force_list(outputs_for_clear_buffer)
@@ -961,7 +964,7 @@ def backward_function_tester(rng, func, inputs=None,
     grad_vinputs = grad_voutputs + vinputs
     grad_vinputs_identity = grad_voutputs + vinputs_identity
     func_info_args = output.parent.info.args
-    with nn.context_scope(ctx), nn.auto_forward(False):
+    with nn.context_scope(ctx), nn.auto_forward(auto_forward):
         ograds0 = func_backward(grad_vinputs_identity, **func_info_args)
         ograds0 = force_list(ograds0)
         ograds0_ = list(filter(lambda o: o is not None, ograds0))
@@ -989,7 +992,7 @@ def backward_function_tester(rng, func, inputs=None,
     vinputs = [v for b, v in zip(backward, vinputs) if b]
     vinputs = list(filter(lambda x: x is not None, vinputs))
 
-    with nn.context_scope(ctx), nn.auto_forward(False):
+    with nn.context_scope(ctx), nn.auto_forward(auto_forward):
         outputs0_for_nn_grad = func(
             *(vinputs_identity_for_nn_grad + func_args), **func_kwargs)
         outputs0_for_nn_grad = force_list(outputs0_for_nn_grad)
@@ -1044,17 +1047,23 @@ def backward_function_tester(rng, func, inputs=None,
             continue
         for ig, v in zip(initial_grads, grad_vinputs):
             v.g = ig
-        from scipy.optimize import approx_fprime
+
+        # This must be first since approx_fprime destroys the input values
+        # analytical grad.
         rgrad = rng.randn()
-        sum_ograd = F.sum(ograd) * rgrad
-        numerical_grads = approx_fprime(
-            grad_inputs1, obj_func, dstep, sum_ograd, grad_vinputs)
+        with nn.auto_forward(auto_forward):
+            sum_ograd = F.sum(ograd) * rgrad
         sum_ograd.forward(clear_no_need_grad=True)
         sum_ograd.backward()
         analytical_grads = np.concatenate(
             [v.g.flatten() for v in grad_vinputs])
         analytical_grads -= np.concatenate([g.flatten()
                                             for g in initial_grads])
+        # numerical grad
+        from scipy.optimize import approx_fprime
+        numerical_grads = approx_fprime(
+            grad_inputs1, obj_func, dstep, sum_ograd, grad_vinputs)
+
         # grad_vinputs: dy_1, ..., dy_n, x_1, ..., x_n
         # grad_voutputs: dy_1, ..., dy_n
         seps = [0] + np.cumsum([int(np.prod(v.shape))

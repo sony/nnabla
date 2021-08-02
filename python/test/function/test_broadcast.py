@@ -43,19 +43,33 @@ def get_combinations(*N):
 @pytest.mark.parametrize("seed", [314])
 @pytest.mark.parametrize("fname, ctx, func_name", list_ctx_and_func_name(['broadcast']))
 @pytest.mark.parametrize("ndim, broadcast_dim", get_combinations(*range(0, 6)))
-def test_broadcast_forward_backward(ndim, broadcast_dim, seed, fname, ctx, func_name):
+@pytest.mark.parametrize("align", [True, False])
+def test_broadcast_forward_backward(align, ndim, broadcast_dim, seed, fname, ctx, func_name):
     func = getattr(F, fname)
     ref_func = eval('ref_' + fname)
     rng = np.random.RandomState(seed)
     shape = rng.randint(2, 5, size=(ndim,))
     inshape = shape.copy()
     inshape[broadcast_dim] = 1
+
     if ndim == 0:
         # Performing 0-dim array test too.
         inputs = [np.array(rng.randn()).astype("float32")]
         function_tester(rng, func, ref_func, inputs, [shape],
                         ctx=ctx, backward=[True], func_name=func_name,
                         atol_b=4e-3)
+        return
+
+    if not align:
+        # Trailing pattern, e.g., inshape = (3, 4), shape = (2, 3, 4)
+        if np.all(broadcast_dim) or not np.all(broadcast_dim):
+            pytest.skip(
+                "All true or all false of broadcast_dim is not needed to test.")
+
+        inshape = inshape[np.logical_not(broadcast_dim)]
+        shape1 = shape[broadcast_dim]
+        shape0 = shape[np.logical_not(broadcast_dim)]
+        shape = shape1 + shape0
 
     inputs = [np.array(rng.randn(*inshape)).astype("float32")]
     function_tester(rng, func, ref_func, inputs, [shape],
@@ -66,13 +80,15 @@ def test_broadcast_forward_backward(ndim, broadcast_dim, seed, fname, ctx, func_
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("fname, ctx, func_name", list_ctx_and_func_name(['broadcast']))
 @pytest.mark.parametrize("ndim, broadcast_dim", get_combinations(*range(0, 6)))
-def test_broadcast_double_backward(ndim, broadcast_dim, seed, fname, ctx, func_name):
+@pytest.mark.parametrize("align", [True, False])
+def test_broadcast_double_backward(align, ndim, broadcast_dim, seed, fname, ctx, func_name):
     from nbla_test_utils import cap_ignore_region, backward_function_tester
 
     rng = np.random.RandomState(seed)
     shape = rng.randint(2, 5, size=(ndim,))
     inshape = shape.copy()
     inshape[broadcast_dim] = 1
+
     if ndim == 0:
         # Performing 0-dim array test too.
         inputs = [np.array(rng.randn()).astype("float32")]
@@ -80,6 +96,17 @@ def test_broadcast_double_backward(ndim, broadcast_dim, seed, fname, ctx, func_n
                                  inputs=inputs,
                                  func_args=[shape], func_kwargs={},
                                  ctx=ctx)
+
+    if not align:
+        # Trailing pattern, e.g., inshape = (3, 4), shape = (2, 3, 4)
+        if np.all(broadcast_dim) or not np.all(broadcast_dim):
+            pytest.skip(
+                "All true or all false of broadcast_dim is not needed to test.")
+
+        inshape = inshape[np.logical_not(broadcast_dim)]
+        shape1 = shape[broadcast_dim]
+        shape0 = shape[np.logical_not(broadcast_dim)]
+        shape = shape1 + shape0
 
     inputs = [np.array(rng.randn(*inshape)).astype("float32")]
     backward_function_tester(rng, F.broadcast, inputs,

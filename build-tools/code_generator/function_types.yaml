@@ -590,10 +590,19 @@ Gather:
 GatherNd:
   float: [float]
   half: [Half]
+BoolGather:
+  float: [float]
+  half: [Half]
 ScatterNd:
   float: [float]
   half: [Half]
 ScatterAdd:
+  float: [float]
+  half: [Half]
+BoolScatter:
+  float: [float]
+  half: [Half]
+BoolFill:
   float: [float]
   half: [Half]
 MaxPoolingBackward:
