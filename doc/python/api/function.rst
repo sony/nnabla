@@ -240,6 +240,7 @@ Array Manipulation
 .. autofunction:: bool_gather
 .. autofunction:: bool_scatter
 .. autofunction:: bool_fill
+.. autofunction:: dot
 
 
 Stochasticity
