@@ -89,3 +89,45 @@ def test_data_csv_csv_10():
 def test_data_csv_csv_20():
     with generate_csv_csv('test.csv', 20, 14) as csvfilename:
         yield csvfilename
+
+
+@contextmanager
+def generate_cache_dir(num_of_data):
+    cache_block_size = 100
+    with create_temp_with_dir('dummy.csv') as csvfilename:
+        imgdir = os.path.dirname(csvfilename)
+
+        # generate data
+        data_x = numpy.random.random((num_of_data, 2, 2))
+        data_y = numpy.random.randint(0, 10, size=(num_of_data,))
+
+        cache_info = []
+        for i in range(0, num_of_data, cache_block_size):
+            npy_fn = os.path.join(imgdir,
+                                  "cache_{}_{}.npy".format(
+                                      str(i).zfill(8), str(i + cache_block_size - 1).zfill(8)))
+            with open(npy_fn, 'wb') as f:
+                numpy.save(f, data_x[i: i + cache_block_size - 1])
+                numpy.save(f, data_y[i: i + cache_block_size - 1])
+
+            cache_info.append(
+                (npy_fn, len(data_y[i: i + cache_block_size - 1])))
+
+        # generate cache_index.csv
+        with open(os.path.join(imgdir, 'cache_index.csv'), 'w') as f:
+            for fn, num in cache_info:
+                f.write("{},{}\n".format(fn, str(num)))
+
+        # generate cache_info.csv
+        with open(os.path.join(imgdir, 'cache_info.csv'), 'w') as f:
+            f.write('x\n')
+            f.write('y\n')
+
+        # generate order.csv
+        with open(os.path.join(imgdir, 'order.csv'), 'w') as f:
+            for i in range(num_of_data):
+                f.write('{},{}\n'.format(i, i))
+
+        print("start testing...")
+        yield imgdir
+        print("finished testing")
