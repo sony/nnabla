@@ -13,8 +13,11 @@
 # limitations under the License.
 
 import pytest
+import sys
+
 import numpy as np
 import nnabla.functions as F
+
 from nbla_test_utils import list_context
 
 ctxs = list_context('Embed')
@@ -41,6 +44,8 @@ def test_embed_forward_backward(seed, shape_x, shape_w, ctx, func_name):
 @pytest.mark.parametrize("shape_x", [(10,), (2, 8), (2, 3, 4), (2, 2, 3, 4)])
 @pytest.mark.parametrize("shape_w", [(5, 3), (4, 3, 4), (6, 2, 2, 3)])
 def test_embed_double_backward(seed, shape_x, shape_w, ctx, func_name):
+    if sys.maxsize <= 2**32 and shape_w == (6, 2, 2, 3):
+        pytest.skip('skipped on 32bit system')
     from nbla_test_utils import backward_function_tester, grad_function_forward_function_output
     from nnabla.backward_function.embed import EmbedFilterGrad
     rng = np.random.RandomState(seed)
