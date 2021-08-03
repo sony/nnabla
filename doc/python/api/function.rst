@@ -204,6 +204,9 @@ Math
 .. autofunction:: atanh
 .. autofunction:: cumsum
 .. autofunction:: cumprod
+.. autofunction:: batch_inv
+.. autofunction:: batch_det
+.. autofunction:: batch_logdet
 
 
 Array Manipulation
@@ -228,15 +231,15 @@ Array Manipulation
 .. autofunction:: sort
 .. autofunction:: reshape
 .. autofunction:: one_hot
-.. autofunction:: batch_inv
-.. autofunction:: batch_det
-.. autofunction:: batch_logdet
 .. autofunction:: assign
 .. autofunction:: top_k_data
 .. autofunction:: top_k_grad
 .. autofunction:: pack_padded_sequence
 .. autofunction:: pad_packed_sequence
 .. autofunction:: searchsorted
+.. autofunction:: bool_gather
+.. autofunction:: bool_scatter
+.. autofunction:: bool_fill
 .. autofunction:: dot
 
 

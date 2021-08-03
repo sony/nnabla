@@ -482,6 +482,23 @@ cdef class Variable:
     def g(self, value):
         self.grad.data = value
 
+    def bool_fill_(self, mask, value):
+        """
+        Return a new but inplaced :obj:`nnabla.Variable` filled with value where mask is non-zero.
+
+        Args:
+            mask (:obj:`nnabla.NdArray`): Mask with which to fill. Non-zero/zero elements are supposed to be a binary mask as 1/0. No gradients are computed with respect to mask.
+            value (float): The value to fill.
+
+        Returns:
+            :obj:`nnabla.Variable`
+
+        """
+        import nnabla.functions as F
+        return F.bool_fill(self, mask, value, outputs=[self.data])
+
+    masked_fill_ = bool_fill_
+
     @property
     def parent(self):
         """
@@ -1112,16 +1129,16 @@ cdef class Variable:
     def __iadd__(self, x):
         import nnabla.functions as F
         if isinstance(x, (NdArray, Variable)):
-            return F.add2(self, x, inplace=True)
+            return F.add2(self, x, inplace=False)
         else:
-            return F.add_scalar(self, x, inplace=True)
+            return F.add_scalar(self, x, inplace=False)
 
     def __isub__(self, x):
         import nnabla.functions as F
         if isinstance(x, (NdArray, Variable)):
-            return F.sub2(self, x, inplace=True)
+            return F.sub2(self, x, inplace=False)
         else:
-            return F.add_scalar(self, -x, inplace=True)
+            return F.add_scalar(self, -x, inplace=False)
 
     def __imul__(self, x):
         import nnabla.functions as F
@@ -1133,14 +1150,14 @@ cdef class Variable:
     def __idiv__(self, x):
         import nnabla.functions as F
         if isinstance(x, (NdArray, Variable)):
-            return F.div2(self, x, inplace=True)
+            return F.div2(self, x, inplace=False)
         else:
             return F.mul_scalar(self, 1. / x)
 
     def __itruediv__(self, x):
         import nnabla.functions as F
         if isinstance(x, (NdArray, Variable)):
-            return F.div2(self, x, inplace=True)
+            return F.div2(self, x, inplace=False)
         else:
             return F.mul_scalar(self, 1. / x)
 
