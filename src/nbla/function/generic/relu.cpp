@@ -28,15 +28,12 @@ NBLA_REGISTER_FUNCTION_SOURCE(ReLU, bool);
 template <typename T>
 void ReLU<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   outputs[0]->reshape(inputs[0]->shape(), true);
-  if (inplace_) {
-    outputs[0]->data()->set_array(inputs[0]->data()->array());
-  }
 }
 
 template <class T>
 void ReLU<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, !inplace_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
   for (int s = 0; s < inputs[0]->size(); s++) {
     y[s] = std::max(T(0), x[s]);
   }

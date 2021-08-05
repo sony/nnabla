@@ -40,7 +40,7 @@ def SmallResNet(x, test=False, act=F.relu, inplace=False, shared=False):
         with nn.parameter_scope("{}-shortcut".format(name)):
             s = PF.convolution(h, maps, (3, 3), (1, 1), with_bias=False)
             h = PF.batch_normalization(h, batch_stat=not test)
-        return act(h + s, inplace) if act in (F.relu, F.leaky_relu) else act(h + s)
+        return act(h + s, inplace=inplace) if act in (F.relu, F.leaky_relu) else act(h + s)
     h = conv(h, maps=4, name="conv1")
     h = F.max_pooling(h, (2, 2))
     h = conv(h, maps=4, name="conv2")

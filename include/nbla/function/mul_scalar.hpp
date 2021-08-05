@@ -41,6 +41,6 @@ Outputs:
 \ingroup FunctionImplGrp
 */
 NBLA_DEFINE_TRANSFORM_UNARY_1_INPLACE(MulScalar, x *(T)a0, dy *(T)a0, false,
-                                      false, double, false);
+                                      false, double, true);
 }
 #endif

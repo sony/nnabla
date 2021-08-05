@@ -46,7 +46,8 @@ Outputs:
 @param n Max number of patches to be erased.
 @param share Use a same bounding box randomly picked over the feature dimension
 when being True. Default is False.
-@param inplace The output array is shared with the input array if True.
+@param inplace This option is obsolete and ignored. Output is never in-placed
+with input.
 @param base_axis
 @param seed Random seed. When -1, seed is sampled from global random number
 generator.
@@ -69,7 +70,6 @@ protected:
   const vector<float> replacements_;
   int n_;
   bool share_;
-  bool inplace_;
   int base_axis_;
   int seed_;
   bool channel_last_;
@@ -90,13 +90,14 @@ public:
                      share, inplace, base_axis, seed, channel_last,
                      ste_fine_grained),
         prob_(prob), area_ratios_(area_ratios), aspect_ratios_(aspect_ratios),
-        replacements_(replacements), n_(n), share_(share), inplace_(inplace),
+        replacements_(replacements), n_(n), share_(share),
         base_axis_(base_axis), seed_(seed), channel_last_(channel_last),
         ste_fine_grained_(ste_fine_grained) {}
   virtual ~RandomErase() {}
   virtual shared_ptr<Function> copy() const {
     return create_RandomErase(ctx_, prob_, area_ratios_, aspect_ratios_,
-                              replacements_, n_, share_, inplace_, base_axis_,
+                              replacements_, n_, share_,
+                              false /* inplace is obsoleted. */, base_axis_,
                               seed_, channel_last_, ste_fine_grained_);
   }
   virtual int min_inputs() { return 1; }
@@ -107,10 +108,6 @@ public:
     return SingletonManager::get<Cpu>()->array_classes();
   }
   virtual string name() { return "RandomErase"; }
-  virtual int inplace_data(int i) const {
-    return inplace_ ? Function::INPLACE : Function::NOT_INPLACE;
-  }
-  virtual int inplace_data_with(int i) const { return 0; }
   virtual bool need_setup_recompute(int o) const { return true; }
   virtual bool grad_depends_output_data(int i, int o) const { return false; }
 
