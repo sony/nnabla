@@ -2,9 +2,9 @@ Extensions
 ==========
 
 NNabla offers easy extensibility for developers to add new device extensions.
-The NNabla Python package officially supports the ``cudnn`` extension, which
-dramatically accelerates computation
-by leveraging NVIDIA CUDA GPUs with cuDNN computation primitives.
+The NNabla Python package officially supports the ``cpu``, ``cuda`` and ``cudnn`` extension,
+``cuda`` and ``cudnn`` extension can dramatically accelerate computation by leveraging NVIDIA
+CUDA GPUs with cuDNN computation primitives.
 
 You can manually import extensions by:
 
@@ -47,22 +47,4 @@ All extension modules must have the following functions.
     The function in the ``cudnn`` extension takes the ``device_id`` as an optional argument,
     which specifies the device you want to synchronize with.
 
-.. py:function:: get_device_count
-
-    TODO: Write me.
-
-.. py:function:: get_devices
-
-    TODO: Write me.
-
-.. py:function:: clear_memory_cache()
-
-    TODO: Write me.
-
-
-		     
-Implementing an extension
--------------------------
-
-TODO: Link to a page of how to create a new extension.
 
