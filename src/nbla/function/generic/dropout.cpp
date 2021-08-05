@@ -28,7 +28,7 @@ NBLA_REGISTER_FUNCTION_SOURCE(Dropout, double, int, bool);
 
 template <typename T>
 void Dropout<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
-  NBLA_CHECK(p_ > 0. && p_ < 1., error_code::value,
+  NBLA_CHECK(p_ >= 0. && p_ < 1., error_code::value,
              "p must be between 0.0 and 1.0. p: %f.", p_);
   outputs[0]->reshape(inputs[0]->shape(), true);
   if (output_mask_) {
