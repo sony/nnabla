@@ -27,7 +27,7 @@ class IdentityModifier(FunctionModifier):
     All functions are replaced to the same `new` function.
 
     Args:
-        inputs (:obj: `dict`): Input variable mapping from the original input to another input. Default is the empty dictionary, so the new graph shares the original inputs.
+        inputs (:obj:`dict`): Input variable mapping from the original input to another input. Default is the empty dictionary, so the new graph shares the original inputs.
 
     Examples:
 
