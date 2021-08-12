@@ -96,8 +96,9 @@ class CreateCache(CsvDataSource):
 
         self.current_cache_position += 1
         if single_or_rankzero():
-            progress('Create cache', self.current_cache_position /
-                     self.num_of_cache_file)
+            if self.current_cache_position % int(self.num_of_cache_file/20+1) == 0:
+                progress('Create cache', self.current_cache_position /
+                         self.num_of_cache_file)
         return cache_filename, len(cache_data)
 
     def __init__(self, input_csv_filename, rng=None, shuffle=False, num_of_threads=None):
