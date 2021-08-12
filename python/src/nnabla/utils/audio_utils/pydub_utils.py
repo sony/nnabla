@@ -15,11 +15,11 @@
 
 from __future__ import absolute_import, division
 
-import warnings
-import os
 import math
-import numpy as np
+import os
+import warnings
 
+import numpy as np
 
 warnings.simplefilter("ignore", RuntimeWarning)
 from pydub import AudioSegment

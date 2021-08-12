@@ -28,13 +28,14 @@ computation graph, and saving and restoring their neural network from a persiste
 
 """
 
-import nnabla as nn
-import numpy as np
 import weakref
 from collections import OrderedDict
 from contextlib import contextmanager
-from itertools import chain
 from functools import reduce
+from itertools import chain
+
+import nnabla as nn
+import numpy as np
 
 __graph_members__ = ['inputs', 'outputs',
                      'parameters', 'functions', 'variables']
@@ -2193,7 +2194,6 @@ class ProtoFunction:
         computation graph.
         """
         from nnabla.parameter import get_parameter_or_create
-        from nnabla.utils import nnabla_pb2
         from nnabla.utils.load_function import _create_function_instance
         inputs = []
         batch_size = kwargs.get('batch_size', 1)

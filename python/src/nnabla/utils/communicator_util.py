@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from nnabla.logger import logger
 import nnabla.communicators as C
+from nnabla.logger import logger
 
 _current_communicator = None
 

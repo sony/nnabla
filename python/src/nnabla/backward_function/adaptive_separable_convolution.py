@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def adaptive_separable_convolution_backward(inputs):
     """
     Args:

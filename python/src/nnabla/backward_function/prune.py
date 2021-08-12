@@ -13,10 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-from .utils import no_grad
-
-
 def prune_backward(inputs, rate=0.9):
     """
     Args:

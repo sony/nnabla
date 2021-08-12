@@ -15,8 +15,9 @@
 
 from __future__ import print_function
 
-from setuptools import setup
 import os
+
+from setuptools import setup
 
 if __name__ == '__main__':
     ############################################################################

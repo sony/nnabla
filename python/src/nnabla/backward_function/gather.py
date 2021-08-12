@@ -20,9 +20,6 @@
 # 3. UPDATE THE MAPPING IF NECESSARY (see function_backward_functions.py.tmpl)
 
 
-import nnabla.functions as F
-
-
 def gather_backward(inputs, axis=None, batch_dims=None):
     """
     Args:

@@ -11,20 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import os
-import csv
-import h5py
-import numpy
-import shutil
 import collections
+import csv
+import os
+import shutil
 from contextlib import closing
 from multiprocessing.pool import ThreadPool
 
-from nnabla.utils.data_source_implements import CsvDataSource
-from nnabla.utils.data_source_loader import FileReader
-
+import h5py
+import numpy
 from nnabla.config import nnabla_config
 from nnabla.logger import logger
+from nnabla.utils.data_source_implements import CsvDataSource
+from nnabla.utils.data_source_loader import FileReader
 from nnabla.utils.progress import progress
 from nnabla.utils.communicator_util import single_or_rankzero
 

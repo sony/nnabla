@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def nms_detection2d_backward(inputs, thresh=None, nms=None, nms_per_class=None):
     """
     Args:

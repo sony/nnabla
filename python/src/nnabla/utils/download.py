@@ -14,11 +14,10 @@
 # limitations under the License.
 
 
-from nnabla.logger import logger
-
-import urllib.request as request
-from tqdm import tqdm
 import os
+import urllib.request as request
+from nnabla.logger import logger
+from tqdm import tqdm
 
 
 def get_data_home():

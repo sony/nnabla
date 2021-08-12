@@ -13,10 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-from .utils import no_grad
-
-
 def rand_gamma_backward(inputs, k=0.5, theta=1, shape=[], seed=-1):
     """
     Args:

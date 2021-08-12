@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def sort_backward(inputs, axis=-1, reverse=False, with_index=False, only_index=False):
     """
     Args:

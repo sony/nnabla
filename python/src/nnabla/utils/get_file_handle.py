@@ -13,19 +13,19 @@
 # limitations under the License.
 
 import contextlib
-import zipfile
-import h5py
 import io
 import os
 import re
-import numpy
-import google.protobuf.text_format as text_format
+import zipfile
 from collections import OrderedDict
 
+import google.protobuf.text_format as text_format
+import h5py
+import nnabla as nn
+import numpy
 from nnabla.logger import logger
 from nnabla.utils import nnabla_pb2
 from nnabla.utils.nnp_format import nnp_version
-import nnabla as nn
 
 
 class FileHandlerContext:

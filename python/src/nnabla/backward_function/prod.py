@@ -14,7 +14,8 @@
 
 
 import nnabla.functions as F
-from .utils import no_grad, force_list
+
+from .utils import force_list
 
 
 def prod_backward(inputs, axes=None, keep_dims=False):

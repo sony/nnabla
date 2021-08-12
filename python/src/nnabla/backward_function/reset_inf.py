@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def reset_inf_backward(inputs, val=0):
     """
     Args:

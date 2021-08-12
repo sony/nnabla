@@ -13,11 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ..onnx import OnnxExporter
-from onnx_tf.backend import prepare
-import tensorflow as tf
 import os
+
+import tensorflow as tf
+from onnx_tf.backend import prepare
 from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
+
+from ..onnx import OnnxExporter
 
 
 class TensorflowExporter:

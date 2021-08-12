@@ -13,8 +13,8 @@
 # limitations under the License.
 
 
-import nnabla as nn
 import nnabla.functions as F
+
 from .utils import force_list
 
 

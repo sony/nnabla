@@ -14,8 +14,9 @@
 
 
 import collections
-from .refine_parser import RefineParser
+
 from .refine_graph import RefineGraph
+from .refine_parser import RefineParser
 
 
 def _strip_node_name(name):

@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def binary_error_backward(inputs):
     """
     Args:

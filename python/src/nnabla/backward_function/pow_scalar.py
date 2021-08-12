@@ -14,10 +14,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-from .utils import no_grad
-
-
 # Inplacing is obsoleted.
 def pow_scalar_backward(inputs, val=1, inplace=False):
     """

@@ -15,7 +15,6 @@
 """
 This module implements a series of optimizer based on proto_graph object.
 """
-import weakref
 from nnabla.logger import logger
 
 

@@ -12,21 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from six.moves import map
 import csv
-import numpy as np
 import os
 
-from nnabla.logger import logger
-from nnabla.utils.progress import configure_progress, progress
-from nnabla.utils.cli.utility import let_data_to_variable, is_float, compute_full_path
+import nnabla.utils.callback as callback
 import nnabla.utils.load as load
-from nnabla.utils.data_iterator import data_iterator_csv_dataset
+import numpy as np
+from nnabla.logger import logger
+from nnabla.utils.cli.utility import let_data_to_variable, is_float, compute_full_path
 from nnabla.utils.data_iterator import data_iterator_cache
+from nnabla.utils.data_iterator import data_iterator_csv_dataset
 from nnabla.utils.data_source_loader import FileReader
 from nnabla.utils.image_utils import imsave
-
-import nnabla.utils.callback as callback
+from nnabla.utils.progress import configure_progress, progress
+from six.moves import map
 
 
 def _set_initial_values(result, type_and_name, d):

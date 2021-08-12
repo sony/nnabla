@@ -15,7 +15,6 @@
 
 
 import nnabla as nn
-import nnabla.functions as F
 import nnabla.function as _F
 from nnabla.function import PythonFunction
 

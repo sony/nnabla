@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def confusion_matrix_backward(inputs, axis=None):
     """
     Args:

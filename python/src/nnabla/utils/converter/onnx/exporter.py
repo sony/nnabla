@@ -13,11 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from nnabla.utils import nnabla_pb2
-from functools import partial
-import numpy as np
-import re
 import collections
+import re
+from functools import partial
+
+import numpy as np
+from nnabla.utils import nnabla_pb2
+
 try:
     import onnx
     from .utils import *

@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def vat_noise_backward(inputs, base_axis=1, eps=1.0):
     """
     Args:

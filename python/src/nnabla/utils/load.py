@@ -17,29 +17,27 @@ Load saved network from nntxt.
 
 '''
 
-from collections import OrderedDict
-import numpy
+import itertools
 import os
 import re
-import itertools
-
-from nnabla.initializer import (
-    NormalInitializer, UniformInitializer, ConstantInitializer, RangeInitializer)
-from nnabla.logger import logger
-
-from nnabla.utils import nnabla_pb2
-from nnabla.utils.data_iterator import data_iterator_csv_dataset, data_iterator_cache
-from nnabla.utils.create_cache import CreateCache
-from nnabla.utils.communicator_util import current_communicator, single_or_rankzero
-from nnabla.utils.learning_rate_scheduler import (
-    PolynomialScheduler, CosineScheduler, ExponentialScheduler, StepScheduler, LinearWarmupScheduler)
-
-from nnabla.utils.get_file_handle import get_initial_file_loader, load_files
-from nnabla.core.graph_optimizer import IdentityRemover
+from collections import OrderedDict
 
 import nnabla as nn
 import nnabla.functions as F
 import nnabla.solver as S
+import numpy
+from nnabla.core.graph_optimizer import IdentityRemover
+from nnabla.initializer import (
+    NormalInitializer, UniformInitializer, ConstantInitializer, RangeInitializer)
+from nnabla.logger import logger
+from nnabla.utils import nnabla_pb2
+from nnabla.utils.communicator_util import current_communicator, single_or_rankzero
+from nnabla.utils.create_cache import CreateCache
+from nnabla.utils.data_iterator import data_iterator_csv_dataset, data_iterator_cache
+from nnabla.utils.get_file_handle import get_initial_file_loader, load_files
+from nnabla.utils.learning_rate_scheduler import (
+    PolynomialScheduler, CosineScheduler, ExponentialScheduler, StepScheduler, LinearWarmupScheduler)
+
 
 # The mainly difference between legacy implementation and refactor-ed implementation:
 #  - legacy shares variable dictionary with each networks, while new has not implemented.

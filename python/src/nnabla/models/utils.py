@@ -12,12 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from __future__ import absolute_import
+
 import os
 
 from nnabla import logger
 from nnabla.utils.download import get_data_home
-
-from ..utils import *
 
 
 def get_model_home():

@@ -15,9 +15,9 @@
 
 __all__ = ['profile']
 
-import pstats
-import cProfile
 import atexit
+import cProfile
+import pstats
 
 
 def _null_condition(*args, **kw):

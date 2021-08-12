@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import collections
-import numpy as np
 from functools import partial
 
 import nnabla.utils.converter
+import numpy as np
 
 
 def generate_value(type, dims, multiplier):

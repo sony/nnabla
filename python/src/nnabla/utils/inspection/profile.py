@@ -14,14 +14,14 @@
 
 from __future__ import absolute_import
 
-import time
 import csv
 import os
-import numpy as np
-from importlib import import_module
+import time
 from collections import OrderedDict
 from contextlib import contextmanager
+from importlib import import_module
 
+import numpy as np
 from nnabla.ext_utils import import_extension_module
 
 from .base import FunctionHookCallbackBase

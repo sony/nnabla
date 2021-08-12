@@ -14,21 +14,19 @@
 
 from __future__ import print_function
 
-from collections import OrderedDict
-from contextlib2 import ExitStack  # Backport from python3
-import numpy as np
 import os
 import time
+from collections import OrderedDict
 from functools import partial
 
-import nnabla.function as F
+import nnabla.utils.callback as callback
+import nnabla.utils.load as load
+import numpy as np
+from contextlib2 import ExitStack  # Backport from python3
 from nnabla.ext_utils import import_extension_module
 from nnabla.logger import logger
-from nnabla.parameter import save_parameters
-from nnabla.utils.progress import configure_progress, progress
 from nnabla.utils.cli.utility import let_data_to_variable
-import nnabla.utils.load as load
-import nnabla.utils.callback as callback
+from nnabla.utils.progress import configure_progress, progress
 
 
 def profile(config, name, func, result_dict, synchromize):

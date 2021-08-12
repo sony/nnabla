@@ -14,7 +14,6 @@
 
 
 import nnabla.functions as F
-from .utils import no_grad
 
 
 def kl_multinomial_backward(inputs, base_axis=1):

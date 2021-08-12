@@ -23,7 +23,6 @@ from .csrc_templates import \
     csrc_implements, \
     csrc_example, \
     csrc_gnumake
-
 from .utils import create_nnabart_info
 from .utils import preprocess_for_exporter
 

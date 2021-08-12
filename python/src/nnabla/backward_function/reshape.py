@@ -14,7 +14,6 @@
 
 
 import nnabla.functions as F
-from .utils import no_grad
 
 
 def reshape_backward(inputs, shape, inplace=True):

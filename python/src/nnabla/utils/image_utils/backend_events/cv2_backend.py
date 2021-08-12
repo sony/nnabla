@@ -16,10 +16,9 @@ from __future__ import absolute_import, division
 
 import cv2
 import numpy as np
-import os
-
 from nnabla.logger import logger
-from .common import upscale_pixel_intensity, check_type_and_cast_if_necessary,\
+
+from .common import upscale_pixel_intensity, check_type_and_cast_if_necessary, \
     _imread_before, _imread_after, _imsave_before, _imresize_before, _imresize_after
 from .image_utils_backend import ImageUtilsBackend
 

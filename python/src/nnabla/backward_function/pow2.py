@@ -15,7 +15,6 @@
 
 
 import nnabla.functions as F
-from .utils import no_grad
 
 
 def pow2_backward(inputs, inplace=False):  # Inplacing is obsoleted.

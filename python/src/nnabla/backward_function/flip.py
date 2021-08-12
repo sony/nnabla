@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def flip_backward(inputs, axes=None):
     """
     Args:

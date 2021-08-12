@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def warp_by_grid_backward(inputs, mode='linear', padding_mode='zero', align_corners=False, channel_last=False):
     """
     Args:

@@ -13,11 +13,12 @@
 # limitations under the License.
 
 from collections import OrderedDict
+
 import nnabla as nn
-from nnabla.utils import nnabla_pb2
 import nnabla.functions as F
-from nnabla.utils.save_function import _create_function_nntxt
 import numpy as np
+from nnabla.utils import nnabla_pb2
+from nnabla.utils.save_function import _create_function_nntxt
 
 
 class ProtoGenerator:

@@ -14,17 +14,14 @@
 # limitations under the License.
 
 
-import numpy as np
+import nnabla as nn
+import nnabla.function as _F
 import nnabla.functions as F
-from .utils import no_grad, get_output
+from nnabla.function import PythonFunction
+
 from .batch_normalization import double_backward_for_batch as bn_double_backward_for_batch
 from .batch_normalization import double_backward_for_global as bn_double_backward_for_global
-from functools import partial
-
-import nnabla as nn
-import nnabla.functions as F
-import nnabla.function as _F
-from nnabla.function import PythonFunction
+from .utils import no_grad, get_output
 
 
 def double_backward(g_dx0, g_db0, g_dg0, g_dz0,

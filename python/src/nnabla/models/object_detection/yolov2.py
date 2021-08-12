@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from __future__ import absolute_import
+
 import nnabla as nn
+import numpy as np
 from nnabla.utils.nnp_graph import NnpNetworkPass
 
-import numpy as np
 from .base import ObjectDetection
 
 

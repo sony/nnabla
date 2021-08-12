@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def top_k_grad_backward(inputs, k, abs=False, base_axis=1):
     """
     Args:

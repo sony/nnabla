@@ -20,9 +20,6 @@
 # 3. UPDATE THE MAPPING IF NECESSARY (see function_backward_functions.py.tmpl)
 
 
-import nnabla.functions as F
-
-
 def deformable_convolution_backward(inputs, base_axis=1, pad=None, stride=None, dilation=None, group=1, deformable_group=1, channel_last=False):
     """
     Args:

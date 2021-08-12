@@ -15,15 +15,15 @@
 
 from __future__ import division, print_function
 
-import nnabla as nn
-from nnabla.ext_utils import import_extension_module
-import os
 import csv
+import os
 import sys
-
 import time
 from collections import namedtuple
 from functools import partial
+
+import nnabla as nn
+from nnabla.ext_utils import import_extension_module
 
 ProfileStat = namedtuple("ProfileStat", ["parameter_scope", "inputs_shape",
                                          "args_info", "function_name", "mean_time", "n_run"])

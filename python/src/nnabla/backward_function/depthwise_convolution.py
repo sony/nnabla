@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def depthwise_convolution_backward(inputs, base_axis=1, pad=None, stride=None, dilation=None, multiplier=1):
     """
     Args:

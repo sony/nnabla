@@ -13,10 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-from .utils import no_grad
-
-
 def random_shift_backward(inputs, shifts=None, border_mode='nearest', base_axis=1, seed=-1):
     """
     Args:

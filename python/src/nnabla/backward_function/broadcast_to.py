@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def broadcast_to_backward(inputs, axis=None):
     """
     Args:

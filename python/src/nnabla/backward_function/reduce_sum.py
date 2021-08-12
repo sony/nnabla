@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def reduce_sum_backward(inputs):
     """
     Args:

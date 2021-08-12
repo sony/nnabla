@@ -15,7 +15,7 @@
 
 
 import nnabla.functions as F
-from .utils import no_grad, positive_axis, get_output
+from .utils import positive_axis, get_output
 
 
 def log_softmax_backward(inputs, axis=None):

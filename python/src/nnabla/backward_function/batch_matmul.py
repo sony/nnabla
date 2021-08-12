@@ -14,8 +14,6 @@
 
 import nnabla as nn
 import nnabla.functions as F
-import nnabla.functions as F
-from .utils import no_grad
 
 
 def _sum(dx, x):

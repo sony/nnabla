@@ -13,9 +13,7 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
 import numpy as np
-from .utils import no_grad
 
 
 def r_pow_scalar_backward(inputs, val=1):

@@ -15,7 +15,6 @@
 
 
 import nnabla.functions as F
-import numpy as np
 
 
 def no_grad(x):

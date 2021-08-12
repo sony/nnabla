@@ -15,9 +15,6 @@
 import nnabla as nn
 import numpy as np
 
-from nnabla.parameter import get_parameter_or_create
-from nnabla.initializer import ConstantInitializer
-
 from .graph_converter import FunctionModifier
 
 

@@ -15,14 +15,11 @@
 
 from __future__ import print_function
 
-from collections import OrderedDict
-import os
-import weakref
-import numpy as np
 import itertools
+from collections import OrderedDict
 
 import nnabla as nn
-import nnabla.function as F
+import numpy as np
 
 
 class NnpNetwork(object):

@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def affine_grid_backward(inputs, size, align_corners=False):
     """
     Args:

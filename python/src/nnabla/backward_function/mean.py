@@ -13,9 +13,9 @@
 # limitations under the License.
 
 
-import numpy as np
-import nnabla as nn
 import nnabla.functions as F
+import numpy as np
+
 from .utils import force_list
 
 

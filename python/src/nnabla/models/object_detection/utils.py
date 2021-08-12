@@ -11,9 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from nnabla.utils.image_utils import imresize
-from nnabla.models.object_detection.draw_utils import DrawBoundingBoxes
 import numpy as np
+from nnabla.models.object_detection.draw_utils import DrawBoundingBoxes
+from nnabla.utils.image_utils import imresize
 
 
 def draw_bounding_boxes(img, bboxes, names, colors=None, thresh=0.5):

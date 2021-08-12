@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def binary_connect_affine_backward(inputs, base_axis=1, quantize_zero_to=1.0):
     """
     Args:

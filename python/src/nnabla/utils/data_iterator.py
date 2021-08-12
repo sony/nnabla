@@ -21,20 +21,19 @@ Detailed design document is :doc:`/doc/designs/data_iterator`.
 '''
 
 import atexit
+import threading
+
 import numpy
 import six
-import threading
+from nnabla.logger import logger
 
 from .data_source import DataSourceWithFileCache
 from .data_source import DataSourceWithMemoryCache
 from .data_source import SlicedDataSource
-
-from .data_source_implements import SimpleDataSource
-from .data_source_implements import CsvDataSource
 from .data_source_implements import CacheDataSource
 from .data_source_implements import ConcatDataSource
-
-from nnabla.logger import logger
+from .data_source_implements import CsvDataSource
+from .data_source_implements import SimpleDataSource
 
 
 class DataIterator(object):

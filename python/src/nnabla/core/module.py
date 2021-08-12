@@ -14,10 +14,12 @@
 # limitations under the License.
 
 import re
-import nnabla as nn
 from collections import OrderedDict
 from functools import wraps
-from nnabla.core.graph_def import ProtoVariable, module_scope, current_graph_builder
+
+import nnabla as nn
+from nnabla.core.graph_def import module_scope, current_graph_builder
+
 
 # TODO:
 #   - The following submodule has not supported yet, for example:

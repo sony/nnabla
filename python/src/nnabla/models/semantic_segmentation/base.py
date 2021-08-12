@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from __future__ import absolute_import
+
 from nnabla.utils.nnp_graph import NnpLoader
 
 from ..utils import *

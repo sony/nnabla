@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def inq_convolution_backward(inputs, base_axis=1, pad=None, stride=None, dilation=None, group=1, num_bits=4, inq_iterations=(), selection_algorithm='largest_abs', seed=-1):
     """
     Args:

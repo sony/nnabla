@@ -17,16 +17,16 @@ Save network structure into file.
 
 '''
 
-from collections import OrderedDict
-import numpy
 import os
 import re
 
 import nnabla as nn
+import numpy
 from nnabla.logger import logger
 from nnabla.parameter import get_parameters
 from nnabla.utils import nnabla_pb2
 from nnabla.utils.get_file_handle import FileHandlerContext, get_default_file_savers, save_files
+
 
 # ----------------------------------------------------------------------
 # Helper functions

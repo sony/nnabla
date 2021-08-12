@@ -14,15 +14,17 @@
 # limitations under the License.
 
 import os
-from ..onnx import OnnxImporter
+
 import tensorflow as tf
-from tensorflow.core.framework import graph_pb2
-from tf2onnx import constants, tf_loader, optimizer
-from tf2onnx.tfonnx import process_tf_graph
-from tensorflow.python.tools import freeze_graph
-from .common import find_out_terminal_node
 import tflite
 import tflite2onnx
+from tensorflow.core.framework import graph_pb2
+from tensorflow.python.tools import freeze_graph
+from tf2onnx import constants, tf_loader, optimizer
+from tf2onnx.tfonnx import process_tf_graph
+
+from .common import find_out_terminal_node
+from ..onnx import OnnxImporter
 
 
 class TensorflowImporter:

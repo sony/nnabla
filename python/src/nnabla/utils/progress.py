@@ -14,10 +14,10 @@
 
 import time
 from datetime import datetime, timedelta
-import nnabla.utils.callback as callback
-from nnabla.utils.cli.utility import cpu_load_backend_ok
-from nnabla import logger
 
+import nnabla.utils.callback as callback
+from nnabla import logger
+from nnabla.utils.cli.utility import cpu_load_backend_ok
 
 # state output
 # ============

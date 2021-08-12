@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def mean_subtraction_backward(inputs, base_axis=1, update_running_mean=True):
     """
     Args:

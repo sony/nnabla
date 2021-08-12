@@ -14,11 +14,7 @@
 # limitations under the License.
 
 
-import numpy as np
 import nnabla as nn
-import nnabla.functions as F
-import nnabla.function as _F
-from .utils import no_grad
 from nnabla.function import PythonFunction
 
 

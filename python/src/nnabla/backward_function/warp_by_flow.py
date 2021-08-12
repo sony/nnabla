@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def warp_by_flow_backward(inputs):
     """
     Args:

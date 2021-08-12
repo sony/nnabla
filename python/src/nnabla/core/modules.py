@@ -14,12 +14,9 @@
 
 from __future__ import absolute_import
 
-from nnabla.core.module import Module  # TODO
-
-import numpy as np
-import nnabla as nn
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
+from nnabla.core.module import Module  # TODO
 
 
 def complete_dims(s, dims):

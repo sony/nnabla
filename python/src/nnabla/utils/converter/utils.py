@@ -13,11 +13,12 @@
 # limitations under the License.
 
 
+import pickle
+import zlib
 from collections import OrderedDict
 from os.path import abspath, join, dirname
-import pickle
+
 import yaml
-import zlib
 
 _nnabla_func_info = None
 _onnx_func_info = None

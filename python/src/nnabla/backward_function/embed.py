@@ -14,11 +14,11 @@
 
 
 import nnabla as nn
-import nnabla.functions as F
 import nnabla.function as _F
-#from nnabla.function import PythonFunction
-from .backward_function import LinearDataGrad, LinearFilterGrad
-from .utils import no_grad
+import nnabla.functions as F
+
+# from nnabla.function import PythonFunction
+from .backward_function import LinearFilterGrad
 
 
 class EmbedFilterGrad(LinearFilterGrad):

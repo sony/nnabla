@@ -14,11 +14,10 @@
 
 from __future__ import absolute_import
 
-from nnabla import forward_all
-import nnabla.functions as F
-
 from collections import OrderedDict
 from contextlib import contextmanager
+
+import nnabla.functions as F
 
 from .base import FunctionHookCallbackBase
 

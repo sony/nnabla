@@ -13,8 +13,7 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-from .utils import no_grad, sum_for_arithmetics
+from .utils import sum_for_arithmetics
 
 
 def add2_backward(inputs, inplace=False):

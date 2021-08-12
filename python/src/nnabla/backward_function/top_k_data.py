@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def top_k_data_backward(inputs, k, abs=False, reduce=True, base_axis=1):
     """
     Args:

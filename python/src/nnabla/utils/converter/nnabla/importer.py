@@ -12,14 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import google.protobuf.text_format as text_format
 import os
 import shutil
 import tempfile
 import zipfile
 
-from . import expander
+import google.protobuf.text_format as text_format
 from nnabla.utils import nnabla_pb2
+
+from . import expander
 
 
 class NnpImporter:

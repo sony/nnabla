@@ -13,9 +13,6 @@
 # limitations under the License.
 
 
-import nnabla.functions as F
-
-
 def fused_convolution_backward(inputs, base_axis=1, pad=None, stride=None, dilation=None, group=1, channel_last=False, decay_rate=0.9, eps=1e-05, batch_stat=True, nonlinearity='relu', nonlinearity_args=list()):
     """
     Args:

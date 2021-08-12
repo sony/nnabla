@@ -16,15 +16,9 @@ from __future__ import print_function
 
 import os
 
-import numpy as np
-
-from nnabla import logger
-
-from google.protobuf import text_format
-
 import nnabla as nn
-
-
+import numpy as np
+from nnabla import logger
 from nnabla.parameter import get_parameters, set_parameter, save_parameters, load_parameters
 
 

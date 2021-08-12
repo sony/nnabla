@@ -15,10 +15,9 @@
 
 import nnabla as nn
 import nnabla.functions as F
-from nnabla.parameter import get_parameter_or_create, get_parameter
 from nnabla.initializer import (
     calc_uniform_lim_glorot,
-    ConstantInitializer, NormalInitializer, UniformInitializer)
+    ConstantInitializer, UniformInitializer)
 
 from .module import Module
 
