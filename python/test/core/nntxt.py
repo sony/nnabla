@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# The nntxt is generated from /home/woody/aid/nnabla-sample-data/sample_project/tutorial/recurrent_neural_networks/elman_net.files/20180720_190147/net.nntxt.
+# The nntxt is generated from nnabla-sample-data/sample_project/tutorial/recurrent_neural_networks/elman_net.files/20180720_190147/net.nntxt.
 N00000000 = r'''global_config {
   default_context {
     array_class: "CudaCachedArray"
@@ -811,7 +811,7 @@ executor {
   }
 }
 '''
-# The nntxt is generated from /home/woody/aid/nnabla-sample-data/sample_project/tutorial/recurrent_neural_networks/elman_net.files/20170804_142035/net.nntxt.
+# The nntxt is generated from nnabla-sample-data/sample_project/tutorial/recurrent_neural_networks/elman_net.files/20170804_142035/net.nntxt.
 N00000001 = r'''global_config {
   default_context {
     backend: "cpu|cuda"
@@ -1609,7 +1609,7 @@ executor {
   }
 }
 '''
-# The nntxt is generated from /home/woody/aid/nnabla-sample-data/sample_project/tutorial/recurrent_neural_networks/elman_net_with_attention.files/20180720_190245/net.nntxt.
+# The nntxt is generated from nnabla-sample-data/sample_project/tutorial/recurrent_neural_networks/elman_net_with_attention.files/20180720_190245/net.nntxt.
 N00000002 = r'''global_config {
   default_context {
     array_class: "CudaCachedArray"
@@ -2381,7 +2381,7 @@ executor {
   }
 }
 '''
-# The nntxt is generated from /home/woody/aid/nnabla-sample-data/sample_project/tutorial/recurrent_neural_networks/elman_net_with_attention.files/20170804_142242/net.nntxt.
+# The nntxt is generated from nnabla-sample-data/sample_project/tutorial/recurrent_neural_networks/elman_net_with_attention.files/20170804_142242/net.nntxt.
 N00000003 = r'''global_config {
   default_context {
     backend: "cpu|cuda"
@@ -3151,7 +3151,7 @@ executor {
   }
 }
 '''
-# The nntxt is generated from /home/woody/aid/nnabla-sample-data/sample_project/tutorial/recurrent_neural_networks/bidirectional_elman_net.files/20180720_185920/net.nntxt.
+# The nntxt is generated from nnabla-sample-data/sample_project/tutorial/recurrent_neural_networks/bidirectional_elman_net.files/20180720_185920/net.nntxt.
 N00000004 = r'''global_config {
   default_context {
     array_class: "CudaCachedArray"
@@ -4513,7 +4513,7 @@ executor {
   }
 }
 '''
-# The nntxt is generated from /home/woody/aid/nnabla-sample-data/sample_project/tutorial/recurrent_neural_networks/bidirectional_elman_net.files/20170804_142121/net.nntxt.
+# The nntxt is generated from nnabla-sample-data/sample_project/tutorial/recurrent_neural_networks/bidirectional_elman_net.files/20170804_142121/net.nntxt.
 N00000005 = r'''global_config {
   default_context {
     backend: "cpu|cuda"
@@ -5873,7 +5873,7 @@ executor {
   }
 }
 '''
-# The nntxt is generated from /home/woody/aid/nnabla-sample-data/sample_project/tutorial/recurrent_neural_networks/gated_recurrent_unit(GRU).files/20170804_142332/net.nntxt.
+# The nntxt is generated from nnabla-sample-data/sample_project/tutorial/recurrent_neural_networks/gated_recurrent_unit(GRU).files/20170804_142332/net.nntxt.
 N00000006 = r'''global_config {
   default_context {
     backend: "cpu|cuda"
@@ -6876,7 +6876,7 @@ executor {
   }
 }
 '''
-# The nntxt is generated from /home/woody/aid/nnabla-sample-data/sample_project/tutorial/recurrent_neural_networks/gated_recurrent_unit(GRU).files/20180720_191314/net.nntxt.
+# The nntxt is generated from nnabla-sample-data/sample_project/tutorial/recurrent_neural_networks/gated_recurrent_unit(GRU).files/20180720_191314/net.nntxt.
 N00000007 = r'''global_config {
   default_context {
     array_class: "CudaCachedArray"
@@ -7881,7 +7881,7 @@ executor {
   }
 }
 '''
-# The nntxt is generated from /home/woody/aid/nnabla-sample-data/sample_project/tutorial/recurrent_neural_networks/stacked_GRU.files/20170804_143636/net.nntxt.
+# The nntxt is generated from nnabla-sample-data/sample_project/tutorial/recurrent_neural_networks/stacked_GRU.files/20170804_143636/net.nntxt.
 N00000008 = r'''global_config {
   default_context {
     backend: "cpu|cuda"
@@ -9502,7 +9502,7 @@ executor {
   }
 }
 '''
-# The nntxt is generated from /home/woody/aid/nnabla-sample-data/sample_project/tutorial/recurrent_neural_networks/stacked_GRU.files/20180720_193132/net.nntxt.
+# The nntxt is generated from nnabla-sample-data/sample_project/tutorial/recurrent_neural_networks/stacked_GRU.files/20180720_193132/net.nntxt.
 N00000009 = r'''global_config {
   default_context {
     array_class: "CudaCachedArray"
@@ -11125,7 +11125,7 @@ executor {
   }
 }
 '''
-# The nntxt is generated from /home/woody/aid/nnabla-sample-data/sample_project/tutorial/recurrent_neural_networks/LSTM_auto_encoder.files/20170804_142847/net.nntxt.
+# The nntxt is generated from nnabla-sample-data/sample_project/tutorial/recurrent_neural_networks/LSTM_auto_encoder.files/20170804_142847/net.nntxt.
 N00000010 = r'''global_config {
   default_context {
     backend: "cpu|cuda"
@@ -13998,7 +13998,7 @@ executor {
   }
 }
 '''
-# The nntxt is generated from /home/woody/aid/nnabla-sample-data/sample_project/tutorial/recurrent_neural_networks/LSTM_auto_encoder.files/20180720_192730/net.nntxt.
+# The nntxt is generated from nnabla-sample-data/sample_project/tutorial/recurrent_neural_networks/LSTM_auto_encoder.files/20180720_192730/net.nntxt.
 N00000011 = r'''global_config {
   default_context {
     array_class: "CudaCachedArray"
@@ -16873,7 +16873,7 @@ executor {
   }
 }
 '''
-# The nntxt is generated from /home/woody/aid/nnabla-sample-data/sample_project/tutorial/recurrent_neural_networks/long_short_term_memory(LSTM).files/20170804_142559/net.nntxt.
+# The nntxt is generated from nnabla-sample-data/sample_project/tutorial/recurrent_neural_networks/long_short_term_memory(LSTM).files/20170804_142559/net.nntxt.
 N00000012 = r'''global_config {
   default_context {
     backend: "cpu|cuda"
@@ -18054,7 +18054,7 @@ executor {
   }
 }
 '''
-# The nntxt is generated from /home/woody/aid/nnabla-sample-data/sample_project/tutorial/recurrent_neural_networks/long_short_term_memory(LSTM).files/20180720_192456/net.nntxt.
+# The nntxt is generated from nnabla-sample-data/sample_project/tutorial/recurrent_neural_networks/long_short_term_memory(LSTM).files/20180720_192456/net.nntxt.
 N00000013 = r'''global_config {
   default_context {
     array_class: "CudaCachedArray"
@@ -19195,7 +19195,7 @@ executor {
   }
 }
 '''
-# The nntxt is generated from /home/woody/aid/nnabla-sample-data/sample_project/tutorial/binary_networks/binary_weight_mnist_MLP.files/20180723_154246/net.nntxt.
+# The nntxt is generated from nnabla-sample-data/sample_project/tutorial/binary_networks/binary_weight_mnist_MLP.files/20180723_154246/net.nntxt.
 N00000014 = r'''global_config {
   default_context {
     array_class: "CudaCachedArray"
@@ -20157,7 +20157,7 @@ executor {
   }
 }
 '''
-# The nntxt is generated from /home/woody/aid/nnabla-sample-data/sample_project/tutorial/binary_networks/binary_net_mnist_LeNet.files/20180723_150834/net.nntxt.
+# The nntxt is generated from nnabla-sample-data/sample_project/tutorial/binary_networks/binary_net_mnist_LeNet.files/20180723_150834/net.nntxt.
 N00000015 = r'''global_config {
   default_context {
     array_class: "CudaCachedArray"
@@ -22014,7 +22014,7 @@ executor {
   }
 }
 '''
-# The nntxt is generated from /home/woody/aid/nnabla-sample-data/sample_project/tutorial/binary_networks/binary_connect_mnist_LeNet.files/20180720_195907/net.nntxt.
+# The nntxt is generated from nnabla-sample-data/sample_project/tutorial/binary_networks/binary_connect_mnist_LeNet.files/20180720_195907/net.nntxt.
 N00000016 = r'''global_config {
   default_context {
     array_class: "CudaCachedArray"
@@ -23898,7 +23898,7 @@ executor {
   }
 }
 '''
-# The nntxt is generated from /home/woody/aid/nnabla-sample-data/sample_project/tutorial/binary_networks/binary_connect_mnist_MLP.files/20180723_144304/net.nntxt.
+# The nntxt is generated from nnabla-sample-data/sample_project/tutorial/binary_networks/binary_connect_mnist_MLP.files/20180723_144304/net.nntxt.
 N00000017 = r'''global_config {
   default_context {
     array_class: "CudaCachedArray"
@@ -25656,7 +25656,7 @@ executor {
   }
 }
 '''
-# The nntxt is generated from /home/woody/aid/nnabla-sample-data/sample_project/tutorial/binary_networks/binary_net_mnist_MLP.files/20180723_152007/net.nntxt.
+# The nntxt is generated from nnabla-sample-data/sample_project/tutorial/binary_networks/binary_net_mnist_MLP.files/20180723_152007/net.nntxt.
 N00000018 = r'''global_config {
   default_context {
     array_class: "CudaCachedArray"
@@ -27387,7 +27387,7 @@ executor {
   }
 }
 '''
-# The nntxt is generated from /home/woody/aid/nnabla-sample-data/sample_project/tutorial/basics/12_residual_learning.files/20170804_140212/net.nntxt.
+# The nntxt is generated from nnabla-sample-data/sample_project/tutorial/basics/12_residual_learning.files/20170804_140212/net.nntxt.
 N00000019 = r'''global_config {
   default_context {
     backend: "cpu|cuda"
@@ -32854,7 +32854,7 @@ executor {
   }
 }
 '''
-# The nntxt is generated from /home/woody/aid/nnabla-sample-data/sample_project/tutorial/basics/12_residual_learning.files/20180720_182255/net.nntxt.
+# The nntxt is generated from nnabla-sample-data/sample_project/tutorial/basics/12_residual_learning.files/20180720_182255/net.nntxt.
 N00000020 = r'''global_config {
   default_context {
     array_class: "CudaCachedArray"
@@ -38323,7 +38323,7 @@ executor {
   }
 }
 '''
-# The nntxt is generated from /home/woody/aid/nnabla-sample-data/sample_project/tutorial/basics/10_deep_mlp.files/20180720_181928/net.nntxt.
+# The nntxt is generated from nnabla-sample-data/sample_project/tutorial/basics/10_deep_mlp.files/20180720_181928/net.nntxt.
 N00000021 = r'''global_config {
   default_context {
     array_class: "CudaCachedArray"
@@ -39244,7 +39244,7 @@ executor {
   }
 }
 '''
-# The nntxt is generated from /home/woody/aid/nnabla-sample-data/sample_project/tutorial/basics/10_deep_mlp.files/20170804_140049/net.nntxt.
+# The nntxt is generated from nnabla-sample-data/sample_project/tutorial/basics/10_deep_mlp.files/20170804_140049/net.nntxt.
 N00000022 = r'''global_config {
   default_context {
     backend: "cpu|cuda"
@@ -40163,7 +40163,7 @@ executor {
   }
 }
 '''
-# The nntxt is generated from /home/woody/aid/nnabla-sample-data/sample_project/tutorial/basics/11_deconvolution.files/20170804_140111/net.nntxt.
+# The nntxt is generated from nnabla-sample-data/sample_project/tutorial/basics/11_deconvolution.files/20170804_140111/net.nntxt.
 N00000023 = r'''global_config {
   default_context {
     backend: "cpu|cuda"
@@ -41716,7 +41716,7 @@ executor {
   }
 }
 '''
-# The nntxt is generated from /home/woody/aid/nnabla-sample-data/sample_project/tutorial/basics/11_deconvolution.files/20180720_182001/net.nntxt.
+# The nntxt is generated from nnabla-sample-data/sample_project/tutorial/basics/11_deconvolution.files/20180720_182001/net.nntxt.
 N00000024 = r'''global_config {
   default_context {
     array_class: "CudaCachedArray"
@@ -43271,7 +43271,7 @@ executor {
   }
 }
 '''
-# The nntxt is generated from /home/woody/aid/nnabla-sample-data/sample_project/tutorial/basics/01_logistic_regression.files/20170804_135944/net.nntxt.
+# The nntxt is generated from nnabla-sample-data/sample_project/tutorial/basics/01_logistic_regression.files/20170804_135944/net.nntxt.
 N00000025 = r'''global_config {
   default_context {
     backend: "cpu|cuda"
@@ -43594,7 +43594,7 @@ executor {
   }
 }
 '''
-# The nntxt is generated from /home/woody/aid/nnabla-sample-data/sample_project/tutorial/basics/01_logistic_regression.files/20180720_162850/net.nntxt.
+# The nntxt is generated from nnabla-sample-data/sample_project/tutorial/basics/01_logistic_regression.files/20180720_162850/net.nntxt.
 N00000026 = r'''global_config {
   default_context {
     array_class: "CpuCachedArray"
@@ -43916,7 +43916,7 @@ executor {
   }
 }
 '''
-# The nntxt is generated from /home/woody/aid/nnabla-sample-data/sample_project/tutorial/basics/06_auto_encoder.files/20170804_140025/net.nntxt.
+# The nntxt is generated from nnabla-sample-data/sample_project/tutorial/basics/06_auto_encoder.files/20170804_140025/net.nntxt.
 N00000027 = r'''global_config {
   default_context {
     backend: "cpu|cuda"
@@ -44403,7 +44403,7 @@ executor {
   }
 }
 '''
-# The nntxt is generated from /home/woody/aid/nnabla-sample-data/sample_project/tutorial/basics/06_auto_encoder.files/20180720_181844/net.nntxt.
+# The nntxt is generated from nnabla-sample-data/sample_project/tutorial/basics/06_auto_encoder.files/20180720_181844/net.nntxt.
 N00000028 = r'''global_config {
   default_context {
     array_class: "CudaCachedArray"
@@ -44892,7 +44892,7 @@ executor {
   }
 }
 '''
-# The nntxt is generated from /home/woody/aid/nnabla-sample-data/sample_project/tutorial/basics/02_binary_cnn.files/20170804_140002/net.nntxt.
+# The nntxt is generated from nnabla-sample-data/sample_project/tutorial/basics/02_binary_cnn.files/20170804_140002/net.nntxt.
 N00000029 = r'''global_config {
   default_context {
     backend: "cpu|cuda"
@@ -45788,7 +45788,7 @@ executor {
   }
 }
 '''
-# The nntxt is generated from /home/woody/aid/nnabla-sample-data/sample_project/tutorial/basics/02_binary_cnn.files/20180720_181750/net.nntxt.
+# The nntxt is generated from nnabla-sample-data/sample_project/tutorial/basics/02_binary_cnn.files/20180720_181750/net.nntxt.
 N00000030 = r'''global_config {
   default_context {
     array_class: "CudaCachedArray"
