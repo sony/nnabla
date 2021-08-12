@@ -407,16 +407,26 @@ def _create_dataset(
         if cache_dir and (create_cache_explicitly or comm):
             cache_index = os.path.join(cache_dir, "cache_index.csv")
             if not os.path.exists(cache_index) or overwrite_cache:
+                create_cache_flag = False
                 if single_or_rankzero():
-                    log_uri = (uri.split("/", 3)[-1]
-                               if uri.startswith("s3") else uri)
-                    logger.log(99, 'Creating cache data for "' + log_uri + '"')
+                    create_cache_flag = True
+                    os.makedirs(cache_dir, exist_ok=True)
 
-                    try:
-                        os.makedirs(cache_dir)
-                    except OSError:
-                        pass  # python2 does not support exists_ok arg
+                if comm:
+                    comm.barrier()
+                    # Check whether cache directory needs to be created on each node.
+                    if comm.local_rank == 0 and comm.rank != 0 and not os.path.exists(cache_dir):
+                        os.makedirs(cache_dir, exist_ok=True)
+                        create_cache_flag = True
 
+                if create_cache_flag:
+                    log_uri = (uri.split("/", 3)
+                               [-1] if uri.startswith("s3") else uri)
+                    if comm:
+                        logger.log(
+                            99, f'Creating cache data for "{log_uri}" on node rank:{comm.rank} local_rank:{comm.local_rank}')
+                    else:
+                        logger.log(99, f'Creating cache data for "{log_uri}"')
                     if os.path.exists(uri):
                         cc = CreateCache(uri, rng=rng, shuffle=shuffle)
                         cc.create(cache_dir, normalize=False)
@@ -425,6 +435,7 @@ def _create_dataset(
                             pass
                 if comm:
                     comm.barrier()
+
             rng = numpy.random.RandomState(dataset_index)
             dataset.data_iterator = (lambda: data_iterator_cache(
                 cache_dir, batch_size, shuffle, rng=rng, normalize=dataset.normalize, with_memory_cache=use_memory_cache))
