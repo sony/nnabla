@@ -1162,3 +1162,39 @@ class TestRecomputation():
         # Check unnecessary recomputation.
         y.forward(clear_no_need_grad=True)
         y.backward(function_pre_hook=fail_with_not_cleared_data)
+
+
+@pytest.mark.parametrize("inplace", [True, False])
+@pytest.mark.parametrize("func, num_inputs", [
+    (F.relu, 1),
+    (F.leaky_relu, 1),
+    (F.random_erase, 1),
+    (F.add2, 2),
+    (F.bc_add2, 2),
+    (F.sub2, 2),
+    (F.add_scalar, 1),
+    (F.mul_scalar, 1),
+])
+def test_obsolete_inplace_option(inplace, func, num_inputs):
+    '''
+    This test confirms the construction of graph.
+    Since F.log_softmax requires output for backward calculation, graph cannot be constructed if it is inplaced.
+    '''
+    x0 = nn.Variable((2, 3, 4, 5), need_grad=True)
+    x1 = nn.Variable((2, 3, 4, 5), need_grad=True)
+
+    if num_inputs == 1:
+        y = F.identity(x0)
+        y = F.log_softmax(y)
+        y = func(y, inplace=inplace)
+        y.forward()
+        y.backward()
+
+    elif num_inputs == 2:
+        y0 = F.identity(x0)
+        y1 = F.identity(x1)
+        y0 = F.log_softmax(y0)
+        y1 = F.log_softmax(y1)
+        y = func(y0, y1, inplace=inplace)
+        y.forward()
+        y.backward()
