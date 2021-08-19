@@ -320,8 +320,9 @@ class DataSourceWithFileCache(DataSource):
         while self._position < self._data_source._size:
 
             if single_or_rankzero():
-                progress('Create cache', self._position *
-                         1.0 / self._data_source._size)
+                if self._position % int(self._data_source._size/20+1) == 0:
+                    progress('Create cache', self._position *
+                             1.0 / self._data_source._size)
 
             self._store_data_to_cache_buffer(self._position)
             self._position += 1
