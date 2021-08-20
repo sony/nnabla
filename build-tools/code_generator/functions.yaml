@@ -1135,7 +1135,7 @@ Neural Network Activation Functions:
         doc: N-D array
     arguments:
       inplace:
-        doc: The output array is shared with the input array if True.
+        doc: This option is obsolete and ignored. Output is never in-placed with input.
         type: bool
         default: 'False'
     outputs:
@@ -1165,7 +1165,7 @@ Neural Network Activation Functions:
         type: float
         default: '0.1'
       inplace:
-        doc: The output array is shared with the input array if True.
+        doc: This option is obsolete and ignored. Output is never in-placed with input.
         type: bool
         default: 'False'
     outputs:
@@ -2583,7 +2583,7 @@ Arithmetic:
         doc: N-D array
     arguments:
       inplace:
-        doc: The output array is shared with the 1st input array if True.
+        doc: This option is obsolete and ignored. Output is never in-placed with input.
         type: bool
         default: 'False'
     outputs:
@@ -2623,7 +2623,7 @@ Arithmetic:
         doc: N-D array
     arguments:
       inplace:
-        doc: The output array is shared with the 1st input array if True.
+        doc: This option is obsolete and ignored. Output is never in-placed with input.
         type: bool
         default: 'False'
     outputs:
@@ -2648,7 +2648,7 @@ Arithmetic:
         doc: N-D array
     arguments:
       inplace:
-        doc: The output array is shared with the 1st input array if True.
+        doc: This option is obsolete and ignored. Output is never in-placed with input.
         type: bool
         default: 'False'
     outputs:
@@ -2769,7 +2769,7 @@ Arithmetic:
         type: double
         default: '1'
       inplace:
-        doc: The output array is shared with the input array if True.
+        doc: This option is obsolete and ignored. Output is never in-placed with input.
         type: bool
         default: 'False'
     outputs:
@@ -2796,7 +2796,7 @@ Arithmetic:
         type: double
         default: '1'
       inplace:
-        doc: The output array is shared with the input array if True.
+        doc: This option is obsolete and ignored. Output is never in-placed with input.
         type: bool
         default: 'False'
     outputs:
@@ -5887,7 +5887,7 @@ Stochasticity:
         type: bool
         default: 'True'
       inplace:
-        doc: The output array is shared with the input array if True.
+        doc: This option is obsolete and ignored. Output is never in-placed with input.
         type: bool
         default: 'False'
       base_axis:

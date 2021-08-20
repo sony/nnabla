@@ -48,20 +48,20 @@ Outputs:
 
 @tparam T Data type for computation.
 @param alpha Leakage parameter.
-@param inplace The output array is will be shared with the input array if true.
+@param inplace This option is obsolete and ignored. Output is never in-placed
+with input.
 \ingroup FunctionImplGrp
  */
 template <typename T> class LeakyReLU : public BaseFunction<float, bool> {
 protected:
   float alpha_;
-  bool inplace_;
 
 public:
   LeakyReLU(const Context &ctx, float alpha, bool inplace)
-      : BaseFunction(ctx, alpha, inplace), alpha_(alpha), inplace_(inplace) {}
+      : BaseFunction(ctx, alpha, inplace), alpha_(alpha) {}
   virtual ~LeakyReLU() {}
   virtual shared_ptr<Function> copy() const {
-    return create_LeakyReLU(ctx_, alpha_, inplace_);
+    return create_LeakyReLU(ctx_, alpha_, false /* inplace is obsoleted. */);
   }
   virtual int min_inputs() { return 1; }
   virtual int min_outputs() { return 1; }
@@ -71,11 +71,9 @@ public:
   virtual vector<string> allowed_array_classes() {
     return SingletonManager::get<Cpu>()->array_classes();
   }
-  virtual int inplace_data(int i) const {
-    return inplace_ ? Function::INPLACE : Function::NOT_INPLACE;
+  virtual bool grad_depends_output_data(int i, int o) const {
+    return alpha_ >= 0;
   }
-  virtual int inplace_data_with(int i) const { return 0; }
-  virtual bool grad_depends_output_data(int i, int o) const { return inplace_; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,
@@ -87,7 +85,7 @@ protected:
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
   virtual bool grad_depends_input_data_impl(int i, int j) const {
-    return !inplace_;
+    return alpha_ < 0;
   }
 };
 }

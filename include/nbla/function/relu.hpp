@@ -43,19 +43,17 @@ Outputs:
 - N-D array.
 
 @tparam T Data type for computation.
-@param inplace The output array is will be shared with the input array if true.
+@param inplace This option is obsolete and ignored. Output is never in-placed
+with input.
 \ingroup FunctionImplGrp
  */
 template <typename T> class ReLU : public BaseFunction<bool> {
 protected:
-  bool inplace_;
-
 public:
-  ReLU(const Context &ctx, bool inplace)
-      : BaseFunction(ctx, inplace), inplace_(inplace) {}
+  ReLU(const Context &ctx, bool inplace) : BaseFunction(ctx, inplace) {}
   virtual ~ReLU() {}
   virtual shared_ptr<Function> copy() const {
-    return create_ReLU(ctx_, inplace_);
+    return create_ReLU(ctx_, false /* inplace is obsoleted. */);
   }
   virtual int min_inputs() { return 1; }
   virtual int min_outputs() { return 1; }
@@ -66,10 +64,6 @@ public:
     return SingletonManager::get<Cpu>()->array_classes();
   }
   virtual bool grad_depends_output_data(int i, int o) const { return true; }
-  virtual int inplace_data(int i) const {
-    return inplace_ ? Function::INPLACE : Function::NOT_INPLACE;
-  }
-  virtual int inplace_data_with(int i) const { return 0; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,

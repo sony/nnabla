@@ -44,14 +44,11 @@ Outputs:
  */
 template <typename T> class Add2 : public BaseFunction<bool> {
 protected:
-  bool inplace_;
-
 public:
-  Add2(const Context &ctx, bool inplace)
-      : BaseFunction(ctx, inplace), inplace_(inplace) {}
+  Add2(const Context &ctx, bool inplace) : BaseFunction(ctx, inplace) {}
   virtual ~Add2() {}
   virtual shared_ptr<Function> copy() const {
-    return create_Add2(ctx_, inplace_);
+    return create_Add2(ctx_, false /* inplace is obsoleted. */);
   }
   virtual vector<dtypes> in_types() {
     return vector<dtypes>{get_dtype<T>(), get_dtype<T>()};
@@ -62,15 +59,6 @@ public:
   virtual string name() { return "Add2"; }
   virtual vector<string> allowed_array_classes() {
     return SingletonManager::get<Cpu>()->array_classes();
-  }
-  virtual int inplace_data(int i) const {
-    if (this->fall_back_func_ || !inplace_ || i > 0)
-      return Function::NOT_INPLACE;
-    return Function::INPLACE;
-  }
-  virtual int inplace_data_with(int i) const {
-    // 0 is okay because never be called in the case of i != 0.
-    return 0;
   }
   virtual bool grad_depends_output_data(int i, int o) const { return false; }
 

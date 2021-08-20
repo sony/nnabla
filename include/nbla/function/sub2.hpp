@@ -39,6 +39,6 @@ Outputs:
 \ingroup FunctionImplGrp
  */
 NBLA_DEFINE_TRANSFORM_BINARY_INPLACE(Sub2, x0 - x1, dy, -dy, false, false,
-                                     false, false, false);
+                                     false, false, true);
 }
 #endif

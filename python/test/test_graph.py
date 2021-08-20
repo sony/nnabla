@@ -473,37 +473,6 @@ class TestClearInput():
 
         self.check_input_data_clear_called_flags(answer)
 
-    # Test for inplaced variable in a network of two layers.
-    def test_clear_input_if_no_need_grad_inplace0(self):
-        x1 = nn.Variable([1, 5], need_grad=True)
-
-        xx1 = F.identity(x1)
-        y1 = F.add_scalar(xx1, inplace=True)
-
-        answer = []
-        answer.append([False])
-        answer.append([False])
-
-        y1.forward(clear_no_need_grad=True)
-
-        self.check_input_data_clear_called_flags(answer)
-
-    # Test for inplaced variable in a network of three layers.
-    def test_clear_input_if_no_need_grad_inplace1(self):
-        x1 = nn.Variable([1, 5], need_grad=True)
-
-        xx1 = F.identity(x1)
-        y1 = F.add_scalar(xx1, inplace=True)
-        y2 = F.add_scalar(y1)
-
-        answer = []
-        answer.append([False])
-        answer.append([False])
-        answer.append([False])
-
-        y2.forward(clear_no_need_grad=True)
-        self.check_input_data_clear_called_flags(answer)
-
     # Test for a variable shared with two layer functions.
     # Check if it is cleared after the both functions finish to use it.
     def test_clear_input_if_no_need_grad_branch0(self):
@@ -545,28 +514,6 @@ class TestClearInput():
         answer.append([False])
         answer.append([False, True])  # (2) use xx2 in backward
         answer.append([True, True])  # (3)
-
-        y3.forward(clear_no_need_grad=True)
-        self.check_input_data_clear_called_flags(answer)
-
-    # Test for inplace after branching.
-    def test_clear_input_if_no_need_grad_branch2(self):
-        x1 = nn.Variable([1, 5], need_grad=True)
-
-        xx1 = F.identity(x1)
-        y1 = F.add_scalar(xx1)
-        y2 = F.add_scalar(y1, inplace=True)
-        z1 = F.add_scalar(xx1)
-        z2 = F.add_scalar(z1)
-        y3 = F.add2(y2, z2)
-
-        answer = []
-        answer.append([False])
-        answer.append([False])
-        answer.append([False])
-        answer.append([True])
-        answer.append([True])
-        answer.append([False, True])
 
         y3.forward(clear_no_need_grad=True)
         self.check_input_data_clear_called_flags(answer)
@@ -1215,3 +1162,39 @@ class TestRecomputation():
         # Check unnecessary recomputation.
         y.forward(clear_no_need_grad=True)
         y.backward(function_pre_hook=fail_with_not_cleared_data)
+
+
+@pytest.mark.parametrize("inplace", [True, False])
+@pytest.mark.parametrize("func, num_inputs", [
+    (F.relu, 1),
+    (F.leaky_relu, 1),
+    (F.random_erase, 1),
+    (F.add2, 2),
+    (F.bc_add2, 2),
+    (F.sub2, 2),
+    (F.add_scalar, 1),
+    (F.mul_scalar, 1),
+])
+def test_obsolete_inplace_option(inplace, func, num_inputs):
+    '''
+    This test confirms the construction of graph.
+    Since F.log_softmax requires output for backward calculation, graph cannot be constructed if it is inplaced.
+    '''
+    x0 = nn.Variable((2, 3, 4, 5), need_grad=True)
+    x1 = nn.Variable((2, 3, 4, 5), need_grad=True)
+
+    if num_inputs == 1:
+        y = F.identity(x0)
+        y = F.log_softmax(y)
+        y = func(y, inplace=inplace)
+        y.forward()
+        y.backward()
+
+    elif num_inputs == 2:
+        y0 = F.identity(x0)
+        y1 = F.identity(x1)
+        y0 = F.log_softmax(y0)
+        y1 = F.log_softmax(y1)
+        y = func(y0, y1, inplace=inplace)
+        y.forward()
+        y.backward()

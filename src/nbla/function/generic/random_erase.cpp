@@ -212,9 +212,6 @@ void RandomErase<T>::setup_impl(const Variables &inputs,
       "Image (the number of the spatial dimensions is 2) is only supported.");
 
   outputs[0]->reshape(inputs[0]->shape(), true);
-  if (inplace_) {
-    outputs[0]->data()->set_array(inputs[0]->data()->array());
-  }
 
   rgen_ = std::mt19937((seed_ == -1 ? std::random_device()() : seed_));
 }
@@ -242,7 +239,7 @@ void RandomErase<T>::random_erase(const Variables &inputs,
   auto Bs = C * H * W;
 
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
-  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, !inplace_);
+  T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
 
   // Generate N x B (x C) x 5, 5 is {prob, Se, re, xe, ye}
   this->random_coordinates_ =

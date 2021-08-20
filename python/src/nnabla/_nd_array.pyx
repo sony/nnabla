@@ -486,17 +486,17 @@ cdef class NdArray:
     def __iadd__(self, x):
         import nnabla.functions as F
         if isinstance(x, (NdArray, Variable)):
-            F.add2(self, x, inplace=True)
+            F.add2(self, x, outputs=[self])
         else:
-            F.add_scalar(self, x, inplace=True)
+            F.add_scalar(self, x, outputs=[self])
         return self
 
     def __isub__(self, x):
         import nnabla.functions as F
         if isinstance(x, (NdArray, Variable)):
-            F.sub2(self, x, inplace=True)
+            F.sub2(self, x, outputs=[self])
         else:
-            F.add_scalar(self, -x, inplace=True)
+            F.add_scalar(self, -x, outputs=[self])
         return self
 
     def __imul__(self, x):
@@ -504,7 +504,7 @@ cdef class NdArray:
         if isinstance(x, (NdArray, Variable)):
             return F.mul2(self, x)
         else:
-            F.mul_scalar(self, x, inplace=True)
+            F.mul_scalar(self, x, outputs=[self])
         return self
 
     def __idiv__(self, x):
@@ -512,7 +512,7 @@ cdef class NdArray:
         if isinstance(x, (NdArray, Variable)):
             return F.div2(self, x)
         else:
-            F.mul_scalar(self, 1. / x, inplace=True)
+            F.mul_scalar(self, 1. / x, outputs=[self])
         return self
 
     def __itruediv__(self, x):
@@ -520,7 +520,7 @@ cdef class NdArray:
         if isinstance(x, (NdArray, Variable)):
             return F.div2(self, x)
         else:
-            F.mul_scalar(self, 1. / x, inplace=True)
+            F.mul_scalar(self, 1. / x, outputs=[self])
         return self
 
     def __ipow__(self, x):
