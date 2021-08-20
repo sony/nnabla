@@ -26,7 +26,7 @@ ctxs = list_context('Dropout')
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
-@pytest.mark.parametrize("p", [p / 10. for p in range(1, 9)])
+@pytest.mark.parametrize("p", [p / 10. for p in range(1, 9)] + [0])
 @pytest.mark.parametrize("output_mask", [True, False])
 def test_dropout_forward_backward(output_mask, p, seed, ctx, func_name):
     from nbla_test_utils import cap_ignore_region, function_tester, force_tuple
@@ -78,7 +78,7 @@ def test_dropout_forward_backward(output_mask, p, seed, ctx, func_name):
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
-@pytest.mark.parametrize("p", [p / 10. for p in range(1, 9)])
+@pytest.mark.parametrize("p", [p / 10. for p in range(1, 9)] + [0])
 def test_dropout_double_backward(p, seed, ctx, func_name):
     from nbla_test_utils import backward_function_tester
     rng = np.random.RandomState(seed)
@@ -90,7 +90,7 @@ def test_dropout_double_backward(p, seed, ctx, func_name):
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [-1, 313])
-@pytest.mark.parametrize("p", [0.5])
+@pytest.mark.parametrize("p", [0.5] + [0])
 def test_dropout_recompute(p, seed, ctx, func_name):
     from nbla_test_utils import recomputation_test
 
