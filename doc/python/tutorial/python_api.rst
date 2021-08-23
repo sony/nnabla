@@ -545,7 +545,7 @@ initialized randomly at function call, and registered by a name
 The ``name=`` argument of any PF function creates the equivalent
 parameter space to the above definition of ``PF.affine`` transformation
 as below. It could save the space of your Python code. The
-``nnabla.parametric_scope`` is more useful when you group multiple
+``nnabla.parameter_scope`` is more useful when you group multiple
 parametric functions such as Convolution-BatchNormalization found in a
 typical unit of CNNs.
 

@@ -85,7 +85,7 @@ def parametric_function_api(scope_name=None, param_desc=None):
 
         .. code-block:: python
 
-            with parametric_scope(name):
+            with parameter_scope(name):
                 output = {name}(<args>)
 
         """.format(name=name)
