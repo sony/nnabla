@@ -47,13 +47,18 @@ def ref_cumprod(x, axis, exclusive, reverse):
 
 
 @pytest.mark.parametrize("seed", [313])
-@pytest.mark.parametrize("axis", [0, 1, 2, -1])
+@pytest.mark.parametrize("axis", [0, 1, -1])
 @pytest.mark.parametrize("exclusive", [True, False])
 @pytest.mark.parametrize("reverse", [True, False])
+@pytest.mark.parametrize("with_mask", [True, False])
 @pytest.mark.parametrize("ctx, func_name", list_context('CumProd'))
-def test_cumprod_forward_backward(seed, axis, exclusive, reverse, ctx, func_name):
+def test_cumprod_forward_backward(seed, axis, exclusive, reverse, with_mask, ctx, func_name):
     from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
     inputs = [(rng.randn(5, 7, 8)).astype(np.float32)]
+    if with_mask:
+        masks = [np.random.choice(2, i.size).reshape(i.shape) for i in inputs]
+        inputs = [i*m for i, m in zip(inputs, masks)]
+
     function_tester(rng, F.cumprod, ref_cumprod, inputs, func_args=[axis, exclusive, reverse],
                     ctx=ctx, func_name=func_name, atol_b=4e-3, disable_half_test=True)
