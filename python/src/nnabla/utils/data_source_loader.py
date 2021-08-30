@@ -48,6 +48,7 @@ from nnabla.logger import logger
 
 
 # Expose for backward compatibility
+from .download import download, get_data_home
 
 pydub_available = False
 with warnings.catch_warnings():
