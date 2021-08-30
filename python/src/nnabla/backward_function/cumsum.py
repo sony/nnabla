@@ -33,5 +33,5 @@ def cumsum_backward(inputs, axis=None, exclusive=False, reverse=False):
       list of Variable: Return the gradients wrt inputs of the corresponding function.
     """
     dy = inputs[0]
-    x0 = inputs[1]
-    raise NotImplementedError("cumsum_backward is not implemented.")
+    dx = F.cumsum(dy, axis=axis, exclusive=exclusive, reverse=not reverse)
+    return dx
