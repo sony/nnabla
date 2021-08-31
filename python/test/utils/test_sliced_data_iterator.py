@@ -15,12 +15,86 @@
 
 import pytest
 import numpy as np
+import math
+from functools import partial
 
 from nnabla.utils.data_source_loader import load_image
 from nnabla.utils.data_iterator import data_iterator_simple
 
 from .test_data_iterator import check_data_iterator_result
 from .conftest import generate_cache_dir
+
+
+@pytest.mark.parametrize("num_of_slices", [7])
+@pytest.mark.parametrize("size", [55])
+@pytest.mark.parametrize("batch_size", [1])
+@pytest.mark.parametrize("shuffle", [False])
+def test_sliced_data_iterator_equivalence(test_data_csv_png_10, num_of_slices, size, batch_size, shuffle):
+
+    def lcm(a, b):
+        return abs(a * b) / math.gcd(a, b) if a and b else 0
+
+    max_epoch = lcm(batch_size, size) / size
+
+    def test_load_func(position):
+        return np.full((1), position, dtype=np.int)
+
+    def simple_load_func(data_set, position):
+        return data_set[position]
+
+    def get_data(iter_list, iter_num):
+        total = 0
+        for it in iter_list:
+            for _ in range(iter_num):
+                yield it.next()
+                total += 1
+            yield total
+        yield total
+
+    iter_num = int((max_epoch * size) / (num_of_slices * batch_size) + 0.5)
+
+    sliced_di_list = []
+    di = data_iterator_simple(test_load_func, size,
+                              batch_size, shuffle=shuffle)
+
+    for slice_pos in range(num_of_slices):
+        sliced_di = di.slice(
+            rng=None, num_of_slices=num_of_slices, slice_pos=slice_pos)
+        sliced_di_list.append(sliced_di)
+
+    ref_di_list = []
+    all_data = [np.full((1), position, dtype=np.int)
+                for position in range(size)]
+    for slice_pos in range(num_of_slices):
+        slice_sample_size = size / num_of_slices
+        start_index = int(slice_sample_size * slice_pos + 0.5)
+        end_index = int(slice_sample_size * (slice_pos + 1) + 0.5)
+        slice_block_size = end_index - start_index
+        sliced_data = all_data[start_index: end_index]
+        di = data_iterator_simple(
+            partial(simple_load_func, sliced_data), slice_block_size, batch_size, shuffle=shuffle)
+        ref_di_list.append(di)
+
+    set_a = set()
+    set_b = set()
+    for ref, t in zip(get_data(ref_di_list, iter_num), get_data(sliced_di_list, iter_num)):
+        if isinstance(ref, tuple):
+            ref, t = ref[0], t[0]
+        if isinstance(ref, np.ndarray):
+            # print(f"{ref} <--> {t}")
+            set_a = set_a.union(set(ref))
+            set_b = set_b.union(set(t))
+        else:
+            #print("-" * 30)
+            assert ref == t
+    # str_a = ','.join([str(f) for f in set_a])
+    # str_b = ','.join([str(f) for f in set_b])
+    # print(f"{str_a}  <--> {str_b}")
+    assert set_a == set_b
+
+    di_all = ref_di_list + sliced_di_list
+    for di in di_all:
+        di.close()
 
 
 @pytest.mark.parametrize("num_of_slices", [2, 3, 5])
@@ -35,14 +109,8 @@ def test_sliced_data_iterator(test_data_csv_png_10, num_of_slices, size, batch_s
     di = data_iterator_simple(test_load_func, size,
                               batch_size, shuffle=shuffle)
 
-    import six
-    if six.PY2:
-        from fractions import gcd
-    else:
-        from math import gcd
-
     def lcm(a, b):
-        return abs(a * b) / gcd(a, b) if a and b else 0
+        return abs(a * b) / math.gcd(a, b) if a and b else 0
 
     max_epoch = lcm(batch_size, size) / size
 
@@ -72,12 +140,8 @@ def test_sliced_data_iterator(test_data_csv_png_10, num_of_slices, size, batch_s
 
     for epoch in sorted(epochs.keys()):
         x0 = epochs[epoch][0]
-        acceptable_size = batch_size
-        amount = size // num_of_slices
-        if acceptable_size < amount:
-            acceptable_size = amount
         for dup in [x0 & x for x in epochs[epoch][1:]]:
-            assert len(dup) < amount
+            assert len(dup) == 0
 
 
 @pytest.mark.parametrize("num_of_slices", [2, 3, 5])
