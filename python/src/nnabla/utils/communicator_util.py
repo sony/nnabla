@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import nnabla.communicators as C
 from nnabla.logger import logger
 
@@ -23,24 +24,28 @@ def current_communicator():
     return _current_communicator
 
 
-def create_communicator(ignore_error=False):
+def create_communicator(ignore_error=False, extension_module='cudnn', type_config='float'):
     global _current_communicator
 
-    from nnabla.ext_utils import get_extension_context
-    extension_module = "cudnn"
-    context = get_extension_context(extension_module)
-    try:
-        logger.log(99, 'Create communicator with contexts {}'.format(context))
-        _current_communicator = C.MultiProcessCommunicator(context)
-        _current_communicator.init()
-        context.device_id = str(_current_communicator.rank %
-                                _current_communicator.size)
-        if _current_communicator.size == 1:
+    if os.environ.get('OMPI_COMM_WORLD_SIZE') is not None:
+        from nnabla.ext_utils import get_extension_context
+        context = get_extension_context(
+            extension_module, type_config=type_config)
+        try:
+            logger.log(
+                99, 'Create communicator with contexts {}'.format(context))
+            _current_communicator = C.MultiProcessCommunicator(context)
+            _current_communicator.init()
+            context.device_id = str(_current_communicator.rank %
+                                    _current_communicator.size)
+            if _current_communicator.size == 1:
+                _current_communicator = None
+        except:
+            if not ignore_error:
+                raise
+            logger.warning("Failed to initialize nnabla.communicators.")
             _current_communicator = None
-    except:
-        if not ignore_error:
-            raise
-        logger.warning("Failed to initialize nnabla.communicators.")
+    else:
         _current_communicator = None
 
     return _current_communicator
