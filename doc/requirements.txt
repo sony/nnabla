@@ -6,3 +6,4 @@ sphinxcontrib-nwdiag
 sphinxcontrib-plantuml
 sphinxcontrib-seqdiag
 sphinxcontrib-toc
+https://nnabla.org/pkg/funcparserlib-0.3.6.tar.gz
