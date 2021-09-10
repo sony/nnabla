@@ -80,24 +80,27 @@ def forward_variable_and_check_equal(variable_a, variable_b):
         assert_allclose(a.d, b.d, rtol=1e-4, atol=1e-6)
 
 
-def forward_variable(inputs, outputs, side):
+def forward_variable(inputs, outputs, side, feed=None):
     rng = np.random.RandomState(389)
-    if isinstance(inputs, nn.Variable):
-        inputs.d = rng.randn(*inputs.d.shape)
-    else:
-        for v in inputs:
-            v.d = rng.randn(*v.d.shape)
+    if feed is None:
+        if isinstance(inputs, nn.Variable):
+            inputs.d = rng.randn(*inputs.d.shape)
+        else:
+            for v in inputs:
+                v.d = rng.randn(*v.d.shape)
+    elif callable(feed):
+        feed(inputs, rng)
 
     if isinstance(outputs, nn.Variable):
         outputs.forward()
-        yield outputs.d
+        yield outputs.d.copy()
     else:
         y = F.sink(*outputs)
         for v in outputs:
             v.persistent = True
         y.forward()
         for v in outputs:
-            yield v.d
+            yield v.d.copy()
 
 
 def iterate_function(outputs, side):
