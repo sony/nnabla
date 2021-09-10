@@ -134,6 +134,10 @@ def _imsave_before(img, channel_first, auto_scale):
     if channel_first and len(img.shape) == 3:
         img = img.transpose((1, 2, 0))
 
+    if len(img.shape) == 3 and img.shape[-1] not in [1, 2, 3, 4]:
+        raise ValueError(
+            f"Invalid channel size of input image. (channel size: {img.shape[-1]})")
+
     return img
 
 
