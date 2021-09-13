@@ -4872,12 +4872,17 @@ Array Manipulation:
         doc: Shape of output variable.
         type: repeated int64
         default: None
+      add:
+        doc: Add the input data to the same destination specified by the indices.
+        type: bool
+        default: 'False'
     outputs:
       y:
         doc: N-D array of given `shape`.
     c_runtime: not support
     function_ids:
       iI: 271
+      iIB: 342
   ScatterAdd:
     snake_name: scatter_add
     doc: |2

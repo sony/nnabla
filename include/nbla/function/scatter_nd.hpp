@@ -22,7 +22,7 @@
 
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_HEADER(ScatterNd, const vector<int> &);
+NBLA_REGISTER_FUNCTION_HEADER(ScatterNd, const vector<int> &, bool);
 
 /** Scatter `data` into a new array of given `shape` according to `indices`.
   This operation is the inverse of :func:`~nnabla.functions.gather_nd`.
@@ -66,16 +66,17 @@ Outputs:
 \ingroup FunctionImplGrp
  */
 template <typename T>
-class ScatterNd : public BaseFunction<const vector<int> &> {
+class ScatterNd : public BaseFunction<const vector<int> &, bool> {
 protected:
   const vector<int> shape_;
+  const bool add_;
 
 public:
-  ScatterNd(const Context &ctx, const vector<int> &shape)
-      : BaseFunction(ctx, shape), shape_(shape) {}
+  ScatterNd(const Context &ctx, const vector<int> &shape, bool add)
+      : BaseFunction(ctx, shape, add), shape_(shape), add_(add) {}
   virtual ~ScatterNd() {}
   virtual shared_ptr<Function> copy() const {
-    return create_ScatterNd(ctx_, shape_);
+    return create_ScatterNd(ctx_, shape_, add_);
   }
   virtual int min_inputs() { return 2; }
   virtual int min_outputs() { return 1; }

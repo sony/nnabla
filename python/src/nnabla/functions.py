@@ -1293,7 +1293,7 @@ def gather_nd(data, indices):
     return gather_nd_base(data, indices)
 
 
-def scatter_nd(data, indices, shape=None, out=None):
+def scatter_nd(data, indices, shape=None, out=None, add=False):
     """Scatter `data` according to `indices` into a new array of given `shape`
     or an existing array provided as `out`. Exactly one of the `shape` or `out`
     argument must be given. Given output `shape`, or shape of `out` array,
@@ -1332,6 +1332,7 @@ def scatter_nd(data, indices, shape=None, out=None):
         indices(list, numpy.ndarray, ~nnabla.Variable, ~nnabla.NdArray): scatter indices
         shape(tuple, list): shape of new output array
         out(~nnabla.Variable, ~nnabla.NdArray): existing output array
+        add(tool): Add the input data to the same destination specified by the indices.
 
     Returns: ~nnabla.Variable or ~nnabla.NdArray of given `shape`.
 
@@ -1351,7 +1352,7 @@ def scatter_nd(data, indices, shape=None, out=None):
         shape = out.shape
     elif isinstance(shape, np.ndarray):
         shape = shape.tolist()
-    return scatter_nd_base(data, indices, out, shape)
+    return scatter_nd_base(data, indices, out, shape, add)
 
 
 def scatter_add(x0, indices, x1, axis=None):
