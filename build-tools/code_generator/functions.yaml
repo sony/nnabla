@@ -4961,7 +4961,7 @@ Array Manipulation:
         doc: Mask with which to scatter. Non-zero/zero elements are supposed to be
           a binary mask as 1/0. No gradients are computed with respect to mask.
       output:
-        doc: Distination of output. If specified, data are inplaced.
+        doc: Destination of output. If specified, data are inplaced.
         optional: true
     outputs:
       y:
