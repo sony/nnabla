@@ -51,3 +51,29 @@ def test_forward_backward(seed, ishape, index, ctx, func_name):
     inputs = [rng.randn(*ishape).astype(np.float32), np.array(index)]
     function_tester(rng, F.gather_nd, gather_nd, inputs, func_name=func_name,
                     ctx=ctx, backward=[True, False])
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("ishape, index", [
+    ([10], [[0]]),
+    ([10], [[1, 5, 8]]),
+    ([10], [[-1, -5, -8]]),
+    ([3, 4], [[0]]),
+    ([3, 4], [[0], [0]]),
+    ([3, 4], [[0, 1], [0, 2]]),
+    ([3, 4], [[0, -1], [0, -2]]),
+    ([2, 3, 4], [[0]]),
+    ([2, 3, 4], [[0], [1]]),
+    ([2, 3, 4], [[0], [1], [2]]),
+    ([2, 3, 4], [[0, 1]]),
+    ([2, 3, 4], [[0, 1], [1, 2]]),
+    ([2, 3, 4], [[0, 1], [1, 2], [1, 0]]),
+    ([4, 4, 4, 4], [[[0, 1], [2, 3]], [[0, 1], [2, 3]]]),
+])
+def test_double_backward(seed, ishape, index, ctx, func_name):
+    from nbla_test_utils import backward_function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*ishape).astype(np.float32), np.array(index)]
+    backward_function_tester(rng, F.gather_nd, inputs,
+                             ctx=ctx, backward=[True, False])
