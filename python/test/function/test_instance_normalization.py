@@ -78,7 +78,7 @@ def test_instance_normalization_forward(ctx, func_name, seed, x_shape, batch_axi
         rng, x_shape, batch_axis, channel_axis, no_scale, no_bias)
 
     function_tester(rng, F.instance_normalization, ref_instance_normalization, [x, beta, gamma], [channel_axis, batch_axis, eps, output_stat], ctx=ctx,
-                    func_name=func_name, dstep=1e-2, atol_b=1e-2, backward=[False, False, False], disable_half_test=True)
+                    func_name=func_name, backward=[False, False, False], disable_half_test=True)
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
