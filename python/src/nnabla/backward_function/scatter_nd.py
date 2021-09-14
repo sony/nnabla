@@ -16,7 +16,7 @@
 import nnabla.functions as F
 
 
-def scatter_nd_backward(inputs, shape):
+def scatter_nd_backward(inputs, shape, add):
     """
     Args:
       inputs (list of nn.Variable): Incomming grads/inputs to/of the forward function.
