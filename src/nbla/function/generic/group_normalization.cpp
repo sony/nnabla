@@ -129,7 +129,7 @@ void GroupNormalization<T>::setup_impl(const Variables &inputs,
   x->reshape(instn_x_shape_, false);
   y->reshape(instn_x_shape_, false);
 
-  nbla::execute(f_instance_norm_, Variables{x}, outputs);
+  f_instance_norm_->setup({x}, outputs);
 
   // restore shape
   x->reshape(gn_x_shape_, false);
