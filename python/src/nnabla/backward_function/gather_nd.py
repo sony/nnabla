@@ -28,5 +28,5 @@ def gather_nd_backward(inputs):
     dy = inputs[0]
     x0 = inputs[1]
     idx = inputs[2]
-    dx0 = F.scatter_nd(dy, idx, shape=x0.shape)
+    dx0 = F.scatter_nd(dy, idx, shape=x0.shape, add=True)
     return dx0, None

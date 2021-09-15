@@ -20,7 +20,7 @@
 
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_SOURCE(ScatterNd, const vector<int> &);
+NBLA_REGISTER_FUNCTION_SOURCE(ScatterNd, const vector<int> &, bool);
 
 template <typename T>
 void ScatterNd<T>::setup_impl(const Variables &inputs,
@@ -97,8 +97,14 @@ void ScatterNd<T>::forward_impl(const Variables &inputs,
     }
     auto slice_length = dst_strides.at(idx_rows - 1);
     auto slice_offset = ndi::nd2flat(dst_ndi, dst_strides);
-    for (int k = 0; k < slice_length; k++) {
-      dst[slice_offset + k] = src[i * slice_length + k];
+    if (add_) {
+      for (int k = 0; k < slice_length; k++) {
+        dst[slice_offset + k] += src[i * slice_length + k];
+      }
+    } else {
+      for (int k = 0; k < slice_length; k++) {
+        dst[slice_offset + k] = src[i * slice_length + k];
+      }
     }
   }
 }
