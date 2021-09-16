@@ -1,4 +1,5 @@
 // Copyright 2017,2018,2019,2020,2021 Sony Corporation.
+// Copyright 2021 Sony Group Corporation.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -155,5 +156,18 @@ auto get_from_variadic_args(Args &&... args) -> typename std::remove_reference<
 private:                                                                       \
   classname(const classname &);                                                \
   classname &operator=(const classname &)
+
+inline int nbla_setenv(const char *var_name, const char *new_value) {
+  int return_val;
+#ifdef _WIN32
+  string var = string(var_name);
+  string value = string(new_value);
+  string envstring = var + "=" + value;
+  return_val = _putenv(envstring.c_str());
+#else
+  return_val = setenv(var_name, new_value, 1);
+#endif
+  return return_val;
+}
 }
 #endif
