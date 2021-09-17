@@ -254,13 +254,19 @@ bool load_parameters_h5(ParameterVector &pv, string filename) {
 // ----------------------------------------------------------------------
 bool load_parameters_pb(ParameterVector &pv, char *buffer, int size) {
   constexpr int size_1024_mb = 1024 << 20;
+#if GOOGLE_PROTOBUF_VERSION < 3006001
   constexpr int size_128_mb = 128 << 20;
+#endif
   NNablaProtoBuf param;
   std::unique_ptr<google::protobuf::io::ZeroCopyInputStream> input(
       new google::protobuf::io::ArrayInputStream(buffer, size));
   std::unique_ptr<google::protobuf::io::CodedInputStream> coded_input(
       new google::protobuf::io::CodedInputStream(input.get()));
+#if GOOGLE_PROTOBUF_VERSION < 3006001
   coded_input->SetTotalBytesLimit(size_1024_mb, size_128_mb);
+#else
+  coded_input->SetTotalBytesLimit(size_1024_mb);
+#endif
   param.ParseFromCodedStream(coded_input.get());
 
   load_parameters_from_proto(param, pv);
