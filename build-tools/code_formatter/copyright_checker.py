@@ -23,7 +23,7 @@ from contextlib import contextmanager
 
 _exclude_dirs = ['.git', '.egg', 'cache', '.vscode', 'external',
                  'doc', 'build', 'build_wheel', 'third_party', 'build-doc']
-_exclude_files = [".gitignore", "LICENSE", "NOTICE"]
+_exclude_files = [".gitignore", "LICENSE", "NOTICE", ".DS_Store"]
 _date_extract_regex = re.compile('(\\d{4}-\\d{2}-\\d{2})')
 _shebang = re.compile('#!.+')
 
@@ -121,10 +121,14 @@ class Checker:
 
     @contextmanager
     def read_file(self, fn):
-        with open(fn, "r", encoding='utf-8') as f:
-            self.text = f.read()
-        yield self.text
-        self.text = None
+        try:
+            with open(fn, "r", encoding='utf-8') as f:
+                self.text = f.read()
+            yield self.text
+            self.text = None
+        except UnicodeDecodeError:
+            print("{} is invalid text file, skipped!".format(fn))
+            yield None
 
     def create_file_header(self, f):
         commit_dates = retrieve_commit_dates(f)
@@ -234,12 +238,13 @@ def main(args):
         new_header = c.create_file_header(fn)
         if new_header is None:
             continue
-        with c.read_file(str(fn)):
-            old_header = c.extract_file_header()
-            if new_header == old_header:
-                continue
-            with open(str(fn), "w", encoding='utf-8') as fh:
-                fh.write(c.replace_file_header(old_header, new_header))
+        with c.read_file(str(fn)) as f:
+            if f:
+                old_header = c.extract_file_header()
+                if new_header == old_header:
+                    continue
+                with open(str(fn), "w", encoding='utf-8') as fh:
+                    fh.write(c.replace_file_header(old_header, new_header))
 
 
 if __name__ == '__main__':
