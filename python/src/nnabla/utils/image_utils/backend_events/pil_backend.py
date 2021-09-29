@@ -184,6 +184,9 @@ class PilBackend(ImageUtilsBackend):
         if auto_scale and img.dtype != np.uint8:
             img = (img * 255).astype(np.uint8)
 
+        if len(img.shape) == 3 and img.shape[-1] == 1:
+            img = np.squeeze(img, axis=-1)
+
         Image.fromarray(img).save(path)
 
     def imresize(self, img, size, interpolate="bilinear", channel_first=False):
