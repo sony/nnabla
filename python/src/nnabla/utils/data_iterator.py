@@ -283,19 +283,28 @@ class DataIterator(object):
 
         '''
 
-        if num_of_slices is not None and slice_pos is not None and slice_start is None and slice_end is None:
-            size = self._size // num_of_slices
-            amount = self._size % num_of_slices
-            slice_start = slice_pos * size
-            if slice_pos < amount:
-                slice_start += slice_pos
+        def get_slice_start_end(size, n_slices, rank):
+            """
+            This algorithm tends to evenly assign the remained to
+            each slice block with some integer tricky.
+            """
+            size_rank = size // n_slices
+            remain = size % n_slices
+            slice_start = size_rank * rank
+            if rank < remain:
+                slice_start += rank
+                size_rank += 1
             else:
-                slice_start += amount
-            slice_end = slice_start + size
-            if slice_end > self._size:
-                slice_start -= (slice_end - self._size)
-                slice_end = self._size
+                slice_start += remain
 
+            slice_end = slice_start + size_rank
+            assert slice_end <= size
+
+            return slice_start, slice_end
+
+        if num_of_slices is not None and slice_pos is not None and slice_start is None and slice_end is None:
+            slice_start, slice_end = get_slice_start_end(
+                self._size, num_of_slices, slice_pos)
         elif num_of_slices is None and slice_pos is None and slice_start is not None and slice_end is not None:
             pass
         else:
