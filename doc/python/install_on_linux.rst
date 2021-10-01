@@ -37,4 +37,4 @@ FAQ
 Q. I want to use another linux distribution.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-We actually tested other linux distributions and versions; Ubuntu 14.04, CentOS 6.9, 7.3, Fedora 23, 25, 26, and RHEL 7.3 on various environments; Baremetal server, AWS instance, and/or Docker machine. Thus, you can install in almost the same way described here. The details of how-to-install for each are coming soon.
+We actually tested other linux distributions and versions; Ubuntu 18.04, Ubuntu 20.04 and CentOS 8 on various environments; Baremetal server, AWS instance, and/or Docker machine. Theoretically, NNabla should work on any distributions based on glibc>=2.27. Thus, you can install in almost the same way described here. The details of how-to-install for each are coming soon.
