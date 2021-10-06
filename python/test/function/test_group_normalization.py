@@ -119,6 +119,27 @@ def test_group_normalization_forward_backward(ctx, func_name, seed, num_groups, 
                     func_name=func_name, dstep=1e-2, atol_b=4e-2, atol_accum=1e-5, backward=[True, not no_bias, not no_scale], disable_half_test=True)
 
 
+# Convolution (NCW) Large spatial size (W > 512 = NBLA_CUDA_GN_NUM_THREADS)
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("num_groups", [2])
+@pytest.mark.parametrize("x_shape , batch_axis, channel_axis",
+                         [((1, 6, 512 + 123), 0, 1)])
+@pytest.mark.parametrize("eps", [1e-05])
+@pytest.mark.parametrize("output_stat", [False])
+@pytest.mark.parametrize("no_scale", [False])
+@pytest.mark.parametrize("no_bias", [False])
+def test_group_normalization_large_spacial_forward_backward(ctx, func_name, seed, num_groups, x_shape, batch_axis, channel_axis, eps, output_stat, no_scale, no_bias):
+    from nbla_test_utils import function_tester
+
+    rng = np.random.RandomState(seed)
+    x, beta, gamma = create_inputs(
+        rng, x_shape, channel_axis, no_scale, no_bias)
+
+    function_tester(rng, F.group_normalization, ref_group_normalization, [x, beta, gamma], [num_groups, channel_axis, batch_axis, eps, output_stat], ctx=ctx,
+                    func_name=func_name, dstep=1e-2, atol_b=4e-2, atol_accum=1e-5, backward=[True, not no_bias, not no_scale], disable_half_test=True)
+
+
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("num_groups", [2, 3])
