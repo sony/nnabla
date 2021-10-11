@@ -86,78 +86,61 @@ void CumProd<T>::backward_impl(const Variables &inputs,
   if (!(propagate_down[0])) {
     return;
   }
+
   typedef typename force_float<T>::type AccumType;
 
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
-  const T *y = outputs[0]->get_data_pointer<T>(this->ctx_);
   const T *g_y = outputs[0]->get_grad_pointer<T>(this->ctx_);
+  T *g_x = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
 
-  if (propagate_down[0]) {
-    T *g_x = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
+  // `masked_cumprod` is a cumulative prod of `x` but treating the first zero
+  // element as `1` on each `axis`.
+  Variable v_masked_cumprod({size1_});
+  AccumType *masked_cumprod =
+      v_masked_cumprod.cast_data_and_get_pointer<AccumType>(this->ctx_, true);
 
-    bool zero_input_present = false;
-    for (int i = 0; i < inputs[0]->size(); ++i) {
-      if (x[i] == (T)0) {
-        zero_input_present = true;
-        break;
+  for (int i0 = 0; i0 < size0_; ++i0) {
+    for (int i2 = 0; i2 < size2_; ++i2) {
+      const int offset = i0 * size1_ * size2_ + i2;
+
+      // Create masked_cumprod
+      int first_zero_pos = size1_;
+      T prod = (T)1;
+      for (int k = 0; k < size1_; k++) {
+        const int i1 = reverse_ ? size1_ - k - 1 : k;
+        int idx = i1 * size2_ + offset;
+        if (x[idx] == (T)0 && first_zero_pos == size1_) {
+          first_zero_pos = k;
+          // prod *= (T)1;
+        } else {
+          prod *= x[idx];
+        }
+        masked_cumprod[k] = prod;
       }
-    }
 
-    for (int i0 = 0; i0 < size0_; ++i0) {
-      for (int i2 = 0; i2 < size2_; ++i2) {
-        const int j = i0 * size1_ * size2_ + i2;
+      // Calculate gradient
+      AccumType sum = 0;
+      for (int k = size1_ - 1; k >= 0; k--) {
+        const int i1 = reverse_ ? size1_ - k - 1 : k;
+        int idx = i1 * size2_ + offset;
 
-        AccumType cum_sum_ydy = 0.;
-        for (int idx = 0; idx < size1_; ++idx) {
+        if (!exclusive_) {
+          sum += masked_cumprod[k] * g_y[idx];
+        }
 
-          const int i1 = reverse_ ? idx : size1_ - idx - 1;
-          const int x_k = i1 * size2_ + j;
+        T grad;
+        if (k == first_zero_pos) {
+          grad = (T)sum;
+          sum = 0;
+        } else if (k > first_zero_pos) {
+          grad = (T)0;
+        } else {
+          grad = (T)sum / x[idx];
+        }
+        g_x[idx] = grad + (accum[0] ? g_x[idx] : (T)0);
 
-          if (zero_input_present) {
-
-            auto coeff = (i1 == 0)
-                             ? (T)1
-                             : exclusive_ ? y[x_k] : y[(i1 - 1) * size2_ + j];
-            if (reverse_)
-              coeff = (i1 == size1_ - 1)
-                          ? (T)1
-                          : exclusive_ ? y[x_k] : y[(i1 + 1) * size2_ + j];
-
-            AccumType cur = exclusive_ ? (T)0 : coeff * g_y[x_k];
-
-            if (reverse_) {
-              for (int i4 = i1 - 1; i4 >= 0; --i4) {
-                if (!exclusive_ || i4 != i1 - 1)
-                  coeff *= (exclusive_ ? x[(i4 + 1) * size2_ + j]
-                                       : x[i4 * size2_ + j]);
-                cur += coeff * g_y[i4 * size2_ + j];
-              }
-            } else {
-              for (int i4 = i1 + 1; i4 < size1_; ++i4) {
-                if (!exclusive_ || i4 != i1 + 1)
-                  coeff *= (exclusive_ ? x[(i4 - 1) * size2_ + j]
-                                       : x[i4 * size2_ + j]);
-                cur += coeff * g_y[i4 * size2_ + j];
-              }
-            }
-
-            if (accum[0])
-              g_x[x_k] += cur;
-            else
-              g_x[x_k] = cur;
-          }
-
-          else {
-
-            cum_sum_ydy += y[x_k] * g_y[x_k];
-            auto cur =
-                exclusive_ ? cum_sum_ydy - y[x_k] * g_y[x_k] : cum_sum_ydy;
-            if (accum[0]) {
-              g_x[x_k] += cur / x[x_k];
-            } else {
-              g_x[x_k] = cur / x[x_k];
-            }
-          }
+        if (exclusive_ && k != 0) {
+          sum += masked_cumprod[k - 1] * g_y[idx];
         }
       }
     }
