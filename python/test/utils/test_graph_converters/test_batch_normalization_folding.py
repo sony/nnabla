@@ -38,12 +38,13 @@ resnet_ref = small_bn_folding_resnet
 @pytest.mark.parametrize('seed', [313])
 @pytest.mark.parametrize('test', [True])
 @pytest.mark.parametrize('w_bias', [True])
-@pytest.mark.parametrize('channel_last', [True])
+@pytest.mark.parametrize('channel_last', [False])
 @pytest.mark.parametrize('graph_ref, graph_act, opposite',
                          [(resnet_ref, small_bn_resnet, False),
                           (resnet_ref, small_bn_opp_resnet, True)])
+@pytest.mark.parametrize('dims', [2, 3])
 def test_batch_normalization_folding(ctx, func_name, seed, test, w_bias,
-                                     channel_last, graph_ref, graph_act, opposite):
+                                     channel_last, graph_ref, graph_act, opposite, dims):
     from .graph_converter_test_utils import structure_tester, value_tester
 
     if channel_last == True and not func_name.endswith('Cudnn'):
@@ -55,13 +56,13 @@ def test_batch_normalization_folding(ctx, func_name, seed, test, w_bias,
         np.random.seed(seed)
         rng = np.random.RandomState(seed)
 
+        input_shape = (batch_size,) + (32,) * dims + (3,) if channel_last else (batch_size,) + (3,) + (32,) * dims
         # Graph
-        x_data = rng.randn(batch_size, 32, 32, 3) if channel_last == True else rng.randn(
-            batch_size, 3, 32, 32)
+        x_data = rng.randn(*input_shape)
         x = nn.Variable.from_numpy_array(x_data)
 
         y_tgt = graph_act(x, test=test, w_bias=w_bias,
-                          channel_last=channel_last)
+                          channel_last=channel_last, dims=dims)
 
         # FunctionModifier
         modifiers = []
@@ -71,7 +72,7 @@ def test_batch_normalization_folding(ctx, func_name, seed, test, w_bias,
         y_act = GC.GraphConverter(modifiers).convert(y_tgt)
 
         # Ref Graph
-        y_ref = graph_ref(x, test=test, channel_last=channel_last)
+        y_ref = graph_ref(x, test=test, channel_last=channel_last, dims=dims)
 
         # Test
         structure_tester(y_ref, y_act)

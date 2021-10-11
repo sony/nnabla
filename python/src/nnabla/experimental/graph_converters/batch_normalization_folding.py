@@ -292,7 +292,7 @@ class BatchNormalizationFoldingOppositeModifierInner(FunctionModifier, BatchNorm
         else:
             w_data = c0 * w_data
             b_data = w_data * c1
-            b_data = np.sum(w_data, (1, 2, 3))
+            b_data = np.sum(b_data, tuple(range(1, w_data.ndim)))
 
         if len(ip_func.inputs) == 3:
             b = ip_func.inputs[2]

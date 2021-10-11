@@ -28,5 +28,5 @@ def create_scale_bias(idx, maps, ndim=4, axes=[1]):
     return a, b
 
 
-def get_channel_axes(channel_last=False):
-    return [3] if channel_last else [1]
+def get_channel_axes(channel_last=False, dims=2):
+    return [dims+1] if channel_last else [1]

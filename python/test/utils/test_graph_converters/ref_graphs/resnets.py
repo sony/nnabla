@@ -123,9 +123,12 @@ def small_bn_self_folding_resnet(image, channel_last=False, name='bn-self-foldin
 
 # BatchNormalization Small ResNet
 def bn_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1),
-                test=False, w_bias=False, channel_last=False, name='convblock'):
-    axes = get_channel_axes(channel_last)
+                test=False, w_bias=False, channel_last=False, name='convblock', dims=2):
+    axes = get_channel_axes(channel_last, dims)
     h = x
+    kernel = (3,) * dims
+    pad = (1,) * dims
+    stride = (1,) * dims
     with nn.parameter_scope(name):
         h = PF.convolution(h, maps, kernel=kernel, pad=pad, stride=stride,
                            channel_last=channel_last, with_bias=w_bias)
@@ -133,34 +136,40 @@ def bn_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1),
     return F.relu(h + x)
 
 
-def small_bn_resnet(image, test=False, w_bias=False, channel_last=False, name='bn-graph-ref'):
-    axes = get_channel_axes(channel_last)
+def small_bn_resnet(image, test=False, w_bias=False, channel_last=False, name='bn-graph-ref', dims=2):
+    axes = get_channel_axes(channel_last, dims)
 
+    kernel = (3,) * dims
+    pool_kernel = (2,) * dims
+    pad = (1,) * dims
     h = image
     h /= 255.0
-    h = PF.convolution(h, 16, kernel=(3, 3), pad=(1, 1), channel_last=channel_last,
+    h = PF.convolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
                        with_bias=w_bias, name='first-conv')
     h = PF.batch_normalization(
         h, axes=axes, batch_stat=not test, name='first-bn')
     h = F.relu(h)
-    h = F.max_pooling(h, (2, 2), channel_last=channel_last)
+    h = F.max_pooling(h, pool_kernel, channel_last=channel_last)
     h = bn_resblock(h, maps=16, test=test, w_bias=w_bias,
-                    channel_last=channel_last, name='cb1')
+                    channel_last=channel_last, name='cb1', dims=dims)
     h = bn_resblock(h, maps=16, test=test, w_bias=w_bias,
-                    channel_last=channel_last, name='cb2')
+                    channel_last=channel_last, name='cb2', dims=dims)
     h = bn_resblock(h, maps=16, test=test, w_bias=w_bias,
-                    channel_last=channel_last, name='cb3')
+                    channel_last=channel_last, name='cb3', dims=dims)
     h = bn_resblock(h, maps=16, test=test, w_bias=w_bias,
-                    channel_last=channel_last, name='cb4')
-    h = F.average_pooling(h, (2, 2), channel_last=channel_last)
+                    channel_last=channel_last, name='cb4', dims=dims)
+    h = F.average_pooling(h, pool_kernel, channel_last=channel_last)
     pred = PF.affine(h, 10, name='fc')
     return pred
 
 
 # BatchNormalization Small ResNet Opposite
 def bn_opp_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1),
-                    test=False, channel_last=False, name='convblock'):
-    axes = get_channel_axes(channel_last)
+                    test=False, channel_last=False, name='convblock', dims=2):
+    axes = get_channel_axes(channel_last, dims)
+    kernel = (3,) * dims
+    pad = (1,) * dims
+    stride = (1,) * dims
     with nn.parameter_scope(name):
         h = PF.batch_normalization(x, axes=axes, batch_stat=not test)
         z = h
@@ -169,56 +178,65 @@ def bn_opp_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1),
     return F.relu(z + h)
 
 
-def small_bn_opp_resnet(image, test=False, w_bias=False, channel_last=False, name='bn-graph-ref'):
-    axes = get_channel_axes(channel_last)
+def small_bn_opp_resnet(image, test=False, w_bias=False, channel_last=False, name='bn-graph-ref', dims=2):
+    axes = get_channel_axes(channel_last, dims)
 
+    kernel = (3,) * dims
+    pool_kernel = (2,) * dims
+    pad = (1,) * dims
     h = image
     h /= 255.0
     h = PF.batch_normalization(
         h, axes=axes, batch_stat=not test, name='first-bn')
-    h = PF.convolution(h, 16, kernel=(3, 3), pad=(1, 1), channel_last=channel_last,
+    h = PF.convolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
                        with_bias=w_bias, name='first-conv')
     h = F.relu(h)
-    h = F.max_pooling(h, (2, 2), channel_last=channel_last)
+    h = F.max_pooling(h, pool_kernel, channel_last=channel_last)
     h = bn_opp_resblock(h, maps=16, test=test,
-                        channel_last=channel_last, name='cb1')
+                        channel_last=channel_last, name='cb1', dims=dims)
     h = bn_opp_resblock(h, maps=16, test=test,
-                        channel_last=channel_last, name='cb2')
+                        channel_last=channel_last, name='cb2', dims=dims)
     h = bn_opp_resblock(h, maps=16, test=test,
-                        channel_last=channel_last, name='cb3')
+                        channel_last=channel_last, name='cb3', dims=dims)
     h = bn_opp_resblock(h, maps=16, test=test,
-                        channel_last=channel_last, name='cb4')
-    h = F.average_pooling(h, (2, 2), channel_last=channel_last)
+                        channel_last=channel_last, name='cb4', dims=dims)
+    h = F.average_pooling(h, pool_kernel, channel_last=channel_last)
     pred = PF.affine(h, 10, name='fc')
     return pred
 
 
 # BatchNormalization Folding Small ResNet
 def bn_folding_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1),
-                        test=False, channel_last=False, name='convblock'):
+                        test=False, channel_last=False, name='convblock', dims=2):
     h = x
+    kernel = (3,) * dims
+    pad = (1,) * dims
+    stride = (1,) * dims
     with nn.parameter_scope(name):
         h = PF.convolution(h, maps, kernel=kernel, pad=pad, stride=stride,
                            channel_last=channel_last, with_bias=True)
     return F.relu(h + x)
 
 
-def small_bn_folding_resnet(image, test=False, channel_last=False, name='bn-graph-ref'):
+def small_bn_folding_resnet(image, test=False, channel_last=False, name='bn-graph-ref', dims=2):
     h = image
     h /= 255.0
-    h = PF.convolution(h, 16, kernel=(3, 3), pad=(1, 1), channel_last=channel_last,
+    kernel = (3,) * dims
+    pool_kernel = (2,) * dims
+    pad = (1,) * dims
+    h = PF.convolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
                        with_bias=True, name='first-conv')
     h = F.relu(h)
-    h = F.max_pooling(h, (2, 2), channel_last=channel_last)
+    h = F.max_pooling(h, pool_kernel, channel_last=channel_last)
     h = bn_folding_resblock(h, maps=16, test=test,
-                            channel_last=channel_last, name='cb1')
+                            channel_last=channel_last, name='cb1', dims=dims)
     h = bn_folding_resblock(h, maps=16, test=test,
-                            channel_last=channel_last, name='cb2')
+                            channel_last=channel_last, name='cb2', dims=dims)
     h = bn_folding_resblock(h, maps=16, test=test,
-                            channel_last=channel_last, name='cb3')
+                            channel_last=channel_last, name='cb3', dims=dims)
     h = bn_folding_resblock(h, maps=16, test=test,
-                            channel_last=channel_last, name='cb4')
-    h = F.average_pooling(h, (2, 2), channel_last=channel_last)
+                            channel_last=channel_last, name='cb4', dims=dims)
+    h = F.average_pooling(h, pool_kernel, channel_last=channel_last)
     pred = PF.affine(h, 10, name='fc')
     return pred
 
