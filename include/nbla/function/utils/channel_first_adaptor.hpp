@@ -31,7 +31,7 @@ using std::vector;
  * memory format in convolutional neural network.
  *
  * For example, let an input variable shape (32, 128, 128, 3), batch_axis ==
- * [0] and channel_axis == 3 (channel-last). Then this adaptor convert the
+ * [0] and channel_axis == 3 (channel-last). Then this adaptor converts the
  * shape and memory format to (32, 3, 128, 128) by applying transpose function.
  *
  * Possible use case is a force use of channel-first implementation (layer
@@ -40,14 +40,14 @@ using std::vector;
  * following.
  * chennal-last layer -> forward_pre -> channel-first layer -> forward_post ->
  * channel-last layer
- * (Variebles are omitted and same for backward prop)
+ * (Variebles are omitted and the same for backward prop)
  */
 class ChannelFirstAdaptor {
   FunctionPtr pre_transpose_, post_transpose_;
 
 public:
   /**
-   * @brief Check wheather this adaptor needed for the input.
+   * @brief Check wheather this adaptor is needed for the input.
    *
    * Returns `false` when the input is already channel-first format, otherwise
    * `true`.
@@ -93,8 +93,8 @@ public:
    * @param output_pre Variable pointer for `pre_transpose_` output.
    * @param input_post Variable pointer for `post_transpose_` input.
    * @param output_post Variable pointer for `post_transpose_` output.
-   * @param shape Shape of original input. This should be same as the shape of
-   * `input_pre`.
+   * @param shape Shape of original input. This should be the same as the shape
+   * of `input_pre`.
    * @param batch_axis List of integer corresponding to batch or outer axis.
    * Each axis must be in range of [0, ndim).
    * @param channel_axis An integer corresponding to channel axis. This axis
