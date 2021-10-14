@@ -1719,3 +1719,27 @@ def quantize_linear(x, scale, zero_point,
     y = quantize_linear_base(x, scale, zero_point,
                              round_mode, narrow_range, int_dtype)
     return y
+
+
+def linspace(start, stop, num):
+    r"""
+    Generate a one-dimensional vector/tensor of size `num` whose values are evenly spaced from `start` to `end`, inclusive.
+
+    Args:
+        start(float): Start value.
+        stop(float): End value.
+        num(int): Size of the constructed vector/tensor.
+
+    Returns:
+        ~nnabla.Variable: 1-D array with the generated values.
+    """
+    from .function_bases import linspace as linspace_base
+
+    if not isinstance(num, int):
+        raise TypeError(
+            "'{}' object cannot be interpreted as an integer".format(type(num).__name__))
+    if num < 0:
+        raise ValueError(
+            "Number of samples, {}, must be non-negative.".format(num))
+
+    return linspace_base(start, stop, num)

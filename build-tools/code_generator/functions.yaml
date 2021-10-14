@@ -3650,6 +3650,28 @@ Math:
     function_ids:
       fff: 131
     c_runtime: not support
+  Linspace:
+    snake_name: linspace
+    doc: |2
+
+      Generate a one-dimensional vector/tensor of size `num` whose values are evenly spaced from `start` to `end`, inclusive.
+    inputs: {}
+    arguments:
+      start:
+        doc: Start value.
+        type: float
+      stop:
+        doc: End value.
+        type: float
+      num:
+        doc: Size of the constructed vector/tensor.
+        type: int64
+    outputs:
+      y:
+        doc: 1-D array with the generated values.
+    function_ids:
+      ffi: 343
+    c_runtime: not support
   Abs:
     snake_name: abs
     doc: |2
