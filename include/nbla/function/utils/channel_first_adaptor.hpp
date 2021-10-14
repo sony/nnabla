@@ -79,8 +79,9 @@ public:
    * @return true
    * @return false
    */
-  static bool need_adaptor(const Shape_t &shape, const vector<int> &batch_axis,
-                           const int channel_axis);
+  NBLA_API static bool need_adaptor(const Shape_t &shape,
+                                    const vector<int> &batch_axis,
+                                    const int channel_axis);
 
   /**
    * @brief Setup the adaptor.
@@ -101,10 +102,10 @@ public:
    * must be in range of [0, ndim).
    * @param ctx A compute backend descriptor.
    */
-  void setup(Variable *input_pre, Variable *output_pre, Variable *input_post,
-             Variable *output_post, const Shape_t &shape,
-             const vector<int> &batch_axis, const int channel_axis,
-             const Context &ctx);
+  NBLA_API void setup(Variable *input_pre, Variable *output_pre,
+                      Variable *input_post, Variable *output_post,
+                      const Shape_t &shape, const vector<int> &batch_axis,
+                      const int channel_axis, const Context &ctx);
 
   /**
    * @brief Transform variable memory format to channel-first.
@@ -112,7 +113,7 @@ public:
    * @param input `pre_tranpose_` input.
    * @param output `pre_tranpose_` output.
    */
-  void convert_to_channel_first(Variable *input, Variable *output);
+  NBLA_API void convert_to_channel_first(Variable *input, Variable *output);
 
   /**
    * @brief Transform variable memory format from channel-first to original one.
@@ -120,7 +121,7 @@ public:
    * @param input `post_tranpose_` input.
    * @param output `post_tranpose_` output.
    */
-  void convert_from_channel_first(Variable *input, Variable *output);
+  NBLA_API void convert_from_channel_first(Variable *input, Variable *output);
 
   /**
    * @brief Backward execution for `forward_pre`.
@@ -130,9 +131,10 @@ public:
    * @param propagate_down Flag whether or not to perform backward propagation.
    * @param accum Flag whether or not to accumulate grad.
    */
-  void convert_to_channel_first_backward(Variable *input, Variable *output,
-                                         const bool propagate_down,
-                                         const bool accum);
+  NBLA_API void convert_to_channel_first_backward(Variable *input,
+                                                  Variable *output,
+                                                  const bool propagate_down,
+                                                  const bool accum);
 
   /**
    * @brief Backward execution for `forward_post`.
@@ -142,9 +144,10 @@ public:
    * @param propagate_down Flag whether or not to perform backward propagation.
    * @param accum Flag whether or not to accumulate grad.
    */
-  void convert_from_channel_first_backward(Variable *input, Variable *output,
-                                           const bool propagate_down,
-                                           const bool accum);
+  NBLA_API void convert_from_channel_first_backward(Variable *input,
+                                                    Variable *output,
+                                                    const bool propagate_down,
+                                                    const bool accum);
 };
 
 using ChannelFirstAdaptorPtr = std::shared_ptr<ChannelFirstAdaptor>;
