@@ -1,3 +1,4 @@
 ipython
 pytest
+pytest-xdist[psutil]
 scipy
