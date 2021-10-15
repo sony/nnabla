@@ -141,8 +141,8 @@ class SwapInOutScheduler {
   // The differently ordered get/cast/clear is recorded after first iteration
   vector<RecType> wrong_ordered;
 
-  int order_idx = 0;   // pointing the current position in the order.
-  size_t func_idx = 0; // pointing the current layer function.
+  size_t order_idx = 0; // pointing the current position in the order.
+  size_t func_idx = 0;  // pointing the current layer function.
 
   // Function blocks in the order
   vector<size_t> func_block_ends;

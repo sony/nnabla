@@ -25,7 +25,7 @@ std::vector<std::string> add_files_to_nnp(nbla::utils::nnp::Nnp &nnp,
                                           bool on_memory) {
   std::vector<std::string> input_files;
 
-  for (int i = 0; i < files.size(); i++) {
+  for (size_t i = 0; i < files.size(); i++) {
     std::string arg = files[i];
     int ep = arg.find_last_of(".");
     std::string ext = arg.substr(ep, arg.size() - ep);

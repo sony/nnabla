@@ -390,7 +390,7 @@ bool save_parameters_pb(const ParameterVector &pv, string filename) {
       parameter->add_data(data[i]);
 
     Shape *shape = parameter->mutable_shape();
-    for (int i = 0; i < variable->shape().size(); i++)
+    for (Shape_t::size_type i = 0; i < variable->shape().size(); i++)
       shape->add_dim(variable->shape()[i]);
   }
   params.SerializeToOstream(&ofs);

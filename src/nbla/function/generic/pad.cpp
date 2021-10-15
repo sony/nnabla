@@ -77,7 +77,7 @@ pad_reflect_forward(const Shape_t &dst_ndi, const T *src, T *dst,
                     const Shape_t &dst_shape, const PadList &padding) {
   const auto dst_idx = ndi::nd2flat(dst_ndi, dst_stride);
   Shape_t::value_type src_idx = 0;
-  for (int axis = 0; axis < dst_shape.size(); axis++) {
+  for (Shape_t::size_type axis = 0; axis < dst_shape.size(); axis++) {
     const auto src_len =
         dst_shape[axis] - padding[axis].first - padding[axis].second;
     Shape_t::value_type src_axis_idx =
@@ -96,7 +96,7 @@ pad_reflect_backward(const Shape_t &src_ndi, const T *src, T *dst,
                      const Shape_t &src_shape, const PadList &padding) {
   const auto src_idx = ndi::nd2flat(src_ndi, src_stride);
   Shape_t::value_type dst_idx = 0;
-  for (int axis = 0; axis < src_shape.size(); axis++) {
+  for (Shape_t::size_type axis = 0; axis < src_shape.size(); axis++) {
     const auto dst_len =
         src_shape[axis] - padding[axis].first - padding[axis].second;
     Shape_t::value_type dst_axis_idx =
@@ -118,7 +118,7 @@ pad_repeat_forward(const Shape_t &dst_ndi, const T *src, T *dst,
                    const Shape_t &dst_shape, const PadList &padding) {
   const auto dst_idx = ndi::nd2flat(dst_ndi, dst_stride);
   Shape_t::value_type src_idx = 0;
-  for (int axis = 0; axis < dst_shape.size(); axis++) {
+  for (Shape_t::size_type axis = 0; axis < dst_shape.size(); axis++) {
     int src_max_idx =
         dst_shape[axis] - padding[axis].first - padding[axis].second - 1;
     src_idx += std::min(src_max_idx,
@@ -136,7 +136,7 @@ pad_repeat_backward(const Shape_t &src_ndi, const T *src, T *dst,
                     const Shape_t &src_shape, const PadList &padding) {
   const auto src_idx = ndi::nd2flat(src_ndi, src_stride);
   Shape_t::value_type dst_idx = 0;
-  for (int axis = 0; axis < src_shape.size(); axis++) {
+  for (Shape_t::size_type axis = 0; axis < src_shape.size(); axis++) {
     int dst_max_idx =
         src_shape[axis] - padding[axis].first - padding[axis].second - 1;
     dst_idx += std::min(dst_max_idx,

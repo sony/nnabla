@@ -69,7 +69,7 @@ bool nbla_infer_core(nbla::Context ctx, int argc, char *argv[]) {
   // Get variables for input values.
   std::vector<nbla::utils::nnp::Executor::DataVariable> inputs =
       exec->get_data_variables();
-  for (int i = 0; i < inputs.size(); i++) {
+  for (size_t i = 0; i < inputs.size(); i++) {
     std::cout << "Input" << i << ": " << inputs[i].data_name << std::endl;
     auto var = inputs[i].variable->variable();
 
@@ -80,7 +80,7 @@ bool nbla_infer_core(nbla::Context ctx, int argc, char *argv[]) {
 
     if (p.get<std::string>("data_type") == "uint8") {
       uint8_t *data = var->cast_data_and_get_pointer<uint8_t>(ctx);
-      if ((int)size == ((int)(var->size()) * sizeof(uint8_t))) {
+      if ((int)size == ((int)(var->size()) * (int)(sizeof(uint8_t)))) {
         std::vector<uint8_t> buffer(size / sizeof(uint8_t));
         if (file.read((char *)buffer.data(), size)) {
           std::cout << "  Read data from [" << ifile << "]" << std::endl;
@@ -97,7 +97,7 @@ bool nbla_infer_core(nbla::Context ctx, int argc, char *argv[]) {
       }
     } else {
       float *data = var->cast_data_and_get_pointer<float>(ctx);
-      if ((int)size == ((int)(var->size()) * sizeof(float))) {
+      if ((int)size == ((int)(var->size()) * (int)(sizeof(float)))) {
         std::vector<float> buffer(size / sizeof(float));
         if (file.read((char *)buffer.data(), size)) {
           std::cout << "  Read data from [" << ifile << "]" << std::endl;

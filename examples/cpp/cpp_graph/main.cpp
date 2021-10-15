@@ -31,7 +31,7 @@ int main() {
 
   Shape_t shape_x = {1, 28, 28};
   int n_x = 1;
-  for (int i = 0; i < shape_x.size(); i++)
+  for (Shape_t::size_type i = 0; i < shape_x.size(); i++)
     n_x *= shape_x[i];
   int n_h = 1500;
   int n_y = 10;

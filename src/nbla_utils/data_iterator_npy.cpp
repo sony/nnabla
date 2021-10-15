@@ -51,7 +51,7 @@ void DataIteratorFromCacheFiles::loop() {
   while (!req_exit_) {
     std::unique_lock<std::mutex> lock(mutex_);
     auto d = dataset_->get_batch_data(iter_++);
-    while (queue_.size() >= MAX_ITEM) {
+    while (queue_.size() >= static_cast<size_t>(MAX_ITEM)) {
       full_cond_.wait_for(lock, std::chrono::milliseconds(TIMEOUT));
       if (req_exit_)
         return;

@@ -109,7 +109,7 @@ MnistDataIterator::MnistDataIterator() : current_idx_(0) {
   const string label_gz = "train-labels-idx1-ubyte.gz";
   vector<vector<uint8_t>> images = read_images("./", image_gz);
   vector<uint8_t> labels = read_labels("./", label_gz);
-  for (int i = 0; i < images.size(); i++) {
+  for (size_t i = 0; i < images.size(); i++) {
     Pair xt;
     xt.data = images[i];
     xt.label = labels[i];
