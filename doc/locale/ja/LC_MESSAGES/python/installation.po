@@ -28,11 +28,19 @@ msgstr "Python パッケージのインストール"
 msgid "There are three ways to install NNabla Python package."
 msgstr "NNabla Python パッケージのインストール方法は 3 通りあります。"
 
-#: ../../python/installation.rst:10
+#: ../../../../python/installation.rst:8
+msgid ""
+"How to setup environment including CUDA/cudNN, and how to install for "
+"each OS, please refer to `this site <https://nnabla.org/install/>`_."
+msgstr ""
+"CUDA/cudNNを含む環境の設定や、OSごとのインストール方法については"
+"`こちら <https://nnabla.org/ja/install/>`_をご覧ください。"
+
+#: ../../python/installation.rst:12
 msgid "Install with pip command"
 msgstr "pip コマンドを使用してインストールする"
 
-#: ../../python/installation.rst:12
+#: ../../python/installation.rst:14
 msgid ""
 "The NNabla python packages are hosted on PYPI for many platforms. For "
 "people who are familiar with Python and its package management system "
@@ -47,15 +55,15 @@ msgstr ""
 "CUDA ) を使い慣れているなら、次の pip インストールガイドをご覧ください。"
 "OS 別のもう少し詳細なセットアップ方法は次の章を参照してください。"
 
-#: ../../python/installation.rst:23
+#: ../../python/installation.rst:25
 msgid "OS specific workflows"
 msgstr "OS 別ワークフロー"
 
-#: ../../python/installation.rst:34
+#: ../../python/installation.rst:36
 msgid "Install NNabla package compatible with Multi-GPU execution"
 msgstr "Multi-GPU 互換の NNabla パッケージをインストールする"
 
-#: ../../python/installation.rst:36
+#: ../../python/installation.rst:38
 msgid ""
 "To enable multi-GPU execution such as distributed training on NNabla, "
 "you have to install a special edition of NNabla package. See :ref:`pip-"
@@ -65,11 +73,11 @@ msgstr ""
 "パッケージの特別版をインストールする必要があります。インストール方法につ"
 "いては :ref:`pip-installation-distributed` を参照してください。"
 
-#: ../../python/installation.rst:40
+#: ../../python/installation.rst:42
 msgid "Install from source"
 msgstr "ソースコードからインストールする"
 
-#: ../../python/installation.rst:42
+#: ../../python/installation.rst:44
 msgid ""
 "Documentation of build from source has been moved to `Github repository "
 "<https://github.com/sony/nnabla-ext-cuda/tree/master/doc/build>`_ "
@@ -83,6 +91,6 @@ msgstr ""
 "md>`_ または `build_distributed <https://github.com/sony/nnabla-ext-"
 "cuda/blob/master/doc/build/build_distributed.md>`_ ) へ移動しました。"
 
-#: ../../python/installation.rst:46
+#: ../../python/installation.rst:48
 msgid "Running on Docker"
 msgstr "Docker で実行"

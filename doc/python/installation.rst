@@ -5,6 +5,8 @@ Python Package Installation
 
 There are three ways to install NNabla Python package.
 
+How to setup environment including CUDA/cudNN, and how to install for each OS, please refer to `this site <https://nnabla.org/install/>`_.
+
 
 Install with pip command
 ----------------------
