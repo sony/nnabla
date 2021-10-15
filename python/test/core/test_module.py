@@ -20,16 +20,9 @@ import nnabla.functions as F
 import nnabla.parametric_functions as PF
 from nnabla.core.modules import ConvBn, ResUnit
 
-from helper import ModuleCreator, forward_variable_and_check_equal
+from helper import ModuleCreator, forward_variable_and_check_equal, create_temp_with_dir
 
 nnp_file = "t.nnp"
-
-
-@pytest.fixture(scope="function", autouse=True)
-def clear_temporary_file():
-    yield
-    if os.path.exists(nnp_file):
-        os.remove(nnp_file)
 
 
 class Shared(nn.Module):
@@ -607,9 +600,10 @@ def test_save_load_consistency(module_creator):
     with nn.graph_def.graph() as g:
         outputs = module(*proto_variable_inputs)
 
-    g.save(nnp_file)
+    with create_temp_with_dir(nnp_file) as tmp_file:
+        g.save(tmp_file)
 
-    g = nn.graph_def.load(nnp_file)
+        g = nn.graph_def.load(tmp_file)
 
     # create variable inputs and initialized by random value
     variable_inputs = module_creator.get_variable_inputs()
@@ -660,9 +654,11 @@ def test_flat_module_support(module_func):
     if not isinstance(outputs, tuple):
         outputs = (outputs, )
     g = nn.graph_def.get_default_graph_by_variable(outputs[0])
-    g.save(nnp_file)
 
-    g = nn.graph_def.load(nnp_file)
+    with create_temp_with_dir(nnp_file) as tmp_file:
+        g.save(tmp_file)
+
+        g = nn.graph_def.load(tmp_file)
 
     inputs = [nn.Variable(shape) for shape in in_shapes]
     for i in inputs:
@@ -683,7 +679,9 @@ def test_flat_module_with_statement(module_func):
     with nn.graph_def.graph() as g:
         inputs = [nn.ProtoVariable(shape) for shape in in_shapes]
         outputs = func(*inputs)
-    g.save(nnp_file)
+
+    with create_temp_with_dir(nnp_file) as tmp_file:
+        g.save(tmp_file)
 
     inputs = [nn.Variable(shape) for shape in in_shapes]
     for i in inputs:
