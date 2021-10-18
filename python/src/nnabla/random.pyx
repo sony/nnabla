@@ -20,10 +20,22 @@ from random cimport _set_seed
 pseed = 313
 prng = np.random.RandomState(pseed)
 
-def seed(seed_value):
+def seed(seed_value, set_function_seed=True, set_parameter_seed=True):
     assert isinstance(seed_value, int)
-    global pseed
-    global prng
-    pseed = seed_value
-    prng = np.random.RandomState(seed_value)
-    _set_seed(seed_value)
+    
+    if set_parameter_seed:  
+        global pseed
+        global prng
+        pseed = seed_value
+        prng = np.random.RandomState(seed_value)
+    
+    if set_function_seed:
+        _set_seed(seed_value)
+
+def set_parameter_seed(seed_value):
+    # prng should be the same across workers in the multi-device setting.
+    seed(seed_value, set_function_seed=False, set_parameter_seed=True)
+
+def set_function_seed(seed_value):
+    # rng for c++ random functions should be different across workers in the multi-device setting.
+    seed(seed_value, set_function_seed=True, set_parameter_seed=False)

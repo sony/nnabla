@@ -16,7 +16,7 @@
 #include <nbla/singleton_manager-internal.hpp>
 
 namespace nbla {
-RandomManager::RandomManager() : seed_(313), count_(0) {
+RandomManager::RandomManager() : seed_(std::random_device()()), count_(0) {
   rgen_ = std::mt19937(seed_);
 }
 
