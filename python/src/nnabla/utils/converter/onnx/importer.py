@@ -104,6 +104,15 @@ def generate_transpose(node_name, in_name, out_name, axes, base_name, func_count
     return trans
 
 
+def get_transpose_output_shape(input_shape, axes):
+    i_shape = input_shape
+    o_shape = []
+    for i in range(len(i_shape)):
+        index = axes[i]
+        o_shape.append(i_shape[index])
+    return o_shape
+
+
 def generate_broadcast_to(node_name, x, y, out_name, axis, base_name, func_counter):
     """Generate a BroadcastTo operator to brodcastto specified buffer"""
     bt = nnabla_pb2.Function()
@@ -309,6 +318,12 @@ def set_reduction_attrs(p, node):
                              .format(attr.name, node.op_type))
 
 
+def check_attr_int_type(attr, node):
+    if attr.type != AttributeProto.INT:
+        raise ValueError(
+            f"Only INT is supported for {attr.name} in {node.op_type} op_type")
+
+
 def check_padding(pads, dim, padval):
     """Check each padding start/end value
     and set the sufficient pad value.
@@ -494,26 +509,26 @@ class OnnxImporter:
             # Constant does not get converted to a function
             # but we list it here so we can accept it
             "Constant": self.Constant,
-            "Unsqueeze": self.Unsqueeze,
+            "Unsqueeze": partial(self.Unsqueeze, '6'),
             "Sqrt": self.Sqrt,
             "Ceil": partial(self.GeneralOperator, 'Ceil'),
             "Floor": partial(self.GeneralOperator, 'Floor'),
             "Tile": self.Tile,
             "Flatten": self.Flatten,
-            "Squeeze": self.Squeeze,
+            "Squeeze": partial(self.Squeeze, '6'),
             "Slice": partial(self.Slice, '6'),
             # Currently, caffe2 does not support this function.
             "DepthToSpace": self.DepthToSpace,
             "SpaceToDepth": self.SpaceToDepth,
             "ArgMax": partial(self.ElementIndices, "Max"),
             "ArgMin": partial(self.ElementIndices, "Min"),
-            "Split": self.Split,
+            "Split": partial(self.Split, '6'),
             "Upsample": self.Upsample_6,
             "Mean": self.Mean,
             "ConvTranspose": self.ConvTranspose,
             "ConstantOfShape": self.ConstantOfShape,
             "HardSigmoid": self.HardSigmoid,
-            "Hardmax": self.Hardmax,
+            "Hardmax": self.Hardmax_6,
             "InstanceNormalization": self.InstanceNormalization,
             "ReduceSumSquare": self.ReduceSumSquare,
             # Currently, Cast does not get converted to a function
@@ -585,15 +600,32 @@ class OnnxImporter:
         }
         self.table_op_set_11 = dict(
             self.table_op_set_10, **self.table_op_set_11)
-
         # Currently, we only planed to support opset 6 and opset 11.
         # More planes will be added later to support more opset versions.
+
+        # opset_13 table
+        self.table_op_set_13 = {
+            "ReduceSum": self.ReduceSum,
+            "Squeeze": partial(self.Squeeze, '13'),
+            "Unsqueeze": partial(self.Unsqueeze, '13'),
+            "Split": partial(self.Split, '13'),
+            "Hardmax": self.Hardmax_13,
+            "LessOrEqual": partial(self.BroadcastOperator_9, 'LessEqual'),
+            "GreaterOrEqual": partial(self.BroadcastOperator_9, 'GreaterEqual'),
+            "Celu": self.Celu,
+            "Softmax": self.Softmax_13,
+            "LogSoftmax": self.LogSoftmax_13,
+        }
+        self.table_op_set_13 = dict(
+            self.table_op_set_11, **self.table_op_set_13)
+
         self.opver_impl_map = {
             "6": self.table_op_set_6,
             "7": self.table_op_set_7,
             "9": self.table_op_set_9,
             "10": self.table_op_set_10,
             "11": self.table_op_set_11,
+            "13": self.table_op_set_13,
         }
 
     def get_onnx_graph_info(self):
@@ -998,6 +1030,10 @@ class OnnxImporter:
                 raise ValueError("Unsupported attribute {} was specified at {}"
                                  .format(attr.name, n.op_type))
         input_shape = self.get_func_input_shape(func.input[0])
+        if not tp.axes:
+            ts = list(range(len(input_shape)))
+            ts.reverse()
+            tp.axes.extend(ts)
         output_shape = []
         for i in range(len(input_shape)):
             index = tp.axes[i]
@@ -1449,6 +1485,60 @@ class OnnxImporter:
         self._shape_output[n.output[0]] = input_shape
         func_list.append(rp)
 
+    def Softmax_13(self, func_list, n):
+        axis = -1
+        input_shape = self.get_func_input_shape(n.input[0])
+        for attr in n.attribute:
+            if attr.name == "axis":
+                if attr.type != AttributeProto.INT:
+                    raise ValueError("Softmax axis must be a single integer")
+                if attr.i < 0:
+                    axis = len(input_shape) + attr.i
+                else:
+                    axis = attr.i
+            else:
+                raise ValueError("Unsupported attribute {} was specified at {}"
+                                 .format(attr.name, n.op_type))
+
+        axis = len(input_shape) + axis if axis < 0 else axis
+
+        _reduced_shape = [1 if i == axis else input_shape[i]
+                          for i in range(len(input_shape))]
+
+        # Max
+        mout_x = fork_name(n.input[0])+"_max"
+        gr = generate_reduction("Max", n.name, n.input[0], mout_x,
+                                [axis], True, self._graph.name, self._func_counter)
+        self._shape_output[mout_x] = _reduced_shape
+        func_list.append(gr)
+
+        # Sub2
+        sout_x = fork_name(n.input[0])+"_sub2"
+        ga = generate_arithmetic("Sub2", n.name, [n.input[0], mout_x], sout_x,
+                                 self._graph.name, self._func_counter)
+        self._shape_output[sout_x] = input_shape
+        func_list.append(ga)
+
+        # Exp
+        expout_x = fork_name(sout_x)+"_exp"
+        ge = generate_unary("Exp", n.name, sout_x, expout_x,
+                            self._graph.name, self._func_counter)
+        self._shape_output[expout_x] = input_shape
+        func_list.append(ge)
+
+        # Sum
+        sumout_x = fork_name(expout_x)+"_sum"
+        gr = generate_reduction("Sum", n.name, expout_x, sumout_x,
+                                [axis], True, self._graph.name, self._func_counter)
+        self._shape_output[sumout_x] = _reduced_shape
+        func_list.append(gr)
+
+        # Div2
+        ga = generate_arithmetic("Div2", n.name, [expout_x, sumout_x], n.output[0],
+                                 self._graph.name, self._func_counter)
+        self._shape_output[n.output[0]] = input_shape
+        func_list.append(ga)
+
     def Pad(self, opset, func_list, n):
         func = self.generate_default_function("Pad", n)
         mode = "constant"
@@ -1863,6 +1953,67 @@ class OnnxImporter:
         self._shape_output[n.output[0]] = input_shape
         func_list.append(rp)
 
+    def LogSoftmax_13(self, func_list, n):
+        axis = -1
+        input_shape = self.get_func_input_shape(n.input[0])
+        for attr in n.attribute:
+            if attr.name == "axis":
+                if attr.type != AttributeProto.INT:
+                    raise ValueError("Softmax axis must be a single integer")
+                if attr.i < 0:
+                    axis = len(input_shape) + attr.i
+                else:
+                    axis = attr.i
+            else:
+                raise ValueError("Unsupported attribute {} was specified at {}"
+                                 .format(attr.name, n.op_type))
+
+        axis = len(input_shape) + axis if axis < 0 else axis
+
+        _reduced_shape = [1 if i == axis else input_shape[i]
+                          for i in range(len(input_shape))]
+
+        # Max
+        mout_x = fork_name(n.input[0])+"_max"
+        gr = generate_reduction("Max", n.name, n.input[0], mout_x,
+                                [axis], True, self._graph.name, self._func_counter)
+        self._shape_output[mout_x] = _reduced_shape
+        func_list.append(gr)
+
+        # Sub2
+        sout_x = fork_name(n.input[0])+"_sub2"
+        ga = generate_arithmetic("Sub2", n.name, [n.input[0], mout_x], sout_x,
+                                 self._graph.name, self._func_counter)
+        self._shape_output[sout_x] = input_shape
+        func_list.append(ga)
+
+        # Exp
+        expout_x = fork_name(sout_x)+"_exp"
+        ge = generate_unary("Exp", n.name, sout_x, expout_x,
+                            self._graph.name, self._func_counter)
+        self._shape_output[expout_x] = input_shape
+        func_list.append(ge)
+
+        # Sum
+        sumout_x = fork_name(expout_x)+"_sum"
+        gr = generate_reduction("Sum", n.name, expout_x, sumout_x,
+                                [axis], True, self._graph.name, self._func_counter)
+        self._shape_output[sumout_x] = _reduced_shape
+        func_list.append(gr)
+
+        # Div2
+        div2out_x = fork_name(n.output[0])+"_div2"
+        ga = generate_arithmetic("Div2", n.name, [expout_x, sumout_x], div2out_x,
+                                 self._graph.name, self._func_counter)
+        self._shape_output[div2out_x] = input_shape
+        func_list.append(ga)
+
+        # Log
+        ge = generate_unary("Log", n.name, div2out_x, n.output[0],
+                            self._graph.name, self._func_counter)
+        self._shape_output[n.output[0]] = input_shape
+        func_list.append(ge)
+
     def Clip(self, opset, func_list, n):
         func = self.generate_default_function("Clip", n)
         maxval = None
@@ -1898,18 +2049,24 @@ class OnnxImporter:
         if maxval is None and minval is None:
             # No clipping. Convert to an identity
             func.type = "Identity"
+            del func.input[:]
+            func.input.extend([n.input[0]])
             func_list.append(func)
         elif maxval is None and isinstance(minval, float):
             # Only min value is specified, so we convert to MaxScalar
             func.type = "MaximumScalar"
             msp = func.maximum_scalar_param
             msp.val = minval
+            del func.input[:]
+            func.input.extend([n.input[0]])
             func_list.append(func)
         elif isinstance(maxval, float) and minval is None:
             # Only max value is specified, so we use MinScalar
             func.type = "MinimumScalar"
             msp = func.minimum_scalar_param
             msp.val = maxval
+            del func.input[:]
+            func.input.extend([n.input[0]])
             func_list.append(func)
         else:  # both min and max is specified
             # Add MinimumScalar and rewire with MaximumScalar
@@ -1928,21 +2085,28 @@ class OnnxImporter:
         self._shape_output[func.output[0]
                            ] = self.get_func_input_shape(func.input[0])
 
-    def Unsqueeze(self, func_list, n):
+    def Unsqueeze(self, opset, func_list, n):
         func = self.generate_default_function("Reshape", n)
         rp = func.reshape_param
         input_shape = self.get_func_input_shape(func.input[0])
         axes = []
-        for attr in n.attribute:
-            if attr.name == "axes":
-                if attr.type != AttributeProto.INTS:
-                    raise ValueError(
-                        "Only INTS is supported for axes in {} op_type".format(n.op_type))
-                for index in attr.ints:
-                    axes.append(index)
+        if int(opset) < 13:
+            for attr in n.attribute:
+                if attr.name == "axes":
+                    if attr.type != AttributeProto.INTS:
+                        raise ValueError(
+                            "Only INTS is supported for axes in {} op_type".format(n.op_type))
+                    for index in attr.ints:
+                        axes.append(index)
+                else:
+                    raise ValueError("Unsupported attribute {} was specified at {}"
+                                     .format(attr.name, n.op_type))
+        else:
+            if len(func.input) == 2:
+                axes = self.get_input_raw_data(n.input[1], TensorProto.INT64)
+                del func.input[1]
             else:
-                raise ValueError("Unsupported attribute {} was specified at {}"
-                                 .format(attr.name, n.op_type))
+                raise ValueError('Onnx Unsqueeze op should has exact 2 inputs')
         output_shape = [0] * (len(input_shape) + len(axes))
         for axis in axes:
             output_shape[axis] = 1
@@ -2085,22 +2249,32 @@ class OnnxImporter:
         self._shape_output[func.output[0]] = output_shape
         func_list.append(func)
 
-    def Squeeze(self, func_list, n):
+    def Squeeze(self, opset, func_list, n):
         # Convert to Reshape
         func = self.generate_default_function("Reshape", n)
         output_shape = self.get_func_input_shape(func.input[0])
         rp = func.reshape_param
         axes = []
-        for attr in n.attribute:
-            if attr.name == "axes":
-                if attr.type != AttributeProto.INTS:
-                    raise ValueError(
-                        "Only INTS is supported for axes in {} op_type".format(n.op_type))
+        if int(opset) < 13:
+            for attr in n.attribute:
+                if attr.name == "axes":
+                    if attr.type != AttributeProto.INTS:
+                        raise ValueError(
+                            "Only INTS is supported for axes in {} op_type".format(n.op_type))
+                    axes.extend([len(output_shape) + i if i <
+                                0 else i for i in attr.ints])
+                else:
+                    logger.info('Unsupported attribute {} was specified at {}'
+                                .format(attr.name, n.op_type))
+        else:
+            if len(func.input) == 2:
+                axes_raw = self.get_input_raw_data(
+                    n.input[1], TensorProto.INT64)
                 axes.extend([len(output_shape) + i if i <
-                             0 else i for i in attr.ints])
-            else:
-                logger.info('Unsupported attribute {} was specified at {}'
-                            .format(attr.name, n.op_type))
+                             0 else i for i in axes_raw])
+                del func.input[1]
+            elif len(func.input) != 1:
+                raise ValueError('Onnx Squeeze op should has 1 or 2 inputs')
 
         if len(axes):
             output_shape = [output_shape[i]
@@ -2216,16 +2390,10 @@ class OnnxImporter:
         func_list.append(rp)
 
     def ElementIndices(self, func_name, func_list, n):
-        # Convert to Max or Min
-        func = self.generate_default_function(func_name, n)
-        output_shape = self.get_func_input_shape(func.input[0])
-        if func_name == "Max":
-            mp = func.max_param
-        else:
-            mp = func.min_param
-        mp.only_index = True
-        mp.keep_dims = True
         axes = [0]
+        output_shape = self.get_func_input_shape(n.input[0])
+        keep_dims = True
+        select_last_index = False
         for attr in n.attribute:
             if attr.name == "axis":
                 if attr.type != AttributeProto.INT:
@@ -2239,20 +2407,62 @@ class OnnxImporter:
                 if attr.type != AttributeProto.INT:
                     raise ValueError(
                         "Only INT is supported for keepdims in {} op_type".format(n.op_type))
-                mp.keep_dims = bool(attr.i)
+                keep_dims = bool(attr.i)
+            elif attr.name == "select_last_index":
+                if attr.type != AttributeProto.INT:
+                    raise ValueError(
+                        "Only INT is supported for select_last_index in {} op_type".format(n.op_type))
+                select_last_index = bool(attr.i)
             else:
                 logger.info('Unsupported attribute {} was specified at {}'
                             .format(attr.name, n.op_type))
+
+        # do flip when select_last_index is True
+        if select_last_index:
+            flip_out = fork_name(n.input[0]) + "_flip"
+            flipf = self.generate_default_function('Flip', n)
+            flipf.input[0] = n.input[0]
+            flipf.output[0] = flip_out
+            flipf.flip_param.axes.extend(axes)
+            self._shape_output[flip_out] = output_shape
+            func_list.append(flipf)
+
+            block_input = flip_out
+            block_output = fork_name(n.input[0]) + f'_{func_name}'
+            target_axis_len = output_shape[axes[0]]
+        else:
+            block_input = n.input[0]
+            block_output = n.output[0]
+
+         # Convert to Max or Min
+        mf = self.generate_default_function(func_name, n)
+        mf.input[0] = block_input
+        mf.output[0] = block_output
+        if func_name == "Max":
+            mp = mf.max_param
+        else:
+            mp = mf.min_param
+        mp.only_index = True
+        mp.keep_dims = keep_dims
         mp.axes.extend(axes)
         for i in mp.axes:
             if mp.keep_dims:
                 output_shape[i] = 1
             else:
                 del output_shape[i]
-        self._shape_output[func.output[0]] = output_shape
-        func_list.append(func)
+        self._shape_output[block_output] = output_shape
+        func_list.append(mf)
 
-    def Split(self, func_list, n):
+        if select_last_index:
+            # index is target_axis_len - 1 - argmax_result after Flip
+            rsf = self.generate_default_function('RSubScalar', n)
+            rsf.input[0] = block_output
+            rsf.output[0] = n.output[0]
+            rsf.r_sub_scalar_param.val = target_axis_len - 1
+            self._shape_output[n.output[0]] = output_shape
+            func_list.append(rsf)
+
+    def Split(self, opset, func_list, n):
         # Convert to Split+Stack
         input_shape = self.get_func_input_shape(n.input[0])
         axis = 0
@@ -2268,7 +2478,7 @@ class OnnxImporter:
                     axis = len(input_shape) + attr.i
                 else:
                     axis = attr.i
-            elif attr.name == "split":
+            elif attr.name == "split" and int(opset) < 13:
                 if attr.type != AttributeProto.INTS:
                     raise ValueError(
                         "Only INTS is supported for split in {} op_type".format(n.op_type))
@@ -2276,6 +2486,9 @@ class OnnxImporter:
             else:
                 logger.info('Unsupported attribute {} was specified at {}'
                             .format(attr.name, n.op_type))
+
+        if int(opset) == 13 and len(n.input) == 2:
+            output_len = self.get_input_raw_data(n.input[1], TensorProto.INT64)
 
         if len(output_len) == 0:
             output_len = [input_shape[axis] // len(n.output)] * len(n.output)
@@ -2675,7 +2888,7 @@ class OnnxImporter:
             self._shape_output[n.output[0]] = shape
             func_list.append(maxs)
 
-    def Hardmax(self, func_list, n):
+    def Hardmax_6(self, func_list, n):
         axis = 1
         input_shape = self.get_func_input_shape(n.input[0])
         for attr in n.attribute:
@@ -2716,6 +2929,69 @@ class OnnxImporter:
                               self._graph.name, self._func_counter)
         self._shape_output[n.output[0]] = input_shape
         func_list.append(rp)
+
+    def Hardmax_13(self, func_list, n):
+        axis = -1
+        input_shape = self.get_func_input_shape(n.input[0])
+        for attr in n.attribute:
+            if attr.name == "axis":
+                axis = attr.i
+
+        axis = len(input_shape) + axis if axis < 0 else axis
+        # when axis = len(input_shape) - 1, transpose is not needed
+        need_trans = len(input_shape) - 1 - axis
+
+        if need_trans:
+            # transpose target axis to last dimension
+            trans0_out = fork_name(n.input[0])+"_trans0"
+            i_axes = [i for i in range(len(input_shape)) if i != axis]
+            i_axes.append(axis)
+            trans0 = generate_transpose(n.name, n.input[0], trans0_out,
+                                        i_axes, self._graph.name, self._func_counter)
+            o_shape = get_transpose_output_shape(input_shape, i_axes)
+            self._shape_output[trans0_out] = o_shape
+            func_list.append(trans0)
+            block_in = trans0_out
+            block_shape = o_shape
+            block_out = fork_name(n.input[0])+"_one_hot"
+        else:
+            block_in = n.input[0]
+            block_shape = input_shape
+            block_out = n.output[0]
+
+        # max only_index
+        max_func = self.generate_default_function("Max", n)
+        max_out = fork_name(n.input[0])+"_max"
+        max_func.input[0] = block_in
+        max_func.output[0] = max_out
+        mp = max_func.max_param
+        mp.only_index = True
+        mp.keep_dims = True
+        mp.axes.extend([len(input_shape) - 1])
+        max_o_shape = block_shape.copy()[:-1]
+        self._shape_output[max_out] = [*max_o_shape, 1]
+        func_list.append(max_func)
+
+        # onehot
+        one_hot_func = self.generate_default_function("OneHot", n)
+        one_hot_func.input[0] = max_out
+        one_hot_func.output[0] = block_out
+        one_hot_p = one_hot_func.one_hot_param
+        o_shape = block_shape.copy()
+        one_hot_p.shape.dim.extend([o_shape[-1]])
+        self._shape_output[block_out] = o_shape
+        func_list.append(one_hot_func)
+
+        if need_trans:
+            # transpose target axis to origin dimension
+            i_shape = self._shape_output[block_out].copy()
+            o_axes = [*range(len(i_shape))]
+            o_axes.insert(axis, o_axes.pop())
+            trans1 = generate_transpose(n.name, block_out, n.output[0],
+                                        o_axes, self._graph.name, self._func_counter)
+            o_shape = get_transpose_output_shape(i_shape, o_axes)
+            self._shape_output[n.output[0]] = o_shape
+            func_list.append(trans1)
 
     def InstanceNormalization(self, func_list, n):
         input_shape = self.get_func_input_shape(n.input[0])
@@ -2839,6 +3115,51 @@ class OnnxImporter:
         where_func.input.extend([gout, n.input[0], cout])
         func_list.append(where_func)
         self._shape_output[n.output[0]] = input_shape
+
+    def ReduceSum(self, func_list, n):
+        for attr in n.attribute:
+            if attr.name == 'keepdims':
+                check_attr_int_type(attr, n)
+                keep_dims = bool(attr.i)
+            elif attr.name == 'noop_with_empty_axes':
+                check_attr_int_type(attr, n)
+                noop_with_empty_axes = bool(attr.i)
+        if len(n.input) not in (1, 2):
+            raise ValueError("Onnx ReduceSum op should has (1-2) inputs")
+        if len(n.input) == 2:
+            axes = self.get_input_raw_data(n.input[1], TensorProto.INT64)
+        else:
+            axes = []
+
+        if not axes and noop_with_empty_axes:
+            # Identity
+            func = self.generate_default_function('Identity', n)
+            self._shape_output[func.output[0]
+                               ] = self.get_func_input_shape(func.input[0])
+            func_list.append(func)
+        else:
+            # Sum
+            func = self.generate_default_function('Sum', n)
+            if len(n.input) == 2:
+                del func.input[1]
+            func_param = func.sum_param
+            func_param.keep_dims = keep_dims
+            func_param.axes.extend(axes)
+            output_shape = self.get_func_input_shape(func.input[0])
+            if len(func_param.axes) == 0:
+                func_param.axes.extend(range(len(output_shape)))
+            else:
+                for i, axis in enumerate(func_param.axes):
+                    if axis < 0:
+                        func_param.axes[i] = len(output_shape) + axis
+            if func_param.keep_dims:
+                output_shape = [1 if i in func_param.axes else output_shape[i]
+                                for i in range(len(output_shape))]
+            else:
+                output_shape = [output_shape[i] for i in range(
+                    len(output_shape)) if i not in func_param.axes]
+            self._shape_output[func.output[0]] = output_shape
+            func_list.append(func)
 
     def ReduceSumSquare(self, func_list, n):
         input_shape = self.get_func_input_shape(n.input[0])
@@ -2984,6 +3305,94 @@ class OnnxImporter:
 
         self._shape_output[n.output[0]] = input_shape
         func_list.append(func)
+
+    def Celu(self, func_list, n):
+        # Continuously Differentiable Exponential Linear Units
+        # differ from nnabla Celu(Concatenated Exponential Linear Unit)
+
+        alpha = 1.0
+        input_shape = self.get_func_input_shape(n.input[0])
+        for attr in n.attribute:
+            if attr.name == "alpha":
+                if attr.type != AttributeProto.FLOAT:
+                    raise ValueError("alpha must be a single float for Op: {}"
+                                     .format(n.op_type))
+                alpha = attr.f
+            else:
+                raise ValueError("Unsupported attribute {} was specified at {}"
+                                 .format(attr.name, n.op_type))
+        # alpha
+        a_cout = fork_name(n.input[0])+"_alpha"
+        constant_func = self.generate_default_function("Constant", n)
+        cp = constant_func.constant_param
+        cp.val = alpha
+        cp.shape.dim.extend(input_shape)
+        del constant_func.input[0]
+        constant_func.output[0] = a_cout
+        func_list.append(constant_func)
+        self._shape_output[a_cout] = input_shape
+
+        # 1
+        one_cout = fork_name(n.input[0])+"_one"
+        constant_func1 = self.generate_default_function("Constant", n)
+        cp = constant_func1.constant_param
+        cp.val = 1.0
+        cp.shape.dim.extend(input_shape)
+        del constant_func1.input[0]
+        constant_func1.output[0] = one_cout
+        func_list.append(constant_func1)
+        self._shape_output[one_cout] = input_shape
+
+        # Div2
+        div2out = fork_name(n.output[0])+"_div2"
+        ga = generate_arithmetic("Div2", n.name, [n.input[0], a_cout], div2out,
+                                 self._graph.name, self._func_counter)
+        self._shape_output[div2out] = input_shape
+        func_list.append(ga)
+
+        # Exp
+        expout = fork_name(div2out)+"_exp"
+        ge = generate_unary("Exp", n.name, div2out, expout,
+                            self._graph.name, self._func_counter)
+        self._shape_output[expout] = input_shape
+        func_list.append(ge)
+
+        # Sub2
+        sout = fork_name(expout)+"_sub2"
+        ga = generate_arithmetic("Sub2", n.name, [expout, one_cout], sout,
+                                 self._graph.name, self._func_counter)
+        self._shape_output[sout] = input_shape
+        func_list.append(ga)
+
+        ms_in = sout
+        if alpha != 1.0:
+            # MulScalar
+            muls_out = fork_name(expout)+"_muls"
+            muls = generate_mul_scalar(n.name, sout, muls_out,
+                                       alpha, self._graph.name, self._func_counter)
+            self._shape_output[muls_out] = input_shape
+            func_list.append(muls)
+            ms_in = muls_out
+
+        # MinimumScalar
+        mins_out = fork_name(n.output[0])+"_mins"
+        mins = generate_minimum_scalar(n.name, ms_in, mins_out,
+                                       0, self._graph.name, self._func_counter)
+        self._shape_output[mins_out] = input_shape
+        func_list.append(mins)
+
+        # MaximumScalar
+        maxs_out = fork_name(n.output[0])+"_maxs"
+        maxs = generate_maximum_scalar(n.name, n.input[0], maxs_out,
+                                       0, self._graph.name, self._func_counter)
+        self._shape_output[maxs_out] = input_shape
+        func_list.append(maxs)
+
+        # Add2
+        ga = generate_arithmetic("Add2", n.name, [maxs_out, mins_out], n.output[0],
+                                 self._graph.name, self._func_counter)
+        self._shape_output[n.output[0]] = input_shape
+        func_list.append(ga)
 
     def convert_to_functions(self, n):
         ft = self._onnx_optype_to_nnabla_function_type.get(n.op_type)
