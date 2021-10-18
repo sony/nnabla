@@ -183,7 +183,8 @@ if __name__ == '__main__':
         '_indexing',
         'utils/dlpack',
         'testing/clear_called_flag_recorder',
-        'lms']
+        'lms',
+        '_dropout_workaround']
 
     ext_modules = [Extension('nnabla.{}'.format(mname.replace('/', '.')),
                              [os.path.join(path_pkg,

@@ -30,7 +30,7 @@ namespace nbla {
 
 using std::string;
 
-NBLA_REGISTER_FUNCTION_HEADER(Dropout, double, int, bool);
+NBLA_REGISTER_FUNCTION_HEADER(Dropout, double, int);
 
 /** Dropout defined as
 @f[
@@ -55,24 +55,22 @@ Outputs:
 \ingroup FunctionImplGrp
 
 */
-template <typename T> class Dropout : public BaseFunction<double, int, bool> {
+template <typename T> class Dropout : public BaseFunction<double, int> {
 protected:
   float p_;
   int seed_;
-  bool output_mask_;
   float scale_; // = 1./(1.-p_)
-  Variable mask_;
+  VariablePtr mask_;
   bool save_rng_ = false;
   std::mt19937 rgen_, rgen_for_recompute_;
   std::bernoulli_distribution rdist_;
 
 public:
-  Dropout(const Context &ctx, double p, int seed = -1, bool output_mask = false)
-      : BaseFunction(ctx, p, seed, output_mask), p_(p), seed_(seed),
-        output_mask_(output_mask) {}
+  Dropout(const Context &ctx, double p, int seed = -1)
+      : BaseFunction(ctx, p, seed), p_(p), seed_(seed) {}
   virtual ~Dropout() {}
   virtual shared_ptr<Function> copy() const {
-    return create_Dropout(ctx_, p_, seed_, output_mask_);
+    return create_Dropout(ctx_, p_, seed_);
   }
   virtual int min_inputs() { return 1; }
   virtual int min_outputs() { return 1; }
@@ -83,9 +81,7 @@ public:
     return SingletonManager::get<Cpu>()->array_classes();
   }
   virtual bool need_setup_recompute(int o) const { return true; }
-  virtual bool grad_depends_output_data(int i, int o) const {
-    return (output_mask_ && (o > 0));
-  }
+  virtual bool grad_depends_output_data(int i, int o) const { return false; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,
@@ -102,6 +98,10 @@ protected:
                                        const Variables &outputs);
   void dropout(const Variables &inputs, const Variables &outputs,
                std::mt19937 &rgen);
+
+  /** Clear the member variable, in particular "mask_". */
+  NBLA_API void clear_buffer();
+
   virtual bool grad_depends_input_data_impl(int i, int j) const {
     return false;
   }

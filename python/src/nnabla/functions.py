@@ -1170,62 +1170,6 @@ def _istft_v1(y_r, y_i, window_size, stride, fft_size, window_type='hanning', ce
     return x
 
 
-def dropout(x, p=0.5, seed=-1, output_mask=False):
-    r"""Dropout.
-    Samples a number :math:`u` from a uniform distribution in :math:`[0, 1]`,
-    and ignores the input if :math:`u \leq p`.
-
-    .. math::
-
-        \begin{equation}
-            y = \left\{
-            \begin{array}{ll}
-                \frac{x}{1 - p} & (u > p) \\
-                0 & ({\rm otherwise})
-            \end{array} \right.
-        \end{equation}
-
-    Args:
-        x (Variable): An input variable.
-        p (float): math:`p` in definition. [default= `0.5` ]
-        seed (int): Random seed. When -1, seed is sampled from global random number generator. [default= `-1` ]
-        output_mask (bool): Whether or not to output mask. [default= `False` ]
-
-    Returns:
-        ~nnabla.Variable: N-D array.
-
-    Note:
-        Usually dropout only applied during training as below
-        (except `MC dropout`_). If you want to use dropout as an MC dropout, remove `if train:`.
-
-        .. code-block:: python
-
-            h = PF.affine(x, num_hidden)
-            if train:
-                h = F.dropout(h, 0.5)
-
-        reference: https://arxiv.org/abs/1506.02142
-
-    Note:
-        If you use nn.grad to a graph having dropout, you must set output_mask=True for all dropouts.
-        Otherwise, backward function of dropout raises ValueError when you call nn.grad.
-
-        .. code-block:: python
-
-            h = PF.affine(x, num_hidden)
-            h, mask = F.dropout(h, p=0.1, output_mask=True)
-            y = PF.affine(h, num_hidden)
-
-            grad = nn.grad([y], nn.get_parameters().values())
-
-
-    """
-    from .function_bases import dropout as dropout_base
-
-    n_outputs = 2 if output_mask else 1
-    return dropout_base(x, p, seed, output_mask, n_outputs)
-
-
 def gather_nd(data, indices):
     """Gather elements or slices from `data` according to `indices`, which must
     be at least two-dimensional with the first dimension :math:`M` being less or
