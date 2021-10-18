@@ -76,25 +76,66 @@ def test_large_mean_reduction(seed, inshape, axis, ctx, func_name):
                     func_args=[axis])
 
 
+def preprocess_arg_reduction(x, axes):
+    r"""
+    Transpose and reshape the input numpy.ndarray x for 2D shape
+    (outer, reduction_axes). This is required because numpy cannot calculate
+    argmmin/argmax for multi-dimension.
+
+    Args:
+        x (numpy.ndarray): Input array.
+        axis (:obj:`tuple` of :obj:`int`): Argmax/argmin along these axes.
+    """
+    shape = np.array(x.shape)
+    outer_axes = list(np.delete(np.arange(x.ndim), axes))
+    outer_size = np.prod(shape[outer_axes])
+    reduction_axes = list(axes)
+    reduction_size = np.prod(shape[reduction_axes])
+    transpose_axes = outer_axes + reduction_axes
+    argmax_shape = [outer_size, reduction_size]
+    return x.transpose(transpose_axes).reshape(*argmax_shape)
+
+
+def argmax(x, axes):
+    """
+    Args:
+        x (numpy.ndarray): Input array.
+        axis (:obj:`tuple` of :obj:`int`): Argmax along these axes.
+    """
+    return preprocess_arg_reduction(x, axes).argmax(-1)
+
+
+def argmin(x, axis):
+    """
+    Args:
+        x (numpy.ndarray): Input array.
+        axis (:obj:`tuple` of :obj:`int`): Argmin along these axes.
+    """
+    return preprocess_arg_reduction(x, axis).argmin(-1)
+
+
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("ctx, func_name", list_context('Max'))
 @pytest.mark.parametrize("keepdims", [False, True])
 @pytest.mark.parametrize("inshape, axis", [
     ((8, 1, 128, 128), (2, 3)),
     ((8, 128, 1, 128), (1, 3)),
+    ((8, 128, 8, 128), (1, 3)),
 ])
 def test_max_with_index(seed, ctx, func_name, inshape, axis, keepdims):
     x = np.random.RandomState(seed).randn(*inshape).astype(np.float32)
     x = nn.Variable.from_numpy_array(x)
+
+    # with_index
     with nn.context_scope(ctx), nn.auto_forward(True):
         val, idx = F.max(x, axis, keepdims, with_index=True)
     assert_allclose(val.d, np.amax(x.d, axis, keepdims=keepdims))
-    shape = [a for i, a in enumerate(x.d.shape) if i not in axis] + [-1]
-    assert np.all(idx.d == x.d.reshape(*shape).argmax(-1).reshape(idx.d.shape))
+    assert np.all(idx.d == argmax(x.d, axis).reshape(idx.d.shape))
+
+    # only_index
     with nn.context_scope(ctx), nn.auto_forward(True):
         idx = F.max(x, axis, keepdims, only_index=True)
-    shape = [a for i, a in enumerate(x.d.shape) if i not in axis] + [-1]
-    assert np.all(idx.d == x.d.reshape(*shape).argmax(-1).reshape(idx.d.shape))
+    assert np.all(idx.d == argmax(x.d, axis).reshape(idx.d.shape))
 
 
 @pytest.mark.parametrize("seed", [313])
@@ -103,19 +144,22 @@ def test_max_with_index(seed, ctx, func_name, inshape, axis, keepdims):
 @pytest.mark.parametrize("inshape, axis", [
     ((8, 1, 128, 128), (2, 3)),
     ((8, 128, 1, 128), (1, 3)),
+    ((8, 128, 8, 128), (1, 3)),
 ])
 def test_min_with_index(seed, ctx, func_name, inshape, axis, keepdims):
     x = np.random.RandomState(seed).randn(*inshape).astype(np.float32)
     x = nn.Variable.from_numpy_array(x)
+
+    # with_index
     with nn.context_scope(ctx), nn.auto_forward(True):
         val, idx = F.min(x, axis, keepdims, with_index=True)
     assert_allclose(val.d, np.amin(x.d, axis, keepdims=keepdims))
-    shape = [a for i, a in enumerate(x.d.shape) if i not in axis] + [-1]
-    assert np.all(idx.d == x.d.reshape(*shape).argmin(-1).reshape(idx.d.shape))
+    assert np.all(idx.d == argmin(x.d, axis).reshape(idx.d.shape))
+
+    # only_index
     with nn.context_scope(ctx), nn.auto_forward(True):
         idx = F.min(x, axis, keepdims, only_index=True)
-    shape = [a for i, a in enumerate(x.d.shape) if i not in axis] + [-1]
-    assert np.all(idx.d == x.d.reshape(*shape).argmin(-1).reshape(idx.d.shape))
+    assert np.all(idx.d == argmin(x.d, axis).reshape(idx.d.shape))
 
 
 @pytest.mark.parametrize("seed", [313])
