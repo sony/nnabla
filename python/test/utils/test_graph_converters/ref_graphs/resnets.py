@@ -149,7 +149,8 @@ def small_bn_resnet(image, test=False, w_bias=False, channel_last=False, name='b
     h = PF.batch_normalization(
         h, axes=axes, batch_stat=not test, name='first-bn')
     h = F.relu(h)
-    h = F.max_pooling(h, pool_kernel, channel_last=channel_last)
+    h = F.max_pooling(
+        h, pool_kernel, channel_last=channel_last) if dims > 1 else h
     h = bn_resblock(h, maps=16, test=test, w_bias=w_bias,
                     channel_last=channel_last, name='cb1', dims=dims)
     h = bn_resblock(h, maps=16, test=test, w_bias=w_bias,
@@ -158,7 +159,149 @@ def small_bn_resnet(image, test=False, w_bias=False, channel_last=False, name='b
                     channel_last=channel_last, name='cb3', dims=dims)
     h = bn_resblock(h, maps=16, test=test, w_bias=w_bias,
                     channel_last=channel_last, name='cb4', dims=dims)
-    h = F.average_pooling(h, pool_kernel, channel_last=channel_last)
+    h = F.average_pooling(
+        h, pool_kernel, channel_last=channel_last) if dims > 1 else h
+    pred = PF.affine(h, 10, name='fc')
+    return pred
+
+
+# Small deconv network
+def small_bn_dcn(image, test=False, w_bias=False, channel_last=False, name='small-bn-dcn', dims=2):
+    h = image
+    h /= 255.0
+    kernel = (3,) * dims
+    pool_kernel = (2,) * dims
+    pad = (1,) * dims
+    axes = get_channel_axes(channel_last, dims)
+    with nn.parameter_scope('dcn-deconv1') as scope:
+        h = PF.deconvolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
+                             with_bias=w_bias, name='deconv1')
+        h = PF.batch_normalization(
+            h, axes=axes, batch_stat=not test, name='bn1')
+        h = F.relu(h)
+        h = F.max_pooling(
+            h, pool_kernel, channel_last=channel_last) if dims > 1 else h
+    with nn.parameter_scope('dcn-deconv2') as scope:
+        h = PF.deconvolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
+                             with_bias=w_bias, name='deconv2')
+        h = PF.batch_normalization(
+            h, axes=axes, batch_stat=not test, name='bn2')
+        h = F.relu(h)
+        h = F.max_pooling(
+            h, pool_kernel, channel_last=channel_last) if dims > 1 else h
+    with nn.parameter_scope('dcn-deconv3') as scope:
+        h = PF.deconvolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
+                             with_bias=w_bias, name='deconv3')
+        h = PF.batch_normalization(
+            h, axes=axes, batch_stat=not test, name='bn3')
+        h = F.relu(h)
+        h = F.max_pooling(
+            h, pool_kernel, channel_last=channel_last) if dims > 1 else h
+    pred = PF.affine(h, 10, name='dcn-fc')
+    return pred
+
+
+# Small deconv network
+def small_dcn(image, test=False, w_bias=True, channel_last=False, name='small-dcn', dims=2):
+    h = image
+    h /= 255.0
+    kernel = (3,) * dims
+    pool_kernel = (2,) * dims
+    pad = (1,) * dims
+    with nn.parameter_scope('deconv1') as scope:
+        h = PF.deconvolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
+                             with_bias=w_bias, name='deconv1')
+        h = F.relu(h)
+        h = F.max_pooling(
+            h, pool_kernel, channel_last=channel_last) if dims > 1 else h
+    with nn.parameter_scope('deconv2') as scope:
+        h = PF.deconvolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
+                             with_bias=w_bias, name='deconv2')
+        h = F.relu(h)
+        h = F.max_pooling(
+            h, pool_kernel, channel_last=channel_last) if dims > 1 else h
+    with nn.parameter_scope('deconv3') as scope:
+        h = PF.deconvolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
+                             with_bias=w_bias, name='deconv3')
+        h = F.relu(h)
+        h = F.max_pooling(
+            h, pool_kernel, channel_last=channel_last) if dims > 1 else h
+    pred = PF.affine(h, 10, name='fc')
+    return pred
+
+
+# Small deconv network bn opp
+def small_bn_opp_dcn(image, test=False, w_bias=False, channel_last=False, name='small-bn-opp-dcn', dims=2):
+    h = image
+    h /= 255.0
+    kernel = (3,) * dims
+    pool_kernel = (2,) * dims
+    pad = (1,) * dims
+    axes = get_channel_axes(channel_last, dims)
+    with nn.parameter_scope('dcn-deconv1') as scope:
+        h = PF.deconvolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
+                             with_bias=w_bias, name='deconv1')
+        h = F.relu(h)
+        h = PF.batch_normalization(
+            h, axes=axes, batch_stat=not test, name='bn1')
+        h = PF.deconvolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
+                             with_bias=w_bias, name='deconv2')
+        h = F.max_pooling(
+            h, pool_kernel, channel_last=channel_last) if dims > 1 else h
+    with nn.parameter_scope('dcn-deconv2') as scope:
+        h = PF.deconvolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
+                             with_bias=w_bias, name='deconv3')
+        h = F.relu(h)
+        h = PF.batch_normalization(
+            h, axes=axes, batch_stat=not test, name='bn2')
+        h = PF.deconvolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
+                             with_bias=w_bias, name='deconv4')
+        h = F.max_pooling(
+            h, pool_kernel, channel_last=channel_last) if dims > 1 else h
+    with nn.parameter_scope('dcn-deconv3') as scope:
+        h = PF.deconvolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
+                             with_bias=w_bias, name='deconv5')
+        h = F.relu(h)
+        h = PF.batch_normalization(
+            h, axes=axes, batch_stat=not test, name='bn3')
+        h = PF.deconvolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
+                             with_bias=w_bias, name='last-conv')
+        h = F.max_pooling(
+            h, pool_kernel, channel_last=channel_last) if dims > 1 else h
+    pred = PF.affine(h, 10, name='dcn-fc')
+    return pred
+
+
+def small_opp_dcn(image, test=False, w_bias=True, channel_last=False, name='small-opp-dcn', dims=2):
+    h = image
+    h /= 255.0
+    kernel = (3,) * dims
+    pool_kernel = (2,) * dims
+    pad = (1,) * dims
+    with nn.parameter_scope('deconv1') as scope:
+        h = PF.deconvolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
+                             with_bias=w_bias, name='deconv1')
+        h = F.relu(h)
+        h = PF.deconvolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
+                             with_bias=w_bias, name='deconv2')
+        h = F.max_pooling(
+            h, pool_kernel, channel_last=channel_last) if dims > 1 else h
+    with nn.parameter_scope('deconv2') as scope:
+        h = PF.deconvolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
+                             with_bias=w_bias, name='deconv3')
+        h = F.relu(h)
+        h = PF.deconvolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
+                             with_bias=w_bias, name='deconv4')
+        h = F.max_pooling(
+            h, pool_kernel, channel_last=channel_last) if dims > 1 else h
+    with nn.parameter_scope('deconv3') as scope:
+        h = PF.deconvolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
+                             with_bias=w_bias, name='deconv5')
+        h = F.relu(h)
+        h = PF.deconvolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
+                             with_bias=w_bias, name='last-conv')
+        h = F.max_pooling(
+            h, pool_kernel, channel_last=channel_last) if dims > 1 else h
     pred = PF.affine(h, 10, name='fc')
     return pred
 
@@ -191,7 +334,8 @@ def small_bn_opp_resnet(image, test=False, w_bias=False, channel_last=False, nam
     h = PF.convolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
                        with_bias=w_bias, name='first-conv')
     h = F.relu(h)
-    h = F.max_pooling(h, pool_kernel, channel_last=channel_last)
+    h = F.max_pooling(
+        h, pool_kernel, channel_last=channel_last) if dims > 1 else h
     h = bn_opp_resblock(h, maps=16, test=test,
                         channel_last=channel_last, name='cb1', dims=dims)
     h = bn_opp_resblock(h, maps=16, test=test,
@@ -200,7 +344,8 @@ def small_bn_opp_resnet(image, test=False, w_bias=False, channel_last=False, nam
                         channel_last=channel_last, name='cb3', dims=dims)
     h = bn_opp_resblock(h, maps=16, test=test,
                         channel_last=channel_last, name='cb4', dims=dims)
-    h = F.average_pooling(h, pool_kernel, channel_last=channel_last)
+    h = F.average_pooling(
+        h, pool_kernel, channel_last=channel_last) if dims > 1 else h
     pred = PF.affine(h, 10, name='fc')
     return pred
 
@@ -227,7 +372,8 @@ def small_bn_folding_resnet(image, test=False, channel_last=False, name='bn-grap
     h = PF.convolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
                        with_bias=True, name='first-conv')
     h = F.relu(h)
-    h = F.max_pooling(h, pool_kernel, channel_last=channel_last)
+    h = F.max_pooling(
+        h, pool_kernel, channel_last=channel_last) if dims > 1 else h
     h = bn_folding_resblock(h, maps=16, test=test,
                             channel_last=channel_last, name='cb1', dims=dims)
     h = bn_folding_resblock(h, maps=16, test=test,
@@ -236,7 +382,8 @@ def small_bn_folding_resnet(image, test=False, channel_last=False, name='bn-grap
                             channel_last=channel_last, name='cb3', dims=dims)
     h = bn_folding_resblock(h, maps=16, test=test,
                             channel_last=channel_last, name='cb4', dims=dims)
-    h = F.average_pooling(h, pool_kernel, channel_last=channel_last)
+    h = F.average_pooling(
+        h, pool_kernel, channel_last=channel_last) if dims > 1 else h
     pred = PF.affine(h, 10, name='fc')
     return pred
 

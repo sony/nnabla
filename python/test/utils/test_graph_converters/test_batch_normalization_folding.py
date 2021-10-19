@@ -25,7 +25,11 @@ from nbla_test_utils import list_context
 from .ref_graphs.lenets import bn_lenet, bn_folding_lenet, bn_opp_lenet
 from .ref_graphs.resnets import (small_bn_resnet,
                                  small_bn_folding_resnet,
-                                 small_bn_opp_resnet)
+                                 small_bn_opp_resnet,
+                                 small_bn_dcn,
+                                 small_dcn,
+                                 small_opp_dcn,
+                                 small_bn_opp_dcn)
 
 
 ctxs = list_context('Convolution')  # proxy to switch the context
@@ -38,11 +42,13 @@ resnet_ref = small_bn_folding_resnet
 @pytest.mark.parametrize('seed', [313])
 @pytest.mark.parametrize('test', [True])
 @pytest.mark.parametrize('w_bias', [True])
-@pytest.mark.parametrize('channel_last', [False])
+@pytest.mark.parametrize('channel_last', [False, True])
 @pytest.mark.parametrize('graph_ref, graph_act, opposite',
                          [(resnet_ref, small_bn_resnet, False),
-                          (resnet_ref, small_bn_opp_resnet, True)])
-@pytest.mark.parametrize('dims', [2, 3])
+                          (resnet_ref, small_bn_opp_resnet, True),
+                          (small_dcn, small_bn_dcn, False),
+                          (small_opp_dcn, small_bn_opp_dcn, True)])
+@pytest.mark.parametrize('dims', [1, 2, 3])
 def test_batch_normalization_folding(ctx, func_name, seed, test, w_bias,
                                      channel_last, graph_ref, graph_act, opposite, dims):
     from .graph_converter_test_utils import structure_tester, value_tester
@@ -56,7 +62,8 @@ def test_batch_normalization_folding(ctx, func_name, seed, test, w_bias,
         np.random.seed(seed)
         rng = np.random.RandomState(seed)
 
-        input_shape = (batch_size,) + (32,) * dims + (3,) if channel_last else (batch_size,) + (3,) + (32,) * dims
+        input_shape = (batch_size,) + (32,) * dims + \
+            (3,) if channel_last else (batch_size,) + (3,) + (32,) * dims
         # Graph
         x_data = rng.randn(*input_shape)
         x = nn.Variable.from_numpy_array(x_data)

@@ -95,6 +95,7 @@ class BatchNormalizationFoldingModifierInner(FunctionModifier, BatchNormBase):
 
     def __init__(self, channel_last=False):
         super(BatchNormalizationFoldingModifierInner, self).__init__()
+        self._channel_last = channel_last
 
     def modify(self, f, inputs):
         outputs = f.outputs[0]
@@ -135,37 +136,43 @@ class BatchNormalizationFoldingModifierInner(FunctionModifier, BatchNormBase):
 
         return h
 
+    def reshape_bn_parameters(self, ip_func, bn_parameters, channel_last):
+        """
+                                Weight layout
+        conv(channel_first)     o,i,k1,k2,...kn
+        conv(channel_last)      o,k1,k2,...,kn,i
+        deconv(channel_first)   i,o,k1,k2,...,kn
+        deconv(channel_last)    i,k1,k2,...,kn,o
+        """
+        if ip_func.info.type_name == 'Convolution':
+            axes = list(range(bn_parameters[0].ndim))
+            axis_to_switch = -1 if channel_last else 1
+            axes[0], axes[axis_to_switch] = axes[axis_to_switch], axes[0]
+            bn_parameters = [np.transpose(bn_param, axes)
+                             for bn_param in bn_parameters]
+
+        if ip_func.info.type_name == 'Affine':
+            bn_parameters = [bn_param.reshape(
+                bn_param.shape[1], bn_param.shape[0]) for bn_param in bn_parameters]
+
+        return bn_parameters
+
     def _compute_folded_parameters(self, ip_func, bn_func):
-        # Squeeze
-        beta_data = np.squeeze(bn_func.inputs[1].d)
-        gamma_data = np.squeeze(bn_func.inputs[2].d)
-        mean_data = np.squeeze(bn_func.inputs[3].d)
-        var_data = np.squeeze(bn_func.inputs[4].d)
+        beta_data = bn_func.inputs[1].d.copy()
+        gamma_data = bn_func.inputs[2].d.copy()
+        mean_data = bn_func.inputs[3].d.copy()
+        var_data = bn_func.inputs[4].d.copy()
         eps_data = bn_func.info.args['eps']
 
-        # Reshape
-        w = ip_func.inputs[1]
-        r_shape = [1 for _ in range(len(w.shape) - len(beta_data.shape))]
-        beta_data = beta_data.reshape(list(beta_data.shape) + r_shape)
-        gamma_data = gamma_data.reshape(list(gamma_data.shape) + r_shape)
-        mean_data = mean_data.reshape(list(mean_data.shape) + r_shape)
-        var_data = var_data.reshape(list(var_data.shape) + r_shape)
-        sigma_data = np.sqrt(var_data + eps_data)
-
-        # Reshape again if affine
-        if ip_func.name == 'Affine':  # (inp, out) -> (out, inp)
-            beta_data = beta_data.reshape(
-                beta_data.shape[1], beta_data.shape[0])
-            gamma_data = gamma_data.reshape(
-                gamma_data.shape[1], gamma_data.shape[0])
-            mean_data = mean_data.reshape(
-                mean_data.shape[1], mean_data.shape[0])
-            var_data = var_data.reshape(var_data.shape[1], var_data.shape[0])
-            sigma_data = np.sqrt(var_data + eps_data)
+        # Reshape BN parameters to make it match with the weight of Conv/Deconv/Affine
+        beta_data, gamma_data, mean_data, var_data = self.reshape_bn_parameters(
+            ip_func, [beta_data, gamma_data, mean_data, var_data], self._channel_last)
+        std_data = np.sqrt(var_data + eps_data)
 
         # Fold
-        c0 = gamma_data / sigma_data
-        c1 = beta_data - (gamma_data * mean_data) / sigma_data
+        c0 = gamma_data / std_data
+        c1 = beta_data - (gamma_data * mean_data) / std_data
+        w = ip_func.inputs[1]
         w_data = w.d
         w_data = c0 * w_data
         b_data = c1
@@ -236,68 +243,71 @@ class BatchNormalizationFoldingOppositeModifierInner(FunctionModifier, BatchNorm
 
         return h
 
+    def reshape_bn_parameters(self, ip_func, bn_parameters, channel_last):
+        """
+                                Weight layout
+        conv(channel_first)     o,i,k1,k2,...kn
+        conv(channel_last)      o,k1,k2,...,kn,i
+        deconv(channel_first)   i,o,k1,k2,...,kn
+        deconv(channel_last)    i,k1,k2,...,kn,o
+        """
+        if ip_func.info.type_name == 'Deconvolution':
+            axes = list(range(bn_parameters[0].ndim))
+            axis_to_switch = -1 if channel_last else 1
+            axes[0], axes[axis_to_switch] = axes[axis_to_switch], axes[0]
+            bn_parameters = [np.transpose(bn_param, axes)
+                             for bn_param in bn_parameters]
+
+        if ip_func.info.type_name == 'Affine':
+            bn_parameters = [bn_param.reshape(
+                bn_param.shape[1], bn_param.shape[0], 1, 1) for bn_param in bn_parameters]
+
+        return bn_parameters
+
     def _compute_folded_parameters(self, ip_func, bn_func):
-        # Squeeze
-        beta_data = np.squeeze(bn_func.inputs[1].d)
-        gamma_data = np.squeeze(bn_func.inputs[2].d)
-        mean_data = np.squeeze(bn_func.inputs[3].d)
-        var_data = np.squeeze(bn_func.inputs[4].d)
+        beta_data = bn_func.inputs[1].d.copy()
+        gamma_data = bn_func.inputs[2].d.copy()
+        mean_data = bn_func.inputs[3].d.copy()
+        var_data = bn_func.inputs[4].d.copy()
         eps_data = bn_func.info.args['eps']
 
-        # Reshape
+        # Reshape BN parameters to make it match with the weight of Conv/Deconv/Affine
+        beta_data, gamma_data, mean_data, var_data = self.reshape_bn_parameters(ip_func,
+                                                                                [beta_data, gamma_data, mean_data,
+                                                                                 var_data], self._channel_last)
+        std_data = np.sqrt(var_data + eps_data)
+
+        c0 = gamma_data / std_data
+        c1 = beta_data - (gamma_data * mean_data) / std_data
         w = ip_func.inputs[1]
-        r_shape = [1 for _ in range(len(w.shape) - len(beta_data.shape))]
-        if self._channel_last:
-            beta_data = beta_data.reshape(r_shape + list(beta_data.shape))
-            gamma_data = gamma_data.reshape(r_shape + list(gamma_data.shape))
-            mean_data = mean_data.reshape(r_shape + list(mean_data.shape))
-            var_data = var_data.reshape(r_shape + list(var_data.shape))
-        else:
-            beta_data = beta_data.reshape(
-                [r_shape[0]] + list(beta_data.shape) + r_shape[1:len(r_shape)])
-            gamma_data = gamma_data.reshape(
-                [r_shape[0]] + list(gamma_data.shape) + r_shape[1:len(r_shape)])
-            mean_data = mean_data.reshape(
-                [r_shape[0]] + list(mean_data.shape) + r_shape[1:len(r_shape)])
-            var_data = var_data.reshape(
-                [r_shape[0]] + list(var_data.shape) + r_shape[1:len(r_shape)])
-
-        sigma_data = np.sqrt(var_data + eps_data)
-
-        # Reshape again if affine
-        if ip_func.name == 'Affine':  # (inp, out) -> (out, inp)
-            beta_data = beta_data.reshape(
-                beta_data.shape[1], beta_data.shape[0], 1, 1)
-            gamma_data = gamma_data.reshape(
-                gamma_data.shape[1], gamma_data.shape[0], 1, 1)
-            mean_data = mean_data.reshape(
-                mean_data.shape[1], mean_data.shape[0], 1, 1)
-            var_data = var_data.reshape(
-                var_data.shape[1], var_data.shape[0], 1, 1)
-            sigma_data = np.sqrt(var_data + eps_data)
-
-        # Fold
-        c0 = gamma_data / sigma_data
-        c1 = beta_data - (gamma_data * mean_data) / sigma_data
         w_data = w.d
 
-        if ip_func.name == 'Affine':
-            _, d_0, d_1, d_2 = bn_func.inputs[0].shape
-            _, d_3 = w_data.shape
+        # Reshape the weight of Affine
+        if ip_func.info.type_name == 'Affine':
+            d_0, d_1, d_2 = bn_func.inputs[0].shape[1:]
+            d_3 = w_data.shape[1:]
             w_data = np.reshape(w_data, (d_0, d_1, d_2, d_3))
-            w_data = c0 * w_data
-            b_data = w_data * c1
-            b_data = np.sum(w_data, (0, 1, 2))
-            w_data = np.reshape(w_data, (-1, d_3))
-        else:
-            w_data = c0 * w_data
-            b_data = w_data * c1
-            b_data = np.sum(b_data, tuple(range(1, w_data.ndim)))
+
+        # Fold
+        w_data = c0 * w_data
+        b_data = w_data * c1
+
+        w_data = np.reshape(
+            w_data, (-1, d_3)) if ip_func.info.type_name == 'Affine' else w_data
+
+        # Reduce the dimension of bias
+        # Default setting for Conv
+        axes_to_reduce = tuple(range(1, w_data.ndim))
+        if ip_func.info.type_name == 'Deconvolution':
+            axes_to_reduce = tuple(range(
+                w_data.ndim-1)) if self._channel_last else (0,) + tuple(range(2, w_data.ndim))
+        axes_to_reduce = (
+            0, 1, 2) if ip_func.info.type_name == 'Affine' else axes_to_reduce
+        b_data = np.sum(b_data, axes_to_reduce)
 
         if len(ip_func.inputs) == 3:
             b = ip_func.inputs[2]
             b_data += b.d
-
         return w_data, b_data
 
 
