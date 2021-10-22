@@ -9,6 +9,7 @@ clusters, embedded devices and production servers.
 * [Neural Network Libraries - Examples](https://github.com/sony/nnabla-examples): Working examples of Neural Network Libraries from basic to state-of-the-art.
 * [Neural Network Libraries - C Runtime](https://github.com/sony/nnabla-c-runtime):  Runtime library for inference Neural Network created by Neural Network Libraries.
 * [Neural Network Libraries - NAS](https://github.com/sony/nnabla-nas):  Hardware-aware Neural Architecture Search (NAS) for Neural Network Libraries.
+* [Neural Network Libraries - RL](https://github.com/sony/nnabla-rl):  Deep Reinforcement Learning (RL) library built on top of Neural Network Libraries.
 * [Neural Network Console](https://dl.sony.com/): A Windows GUI app for neural network development.
 
 
