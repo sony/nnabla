@@ -61,4 +61,4 @@ def test_cumprod_forward_backward(seed, axis, exclusive, reverse, with_mask, ctx
         inputs = [i*m for i, m in zip(inputs, masks)]
 
     function_tester(rng, F.cumprod, ref_cumprod, inputs, func_args=[axis, exclusive, reverse],
-                    ctx=ctx, func_name=func_name, atol_b=4e-3, disable_half_test=True)
+                    ctx=ctx, func_name=func_name, atol_b=5e-3, disable_half_test=True)
