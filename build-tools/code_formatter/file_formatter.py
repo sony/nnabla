@@ -70,12 +70,12 @@ def which(name):
 def search_clang_format():
     base = 'clang-format'
     # versions = ['3.4', '3.5', '3.6', '3.7', '3.8', '3.9']
-    versions = ['3.8']  # Use clang-format-3.8
+    versions = ['3.9']  # Use clang-format-3.9
     for c in [base] + [base + '-{}'.format(v) for v in versions]:
         clang = which(c)
         if clang is not None:
             return clang
-    raise ValueError("Not found: clang-format-3.8")
+    raise ValueError("Not found: clang-format-3.9")
 
 
 def search_autopep8():

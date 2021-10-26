@@ -105,7 +105,8 @@ def _save_parameters(args, suffix, epoch, train_config, force=False):
             nnp.write(version_filename, 'nnp_version.txt')
             nnp.write(_save_parameter_info['config'], os.path.basename(
                 _save_parameter_info['config']))
-            nnp.write(param_filename, f'parameter{nnabla_config.get("MISC", "nnp_param_format")}')
+            nnp.write(
+                param_filename, f'parameter{nnabla_config.get("MISC", "nnp_param_format")}')
             if need_save_opti:
                 for f in opti_filenames:
                     nnp.write(f, f[len(base) + 1:])
@@ -585,13 +586,15 @@ def train_command(args):
     if args.ooc_gpu_memory_size is not None:
         ooc_gpu_memory_size = str_to_num(args.ooc_gpu_memory_size)
         if ooc_gpu_memory_size < 0:
-            logger.log(99, f'Fatal error. invalid ooc_gpu_memory_size [{args.ooc_gpu_memory_size}].')
+            logger.log(
+                99, f'Fatal error. invalid ooc_gpu_memory_size [{args.ooc_gpu_memory_size}].')
             return False
         args.ooc_gpu_memory_size = ooc_gpu_memory_size
     if args.ooc_window_length is not None:
         ooc_window_length = str_to_num(args.ooc_window_length)
         if ooc_window_length < 0:
-            logger.log(99, f'Fatal error. invalid ooc_window_length [{args.ooc_window_length}].')
+            logger.log(
+                99, f'Fatal error. invalid ooc_window_length [{args.ooc_window_length}].')
             return False
         args.ooc_window_length = ooc_window_length
 

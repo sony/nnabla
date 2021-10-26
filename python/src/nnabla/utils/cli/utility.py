@@ -370,7 +370,8 @@ def lms_scheduler(ctx, use_lms, gpu_memory_size=None, window_length=None):
 
     comm = current_communicator()
     if comm:
-        logger.log(99, f'[OoC] Currently OoC is disabled for Multi-GPU training.')
+        logger.log(
+            99, f'[OoC] Currently OoC is disabled for Multi-GPU training.')
         use_lms = False
 
     if use_lms:
@@ -387,14 +388,16 @@ def lms_scheduler(ctx, use_lms, gpu_memory_size=None, window_length=None):
                 total_memory = nvml.nvmlDeviceGetMemoryInfo(handle).total
                 gpu_memory_size = int(total_memory * 0.7)
             except:
-                logger.log(99, f'[OoC] Could not get GPU memory size using default value(6GB).')
+                logger.log(
+                    99, f'[OoC] Could not get GPU memory size using default value(6GB).')
                 gpu_memory_size = 6e9  # default 6 GiB
                 pass
 
         if window_length is None or window_length == 0:
             window_length = int(gpu_memory_size * 1.5)
 
-        logger.log(99, f'[OoC] gpu_memory_limit: {gpu_memory_size / 1e9}GB, prefetch_window_length: {window_length / 1e9}GB')
+        logger.log(
+            99, f'[OoC] gpu_memory_limit: {gpu_memory_size / 1e9}GB, prefetch_window_length: {window_length / 1e9}GB')
         # Change array preference so that lms works well.
         # import nnabla_ext.cuda.init as cuda_init
         # cuda_init.prefer_cpu_pinned_array()
