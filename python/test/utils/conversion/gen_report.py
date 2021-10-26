@@ -35,7 +35,8 @@ def generate_import_table(opsets):
     headers = ['ONNX Operator']
     value_matrix = []
     import_funcs_opset_d = yaml.load(
-        open(os.path.join(CURRENT_PATH, 'importer_funcs_opset.yaml'), 'r'))
+        open(os.path.join(CURRENT_PATH, 'importer_funcs_opset.yaml'), 'r'),
+        Loader=yaml.FullLoader)
     for o in opsets:
         headers.append(str(o))
     headers.append('Description')
@@ -73,7 +74,8 @@ def generate_export_table(opsets, export_result):
     headers.append('Description')
     value_matrix = []
     funcs_opset_d = yaml.load(
-        open(os.path.join(CURRENT_PATH, 'exporter_funcs_opset.yaml'), 'r'))
+        open(os.path.join(CURRENT_PATH, 'exporter_funcs_opset.yaml'), 'r'),
+        Loader=yaml.FullLoader)
     export_refine_d = {}
     for func, impl in funcs_opset_d.items():
         if impl and '@' in impl[0]:
