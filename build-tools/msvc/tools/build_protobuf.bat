@@ -14,7 +14,8 @@ REM WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 REM See the License for the specific language governing permissions and
 REM limitations under the License.
 
-for /f %%i in ('python -c "import google.protobuf; print(google.protobuf.__version__)"') do set PROTOVER=%%i
+REM for /f %%i in ('python -c "import google.protobuf; print(google.protobuf.__version__)"') do set PROTOVER=%%i
+SET PROTOVER=3.18.1
 SET protobuf_tag=v%PROTOVER%
 
 REM Build protobuf libs
