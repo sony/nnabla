@@ -14,88 +14,81 @@
 
 # for nnabla>=1.5.0
 
-FROM ubuntu:18.04
+FROM centos:7
 
 ARG PIP_INS_OPTS
 ARG PYTHONWARNINGS
 ARG CURL_OPTS
 ARG WGET_OPTS
-ARG APT_OPTS
+ARG YUM_OPTS
 
 ENV LC_ALL C
 ENV LANG C
 ENV LANGUAGE C
 
-ARG PYTHON_VERSION_MAJOR=3
-ARG PYTHON_VERSION_MINOR=6
-ENV PYVERNAME=${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}
 
-RUN eval ${APT_OPTS} \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends \
+RUN eval ${YUM_OPTS} \
+    && yum install -y \
+       epel-release \
+       yum-utils \
+    && yum install -y \
         curl \
-        ca-certificates \
+        freetype-devel \
         git \
-        libhdf5-dev \
-        libjpeg-dev \
-        liblapack-dev \
-        liblzma-dev \
-        libpng-dev \
+        hdf5 \
+        hdf5-devel \
+        lapack-devel \
+        libjpeg-devel \
+        liblzma-devel \
+        libpng-devel \
+        redhat-lsb-core \
+        rpm-build \
         unzip \
         wget \
+        which \
         zip \
-        zlibc \
-        cmake \
-        libmpc-dev \
-        libmpfr-dev \
-        libgmp-dev \
-        openssl \
-        libssl-dev \
-        bzip2 \
-        libffi-dev \
-        build-essential \
-        clang-format-5.0 \
-        libarchive-dev \
-        libgoogle-glog-dev \
-        make \
-        python3-venv \
-        python3-pip \
-        libpython${PYVERNAME}-dev \
-        python${PYVERNAME} \
-        python${PYVERNAME}-venv \
-        software-properties-common \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+        zlib-static \
+        libmpc-devel \
+        mpfr-devel \
+        gmp-devel \
+        openssl-devel \
+        bzip2-devel \
+        libffi-devel \
+    && yum group install -y "Development Tools" \
+    && yum clean all
 
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python${PYVERNAME} 0
-
-RUN python -m pip install ${PIP_INS_OPTS} -U pip
-
-RUN add-apt-repository 'deb http://archive.ubuntu.com/ubuntu/ xenial main' && add-apt-repository 'deb http://archive.ubuntu.com/ubuntu/ xenial universe'
-
-RUN eval ${APT_OPTS} \
-    && apt-get update \
-    && apt-get install -y g++-4.9 \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.9 10
-RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.9 10
-
-ARG CMAKEVER=3.14.3
+############################################################# gcc
 RUN mkdir /tmp/deps \
     && cd /tmp/deps \
-    && curl ${CURL_OPTS} -L https://github.com/Kitware/CMake/releases/download/v${CMAKEVER}/cmake-${CMAKEVER}.tar.gz -o cmake-${CMAKEVER}.tar.gz \
-    && tar xf cmake-${CMAKEVER}.tar.gz \
-    && cd cmake-${CMAKEVER} \
-    && mkdir build \
-    && cd build \
-    && cmake -DBUILD_TESTING=FALSE .. \
+    && wget ${WGET_OPTS} http://ftp.tsukuba.wide.ad.jp/software/gcc/releases/gcc-4.9.2/gcc-4.9.2.tar.bz2 \
+    && tar xvfj gcc-4.9.2.tar.bz2 \
+    && cd gcc-4.9.2 \
+    && ./configure --disable-multilib --enable-languages=c,c++ \
     && make -j8 \
     && make install \
     && cd / \
     && rm -rf /tmp/*
 
+############################################################# cmake
+ARG CMAKEVER=3.14.3
+RUN mkdir /tmp/deps \
+    && cd /tmp/deps \
+    && yum install -y cmake3 \
+    && curl ${CURL_OPTS} -L https://github.com/Kitware/CMake/releases/download/v${CMAKEVER}/cmake-${CMAKEVER}.tar.gz -o cmake-${CMAKEVER}.tar.gz \
+    && tar xf cmake-${CMAKEVER}.tar.gz \
+    && cd cmake-${CMAKEVER} \
+    && mkdir build \
+    && cd build \
+    && cmake3 -DBUILD_TESTING=FALSE .. \
+    && make -j8 \
+    && make install \
+    && yum remove -y cmake3 \
+    && yum clean all \
+    && rm -rf /var/cache/yum/* \
+    && cd / \
+    && rm -rf /tmp/*
+
+############################################################ protobuf
 ARG PROTOVER=3.10.1
 RUN mkdir /tmp/deps \
     && cd /tmp/deps \
@@ -113,6 +106,7 @@ RUN mkdir /tmp/deps \
     && cd / \
     && rm -rf /tmp/*
 
+############################################################ libarchive
 ARG LIBARCHIVEVER=3.4.3
 RUN mkdir /tmp/deps \
     && cd /tmp/deps \
@@ -145,16 +139,33 @@ RUN mkdir /tmp/deps \
     && cd / \
     && rm -rf /tmp/*
 
+ARG PYTHON_VERSION_MAJOR=3
+ARG PYTHON_VERSION_MINOR=6
+ENV PYVERNAME=${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}
+
 ADD python/setup_requirements.txt /tmp/deps/
 ADD python/requirements.txt /tmp/deps/
 ADD python/test_requirements.txt /tmp/deps/
 
-RUN pip install ${PIP_INS_OPTS} -U -r /tmp/deps/setup_requirements.txt
-RUN pip install ${PIP_INS_OPTS} -U -r /tmp/deps/requirements.txt
-RUN pip install ${PIP_INS_OPTS} -U -r /tmp/deps/test_requirements.txt
-RUN pip install ${PIP_INS_OPTS} -U auditwheel
+################################################## build python from source
+RUN if [ "${PYVERNAME}" == "3.6" ]; then wget ${WGET_OPTS} https://www.python.org/ftp/python/3.6.12/Python-3.6.12.tgz; fi \
+	&& if [ "${PYVERNAME}" == "3.7" ]; then wget ${WGET_OPTS} https://www.python.org/ftp/python/3.7.10/Python-3.7.10.tgz; fi \
+	&& if [ "${PYVERNAME}" == "3.8" ]; then wget ${WGET_OPTS} https://www.python.org/ftp/python/3.8.8/Python-3.8.8.tgz; fi \
+	&& if [ "${PYVERNAME}" == "3.9" ]; then wget ${WGET_OPTS} https://www.python.org/ftp/python/3.9.2/Python-3.9.2.tgz; fi \
+	&& tar -xzf Python-${PYVERNAME}*.tgz \
+	&& cd Python-${PYVERNAME}* \
+	&& ./configure --enable-optimizations \
+	&& make altinstall \
+	&& ln -s -f /usr/local/bin/python${PYVERNAME} /usr/bin/python \
+	&& ln -s /usr/local/bin/pip${PYVERNAME} /usr/local/bin/pip \
+	&& pip install ${PIP_INS_OPTS} -U -r /tmp/deps/setup_requirements.txt \
+	&& pip install ${PIP_INS_OPTS} -U -r /tmp/deps/requirements.txt \
+	&& pip install ${PIP_INS_OPTS} -U -r /tmp/deps/test_requirements.txt \
+	&& cd .. \
+	&& rm -rf Python-${PYVERNAME}* \
+	&& rm -rf /tmp/*
 
-ENV PATH /usr/bin:/tmp/.local/bin:$PATH
-ENV LD_LIBRARY_PATH /usr/lib64:$LD_LIBRARY_PATH
-ENV CC /usr/bin/gcc-4.9
-ENV CXX /usr/bin/g++-4.9
+ENV PATH /tmp/.local/bin:$PATH
+ENV LD_LIBRARY_PATH /usr/local/lib64:$LD_LIBRARY_PATH
+ENV CC /usr/local/bin/gcc
+ENV CXX /usr/local/bin/g++
