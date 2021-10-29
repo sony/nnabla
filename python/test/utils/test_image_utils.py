@@ -29,6 +29,7 @@ imgs = [
     np.random.random(size=SIZE).astype(np.float),
     np.random.random(size=SIZE).astype(np.float) - 10,
     np.random.randint(low=0, high=255, size=SIZE[:-1]).astype(np.uint8),
+    np.random.randint(low=0, high=255, size=(1, 1, 3)).astype(np.uint8),
 ]
 
 
