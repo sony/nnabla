@@ -55,22 +55,22 @@ void CumProd<T>::forward_impl(const Variables &inputs,
   const T *x = inputs[0]->get_data_pointer<T>(this->ctx_);
   AccumType *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
 
-  for (int i0 = 0; i0 < size0_; ++i0) {
-    for (int i2 = 0; i2 < size2_; ++i2) {
-      const int j = i0 * size1_ * size2_ + i2;
+  for (Size_t i0 = 0; i0 < size0_; ++i0) {
+    for (Size_t i2 = 0; i2 < size2_; ++i2) {
+      const Size_t j = i0 * size1_ * size2_ + i2;
 
-      for (int idx = 0; idx < size1_; ++idx) {
+      for (Size_t idx = 0; idx < size1_; ++idx) {
 
-        const int i1 = reverse_ ? size1_ - idx - 1 : idx;
-        const int y_k = i1 * size2_ + j;
+        const Size_t i1 = reverse_ ? size1_ - idx - 1 : idx;
+        const Size_t y_k = i1 * size2_ + j;
         if (idx == 0) {
           // To prevent accessing out-of-bounds.
           y[y_k] = exclusive_ ? 1 : x[y_k];
           continue;
         }
-        const int d = reverse_ ? -1 : 1;
-        const int y_k_prev = y_k - d * size2_;
-        const int x_k = exclusive_ ? y_k_prev : y_k;
+        const Size_t d = reverse_ ? -1 : 1;
+        const Size_t y_k_prev = y_k - d * size2_;
+        const Size_t x_k = exclusive_ ? y_k_prev : y_k;
 
         y[y_k] = y[y_k_prev] * x[x_k];
       }
@@ -78,6 +78,37 @@ void CumProd<T>::forward_impl(const Variables &inputs,
   }
 }
 
+/**
+ * @brief Calculate cumulative prod backward.
+ *
+ * We introduce O(N) algorithm used in this implementation with PyThon like
+ * pseudocode.
+ * The rough idea is splitting `dx` calculation into three parts.
+ *
+ * # n: Array size
+ * # x: Input
+ * # dx: Input grad
+ * # dy: Output grad
+ * # first_zero_idx: Smallest i such that x[i] == 0 (n for x[i] != 0)
+ * # masked_cumprod: Cumulative prod of x but x[first_zero_idx] == 1 if
+ * first_zero_idx != n
+ *
+ * # We need to pre-compute `masked_cumprod`.
+ *
+ * sum = 0
+ * fot i = n-1; i >= 0; i--:
+ *   if i >= first_zero_idx:
+ *     sum += masked_cumprod[i] * dy[i]
+ *
+ *   if i > first_zero_idx:
+ *     dx[i] = 0
+ *   else if i == first_zero_idx:
+ *     dx[i] = sum;
+ *     sum = 0
+ *   else: # i < first_zero_idx
+ *     sum += masked_cumprod[i] * dy[i]
+ *     dx[i] = sum / x[i]
+ */
 template <typename T>
 void CumProd<T>::backward_impl(const Variables &inputs,
                                const Variables &outputs,
@@ -93,22 +124,20 @@ void CumProd<T>::backward_impl(const Variables &inputs,
   const T *g_y = outputs[0]->get_grad_pointer<T>(this->ctx_);
   T *g_x = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
 
-  // `masked_cumprod` is a cumulative prod of `x` but treating the first zero
-  // element as `1` on each `axis`.
   Variable v_masked_cumprod({size1_});
   AccumType *masked_cumprod =
       v_masked_cumprod.cast_data_and_get_pointer<AccumType>(this->ctx_, true);
 
-  for (int i0 = 0; i0 < size0_; ++i0) {
-    for (int i2 = 0; i2 < size2_; ++i2) {
-      const int offset = i0 * size1_ * size2_ + i2;
+  for (Size_t i0 = 0; i0 < size0_; ++i0) {
+    for (Size_t i2 = 0; i2 < size2_; ++i2) {
+      const Size_t offset = i0 * size1_ * size2_ + i2;
 
       // Create masked_cumprod
-      int first_zero_pos = size1_;
+      Size_t first_zero_pos = size1_;
       T prod = (T)1;
-      for (int k = 0; k < size1_; k++) {
-        const int i1 = reverse_ ? size1_ - k - 1 : k;
-        int idx = i1 * size2_ + offset;
+      for (Size_t k = 0; k < size1_; k++) {
+        const Size_t i1 = reverse_ ? size1_ - k - 1 : k;
+        Size_t idx = i1 * size2_ + offset;
         if (x[idx] == (T)0 && first_zero_pos == size1_) {
           first_zero_pos = k;
           // prod *= (T)1;
@@ -120,9 +149,9 @@ void CumProd<T>::backward_impl(const Variables &inputs,
 
       // Calculate gradient
       AccumType sum = 0;
-      for (int k = size1_ - 1; k >= 0; k--) {
-        const int i1 = reverse_ ? size1_ - k - 1 : k;
-        int idx = i1 * size2_ + offset;
+      for (Size_t k = size1_ - 1; k >= 0; k--) {
+        const Size_t i1 = reverse_ ? size1_ - k - 1 : k;
+        Size_t idx = i1 * size2_ + offset;
 
         if (!exclusive_) {
           sum += masked_cumprod[k] * g_y[idx];

@@ -21,22 +21,79 @@ import nnabla.functions as F
 from function_benchmark import FunctionBenchmark, Inspec
 
 
-@pytest.mark.parametrize('B', [1])
-@pytest.mark.parametrize('R', [512, 1024, 2048])
-@pytest.mark.parametrize('N', [512, 1024, 2048])
-@pytest.mark.parametrize('axis', [1, 2])
+class Case:
+    def __init__(self, shape, axis, rtol=1e-6):
+        # rtol (relative tolerance) 1e-6 is default for assert_allclose
+        self.shape = shape
+        self.axis = axis
+        self.rtol = rtol
+
+    # Print this message by pytest when a test fails.
+    def __repr__(self):
+        return 'Case(shape=' + str(self.shape) + \
+               ' axes=' + str(self.axis) + \
+               ', rtol=' + str(self.rtol) + ')'
+
+
+test_cases = [
+    # --------------------------------
+    # Common use case
+    # --------------------------------
+    # Axis 0
+    Case((512, 512), 0),
+    Case((512, 1024), 0),
+    Case((512, 2048), 0),
+    Case((1024, 512), 0),
+    Case((1024, 1024), 0),
+    Case((1024, 2048), 0),
+    Case((2048, 512), 0),
+    Case((2048, 1024), 0),
+    Case((2048, 2048), 0),
+    # Axis 1
+    Case((512, 512), 1),
+    Case((512, 1024), 1),
+    Case((512, 2048), 1),
+    Case((1024, 512), 1),
+    Case((1024, 1024), 1),
+    Case((1024, 2048), 1),
+    Case((2048, 512), 1),
+    Case((2048, 1024), 1),
+    Case((2048, 2048), 1),
+
+    # --------------------------------
+    # Large cases
+    # --------------------------------
+    Case((1024*1024, 32), 1),
+    Case((32, 1024*1024), 0),
+    Case((2048, 2048), 1),
+    Case((2048, 2048), 0),
+    Case((2024*2024, 2), 0),
+    Case((2, 2024*2024), 1),
+
+    # Weak cases
+    # PyTorch uses Cub library in these cases.
+    Case((2024*2024, 1), 0),
+    Case((1, 2024*2024), 1),
+]
+
+
+@pytest.mark.parametrize("seed", [123])
+@pytest.mark.parametrize("test_case", test_cases)
 @pytest.mark.parametrize('exclusive', [False, True])
 @pytest.mark.parametrize('reverse', [False, True])
-def test_cumprod(B, R, N, axis, exclusive, reverse, nnabla_opts):
-    # Create input
-    x_shape = (B, R, N, 1)
+@pytest.mark.parametrize("with_mask", [True, False])
+def test_cumprod(seed, test_case, exclusive, reverse, with_mask, nnabla_opts):
+    x_shape = test_case.shape
+    axis = test_case.axis
 
     def init(shape):
-        rng = np.random.RandomState(123)
+        rng = np.random.RandomState(seed)
         x = rng.randn(*shape)
-        # Make zero elements with the probability of one zero-element per scan axis.
-        mask = rng.rand(*shape) > (1.0 / shape[axis])
-        x = x * mask
+        if with_mask:
+            # Make zero elements with the probability of `1 / x_shape[axis]`.
+            # It is the probability of existence of one zero element in each scan axis.
+            mask = rng.rand(*shape) > (1.0 / shape[axis])
+            x = x * mask
         return x
     need_grad = True
 
