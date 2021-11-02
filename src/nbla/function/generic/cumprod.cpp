@@ -81,16 +81,47 @@ void CumProd<T>::forward_impl(const Variables &inputs,
 /**
  * @brief Calculate cumulative prod backward.
  *
- * We introduce O(N) algorithm used in this implementation with PyThon like
- * pseudocode.
+ * Here, we introduce O(N) algorithm used in this implementation with PyThon
+ * like pseudocode.
  * The rough idea is splitting `dx` calculation into three parts.
  *
+ * e.g) Definition of gradient formula for input_size == 4.
+ * \code{.py}
+ * dx0 = dy0  +  1 * x1 * dy1  +  1 * x1 * x2 * dy2  +  1 * x1 * x2 * x3 * dy3
+ * dx1 =         x0 * 1 * dy1  +  x0 * 1 * x2 * dy2  +  x0 * 1 * x2 * x3 * dy3
+ * dx2 =                          x0 * x1 * 1 * dy2  +  x0 * x1 * 1 * x3 * dy3
+ * dx3 =                                                x0 * x1 * x2 * 1 * dy3
+ * \endcode
+ *
+ * When `x2 == 0`, the formula above is reduced to following.
+ *
+ * \code{.py}
+ * dx0 = dy0  +  1 * x1 * dy1
+ * dx1 =         x0 * 1 * dy1
+ * dx2 =                          x0 * x1 * 1 * dy2  +  x0 * x1 * 1 * x3 * dy3
+ * dx3 = 0
+ * \endcode
+ *
+ * In general,
+ *
+ * \code{.py}
+ * dxi = reversed_cumsum(cumprod(x) * dy) / x     # For i < first_zero_idx
+ * dxi = reversed_cumsum(masked_cumprod(x) * dy)  # For i = first_zero_idx
+ * dxi = 0                                        # For i > first_zero_idx
+ * \endcode
+ *
+ * `first_zero_idx` is the smallest i such that `x[i] == 0` and masked_cumprod
+ * is a cumprod of modified `x` as `x[first_zero_idx] == 1`.
+ * Each case calculation is performed at the same time in O(N) like following
+ * pseudocode.
+ *
+ * \code{.py}
  * # n: Array size
  * # x: Input
  * # dx: Input grad
  * # dy: Output grad
  * # first_zero_idx: Smallest i such that x[i] == 0 (n for x[i] != 0)
- * # masked_cumprod: Cumulative prod of x but x[first_zero_idx] == 1 if
+ * # masked_cumprod: Cumulative prod of x where x[first_zero_idx] == 1 if
  * first_zero_idx != n
  *
  * # We need to pre-compute `masked_cumprod`.
@@ -108,6 +139,7 @@ void CumProd<T>::forward_impl(const Variables &inputs,
  *   else: # i < first_zero_idx
  *     sum += masked_cumprod[i] * dy[i]
  *     dx[i] = sum / x[i]
+ * \endcode
  */
 template <typename T>
 void CumProd<T>::backward_impl(const Variables &inputs,

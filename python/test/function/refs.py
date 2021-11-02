@@ -502,3 +502,57 @@ def pad_sequence(sequences, batch_first):
         else:
             data[:l, b] = seq
     return data
+
+
+def cumsum(x, axis, exclusive, reverse):
+
+    if reverse:
+        out = np.flip(np.cumsum(np.flip(x, axis=axis), axis=axis), axis=axis)
+    else:
+        out = np.cumsum(x, axis=axis)
+
+    if exclusive:
+
+        if axis < 0:
+            axis += out.ndim
+
+        shift_ = 1 if not reverse else -1
+        out = np.roll(out, shift_, axis=axis)
+        index = 0 if not reverse else -1
+        if axis == 0:
+            out[index, :, :] = 0
+        elif axis == 1:
+            out[:, index, :] = 0
+        elif axis == 2:
+            out[:, :, index] = 0
+        else:
+            raise NotImplementedError
+
+    return out
+
+
+def cumprod(x, axis, exclusive, reverse):
+
+    if reverse:
+        out = np.flip(np.cumprod(np.flip(x, axis=axis), axis=axis), axis=axis)
+    else:
+        out = np.cumprod(x, axis=axis)
+
+    if exclusive:
+
+        if axis < 0:
+            axis += out.ndim
+
+        shift_ = 1 if not reverse else -1
+        out = np.roll(out, shift_, axis=axis)
+        index = 0 if not reverse else -1
+        if axis == 0:
+            out[index, :, :] = 1.0
+        elif axis == 1:
+            out[:, index, :] = 1.0
+        elif axis == 2:
+            out[:, :, index] = 1.0
+        else:
+            raise NotImplementedError
+
+    return out

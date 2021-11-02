@@ -1,4 +1,4 @@
-# Copyright 2021 Sony Corporation.
+# Copyright 2021 Sony Group Corporation.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,39 +18,15 @@ import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context
 from test_cumsum import ref_cumsum
-
-
-def ref_cumprod(x, axis, exclusive, reverse):
-
-    if reverse:
-        out = np.flip(np.cumprod(np.flip(x, axis=axis), axis=axis), axis=axis)
-    else:
-        out = np.cumprod(x, axis=axis)
-
-    if exclusive:
-
-        if axis < 0:
-            axis += out.ndim
-
-        shift_ = 1 if not reverse else -1
-        out = np.roll(out, shift_, axis=axis)
-        index = 0 if not reverse else -1
-        if axis == 0:
-            out[index, :, :] = 1.0
-        elif axis == 1:
-            out[:, index, :] = 1.0
-        elif axis == 2:
-            out[:, :, index] = 1.0
-        else:
-            raise NotImplementedError
-
-    return out
+from refs import cumsum as ref_cumsum
+from refs import cumprod as ref_cumprod
 
 
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("axis", [0, 1, -1])
 @pytest.mark.parametrize("exclusive", [True, False])
 @pytest.mark.parametrize("reverse", [True, False])
+# A flag whether input has zero or not.
 @pytest.mark.parametrize("with_mask", [True, False])
 @pytest.mark.parametrize("ctx, func_name", list_context('CumProd'))
 def test_cumprod_forward_backward(seed, axis, exclusive, reverse, with_mask, ctx, func_name):
@@ -61,6 +37,7 @@ def test_cumprod_forward_backward(seed, axis, exclusive, reverse, with_mask, ctx
         masks = [np.random.choice(2, i.size).reshape(i.shape) for i in inputs]
         inputs = [i*m for i, m in zip(inputs, masks)]
 
+    # Half test is disabled since CumProd for fp16 is not implemented currently.
     function_tester(rng, F.cumprod, ref_cumprod, inputs, func_args=[axis, exclusive, reverse],
                     ctx=ctx, func_name=func_name, atol_b=5e-3, disable_half_test=True)
 
@@ -107,23 +84,26 @@ def ref_grad_cumprod(x, dy, axis, exclusive, reverse, **kw):
     dx = dx_before_zero_pos + dx_zero_pos
     return dx.flatten()
 
-# Tests with ref_grad is also performed here because calculation of numerical gradient takes long time with large input.
-
 
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("axis", [0, 1, -1])
 @pytest.mark.parametrize("shape", [(12, 34, 56), (12345, 5, 7), (3, 12345, 7), (3, 5, 12345)])
 @pytest.mark.parametrize("exclusive", [True, False])
 @pytest.mark.parametrize("reverse", [True, False])
+# A flag whether input has zero or not.
 @pytest.mark.parametrize("with_mask", [True, False])
 @pytest.mark.parametrize("ctx, func_name", list_context('CumProd'))
-def test_cumprod_forward_backward_with_ref_grad(seed, shape, axis, exclusive, reverse, with_mask, ctx, func_name):
+def test_cumprod_forward_backward_large(seed, shape, axis, exclusive, reverse, with_mask, ctx, func_name):
+    """ Test for large input cases.
+    Instead of numerical gradient calculation, `ref_grad_cumuprod` is used here because calculation of numerical gradient takes long time with large input.
+    """
+    from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
     inputs = [(rng.randn(*shape)).astype(np.float32)]
     if with_mask:
         masks = [np.random.choice(2, i.size).reshape(i.shape) for i in inputs]
         inputs = [i*m for i, m in zip(inputs, masks)]
 
-    from nbla_test_utils import function_tester
+    # Half test is disabled since CumProd for fp16 is not implemented currently.
     function_tester(rng, F.cumprod, ref_cumprod, inputs, ref_grad=ref_grad_cumprod, func_args=[axis, exclusive, reverse],
                     ctx=ctx, func_name=func_name, disable_half_test=True)
