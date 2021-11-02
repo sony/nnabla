@@ -84,10 +84,11 @@ def test_layer_normalization_forward(ctx, func_name, seed, x_shape, batch_axis, 
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("x_shape , batch_axis", [((2, 3, 4, 4), 0),
                                                   ((2, 4, 4, 3), 0),
+                                                  ((2, 4, 4, 3), 1),
                                                   ((16, 1), 0),
                                                   ((2, 4, 3), 0),
                                                   # time-series (T, B, C) or (B, T, C)
-                                                  ((3, 2, 5), [0, 1])
+                                                  ((3, 2, 5), [0, 1]),
                                                   ])
 @pytest.mark.parametrize("eps", [1e-05])
 @pytest.mark.parametrize("output_stat", [False, True])
