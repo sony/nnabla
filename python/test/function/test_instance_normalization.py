@@ -45,14 +45,20 @@ def ref_instance_normalization(x, beta, gamma, channel_axis, batch_axis, eps, ou
     return norm
 
 
-def create_inputs(rng, x_shape, batch_axis, channel_axis, no_scale, no_bias):
+def create_inputs(rng, x_shape, batch_axis, channel_axis, no_scale, no_bias, broadcast_affine_params):
     x = np.array(rng.randn(*x_shape).astype(np.float32))
 
-    stat_shape = tuple([x_shape[i] if i in _force_list(batch_axis) + [channel_axis, ] else 1
-                        for i in range(len(x_shape))])
+    if broadcast_affine_params:
+        affine_param_shape = tuple([x_shape[i] if i in [channel_axis, ] else 1
+                                    for i in range(len(x_shape))])
+    else:
+        affine_param_shape = tuple([x_shape[i] if i in _force_list(batch_axis) + [channel_axis, ] else 1
+                                    for i in range(len(x_shape))])
 
-    beta = None if no_bias else rng.randn(*stat_shape).astype(np.float32)
-    gamma = None if no_scale else rng.randn(*stat_shape).astype(np.float32)
+    beta = None if no_bias else rng.randn(
+        *affine_param_shape).astype(np.float32)
+    gamma = None if no_scale else rng.randn(
+        *affine_param_shape).astype(np.float32)
 
     return x, beta, gamma
 
@@ -70,12 +76,13 @@ def create_inputs(rng, x_shape, batch_axis, channel_axis, no_scale, no_bias):
 @pytest.mark.parametrize("output_stat", [False, True])
 @pytest.mark.parametrize("no_scale", [False, True])
 @pytest.mark.parametrize("no_bias", [False, True])
-def test_instance_normalization_forward(ctx, func_name, seed, x_shape, batch_axis, channel_axis, eps, output_stat, no_scale, no_bias):
+@pytest.mark.parametrize("broadcast_affine_params", [False, True])
+def test_instance_normalization_forward(ctx, func_name, seed, x_shape, batch_axis, channel_axis, eps, output_stat, no_scale, no_bias, broadcast_affine_params):
     from nbla_test_utils import function_tester
 
     rng = np.random.RandomState(seed)
     x, beta, gamma = create_inputs(
-        rng, x_shape, batch_axis, channel_axis, no_scale, no_bias)
+        rng, x_shape, batch_axis, channel_axis, no_scale, no_bias, broadcast_affine_params)
 
     function_tester(rng, F.instance_normalization, ref_instance_normalization, [x, beta, gamma], [channel_axis, batch_axis, eps, output_stat], ctx=ctx,
                     func_name=func_name, backward=[False, False, False], disable_half_test=True)
@@ -94,18 +101,19 @@ def test_instance_normalization_forward(ctx, func_name, seed, x_shape, batch_axi
 @pytest.mark.parametrize("output_stat", [False, True])
 @pytest.mark.parametrize("no_scale", [False, True])
 @pytest.mark.parametrize("no_bias", [False, True])
-def test_instance_normalization_forward_backward(ctx, func_name, seed, x_shape, batch_axis, channel_axis, eps, output_stat, no_scale, no_bias):
+@pytest.mark.parametrize("broadcast_affine_params", [False, True])
+def test_instance_normalization_forward_backward(ctx, func_name, seed, x_shape, batch_axis, channel_axis, eps, output_stat, no_scale, no_bias, broadcast_affine_params):
     from nbla_test_utils import function_tester
 
     rng = np.random.RandomState(seed)
     x, beta, gamma = create_inputs(
-        rng, x_shape, batch_axis, channel_axis, no_scale, no_bias)
+        rng, x_shape, batch_axis, channel_axis, no_scale, no_bias, broadcast_affine_params)
 
     function_tester(rng, F.instance_normalization, ref_instance_normalization, [x, beta, gamma], [channel_axis, batch_axis, eps, output_stat], ctx=ctx,
                     func_name=func_name, dstep=1e-2, atol_b=1e-2, backward=[True, not no_bias, not no_scale], disable_half_test=True)
 
 
-# Convolution (NCW) Large spatial size (W > 512 = NBLA_CUDA_GN_NUM_THREADS)
+# Convolution (NCW) Large spatial size (W > 512 = NBLA_CUDA_IN_NUM_THREADS)
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("x_shape , batch_axis, channel_axis",
@@ -114,12 +122,13 @@ def test_instance_normalization_forward_backward(ctx, func_name, seed, x_shape, 
 @pytest.mark.parametrize("output_stat", [False])
 @pytest.mark.parametrize("no_scale", [False])
 @pytest.mark.parametrize("no_bias", [False])
-def test_instance_normalization_large_reduction_forward_backward(ctx, func_name, seed, x_shape, batch_axis, channel_axis, eps, output_stat, no_scale, no_bias):
+@pytest.mark.parametrize("broadcast_affine_params", [False, True])
+def test_instance_normalization_large_reduction_forward_backward(ctx, func_name, seed, x_shape, batch_axis, channel_axis, eps, output_stat, no_scale, no_bias, broadcast_affine_params):
     from nbla_test_utils import function_tester
 
     rng = np.random.RandomState(seed)
     x, beta, gamma = create_inputs(
-        rng, x_shape, batch_axis, channel_axis, no_scale, no_bias)
+        rng, x_shape, batch_axis, channel_axis, no_scale, no_bias, broadcast_affine_params)
 
     function_tester(rng, F.instance_normalization, ref_instance_normalization, [x, beta, gamma], [channel_axis, batch_axis, eps, output_stat], ctx=ctx,
                     func_name=func_name, dstep=1e-2, atol_b=1e-2, backward=[True, not no_bias, not no_scale], disable_half_test=True)
@@ -138,11 +147,12 @@ def test_instance_normalization_large_reduction_forward_backward(ctx, func_name,
 @pytest.mark.parametrize("output_stat", [False])
 @pytest.mark.parametrize("no_scale", [False, True])
 @pytest.mark.parametrize("no_bias", [False, True])
-def test_instance_normalization_double_backward(ctx, func_name, seed, x_shape, batch_axis, channel_axis, eps, output_stat, no_scale, no_bias):
+@pytest.mark.parametrize("broadcast_affine_params", [False, True])
+def test_instance_normalization_double_backward(ctx, func_name, seed, x_shape, batch_axis, channel_axis, eps, output_stat, no_scale, no_bias, broadcast_affine_params):
     from nbla_test_utils import backward_function_tester
     rng = np.random.RandomState(seed)
     x, beta, gamma = create_inputs(
-        rng, x_shape, batch_axis, channel_axis, no_scale, no_bias)
+        rng, x_shape, batch_axis, channel_axis, no_scale, no_bias, broadcast_affine_params)
     backward = [True, not no_bias, not no_scale]
     backward_function_tester(rng, F.instance_normalization,
                              inputs=[x, beta, gamma],
