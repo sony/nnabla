@@ -966,6 +966,7 @@ class ProtoNetwork:
                     self.parent.disable()
                 self.parent = parent
                 var.parent = None
+                self.variable = var.variable
 
                 # Replace var with self for var.parent.outputs
                 if parent is None:
@@ -1094,24 +1095,42 @@ class ProtoNetwork:
             callback._apply_function_pass_by_name(
                 pf.delegate(), variables, scope)
 
+        renames = {}
+        for pv in chain(n.variables.values(), n.parameters.values()):
+            pv.prepare_renaming(renames)
+
+        def shorten_route(naming):
+            ret = {}
+            flags = {k: True for k, _ in naming.items()}
+            for k, v in naming.items():
+                d = v
+                while v in naming:
+                    d = naming[v]
+                    flags[v] = False
+                    v = d
+                if flags[k]:
+                    ret[k] = d
+            return ret
+
+        renames = shorten_route(renames)
+
         n._update_network_ports()
         for pf in n.functions.values():
             callback._apply_use_up_to(pf.delegate().inputs)
 
-        # Update from proto
         rng = np.random.RandomState(1223)
-        renames = {}
         for pv in chain(n.variables.values(), n.parameters.values()):
             pv.update_from_proto(rng, renames)
-        for ol, ne in renames.items():
-            if ol in n.variables:
-                n.variables[ne] = n.variables[ol]
-                del n.variables[ol]
-            elif ol in n.parameters:
-                n.parameters[ne] = n.parameters[ol]
-                del n.parameters[ol]
+
+        n.variables = OrderedDict([(renames.get(k, k), v)
+                                  for k, v in n.variables.items()])
+        n.parameters = OrderedDict([(renames.get(k, k), v)
+                                   for k, v in n.parameters.items()])
+
         for pf in n.functions.values():
             pf.update_from_proto(renames)
+        n.inputs = [renames.get(name, name) for name in n.inputs]
+        n.outputs = [renames.get(name, name) for name in n.outputs]
 
         # apply disable()
         for _ in n.forward_sequence():
@@ -1789,12 +1808,16 @@ class ProtoVariable:
                                                   lambda v: 0.0)(self.initializer)
         return self._proto
 
-    def update_from_proto(self, rng, renames):
+    def prepare_renaming(self, renames):
         if self._proto is None:
             return
         if self.name != self._proto.name:
             renames[self.name] = self._proto.name
-        self.name = self._proto.name
+
+    def update_from_proto(self, rng, renames):
+        if self._proto is None:
+            return
+        self.name = renames.get(self.name, self.name)
         assert self.type == self._proto.type, "Change type of variable is not allowed"
         self.shape = self._proto.shape.dim[:]
         self.initializer = _create_initializer(self._proto, rng)
@@ -2115,6 +2138,11 @@ class ProtoFunction:
         self.name = self._proto.name
         self.inputs = [renames.get(n, n) for n in self._proto.input]
         self.outputs = [renames.get(n, n) for n in self._proto.output]
+        self._proto.ClearField('input')
+        self._proto.input.extend(self.inputs)
+        self._proto.ClearField('output')
+        self._proto.output.extend(self.outputs)
+
         self.repeat_id = self._proto.repeat_id[:]
         self.repeat_param = self._proto.repeat_param
         self.recurrent_param = self._proto.recurrent_param

@@ -49,16 +49,35 @@ def mlp_module(x0, x1):
     return y0, y1
 
 
+def prepare_model(model):
+    with get_saved_test_model(model) as nnp_file:
+        nnp = nnp_graph.NnpLoader(nnp_file)
+    return nnp
+
+
+def nnp_get_topo(nnp, side, callback=None):
+    for network_name in sorted(nnp.get_network_names()):
+        network = nnp.get_network(
+            network_name, batch_size=4, callback=callback)
+        yield network
+
+
 def nnp_check(nnp, side, callback=None):
     yield len(nnp.get_network_names())
     for network_name in sorted(nnp.get_network_names()):
         yield network_name
         network = nnp.get_network(
-            network_name, batch_size=32, callback=callback)
+            network_name, batch_size=4, callback=callback)
+        # if isinstance(nnp, nnp_graph.NnpLoader):
+        #     print("-" * 50)
+        #     dump_network_topology(nnp.g.default_graph())
+        #     print("-" * 50)
+        #     dump_network_topology(network.proto_network)
+        #     print("-" * 50)
         for k in sorted(network.variables.keys()):
             print('variables', side, k, '{}, {}'.format(
                 network.variables[k].shape, network.variables[k].d.shape))
-            yield (k, network.variables[k], network.variables[k].name)
+            yield k, network.variables[k], network.variables[k].name
 
         for k in sorted(network.inputs.keys()):
             print('inputs', side, k, '{}, {}'.format(
@@ -85,7 +104,7 @@ def compare_nn_variable_with_name(ref_v, v):
     assert ref_var.d.shape == var.d.shape
     assert ref_var.need_grad == var.need_grad
     if ref_v_name[-2:] in ['/b', '/W']:
-        print("compare {} <--> {}".format(ref_var.d.shape, var.d.shape))
+        # print("compare {} <--> {}".format(ref_var.d.shape, var.d.shape))
         assert np.allclose(ref_var.d, var.d)
 
 
@@ -137,15 +156,10 @@ def assert_parameters_equal(ref_params, params):
             assert a == b
 
 
-# MODULES = [
-#     (flat_module, [(4, 3, 32, 32)]),
-#     (mlp_module, [(16, 100), (16, 100)])
-# ]
-
 MODULES = [
-    (flat_module, [('Convolution_in', (4, 3, 32, 32))]),
-    (mlp_module, [('Affine_in', (16, 100)),
-                  ('Affine_in_1', (16, 100))])
+     (flat_module, [('Convolution_in', (4, 3, 32, 32))]),
+     (mlp_module, [('Affine_in', (16, 100)),
+                   ('Affine_in_1', (16, 100))])
 ]
 
 
@@ -302,8 +316,9 @@ def test_networkpass_remove_and_rewire(module):
     _, inputs = module
     verbose = 1
     callback = nnp_graph.NnpNetworkPass(verbose)
-    callback.remove_and_rewire('affine1_1')
-    callback.remove_and_rewire('c1-c1')
+    callback.remove_and_rewire('Affine')
+    # callback.remove_and_rewire('ReLU_1')
+    callback.remove_and_rewire('Convolution_3')
     with get_saved_test_model(module) as nnp_file:
         ref_nnp = legacy_nnp_graph.NnpLoader(nnp_file)
         nnp = nnp_graph.NnpLoader(nnp_file)
@@ -329,20 +344,49 @@ def test_networkpass_use_up_to(module):
             verify_equivalence(ref_v, v)
 
 
-# @pytest.mark.parametrize("module", MODULES)
-# def test_nnp_graph_topology_with_stop(module):
-#     '''This test tests whether equivalency between new or old implementation of nnp_graph
-#     '''
-#     callback = nnp_graph.NnpNetworkPass(1)
-#     callback.use_up_to('Tanh_out_1')
-#     with get_saved_test_model(module) as nnp_file:
-#         ref_nnp = legacy_nnp_graph.NnpLoader(nnp_file)
-#         network = ref_nnp.get_network('model', batch_size=32, callback=callback)
-#         # nnp = nnp_graph.NnpLoader(nnp_file)
-#         # n = nnp.g.default_graph()
-#         # n.promote(callback)
-#         for k in sorted(network.variables.keys()):
-#             print('variables', k, '{}, {}'.format(network.variables[k].shape, network.variables[k].d.shape))
+class SimpleModuleTest:
+    @staticmethod
+    def source(x):
+        rng = np.random.RandomState(389)
+        h = PF.affine(x, 3, rng=rng)
+        h = PF.affine(h, 3, rng=rng)
+        return h
+
+    @staticmethod
+    def dest(x):
+        rng = np.random.RandomState(389)
+        h = PF.affine(x, 3, rng=rng)
+        return h
+
+    s_module = (source.__func__, [('Affine_in', (4, 3))])
+    d_module = (dest.__func__, [('Affine_in', (4, 3))])
+
+    @staticmethod
+    def modifier(x):
+        callback = nnp_graph.NnpNetworkPass(1)
+        callback.remove_and_rewire('Affine')
+        callback.set_variable('Affine_in', x)
+        return callback
+
+
+@pytest.mark.parametrize("ops", [SimpleModuleTest])
+def test_networkpass_multiple_ops(ops):
+    def prepare_input(v):
+        rng = np.random.RandomState(389)
+        v.d = rng.randn(*v.d.shape)
+    x = nn.Variable((4, 3))
+    prepare_input(x)
+    for n, ref_n in zip(nnp_get_topo(prepare_model(ops.s_module), 'left', ops.modifier(x)),
+                        nnp_get_topo(prepare_model(ops.d_module), 'right')):
+        ref_inputs = list(ref_n.inputs.values())
+        ref_outputs = list(ref_n.outputs.values())
+        inputs = list(n.inputs.values())
+        outputs = list(n.outputs.values())
+        prepare_input(ref_inputs[0])
+        for ref_d, d in zip(forward_variable(ref_inputs, ref_outputs, 'left', True),
+                            forward_variable(inputs, outputs, 'right', True)):
+            assert_allclose(d, ref_d)
+
 
 def get_nnp(contents, tmpdir, need_file_object, file_type):
     import io
