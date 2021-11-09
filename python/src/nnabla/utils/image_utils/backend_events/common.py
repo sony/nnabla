@@ -148,6 +148,10 @@ def _imresize_before(img, size, channel_first, interpolate, interpolations_map):
     if not isinstance(size, (list, tuple)):
         raise ValueError("size must be list or tuple")
 
+    if len(img.shape) not in [2, 3]:
+        raise ValueError(
+            "Invalid dimension size of input image. (dims: {})".format(len(img.shape)))
+
     if interpolate not in interpolations_map:
         raise ValueError(
             "unknown interpolation type."
@@ -158,6 +162,10 @@ def _imresize_before(img, size, channel_first, interpolate, interpolations_map):
 
     if channel_first and len(img.shape) == 3:
         img = img.transpose((1, 2, 0))
+
+    if len(img.shape) == 3 and np.prod(img.shape[:-1]) == 1:
+        cur_dtype = img.dtype
+        img = (img * np.ones((2, 2, 1))).astype(cur_dtype)
 
     return img
 
