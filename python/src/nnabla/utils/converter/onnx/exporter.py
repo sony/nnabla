@@ -139,7 +139,7 @@ def generate_value(type, dims, data_type, multiplier):
     return ret.astype(d).tostring()
 
 
-def get_matrix_variance(func_input, func_name, mean_out, axes, input_shape):
+def get_matrix_variance(opset, graph, func_input, func_name, mean_out, axes, input_shape):
     nl = []
 
     # Sub
@@ -162,13 +162,27 @@ def get_matrix_variance(func_input, func_name, mean_out, axes, input_shape):
 
     # ReduceSum
     sum_out = fork_name(func_input + "_sum")
-    n = onnx.helper.make_node(
-        'ReduceSum',
-        [mul_out],
-        [sum_out],
-        axes=axes,
-        keepdims=True
-    )
+    if opset == '13':
+        axes_shape = (len(axes), )
+        axes_param_name = fork_name("ReduceSumAxes")
+        add_param(graph, axes_param_name,
+                  TensorProto.INT64, axes_shape,
+                  np.array(axes).astype(np.int64).tostring())
+        n = onnx.helper.make_node(
+            'ReduceSum',
+            [mul_out, axes_param_name],
+            [sum_out],
+            keepdims=1,
+            noop_with_empty_axes=0,
+        )
+    else:
+        n = onnx.helper.make_node(
+            'ReduceSum',
+            [mul_out],
+            [sum_out],
+            axes=axes,
+            keepdims=True
+        )
     nl.append(n)
 
     count = [input_shape[i] for i in axes]
@@ -384,8 +398,8 @@ class OnnxExporter:
             "AddScalar": partial(self.ElementWiseScalar, "Add", "6"),
             "PowScalar": partial(self.ElementWiseScalar, "Pow", "6"),
             "BroadcastTo": "",
-            "Split": self.Split,
-            "Stack": self.Stack,
+            "Split": partial(self.Split, '6'),
+            "Stack": partial(self.Stack, '6'),
             "Slice": partial(self.Slice, '6'),
             "Deconvolution": partial(self.BaseDeconvolution, 'Deconvolution'),
             "Flip": self.Flip,
@@ -430,10 +444,10 @@ class OnnxExporter:
             "LessEqualScalar": partial(self.LessEqualScalar, '6'),
             "LessScalar": partial(self.LessScalar, '6'),
             "SpectralNorm": self.SpectralNorm,
-            "WeightStandardization": self.WeightStandardization,
-            "LayerNormalization": self.LayerNormalization,
-            "InstanceNormalization": self.InstanceNormalization,
-            "WeightNormalization": self.WeightNormalization
+            "WeightStandardization": partial(self.WeightStandardization, '6'),
+            "LayerNormalization": partial(self.LayerNormalization, '6'),
+            "InstanceNormalization": partial(self.InstanceNormalization, '6'),
+            "WeightNormalization": partial(self.WeightNormalization, '6'),
         }
 
         table_op_set_7 = {
@@ -532,6 +546,33 @@ class OnnxExporter:
         }
         table_op_set_11 = dict(table_op_set_10, **table_op_set_11)
 
+        # opset_13 table
+        table_op_set_13 = {
+            "Softmax": partial(self.Softmax, '13'),
+            "LogSoftmax": partial(self.LogSoftmax, '13'),
+            "BatchNormalization": partial(self.BatchNormalization, '13'),
+            "FusedBatchNormalization": partial(self.FusedBatchNormalization, '13'),
+            "Sum": self.ReduceSum,
+            "Split": partial(self.Split, '13'),
+            "Stack": partial(self.Stack, '13'),
+            "Less": partial(self.BinaryOperator, "Less", '13'),
+            "Greater": partial(self.BinaryOperator, "Greater", '13'),
+            "Equal": partial(self.BinaryOperator, "Equal", '13'),
+            "Add2": partial(self.BinaryOperator, "Add", '13'),
+            "Mul2": partial(self.BinaryOperator, "Mul", '13'),
+            "Div2": partial(self.BinaryOperator, "Div", '13'),
+            "Pow2": partial(self.BinaryOperator, "Pow", '13'),
+            "Sub2": partial(self.BinaryOperator, "Sub", '13'),
+            "LogicalAnd": partial(self.BinaryOperator, "And", '13'),
+            "LogicalOr": partial(self.BinaryOperator, "Or", '13'),
+            "LogicalXor": partial(self.BinaryOperator, "Xor", '13'),
+            "WeightStandardization": partial(self.WeightStandardization, '13'),
+            "LayerNormalization": partial(self.LayerNormalization, '13'),
+            "InstanceNormalization": partial(self.InstanceNormalization, '13'),
+            "WeightNormalization": partial(self.WeightNormalization, '13'),
+        }
+        table_op_set_13 = dict(table_op_set_11, **table_op_set_13)
+
         # opset_ support for SNPE
         table_op_set_snpe = {
             "Affine": partial(self.BaseAffine, "Affine", '6x'),
@@ -560,6 +601,7 @@ class OnnxExporter:
             "snpe": table_op_set_snpe,
             "10": table_op_set_10,
             "11": table_op_set_11,
+            "13": table_op_set_13,
             "tensorrt": table_op_set_tensorrt
         }
         if opset.isdigit():
@@ -636,13 +678,26 @@ class OnnxExporter:
                 unsqueeze_output = fork_name("broadcast_unsqueeze")
                 trailing = list(
                     range(input1_shape_len+1, input0_shape_len))
-                unsqueeze = onnx.helper.make_node(
-                    'Unsqueeze',
-                    [second_input],
-                    [unsqueeze_output],
-                    axes=list(range(axis)) + trailing,
-                    name=fork_name("broadcast_unsqueeze")
-                )
+                axes = list(range(axis)) + trailing
+                axes_shape = (len(axes), )
+                if opset == '13':
+                    axes_param_name = fork_name("UnsqueezeAxes")
+                    add_param(self._model_proto.graph, axes_param_name,
+                              TensorProto.INT64, axes_shape,
+                              np.array(axes).astype(np.int64).tostring())
+                    unsqueeze = onnx.helper.make_node(
+                        "Unsqueeze",
+                        [second_input, axes_param_name],
+                        [unsqueeze_output],
+                        name=fork_name("broadcast_unsqueeze"))
+                else:
+                    unsqueeze = onnx.helper.make_node(
+                        'Unsqueeze',
+                        [second_input],
+                        [unsqueeze_output],
+                        axes=axes,
+                        name=fork_name("broadcast_unsqueeze")
+                    )
                 nl.append(unsqueeze)
                 n = onnx.helper.make_node(
                     func_name,
@@ -1137,12 +1192,24 @@ class OnnxExporter:
 
             # Squeeze
             squeeze_out = fork_name(func.input[3]) + "_squeeze"
-            n = onnx.helper.make_node(
-                'Squeeze',
-                [mean_out],
-                [squeeze_out],
-                axes=reduc_axes,
-            )
+            if opset == '13':
+                reduc_axes_shape = (len(reduc_axes), )
+                reduc_axes_param_name = fork_name("BnSqueezeAxes")
+                add_param(self._model_proto.graph, reduc_axes_param_name,
+                          TensorProto.INT64, reduc_axes_shape,
+                          np.array(reduc_axes).astype(np.int64).tostring())
+                n = onnx.helper.make_node(
+                    'Squeeze',
+                    [mean_out, reduc_axes_param_name],
+                    [squeeze_out],
+                )
+            else:
+                n = onnx.helper.make_node(
+                    'Squeeze',
+                    [mean_out],
+                    [squeeze_out],
+                    axes=reduc_axes,
+                )
             nl.append(n)
             inputs[3] = squeeze_out
 
@@ -1166,13 +1233,27 @@ class OnnxExporter:
 
             # ReduceSum
             sum_out = fork_name(func.input[4]) + "_sum"
-            n = onnx.helper.make_node(
-                'ReduceSum',
-                [mul_out],
-                [sum_out],
-                axes=reduc_axes,
-                keepdims=False
-            )
+            if opset == '13':
+                reduc_axes_shape = (len(reduc_axes), )
+                reduc_axes_param_name = fork_name("BnReduceSumAxes")
+                add_param(self._model_proto.graph, reduc_axes_param_name,
+                          TensorProto.INT64, reduc_axes_shape,
+                          np.array(reduc_axes).astype(np.int64).tostring())
+                n = onnx.helper.make_node(
+                    'ReduceSum',
+                    [mul_out, reduc_axes_param_name],
+                    [sum_out],
+                    keepdims=0,
+                    noop_with_empty_axes=0,
+                )
+            else:
+                n = onnx.helper.make_node(
+                    'ReduceSum',
+                    [mul_out],
+                    [sum_out],
+                    axes=reduc_axes,
+                    keepdims=False
+                )
             nl.append(n)
 
             # Constant
@@ -1663,20 +1744,38 @@ class OnnxExporter:
             nl.append(n)
         return nl
 
-    def Stack(self, func):
+    def Stack(self, opset, func):
         nl = []
         outputs = []
-        for i, x in enumerate(func.input):
-            output_name = fork_name(x)
-            n = onnx.helper.make_node(
-                "Unsqueeze",
-                [x],
-                [output_name],
-                name=fork_name("Unsqueeze"))
-            attr = onnx.helper.make_attribute("axes", [func.stack_param.axis])
-            n.attribute.extend([attr])
-            nl.append(n)
-            outputs.append(output_name)
+        if opset == '13':
+            axes = [func.stack_param.axis]
+            axes_shape = (len(axes), )
+            for i, x in enumerate(func.input):
+                axes_param_name = fork_name("StackAxes")
+                add_param(self._model_proto.graph, axes_param_name,
+                          TensorProto.INT64, axes_shape,
+                          np.array(axes).astype(np.int64).tostring())
+                output_name = fork_name(x)
+                n = onnx.helper.make_node(
+                    "Unsqueeze",
+                    [x, axes_param_name],
+                    [output_name],
+                    name=fork_name("Unsqueeze"))
+                nl.append(n)
+                outputs.append(output_name)
+        else:
+            for i, x in enumerate(func.input):
+                output_name = fork_name(x)
+                n = onnx.helper.make_node(
+                    "Unsqueeze",
+                    [x],
+                    [output_name],
+                    name=fork_name("Unsqueeze"))
+                attr = onnx.helper.make_attribute(
+                    "axes", [func.stack_param.axis])
+                n.attribute.extend([attr])
+                nl.append(n)
+                outputs.append(output_name)
         n = onnx.helper.make_node(
             "Concat",
             outputs,
@@ -1687,7 +1786,7 @@ class OnnxExporter:
         nl.append(n)
         return nl
 
-    def Split(self, func):
+    def Split(self, opset, func):
         nl = []
         outputs = [fork_name(out) for out in func.output]
 
@@ -1700,15 +1799,32 @@ class OnnxExporter:
         n.attribute.extend([attr])
         nl.append(n)
 
-        for i, x in enumerate(outputs):
-            n = onnx.helper.make_node(
-                "Squeeze",
-                [x],
-                [func.output[i]],
-                name=fork_name("Squeeze"))
-            attr = onnx.helper.make_attribute("axes", [func.split_param.axis])
-            n.attribute.extend([attr])
-            nl.append(n)
+        if opset == '13':
+            axes = [func.split_param.axis]
+            axes_shape = (len(axes), )
+            for i, x in enumerate(outputs):
+                axes_param_name = fork_name("SplitAxes")
+                add_param(self._model_proto.graph, axes_param_name,
+                          TensorProto.INT64, axes_shape,
+                          np.array(axes).astype(np.int64).tostring())
+
+                n = onnx.helper.make_node(
+                    "Squeeze",
+                    [x, axes_param_name],
+                    [func.output[i]],
+                    name=fork_name("Squeeze"))
+                nl.append(n)
+        else:
+            for i, x in enumerate(outputs):
+                n = onnx.helper.make_node(
+                    "Squeeze",
+                    [x],
+                    [func.output[i]],
+                    name=fork_name("Squeeze"))
+                attr = onnx.helper.make_attribute(
+                    "axes", [func.split_param.axis])
+                n.attribute.extend([attr])
+                nl.append(n)
         return nl
 
     def BaseAffine(self, func_name, opset, func):
@@ -2191,13 +2307,27 @@ class OnnxExporter:
 
         # ReduceSum
         sumout = fork_name(func.input[0]) + "_reducesum"
-        n = onnx.helper.make_node(
-            'ReduceSum',
-            [expout],
-            [sumout],
-            axes=[axis],
-            keepdims=True
-        )
+        if opset == '13':
+            axis_shape = (len([axis]), )
+            axis_param_name = fork_name("SoftmaxAxis")
+            add_param(self._model_proto.graph, axis_param_name,
+                      TensorProto.INT64, axis_shape,
+                      np.array([axis]).astype(np.int64).tostring())
+            n = onnx.helper.make_node(
+                'ReduceSum',
+                [expout, axis_param_name],
+                [sumout],
+                keepdims=1,
+                noop_with_empty_axes=0,
+            )
+        else:
+            n = onnx.helper.make_node(
+                'ReduceSum',
+                [expout],
+                [sumout],
+                axes=[axis],
+                keepdims=True
+            )
         nl.append(n)
 
         # Div
@@ -2324,13 +2454,27 @@ class OnnxExporter:
 
         # ReduceSum
         sumout = fork_name(func.input[0]) + "_reducesum"
-        n = onnx.helper.make_node(
-            'ReduceSum',
-            [expout],
-            [sumout],
-            axes=[axis],
-            keepdims=True
-        )
+        if opset == '13':
+            axis_shape = (len([axis]), )
+            axis_param_name = fork_name("LogSoftmaxAxis")
+            add_param(self._model_proto.graph, axis_param_name,
+                      TensorProto.INT64, axis_shape,
+                      np.array([axis]).astype(np.int64).tostring())
+            n = onnx.helper.make_node(
+                'ReduceSum',
+                [expout, axis_param_name],
+                [sumout],
+                keepdims=1,
+                noop_with_empty_axes=0,
+            )
+        else:
+            n = onnx.helper.make_node(
+                'ReduceSum',
+                [expout],
+                [sumout],
+                axes=[axis],
+                keepdims=True
+            )
         nl.append(n)
 
         # Log
@@ -3038,6 +3182,28 @@ class OnnxExporter:
 
         return nl
 
+    def ReduceSum(self, func):
+        nl = []
+        axes = func.sum_param.axes
+        k = func.sum_param.keep_dims
+
+        axes_shape = (len(axes), )
+        axes_param_name = fork_name("SumAxes")
+        add_param(self._model_proto.graph, axes_param_name,
+                  TensorProto.INT64, axes_shape,
+                  np.array(axes).astype(np.int64).tostring())
+        n = onnx.helper.make_node(
+            'ReduceSum',
+            [func.input[0], axes_param_name],
+            func.output,
+            keepdims=k,
+            noop_with_empty_axes=0,
+            name=fork_name('ReduceSum'),
+        )
+        nl.append(n)
+
+        return nl
+
     def ResetNaN(self, func):
         # Convert Constant+IsNaN+Where
         input_shape = list(self._var_dict[func.input[0]].dim[:])
@@ -3395,7 +3561,7 @@ class OnnxExporter:
         nl.append(n)
         return nl
 
-    def WeightStandardization(self, func):
+    def WeightStandardization(self, opset, func):
         nl = []
         pp = func.weight_standardization_param
         eps = pp.eps
@@ -3419,8 +3585,8 @@ class OnnxExporter:
         nl.append(n)
 
         # w_var = w.var(axis=axes, keepdims=True)
-        var_nl, var_out = get_matrix_variance(
-            func.input[0], func.name, mean_out, axes, w_shape)
+        var_nl, var_out = get_matrix_variance(opset, self._model_proto.graph,
+                                              func.input[0], func.name, mean_out, axes, w_shape)
         nl.extend(var_nl)
 
         constant0 = fork_name("constant")
@@ -3468,7 +3634,7 @@ class OnnxExporter:
 
         return nl
 
-    def LayerNormalization(self, func):
+    def LayerNormalization(self, opset, func):
         nl = []
         pp = func.layer_normalization_param
         batch_axis = list(pp.batch_axis)
@@ -3519,8 +3685,8 @@ class OnnxExporter:
         nl.append(n)
 
         # x_var = x.var(axis=axes, keepdims=True)
-        var_nl, var_out = get_matrix_variance(
-            func.input[0], func.name, mean_out, axes, x_shape)
+        var_nl, var_out = get_matrix_variance(opset, self._model_proto.graph,
+                                              func.input[0], func.name, mean_out, axes, x_shape)
         nl.extend(var_nl)
 
         norm_nl = get_normalization_norm(
@@ -3529,7 +3695,7 @@ class OnnxExporter:
 
         return nl
 
-    def InstanceNormalization(self, func):
+    def InstanceNormalization(self, opset, func):
         nl = []
         pp = func.instance_normalization_param
         channel_axis = pp.channel_axis
@@ -3596,8 +3762,8 @@ class OnnxExporter:
             nl.append(n)
 
             # x_var = x.var(axis=axes, keepdims=True)
-            var_nl, var_out_ = get_matrix_variance(
-                rout, func.name, mean_out_, axes, (x_shape + [1]))
+            var_nl, var_out_ = get_matrix_variance(opset, self._model_proto.graph,
+                                                   rout, func.name, mean_out_, axes, (x_shape + [1]))
             nl.extend(var_nl)
 
             var_out = fork_name(func.input[0]) + "_reshape"
@@ -3618,8 +3784,8 @@ class OnnxExporter:
             nl.append(n)
 
             # x_var = x.var(axis=axes, keepdims=True)
-            var_nl, var_out = get_matrix_variance(
-                func.input[0], func.name, mean_out, axes, x_shape)
+            var_nl, var_out = get_matrix_variance(opset, self._model_proto.graph,
+                                                  func.input[0], func.name, mean_out, axes, x_shape)
             nl.extend(var_nl)
 
         norm_nl = get_normalization_norm(
@@ -3628,7 +3794,7 @@ class OnnxExporter:
 
         return nl
 
-    def WeightNormalization(self, func):
+    def WeightNormalization(self, opset, func):
         nl = []
         w_shape = list(self._var_dict[func.input[0]].dim[:])
         pp = func.weight_normalization_param
@@ -3663,13 +3829,27 @@ class OnnxExporter:
 
         # ReduceSum, np.sum(w ** 2, axes, keepdims=True)
         sum_out = fork_name(func.input[0]) + "_sum"
-        n = onnx.helper.make_node(
-            'ReduceSum',
-            [pow_out1],
-            [sum_out],
-            axes=axes,
-            keepdims=True
-        )
+        if opset == '13':
+            axes_shape = (len(axes), )
+            axes_param_name = fork_name("WnReduceSumAxes")
+            add_param(self._model_proto.graph, axes_param_name,
+                      TensorProto.INT64, axes_shape,
+                      np.array(axes).astype(np.int64).tostring())
+            n = onnx.helper.make_node(
+                'ReduceSum',
+                [pow_out1, axes_param_name],
+                [sum_out],
+                keepdims=1,
+                noop_with_empty_axes=0,
+            )
+        else:
+            n = onnx.helper.make_node(
+                'ReduceSum',
+                [pow_out1],
+                [sum_out],
+                axes=axes,
+                keepdims=True
+            )
         nl.append(n)
 
         # Add, (np.sum(w ** 2, axes, keepdims=True) + eps)
