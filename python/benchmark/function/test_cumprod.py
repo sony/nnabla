@@ -15,7 +15,6 @@
 import pytest
 
 import numpy as np
-import nnabla as nn
 import nnabla.functions as F
 
 from function_benchmark import FunctionBenchmark, Inspec
@@ -77,6 +76,16 @@ test_cases = [
 ]
 
 
+def create_cumprod_input(rng, shape, axis, with_mask):
+    x = (rng.randn(*shape)).astype(np.float32)
+    if with_mask:
+        # Make zero elements with the probability of `1 / x_shape[axis]`.
+        # It is the probability of existence of one zero element in each scan axis.
+        mask = rng.rand(*shape) > (1.0 / shape[axis])
+        x = x * mask
+    return x
+
+
 @pytest.mark.parametrize("seed", [123])
 @pytest.mark.parametrize("test_case", test_cases)
 @pytest.mark.parametrize('exclusive', [False, True])
@@ -88,13 +97,7 @@ def test_cumprod(seed, test_case, exclusive, reverse, with_mask, nnabla_opts):
 
     def init(shape):
         rng = np.random.RandomState(seed)
-        x = rng.randn(*shape)
-        if with_mask:
-            # Make zero elements with the probability of `1 / x_shape[axis]`.
-            # It is the probability of existence of one zero element in each scan axis.
-            mask = rng.rand(*shape) > (1.0 / shape[axis])
-            x = x * mask
-        return x
+        return create_cumprod_input(rng, shape, axis, with_mask)
     need_grad = True
 
     inputs = [Inspec(x_shape, init, need_grad)]

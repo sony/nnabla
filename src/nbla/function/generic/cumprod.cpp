@@ -156,7 +156,7 @@ void CumProd<T>::backward_impl(const Variables &inputs,
   const T *g_y = outputs[0]->get_grad_pointer<T>(this->ctx_);
   T *g_x = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
 
-  Variable v_masked_cumprod({size1_});
+  Variable v_masked_cumprod(Shape_t{size1_});
   AccumType *masked_cumprod =
       v_masked_cumprod.cast_data_and_get_pointer<AccumType>(this->ctx_, true);
 

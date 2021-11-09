@@ -504,55 +504,76 @@ def pad_sequence(sequences, batch_first):
     return data
 
 
-def cumsum(x, axis, exclusive, reverse):
-
+def scan(func, init_val, x, axis, exclusive, reverse):
     if reverse:
-        out = np.flip(np.cumsum(np.flip(x, axis=axis), axis=axis), axis=axis)
-    else:
-        out = np.cumsum(x, axis=axis)
-
+        x = np.flip(x, axis)
+    y = func(x, axis)
     if exclusive:
-
+        # Make first element to `init_val` on the axis.
+        shape = y.shape
         if axis < 0:
-            axis += out.ndim
+            ndim = len(shape)
+            axis += ndim
+        shape_3d = ()
+        shape_3d += (np.prod(shape[:axis], dtype=np.int64),)
+        shape_3d += (shape[axis],)
+        shape_3d += (np.prod(shape[(axis+1):], dtype=np.int64),)
+        y = np.reshape(y, shape_3d)
+        scan_size = shape[axis]
+        y[:, 1:scan_size, :] = y[:, :(scan_size-1), :]
+        y[:, 0, :] = init_val
+        y = np.reshape(y, shape)
+    if reverse:
+        y = np.flip(y, axis)
+    return y
 
-        shift_ = 1 if not reverse else -1
-        out = np.roll(out, shift_, axis=axis)
-        index = 0 if not reverse else -1
-        if axis == 0:
-            out[index, :, :] = 0
-        elif axis == 1:
-            out[:, index, :] = 0
-        elif axis == 2:
-            out[:, :, index] = 0
-        else:
-            raise NotImplementedError
 
-    return out
+def cumsum(x, axis, exclusive, reverse):
+    return scan(np.cumsum, 0, x, axis, exclusive, reverse)
 
 
 def cumprod(x, axis, exclusive, reverse):
+    return scan(np.cumprod, 1, x, axis, exclusive, reverse)
 
-    if reverse:
-        out = np.flip(np.cumprod(np.flip(x, axis=axis), axis=axis), axis=axis)
-    else:
-        out = np.cumprod(x, axis=axis)
 
-    if exclusive:
+# Calculate cumprod backward in O(N).
+# See `nnabla/src/nbla/function/generic/cumprod.cpp` for the detail algorithm.
+def cumprod_backward(x, dy, axis, exclusive, reverse, **kw):
+    zero_mask = np.where(x == 0, 1, 0)
 
-        if axis < 0:
-            axis += out.ndim
+    # Create masks for following calculation
+    # [1, ... , 1, 0, 0, ... , 0]
+    before_first_zero_mask = np.where(cumsum(
+        zero_mask, axis, False, reverse) == 0, 1, 0)
+    # [0, ... , 0, 0, 1, ... , 1]
+    after_first_zero_mask = np.where(cumsum(
+        zero_mask, axis, True, reverse) == 0, 0, 1)
+    # [0, ... , 0, 1, 0, ... , 0]
+    first_zero_mask = np.where(
+        before_first_zero_mask + after_first_zero_mask == 0, 1, 0)
 
-        shift_ = 1 if not reverse else -1
-        out = np.roll(out, shift_, axis=axis)
-        index = 0 if not reverse else -1
-        if axis == 0:
-            out[index, :, :] = 1.0
-        elif axis == 1:
-            out[:, index, :] = 1.0
-        elif axis == 2:
-            out[:, :, index] = 1.0
-        else:
-            raise NotImplementedError
+    masked_x = np.where(first_zero_mask == 1, 1, x)
 
-    return out
+    # Check if masks are correctly generated.
+    assert(np.all(first_zero_mask + before_first_zero_mask +
+           after_first_zero_mask == 1))
+    assert(np.all(masked_x - x == first_zero_mask))
+    assert(np.all(x * first_zero_mask == 0))
+
+    normal_cumprod = cumprod(x, axis, exclusive, reverse)
+    masked_cumprod = cumprod(masked_x, axis, exclusive, reverse)
+
+    cumprod_dy = normal_cumprod * dy
+    masked_cumprod_dy = masked_cumprod * dy
+
+    reversed_cumprod_dy = cumsum(cumprod_dy, axis, exclusive, not reverse)
+    reversed_masked_cumprod_dy = cumsum(
+        masked_cumprod_dy, axis, exclusive, not reverse)
+
+    # Calculate dx
+    full_masked_x = np.where(x == 0, 1, x)  # Avoid generating `nan`
+    dx_before_zero_pos = reversed_cumprod_dy / \
+        full_masked_x * before_first_zero_mask
+    dx_zero_pos = reversed_masked_cumprod_dy * first_zero_mask
+    dx = dx_before_zero_pos + dx_zero_pos
+    return dx.flatten()
