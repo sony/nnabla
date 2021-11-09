@@ -63,23 +63,25 @@ def test_parameter_file_load_save_using_global():
     proto_variable_inputs = module_creator.get_proto_variable_inputs()
     outputs = module_creator.module(*proto_variable_inputs)
     g = nn.graph_def.get_default_graph_by_variable(outputs)
-    g.save(nnp_file)
-    another = TSTNetNormal()
-    variable_inputs = module_creator.get_variable_inputs()
-    outputs = g(*variable_inputs)
-    ref_outputs = another(*variable_inputs)
 
-    # Should not equal
-    with pytest.raises(AssertionError) as excinfo:
+    with create_temp_with_dir(nnp_file) as tmp_file:
+        g.save(tmp_file)
+        another = TSTNetNormal()
+        variable_inputs = module_creator.get_variable_inputs()
+        outputs = g(*variable_inputs)
+        ref_outputs = another(*variable_inputs)
+
+        # Should not equal
+        with pytest.raises(AssertionError) as excinfo:
+            forward_variable_and_check_equal(outputs, ref_outputs)
+
+        # load to global scope
+        nn.load_parameters(tmp_file)
+        params = nn.get_parameters()
+        another.set_parameters(params)
+
+        ref_outputs = another(*variable_inputs)
         forward_variable_and_check_equal(outputs, ref_outputs)
-
-    # load to global scope
-    nn.load_parameters(nnp_file)
-    params = nn.get_parameters()
-    another.set_parameters(params)
-
-    ref_outputs = another(*variable_inputs)
-    forward_variable_and_check_equal(outputs, ref_outputs)
 
 
 def test_parameter_file_load_save():
@@ -88,24 +90,26 @@ def test_parameter_file_load_save():
     proto_variable_inputs = module_creator.get_proto_variable_inputs()
     outputs = module_creator.module(*proto_variable_inputs)
     g = nn.graph_def.get_default_graph_by_variable(outputs)
-    g.save(nnp_file)
-    another = TSTNetNormal()
-    variable_inputs = module_creator.get_variable_inputs()
-    outputs = g(*variable_inputs)
-    ref_outputs = another(*variable_inputs)
 
-    # Should not equal
-    with pytest.raises(AssertionError) as excinfo:
+    with create_temp_with_dir(nnp_file) as tmp_file:
+        g.save(tmp_file)
+        another = TSTNetNormal()
+        variable_inputs = module_creator.get_variable_inputs()
+        outputs = g(*variable_inputs)
+        ref_outputs = another(*variable_inputs)
+
+        # Should not equal
+        with pytest.raises(AssertionError) as excinfo:
+            forward_variable_and_check_equal(outputs, ref_outputs)
+
+        # load to local scope
+        with nn.parameter_scope('', another.parameter_scope):
+            nn.load_parameters(tmp_file)
+
+        another.update_parameter()
+
+        ref_outputs = another(*variable_inputs)
         forward_variable_and_check_equal(outputs, ref_outputs)
-
-    # load to local scope
-    with nn.parameter_scope('', another.parameter_scope):
-        nn.load_parameters(nnp_file)
-
-    another.update_parameter()
-
-    ref_outputs = another(*variable_inputs)
-    forward_variable_and_check_equal(outputs, ref_outputs)
 
 
 @pytest.mark.parametrize("parameter_file", [protobuf_file, h5_file])
@@ -122,12 +126,13 @@ def test_parameter_file_load_save_for_files(parameter_file):
     with pytest.raises(AssertionError) as excinfo:
         forward_variable_and_check_equal(outputs, ref_outputs)
 
-    # save to file
-    nn.save_parameters(parameter_file, a_module.get_parameters())
+    with create_temp_with_dir(parameter_file) as tmp_file:
+        # save to file
+        nn.save_parameters(tmp_file, a_module.get_parameters())
 
-    # load from file
-    with nn.parameter_scope('', another.parameter_scope):
-        nn.load_parameters(parameter_file)
+        # load from file
+        with nn.parameter_scope('', another.parameter_scope):
+            nn.load_parameters(tmp_file)
     another.update_parameter()
 
     ref_outputs = another(*variable_inputs)

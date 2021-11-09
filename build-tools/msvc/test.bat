@@ -23,7 +23,7 @@ REM Execute test
 
 FOR /f %%i IN ('dir /b /s %nnabla_build_wheel_folder%\dist\nnabla-*.whl') DO set WHL=%%~fi
 pip install %PIP_INS_OPTS% %WHL% || GOTO :error
-pip install %PIP_INS_OPTS% pytest
+pip install %PIP_INS_OPTS% pytest pytest-xdist[psutil]
 python -m pytest %~dp0..\..\python\test || GOTO :error
 
 CALL deactivate.bat  || GOTO :error
