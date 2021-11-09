@@ -228,7 +228,8 @@ void SwapInOutScheduler::schedule() {
     calc_mem_usage_before_forward(params, head_type);
 
     // Forward, backward, update
-    for (params.fid = 1; params.fid < last_function; params.fid++) {
+    for (params.fid = 1; static_cast<size_t>(params.fid) < last_function;
+         params.fid++) {
       schedule_swap_in(params, prefetch_stopper, type_converted, head_type);
       do_reschedule = reserve_unprefetched_memory(params, prefetch_stopper);
 
@@ -236,7 +237,7 @@ void SwapInOutScheduler::schedule() {
         break;
       }
 
-      if (params.head < func_block_ends[params.fid]) {
+      if (static_cast<size_t>(params.head) < func_block_ends[params.fid]) {
         NBLA_ERROR(error_code::memory, "Some arrays were not prefetched "
                                        "probably due to out of GPU memory.");
       }
@@ -315,10 +316,10 @@ void SwapInOutScheduler::schedule() {
     if (params.swap_out_bytes != 0) {
       NBLA_ERROR(error_code::unclassified, "swap_out_bytes != 0");
     }
-    if (params.head != order.size()) {
+    if (static_cast<size_t>(params.head) != order.size()) {
       NBLA_ERROR(error_code::unclassified, "head != order.size()");
     }
-    if (params.tail != order.size()) {
+    if (static_cast<size_t>(params.tail) != order.size()) {
       NBLA_ERROR(error_code::unclassified, "tail != order.size()");
     }
 #endif
@@ -367,7 +368,7 @@ int SwapInOutScheduler::accumulate_counts(
 void SwapInOutScheduler::backtrack_with_prefetch_cancel(
     ScheduleParams &params, vector<unsigned int> &prefetch_stopper,
     const size_t unprefetched_bytes, size_t available_bytes) {
-  auto back_head = params.head;
+  size_t back_head = params.head;
   auto back_sa_states = params.sa_states;
 
   while (back_head >= func_block_ends[params.fid]) {
@@ -432,7 +433,7 @@ bool SwapInOutScheduler::reserve_unprefetched_memory(
 
   while (max_bytes - params.swap_in_bytes - params.swap_out_bytes <
          unprefetched_bytes) {
-    if (params.tail == func_block_ends[params.fid - 1]) {
+    if (static_cast<size_t>(params.tail) == func_block_ends[params.fid - 1]) {
       // Out of memory, do backtrack with prefetch cancel and reschedule.
       auto available_bytes =
           max_bytes - params.swap_in_bytes - params.swap_out_bytes;
@@ -467,7 +468,7 @@ bool SwapInOutScheduler::reserve_unprefetched_memory(
 }
 
 void SwapInOutScheduler::determine_which_is_host_func() {
-  for (int fid = 0; fid < func_block_ends.size(); fid++) {
+  for (size_t fid = 0; fid < func_block_ends.size(); fid++) {
     bool host_func = false;
 
     for (size_t i = (fid == 0 ? 0 : func_block_ends[fid - 1]);
@@ -491,7 +492,7 @@ void SwapInOutScheduler::calc_mem_usage_before_forward(
     ScheduleParams &params,
     unordered_map<unsigned int, pair<bool, dtypes>> &head_type) {
 
-  for (; params.head < func_block_ends[0]; params.head++) {
+  for (; static_cast<size_t>(params.head) < func_block_ends[0]; params.head++) {
     RecType *r = &order[params.head];
 
     if (r->tag == RecTag::CLEAR)
@@ -572,7 +573,7 @@ bool SwapInOutScheduler::free_memory_to_prefetch(ScheduleParams &params,
 
   while (params.swap_in_bytes + params.swap_out_bytes + array_bytes >
          max_bytes) {
-    if (params.tail == func_block_ends[params.fid - 1]) {
+    if (static_cast<size_t>(params.tail) == func_block_ends[params.fid - 1]) {
       no_memory = true;
       break;
     }
@@ -588,7 +589,7 @@ void SwapInOutScheduler::schedule_swap_in(
     ScheduleParams &params, const vector<unsigned int> prefetch_stopper,
     unordered_map<unsigned int, bool> &type_converted,
     unordered_map<unsigned int, pair<bool, dtypes>> &head_type) {
-  while (params.head < order.size()) {
+  while (static_cast<size_t>(params.head) < order.size()) {
     RecType *r = &order[params.head];
 
     if (r->tag == RecTag::CLEAR) {
@@ -597,7 +598,7 @@ void SwapInOutScheduler::schedule_swap_in(
     }
 
     // Prefetch must be stopped to avoid out-of-memory in the future.
-    if (prefetch_stopper[params.head] > params.fid)
+    if (prefetch_stopper[params.head] > static_cast<size_t>(params.fid))
       break;
 
     if (params.sa_states[r->said][r->dtype].count == 0) {
@@ -794,7 +795,7 @@ void SwapInOutScheduler::schedule_swap_out(
 void SwapInOutScheduler::schedule_wait_for_all_swap_out(
     ScheduleParams &params) {
   // When out of memory, wait for finishing swap out.
-  while (params.tail < order.size()) {
+  while (static_cast<size_t>(params.tail) < order.size()) {
     schedule_wait_for_swap_out_impl(params);
   }
 }
@@ -836,7 +837,8 @@ void SwapInOutScheduler::schedule_preclear(
 
   // fid == 0 is before the first pre-function hook. No chance to preclear.
   for (int fid = func_block_ends.size() - 1; fid > 1; fid--) {
-    for (int i = func_block_ends[fid] - 1; i >= func_block_ends[fid - 1]; i--) {
+    for (size_t i = func_block_ends[fid] - 1; i >= func_block_ends[fid - 1];
+         i--) {
       RecType *r = &order[i];
 
       if (r->tag == RecTag::CLEAR) {
@@ -973,9 +975,9 @@ void SwapInOutScheduler::run_on_end_schedule() {
 //----------------------------------------------------------------
 void SwapInOutScheduler::swap_out_first_iter() {
   // In the first iteration, arrays used in a function are always swapped out.
-  const int start_idx = func_idx == 0 ? 0 : func_block_ends[func_idx - 1];
+  const size_t start_idx = func_idx == 0 ? 0 : func_block_ends[func_idx - 1];
 
-  for (int i = start_idx; i < func_block_ends[func_idx]; i++) {
+  for (size_t i = start_idx; i < func_block_ends[func_idx]; i++) {
     RecType *r = &order[i];
     if (r->tag == RecTag::CLEAR)
       continue;
@@ -997,7 +999,7 @@ void SwapInOutScheduler::swap_out_first_iter() {
 }
 
 void SwapInOutScheduler::swap_out_wrong_order() {
-  for (int i = 0; i < wrong_ordered.size(); i++) {
+  for (size_t i = 0; i < wrong_ordered.size(); i++) {
     RecType *r = &wrong_ordered[i];
 
     if (r->tag == RecTag::CLEAR) {

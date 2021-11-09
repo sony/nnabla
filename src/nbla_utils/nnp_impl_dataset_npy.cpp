@@ -429,7 +429,7 @@ void RingBuffer::fill_buffer(int load_size) {
     if (shuffle_) {
       char *dest = buffer_ + load_size;
       file->read_data(variable_name_, shuffle_buffer_);
-      for (int t = 0; t < idx_list_.size(); ++t) {
+      for (size_t t = 0; t < idx_list_.size(); ++t) {
         const int s = idx_list_[t];
         const int d = data_size_;
         memcpy(dest + t * d, shuffle_buffer_ + s * d, d);

@@ -281,7 +281,7 @@ string NetworkExpander::gen_repeat_name(const string &name, const string &id,
           auto input_name = func->input(j);
           if (is_in(input_name, param_original_names_)) {
             auto name_list = param_original_names_[input_name];
-            if (name_list.size() == ri.times()) {
+            if (name_list.size() == static_cast<size_t>(ri.times())) {
               vname = name_list[i];
             } else {
               vname = input_name;

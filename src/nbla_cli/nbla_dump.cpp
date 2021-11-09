@@ -63,7 +63,7 @@ bool nbla_dump(int argc, char *argv[]) {
       std::cout << "      Input No." << j << " Name [" << jj->data_name << "]";
       auto shape = jj->variable->variable()->shape();
       std::cout << " Shape (";
-      for (int k = 0; k < shape.size(); k++) {
+      for (size_t k = 0; k < shape.size(); k++) {
         std::cout << " " << shape[k];
       }
       std::cout << " )" << std::endl;
@@ -76,7 +76,7 @@ bool nbla_dump(int argc, char *argv[]) {
       std::cout << "      Output No." << j << " Name [" << jj->data_name << "]";
       auto shape = jj->variable->variable()->shape();
       std::cout << " Shape (";
-      for (int k = 0; k < shape.size(); k++) {
+      for (size_t k = 0; k < shape.size(); k++) {
         std::cout << " " << shape[k];
       }
       std::cout << " )" << std::endl;

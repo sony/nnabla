@@ -83,7 +83,7 @@ shared_ptr<Network> MonitorImpl::get_network() { return network_; }
 
 void MonitorImpl::monitor(const nbla::Context &ctx) {
   vector<Monitor::MonitorVariable> monitor_variables = get_monitor_variables();
-  for (int k = 0; k < monitor_variables.size(); k++) {
+  for (size_t k = 0; k < monitor_variables.size(); k++) {
     Monitor::MonitorVariable x = monitor_variables[k];
     std::cout << "- monitor[" << k << "].name: " << x.data_name << std::endl;
     std::cout << "- monitor[" << k << "].var: " << x.variable_name << std::endl;

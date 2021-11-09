@@ -125,7 +125,7 @@ void VirtualCachingAllocatorBase::transfer_memory_from_cache(
   auto &p_mems = mem->get_physical_memory();
   string dev = mem->device_id();
 
-  int i = 0;
+  size_t i = 0;
   // Move physical memory
   for (; i < p_mems.size() && alloc_bytes > p_mem_bytes; ++i) {
     ext_pmems.emplace_back(p_mems[i]);
