@@ -24,7 +24,8 @@ def ref_searchsorted(sorted_sequence, values, right):
     assert sorted_sequence.ndim == values.ndim, 'ndim of sorted_sequence and values array must be same'
 
     for i in range(values.ndim-1):
-        assert sorted_sequence.shape[i] == values.shape[i], f'inner dimensions of sorted sequence and values must match. {sorted_sequence.shape[i]}!={values.shape[i]}'
+        assert sorted_sequence.shape[i] == values.shape[
+            i], f'inner dimensions of sorted sequence and values must match. {sorted_sequence.shape[i]}!={values.shape[i]}'
 
     side = 'right' if right else 'left'
     values_shape = values.shape

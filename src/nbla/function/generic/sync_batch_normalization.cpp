@@ -109,7 +109,7 @@ void SyncBatchNormalization<T>::forward_impl_batch(const Variables &inputs,
       const int i0 = i02 / this->size2_;
       const int i2 = i02 % this->size2_;
       const int i = i0 * this->size12_ + i1 * this->size2_ + i2;
-      const T stdvar = std::sqrt(v[i1] + (T) this->eps_);
+      const T stdvar = std::sqrt(v[i1] + (T)this->eps_);
       y[i] = (x[i] - m[i1]) * gamma[i1] / stdvar + beta[i1];
     }
   }
@@ -175,17 +175,17 @@ void SyncBatchNormalization<T>::backward_impl_batch(
       // dm and dv are set if batch mean and var are used following functions
       // in computation graph.
       T dvar = g[i1] * sum_dyx_ptr[i1] - g[i1] * m[i1] * sum_dy_ptr[i1];
-      dvar = dvar * (T)-0.5 * std::pow(v[i1] + (T) this->eps_, (T)-1.5) +
+      dvar = dvar * (T)-0.5 * std::pow(v[i1] + (T)this->eps_, (T)-1.5) +
              (dv ? dv[i1] : (T)0);
       T dmean = g[i1] * sum_dy_ptr[i1];
-      dmean = dmean * (-1 / std::sqrt(v[i1] + (T) this->eps_)) +
+      dmean = dmean * (-1 / std::sqrt(v[i1] + (T)this->eps_)) +
               (dm ? dm[i1] : (T)0);
 
       for (int i02 = 0; i02 < this->size02_; ++i02) {
         const int i0 = i02 / this->size2_;
         const int i2 = i02 % this->size2_;
         const int i = i0 * this->size12_ + i1 * this->size2_ + i2;
-        const T grad = dy[i] * g[i1] / std::sqrt(v[i1] + (T) this->eps_) +
+        const T grad = dy[i] * g[i1] / std::sqrt(v[i1] + (T)this->eps_) +
                        dvar * 2 * (x[i] - m[i1]) / n + dmean / n;
         if (accum[0])
           dx[i] += grad;
@@ -204,8 +204,8 @@ void SyncBatchNormalization<T>::backward_impl_batch(
       T dbv = accum[1] ? db[i1] : (T)0;
       T dgv = accum[2] ? dg[i1] : (T)0;
       db[i1] = dbv + sum_dy_ptr[i1];
-      dg[i1] = dgv + sum_dyx_ptr[i1] / std::sqrt(v[i1] + (T) this->eps_) -
-               m[i1] / std::sqrt(v[i1] + (T) this->eps_) * sum_dy_ptr[i1];
+      dg[i1] = dgv + sum_dyx_ptr[i1] / std::sqrt(v[i1] + (T)this->eps_) -
+               m[i1] / std::sqrt(v[i1] + (T)this->eps_) * sum_dy_ptr[i1];
     }
   }
 }

@@ -118,7 +118,7 @@ void BatchNormalization<T>::setup_impl(const Variables &inputs,
     add2_ = create_Add2(this->ctx_, false);
     sub2_ = create_Sub2(this->ctx_, false);
     mul2_ = create_Mul2(this->ctx_, false);
-    add_epsilon_ = create_AddScalar(this->ctx_, (T) this->eps_, false);
+    add_epsilon_ = create_AddScalar(this->ctx_, (T)this->eps_, false);
     square_root_ = create_PowScalar(this->ctx_, (T)-0.5, false);
     std::vector<int> raxes;
     for (int i = 0; i < inputs[0]->ndim(); ++i) {

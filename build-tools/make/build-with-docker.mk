@@ -39,7 +39,7 @@ DOCKER_IMAGE_NNABLA_TEST ?= $(DOCKER_IMAGE_NAME_BASE)-nnabla-test$(ARCH_SUFFIX):
 .PHONY: docker_image_auto_format
 docker_image_auto_format:
 	if ! docker image inspect $(DOCKER_IMAGE_AUTO_FORMAT) >/dev/null 2>/dev/null; then \
-		docker pull ubuntu:16.04 && \
+		docker pull ubuntu:18.04 && \
 		(cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_AUTO_FORMAT) -f docker/development/Dockerfile.auto-format .) \
 	fi
 

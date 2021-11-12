@@ -115,9 +115,9 @@ void CumProd<T>::backward_impl(const Variables &inputs,
 
           if (zero_input_present) {
 
-            auto coeff = (i1 == 0) ? (T)1 : exclusive_
-                                                ? y[x_k]
-                                                : y[(i1 - 1) * size2_ + j];
+            auto coeff = (i1 == 0)
+                             ? (T)1
+                             : exclusive_ ? y[x_k] : y[(i1 - 1) * size2_ + j];
             if (reverse_)
               coeff = (i1 == size1_ - 1)
                           ? (T)1
