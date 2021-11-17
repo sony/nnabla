@@ -81,15 +81,15 @@ using std::set;
     // Input next data and label in this line.
     loss->forward(false, true, nullptr,
                   [&](const CgFunctionPtr &ptr) {
-   scheduler.pre_function_callback(ptr); },
+          scheduler.pre_function_callback(ptr); },
                   [&](const CgFunctionPtr &ptr) {
-   scheduler.post_function_callback(ptr); });
+          scheduler.post_function_callback(ptr); });
     loss->variable()->grad()->fill(1.0);
     loss->backward(nullptr, true, {},
-                   [&](const CgFunctionPtr &ptr) {
-   scheduler.pre_function_callback(ptr); },
-                   [&](const CgFunctionPtr &ptr) {
-   scheduler.post_function_callback(ptr); });
+                  [&](const CgFunctionPtr &ptr) {
+          scheduler.pre_function_callback(ptr); },
+                  [&](const CgFunctionPtr &ptr) {
+          scheduler.post_function_callback(ptr); });
     adam->update([&]() { swap_in_out_scheduler.pre_update_callback(); },
                  [&]() { swap_in_out_scheduler.post_update_callback(); });
     scheduler.end_scheduling();

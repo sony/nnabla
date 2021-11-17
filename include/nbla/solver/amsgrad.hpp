@@ -23,8 +23,8 @@ NBLA_REGISTER_SOLVER_HEADER(AMSGRAD, float, float, float, float, bool);
 
 /** AMSGRAD solver defined as
 \f[
-m_t &\leftarrow \beta_1 m_{t-1} + (1 - \beta_1) g_t\\
-v_t &\leftarrow \beta_2 v_{t-1} + (1 - \beta_2) g_t^2\\
+m_t \leftarrow \beta_1 m_{t-1} + (1 - \beta_1) g_t\\
+v_t \leftarrow \beta_2 v_{t-1} + (1 - \beta_2) g_t^2\\
 \hat{v_t} = \max(\hat{v_{t-1}}, v_t)\\
 \theta_{t+1} \leftarrow \theta_t - \alpha
 \frac{m_t}{\sqrt{\hat{v_t}} + \epsilon}

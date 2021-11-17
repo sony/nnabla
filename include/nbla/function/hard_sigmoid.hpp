@@ -29,9 +29,9 @@ NBLA_REGISTER_FUNCTION_HEADER(HardSigmoid);
 /** @class Hard Sigmoid
 @brief Hard Sigmoid defined as
 @f[
-y_i = 1 if x_i > 2.5.
-y_i = 0 if x_i < -2.5
-y_i = 0.2*x_i + 0.5 otherwise.
+y_i = 1 \text{ if } x_i > 2.5\\
+y_i = 0 \text{ if } x_i < -2.5\\
+y_i = 0.2 * x_i + 0.5 \text{, otherwise}.
 @f]
 
 Inputs:

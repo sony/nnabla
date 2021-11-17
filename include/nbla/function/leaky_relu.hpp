@@ -35,9 +35,9 @@ NBLA_REGISTER_FUNCTION_HEADER(LeakyReLU, float, bool);
 @f[
 y_i= \left\{
            \begin{array}{ll}
-                        x_i & if x_i > 0  \\
+                        x_i & \text{if } x_i > 0  \\
                 alpha * x_i & otherwise
-           \end{array} \right.,
+           \end{array}\right..
 @f]
 
 Inputs:

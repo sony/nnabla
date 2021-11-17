@@ -75,6 +75,7 @@ RUN apt-get -yqq update \
 RUN apt-get -yqq update \
     && apt-get -yqq install --no-install-recommends \
         doxygen \
+        libclang-dev \
         fonts-freefont-ttf \
         graphviz \
         pandoc \
@@ -82,6 +83,7 @@ RUN apt-get -yqq update \
         unzip \
     && pip3 install ${PIP_INS_OPTS} -U \
         Sphinx \
+        breathe \    
         pygments \
         tensorflow \
         tensorboardX \

@@ -25,7 +25,7 @@ namespace nbla {
 /** @class ACos
 @brief Arc cosine (ACos) defined as
 @f[
-y_i = \acos (x_i).
+y_i = \arccos (x_i).
 @f]
 
 Inputs:

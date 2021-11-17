@@ -22,7 +22,9 @@ NNABLA_BUILD_WITH_DOCKER_INCLUDED = True
 ########################################################################################################################
 # General settings
 
+NNABLA_EXT_CUDA_DIRECTORY ?= $(shell cd ../nnabla-ext-cuda && pwd)
 NNABLA_DIRECTORY ?= $(shell pwd)
+DOCKER_RUN_OPTS += -e NNABLA_EXT_CUDA_DIRECTORY=$(NNABLA_EXT_CUDA_DIRECTORY)
 include $(NNABLA_DIRECTORY)/build-tools/make/options.mk
 
 DOCKER_IMAGE_NAME_BASE ?= nnabla-py$(PYTHON_VERSION_MAJOR)$(PYTHON_VERSION_MINOR)
@@ -117,10 +119,12 @@ bwd-nnabla-check-copyright: docker_image_auto_format
 
 ########################################################################################################################
 # Doc
+NNABLA_EXT_CUDA_DIRECTORY_ABSOLUTE = $(shell cd $(NNABLA_EXT_CUDA_DIRECTORY) && pwd)
+
 .PHONY: bwd-nnabla-doc
 bwd-nnabla-doc: docker_image_doc
 	cd $(NNABLA_DIRECTORY) \
-	&& docker run $(DOCKER_RUN_OPTS) $(DOCKER_IMAGE_DOC) make -f build-tools/make/build.mk nnabla-doc
+	&& docker run $(DOCKER_RUN_OPTS) -v $(NNABLA_EXT_CUDA_DIRECTORY_ABSOLUTE):$(NNABLA_EXT_CUDA_DIRECTORY_ABSOLUTE) $(DOCKER_IMAGE_DOC) make -f build-tools/make/build.mk nnabla-doc
 
 ########################################################################################################################
 # Build and test

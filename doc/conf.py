@@ -26,7 +26,8 @@ extensions = ['sphinx.ext.autodoc',
               'sphinxcontrib.nwdiag',
               'sphinxcontrib.plantuml',
               'sphinxcontrib.seqdiag',
-              'sphinxcontrib.toc']
+              'sphinxcontrib.toc',
+              'breathe']
 
 templates_path = ['_templates']
 
@@ -61,6 +62,11 @@ intersphinx_mapping = {
 }
 
 blockdiag_html_image_format = "SVG"
+
+breathe_projects = {
+    'Cpp' : '../build-doc/doc/xml-Cpp',
+    'Ext-Cuda-Cpp' : '../build-doc/doc/xml-Ext-Cuda-Cpp'
+}
 
 # Default role of markup `text`
 default_role = 'any'

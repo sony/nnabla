@@ -25,10 +25,10 @@ NBLA_REGISTER_SOLVER_HEADER(RMSpropGraves, float /*lr*/, float /*decay*/,
 /** RMSpropGraves. This is defined as
 
 \f[
-n_t &\leftarrow \rho n_{t-1} + \left(1 - \rho \right) e^2
-g_t &\leftarrow \rho g_{t-1} + \left(1 - \rho \right) e
-d_t &\leftarrow \beta d_{t-1} - \eta \frac{e}{\sqrt{n_t - {g_t}^2 + \epsilon}}
-w_{t+1} &\leftarrow w_t + d_t
+n_t \leftarrow \rho n_{t-1} + \left(1 - \rho \right) e^2\\
+g_t \leftarrow \rho g_{t-1} + \left(1 - \rho \right) e\\
+d_t \leftarrow \beta d_{t-1} - \eta \frac{e}{\sqrt{n_t - {g_t}^2 + \epsilon}}\\
+w_{t+1} \leftarrow w_t + d_t
 \f]
 
 @param lr \f$\eta\f$ Learning rate.

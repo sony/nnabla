@@ -29,9 +29,9 @@ NBLA_REGISTER_FUNCTION_HEADER(HardTanh);
 /** @class HardTanh
 @brief HardTanh defined as
 @f[
-y_i = 1 if x_i > 1.
-y_i = -1 if x_i < -1.
-y_i = x otherwise.
+y_i = 1 \text{ if } x_i > 1\\
+y_i = -1 \text{ if } x_i < -1\\
+y_i = x \text{, otherwise}
 @f]
 
 Inputs:

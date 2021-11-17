@@ -26,7 +26,7 @@ NBLA_REGISTER_FUNCTION_HEADER(LogSoftmax, int);
 
 /** Softmax normalization defined as
 @f[
-y_i = x_i - \log\left\(\sum_j exp(x_j)\right\)
+y_i = x_i - \log(\sum_j \exp(x_j))
 @f]
 along dimension specified by axis.
 
