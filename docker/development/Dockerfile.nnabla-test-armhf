@@ -39,6 +39,8 @@ RUN eval ${APT_OPTS} \
     libhdf5-dev \
     libopenblas-dev \
     liblapack-dev \
+    libsndfile1 \
+    liblzma-dev \
     make \
     pkg-config \
     python3 \

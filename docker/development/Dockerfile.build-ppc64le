@@ -38,7 +38,7 @@ RUN eval ${YUM_OPTS} \
         hdf5-devel \
         lapack-devel \
         libjpeg-devel \
-        liblzma-devel \
+        xz-devel \
         libpng-devel \
         redhat-lsb-core \
         rpm-build \
