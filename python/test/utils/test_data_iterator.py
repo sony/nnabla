@@ -16,6 +16,7 @@ from __future__ import absolute_import
 
 import os
 import pytest
+import threading
 
 # from NNabla
 from nnabla.logger import logger
@@ -55,10 +56,17 @@ def check_data_iterator_concat_result(di, batch_size, normalize, ds1, ds2, stop_
         assert count == di._data_source.size // batch_size * batch_size
 
 
-def check_data_iterator_result(di, batch_size, shuffle, normalize, stop_exhausted):
+def check_data_iterator_result(di, batch_size, shuffle, normalize, stop_exhausted, epoch=None):
     datalist = []
     count = 0
+    n = 0
+    remain = 0
+
     for data in di:
+        n += 1
+        if n * batch_size >= di.size * (epoch[0] + 1):
+            remain += n * batch_size - di.size * (epoch[0] + 1)
+            epoch[0] += 1
         for i in range(batch_size):
             count += 1
             if normalize:
@@ -68,7 +76,7 @@ def check_data_iterator_result(di, batch_size, shuffle, normalize, stop_exhauste
             v2 = round(data[1][i][0])
             assert v1 == v2
             datalist.append(v1)
-        if not stop_exhausted and di.epoch > 0:
+        if not stop_exhausted and di.epoch > 2:
             print("epoch=", di.epoch)
             break
 
@@ -99,10 +107,27 @@ def test_data_iterator_simple(test_data_csv_png_10, batch_size, shuffle, stop_ex
     def test_load_func(position):
         return src_data[position]
 
+    def end_epoch(epoch):
+        print(f"{epoch} == {expect_epoch[0]}")
+        assert epoch == expect_epoch[0], "Failed for end epoch check"
+        assert threading.current_thread().ident == main_thread, "Failed for thread checking"
+
+    def begin_epoch(epoch):
+        print(f"{epoch} == {expect_epoch[0]}")
+        assert epoch == expect_epoch[0], "Failed for begin epoch check"
+        assert threading.current_thread().ident == main_thread, "Failed for thread checking"
+
     size = len(src_data)
+    main_thread = threading.current_thread().ident
+    expect_epoch = [0]
     with data_iterator_simple(test_load_func, size, batch_size, shuffle=shuffle, stop_exhausted=stop_exhausted) as di:
+        if batch_size // size == 0:
+            di.register_epoch_end_callback(begin_epoch)
+            di.register_epoch_end_callback(end_epoch)
+        di.register_epoch_end_callback(begin_epoch)
+        di.register_epoch_end_callback(end_epoch)
         check_data_iterator_result(
-            di, batch_size, shuffle, False, stop_exhausted)
+            di, batch_size, shuffle, False, stop_exhausted, expect_epoch)
 
 
 @pytest.mark.parametrize("size", [10, 20])
@@ -139,6 +164,23 @@ def test_data_iterator_csv_dataset(test_data_csv_png_10,
 
     logger.info(csvfilename)
 
+    main_thread = threading.current_thread().ident
+    expect_epoch = [0]
+
+    def end_epoch(epoch):
+        if batch_size // size == 0:
+            assert epoch == expect_epoch[0], "Failed for end epoch check"
+        else:
+            print(f"E: {epoch} <--> {expect_epoch[0]}")
+        assert threading.current_thread().ident == main_thread, "Failed for thread checking"
+
+    def begin_epoch(epoch):
+        if batch_size // size == 0:
+            assert epoch == expect_epoch[0], "Failed for begin epoch check"
+        else:
+            print(f"B: {epoch} <--> {expect_epoch[0]}")
+        assert threading.current_thread().ident == main_thread, "Failed for thread checking"
+
     if with_context:
         with data_iterator_csv_dataset(uri=csvfilename,
                                        batch_size=batch_size,
@@ -148,8 +190,10 @@ def test_data_iterator_csv_dataset(test_data_csv_png_10,
                                        with_file_cache=with_file_cache,
                                        use_thread=use_thread,
                                        stop_exhausted=stop_exhausted) as di:
+            di.register_epoch_end_callback(begin_epoch)
+            di.register_epoch_end_callback(end_epoch)
             check_data_iterator_result(
-                di, batch_size, shuffle, normalize, stop_exhausted)
+                di, batch_size, shuffle, normalize, stop_exhausted, expect_epoch)
     else:
         di = data_iterator_csv_dataset(uri=csvfilename,
                                        batch_size=batch_size,
@@ -159,8 +203,10 @@ def test_data_iterator_csv_dataset(test_data_csv_png_10,
                                        with_file_cache=with_file_cache,
                                        use_thread=use_thread,
                                        stop_exhausted=stop_exhausted)
+        di.register_epoch_end_callback(begin_epoch)
+        di.register_epoch_end_callback(end_epoch)
         check_data_iterator_result(
-            di, batch_size, shuffle, normalize, stop_exhausted)
+            di, batch_size, shuffle, normalize, stop_exhausted, expect_epoch)
         di.close()
 
 
