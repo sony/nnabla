@@ -84,8 +84,8 @@ class ObjectDetection(object):
         return input_var
 
     def get_nnp_input_size(self):
-        nnp_input_size = self.nnp.proto.network[0].variable[0].shape.dim[2:]
-        return nnp_input_size
+        inputs = self.nnp.get_network(self.nnp.get_network_names()[0]).inputs
+        return list(inputs.values())[0].shape[2:]
 
     def __call__(self, input_var=None, use_from=None, use_up_to='detection', training=False, returns_net=False, verbose=0):
         '''
