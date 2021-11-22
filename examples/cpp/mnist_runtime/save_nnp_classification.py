@@ -39,7 +39,7 @@ def main():
     nnabla_examples_root = os.environ.get('NNABLA_EXAMPLES_ROOT', os.path.join(
         HERE, '../../../../nnabla-examples'))
     mnist_examples_root = os.path.realpath(
-        os.path.join(nnabla_examples_root, 'mnist-collection'))
+        os.path.join(nnabla_examples_root, 'image-classification/mnist-collection'))
     sys.path.append(mnist_examples_root)
     nnabla_examples_git_url = 'https://github.com/sony/nnabla-examples'
 

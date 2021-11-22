@@ -326,7 +326,6 @@ for Data Parallel Distributed Training.
 Now you should have an understanding of how to use
 ``C.MultiProcessCommunicator``, go to the cifar10 example,
 
-1. **multi\_device\_multi\_process\_classification.sh**
-2. **multi\_device\_multi\_process\_classification.py**
+1. **classification.py**
 
 for more details.

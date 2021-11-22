@@ -40,7 +40,7 @@ nnabla_config.set('DATA_ITERATOR', 'cache_file_format', '.h5')
 HERE = os.path.dirname(__file__)
 nnabla_examples_root = os.path.join(HERE, '../../../../nnabla-examples')
 mnist_examples_root = os.path.realpath(
-    os.path.join(nnabla_examples_root, 'mnist-collection'))
+    os.path.join(nnabla_examples_root, 'image-classification/mnist-collection'))
 sys.path.append(mnist_examples_root)
 
 from mnist_data import MnistDataSource

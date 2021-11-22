@@ -17,7 +17,7 @@
 This script creates initialized model in mnist classification examples.
 and save into NNP file, a file format of NNabla, with a network definition.
 This script must be run with the same command line options as that used at
-the training script in nnabla-examples/mnist-collections/classification.py.
+the training script in nnabla-examples/image-classification/mnist-collection/classification.py.
 '''
 
 # Python 2/3
@@ -39,7 +39,7 @@ def main():
     nnabla_examples_root = os.environ.get('NNABLA_EXAMPLES_ROOT', os.path.join(
         HERE, '../../../../nnabla-examples'))
     mnist_examples_root = os.path.realpath(
-        os.path.join(nnabla_examples_root, 'mnist-collection'))
+        os.path.join(nnabla_examples_root, 'image-classification/mnist-collection'))
     sys.path.append(mnist_examples_root)
     nnabla_examples_git_url = 'https://github.com/sony/nnabla-examples'
 
