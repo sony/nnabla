@@ -771,6 +771,21 @@ def test_training_property():
     model.training = True
     assert model.training == True
 
+
+def test_zero_grad():
+    rng = np.random.RandomState(seed=313)
+    x = nn.Variable.from_numpy_array(rng.randn(4, 3, 32, 32))
+    x.grad.zero()
+    e = Example()
+    h = e(x)
+    h.forward()
+    h.backward()
+    params = list(e.get_parameters().values())
+    e.zero_grad()
+    for p in params:
+        assert np.all(p.g == 0.0)
+
+
 # TODO:
 #   - binary-operator of ProtoVariable testing
 
