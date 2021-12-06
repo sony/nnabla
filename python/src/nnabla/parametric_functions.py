@@ -1208,8 +1208,8 @@ def deformable_convolution(inp, outmaps, kernel, offset, mask=None,
         inp (~nnabla.Variable): N-D array.
         outmaps (int): Number of convolution kernels (which is equal to the number of output channels). For example, to apply convolution on an input with 16 types of filters, specify 16.
         kernel (:obj:`tuple` of :obj:`int`): Convolution kernel size. For example, to apply convolution on an image with a 3 (height) by 5 (width) two-dimensional kernel, specify (3,5).
-        offset (~nnabla.Variable): Offsets for deformable convolutions. Shape is fixed to :math:`(N, deformable_group \times 2 \times Kh \times Kw, H, W)`. Offsets must be calculated externally through a separate convolution layer.
-        mask (~nnabla.Variable): Normalized mask for deformable convolutions v2. Shape is fixed to :math:`(N, deformable_group \times 1 \times Kh \times Kw, H, W)`. Masks must be calculated externally together with the offsets through a separate convolution layer.
+        offset (~nnabla.Variable): Offsets for deformable convolutions. Shape is fixed to :math:`(N, deformable{\_}group \\times 2 \\times Kh \\times Kw, H, W)`. Offsets must be calculated externally through a separate convolution layer.
+        mask (~nnabla.Variable): Normalized mask for deformable convolutions v2. Shape is fixed to :math:`(N, deformable{\_}group \\times Kh \\times Kw, H, W)`. Masks must be calculated externally together with the offsets through a separate convolution layer.
         pad (:obj:`tuple` of :obj:`int`): Padding sizes for dimensions.
         stride (:obj:`tuple` of :obj:`int`): Stride sizes for dimensions.
         dilation (:obj:`tuple` of :obj:`int`): Dilation sizes for dimensions.
@@ -2071,8 +2071,8 @@ def layer_normalization(inp, batch_axis=0, eps=1e-05, output_stat=False, fix_par
 
     Returns:
         * :obj:`~nnabla.Variable`: Normalized output variable.
-        * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`).
-        * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
+        * :obj:`~nnabla.Variable`: Mean (if `output_stat=True`).
+        * :obj:`~nnabla.Variable`: Std (if `output_stat=True`)
     """
     from nnabla.normalization_functions import _force_list, _init_beta_gamma
 
@@ -2137,8 +2137,8 @@ def instance_normalization(inp, channel_axis=1, batch_axis=0, eps=1e-05, output_
 
         Returns:
             * :obj:`~nnabla.Variable`: Normalized output variable.
-            * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`)
-            * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
+            * :obj:`~nnabla.Variable`: Mean (if `output_stat=True`)
+            * :obj:`~nnabla.Variable`: Std (if `output_stat=True`)
         """
     from nnabla.normalization_functions import _init_beta_gamma
 
@@ -2207,8 +2207,8 @@ def group_normalization(inp, num_groups, channel_axis=1, batch_axis=0, eps=1e-05
 
     Returns:
         * :obj:`~nnabla.Variable`: Normalized output variable.
-        * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`)
-        * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
+        * :obj:`~nnabla.Variable`: Mean (if `output_stat=True`)
+        * :obj:`~nnabla.Variable`: Std (if `output_stat=True`)
     """
     from nnabla.normalization_functions import _force_list, _init_beta_gamma
 

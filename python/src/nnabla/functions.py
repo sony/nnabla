@@ -222,9 +222,9 @@ def spectral_norm(w, u, dim=0, itr=1, eps=1e-12, test=False, output_u=False):
 
     .. math::
 
-        W_{sn} = \\frac{W}{\\sigma(W)}.
+        W_{sn} = \frac{W}{\sigma(W)}
 
-    where :math:`W` is the input matrix, and the :math:`\\sigma(W)` is the spectral norm of :math:`W`. The spectral norm is approximately computed by the power iteration.
+    where :math:`W` is the input matrix, and the :math:`\sigma(W)` is the spectral norm of :math:`W`. The spectral norm is approximately computed by the power iteration.
 
     References:
 
@@ -340,11 +340,11 @@ def slice(ctx, x, start=None, stop=None, step=None, n_outputs=-1, outputs=None):
     Args:
         x(~nnabla.Variable): N-D array
         start(repeated int64): Start indices for each axis
-            [default=``(0,) * len(x.shape)``]
+            [default= `(0,) * len(x.shape)` ]
         stop(repeated int64): Stop indices for each axis
-            [default=``tuple(x.shape)``]
+            [default= `tuple(x.shape)` ]
         step(repeated int64): Step indices for each axis
-            [default=``(1,) * len(x.shape)``]
+            [default= `(1,) * len(x.shape)` ]
 
     Returns:
         ~nnabla.Variable: Sliced N-D array
@@ -391,9 +391,9 @@ def mean_subtraction(x, mean, t, base_axis=1, update_running_mean=True):
         mean(~nnabla.Variable): N-D array of running mean (modified during forward execution).
         t(~nnabla.Variable): Scalar of num of iteration of running mean (modified during forward execution).
         base_axis(int): Base axis of Mean Subtraction operation. Dimensions up to base_axis is treated as sample dimension.
-            [default=``1``]
+            [default= `1` ]
         update_running_mean(bool): Update running mean during forward execution.
-            [default=``True``]
+            [default= `True` ]
 
     Returns:
         ~nnabla.Variable: N-D array.
