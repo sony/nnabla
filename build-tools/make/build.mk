@@ -200,6 +200,6 @@ nnabla-test-local: nnabla-install nnabla-converter-install
 	@cd $(BUILD_DIRECTORY_WHEEL) \
 	&& PATH=$(PYTEST_PATH_EXTRA):$(PATH) \
 	LD_LIBRARY_PATH=$(PYTEST_LD_LIBRARY_PATH_EXTRA):$(LD_LIBRARY_PATH) \
-	$(NNABLA_DIRECTORY)/build-tools/make/pytest.sh $(NNABLA_DIRECTORY)/python/test
-	@python -m pytest $(NNABLA_DIRECTORY)/src/nbla_utils/test
+	$(NNABLA_DIRECTORY)/build-tools/make/pytest.sh ${PYTEST_OPTS} $(NNABLA_DIRECTORY)/python/test
+	@python -m pytest ${PYTEST_OPTS} $(NNABLA_DIRECTORY)/src/nbla_utils/test
 	$(NNABLA_DIRECTORY)/build-tools/make/test_nbla_utils.sh
