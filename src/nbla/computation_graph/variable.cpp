@@ -750,6 +750,79 @@ void CgVariable::visit_function_recursive(
   // func.get() << std::endl;
 }
 
+/**
+ * @brief Check if `inputs[input_idx]` of `f` needs to be re-computed or not.
+ */
+bool need_recompute_input(const CgFunctionPtr &f, const int input_idx) {
+  const auto function = f->function();
+  const int n_inputs = f->num_inputs();
+  const auto inputs = f->inputs();
+  const auto input = inputs[input_idx];
+
+  // Whether a parent exists
+  const auto parent = input->parent();
+  if (!parent) {
+    return false;
+  }
+
+  // Whether input data is cleared
+  if (!(input->recompute() &&
+        input->variable()->data()->array()->clear_called())) {
+    return false;
+  }
+
+  // Whether input data is needed for grad calculation
+  bool need_for_grad = false;
+  for (int j = 0; j < n_inputs; j++) {
+    // Whether j-th grad computation is needed
+    if (!inputs[j]->need_grad_state()) {
+      continue;
+    }
+
+    // Whether input data is needed for j-th grad computation
+    if (!function->grad_depends_input_data(j, input_idx)) {
+      continue;
+    }
+
+    need_for_grad = true;
+  }
+
+  return need_for_grad;
+}
+
+/**
+ * @brief Check if `outputs[output_idx]` of `f` needs to be re-computed or not.
+ */
+bool need_recompute_output(const CgFunctionPtr &f, const int output_idx) {
+  const auto function = f->function();
+  const int n_inputs = f->num_inputs();
+  const auto inputs = f->inputs();
+  const auto outputs = f->outputs();
+  const auto output = outputs[output_idx];
+
+  // Whether output data is cleared
+  if (!(output->recompute() &&
+        output->variable()->data()->array()->clear_called())) {
+    return false;
+  }
+
+  // Whether output data is needed for grad calculation
+  bool need_for_grad = false;
+  for (int j = 0; j < n_inputs; j++) {
+    // Whether j-th grad computation is needed
+    if (!inputs[j]->need_grad_state())
+      continue;
+
+    // Whether output data is needed for j-th grad computation
+    if (!function->grad_depends_output_data(j, output_idx))
+      continue;
+
+    need_for_grad = true;
+  }
+
+  return need_for_grad;
+}
+
 void CgVariable::visit_function_backward(
     CgFunctionPtr p, std::function<void(CgFunctionPtr)> backward_callback,
     vector<CommunicatorBackwardCallbackPtr> communicator_callbacks) {
@@ -785,44 +858,32 @@ void CgVariable::visit_function_backward(
     if (!f->need_grad())
       continue;
 
-    // Recompute cleared inputs' data
+    // Recompute cleared inputs and outputs
     fclosed.clear();
     const int n_inputs = f->num_inputs();
+    const int n_outputs = f->num_outputs();
     const auto function = f->function();
     const auto inputs = f->inputs();
-    for (int i = 0; i < n_inputs; i++) {
-      // Recompute i-th input data
 
-      // Whether a parent exists
-      const auto parent = inputs[i]->parent();
-      if (!parent)
-        continue;
-
-      // Whether i-th input data is cleared
-      if (!(inputs[i]->recompute() &&
-            inputs[i]->variable()->data()->array()->clear_called()))
-        continue;
-
-      // Whether i-th input data is needed for grad calculation
-      bool need_for_grad = false;
-      for (int j = 0; j < n_inputs; j++) {
-        // Whether j-th grad computation is needed
-        if (!inputs[j]->need_grad_state())
-          continue;
-
-        // Whether i-th input data is needed for j-th grad computation
-        if (!function->grad_depends_input_data(j, i))
-          continue;
-
-        need_for_grad = true;
+    // Recompute outputs
+    for (int i = 0; i < n_outputs; i++) {
+      // Exec recomputation for i-th output data
+      if (need_recompute_output(f, i)) {
+        visit_function_recursive(
+            f, fclosed, true /* as_recomputation */,
+            [&forward_callback](CgFunctionPtr f) { forward_callback(f); });
       }
-      if (!need_for_grad)
-        continue;
+    }
 
+    // Recompute inputs
+    for (int i = 0; i < n_inputs; i++) {
       // Exec recomputation for i-th input data
-      visit_function_recursive(
-          parent, fclosed, true /* as_recomputation */,
-          [&forward_callback](CgFunctionPtr f) { forward_callback(f); });
+      if (need_recompute_input(f, i)) {
+        const auto parent = inputs[i]->parent();
+        visit_function_recursive(
+            parent, fclosed, true /* as_recomputation */,
+            [&forward_callback](CgFunctionPtr f) { forward_callback(f); });
+      }
     }
 
     // Callback

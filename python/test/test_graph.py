@@ -904,6 +904,25 @@ class TestRecomputation():
         self.check_recomputation(seed, graph, inputs)
 
     @pytest.mark.parametrize("seed", [313])
+    def test_grad_value_with_output_dependent_function(self, seed):
+        """
+        Gradient values are tested for the function which depends on output data.
+        Here, we test a following case that variable `h` will be recomputed and
+        its data is needed for the `F.swish` backward.
+        x -> F.swish -> h -> F.interpolate -> y
+        """
+        def graph(x0):
+            # F.swish -> F.interpolate
+            x1 = F.swish(x0)
+            x1.apply(recompute=True)
+            x2 = F.interpolate(x1, scale=(2,))
+            return x2
+
+        x = nn.Variable((2, 3), need_grad=True)
+        inputs = (x,)
+        self.check_recomputation(seed, graph, inputs)
+
+    @pytest.mark.parametrize("seed", [313])
     def test_with_persistent_flag(self, seed):
         x = nn.Variable((2, 3), need_grad=True)
 
