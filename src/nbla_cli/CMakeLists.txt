@@ -52,7 +52,7 @@ add_executable(nbla
   ${CXXABI_HPP})
 
 target_link_libraries(nbla ${NBLA_LIBRARY_NAME} ${NBLA_UTILS_LIBRARY_NAME})
-set_property(TARGET nbla PROPERTY CXX_STANDARD 11)
+set_property(TARGET nbla PROPERTY CXX_STANDARD 14)
 
 # nbla_cli shared library
 add_library(${LIB_NAME}
@@ -64,7 +64,7 @@ add_library(${LIB_NAME}
   ${CXXABI_HPP})
 
 target_link_libraries(${LIB_NAME} ${NBLA_LIBRARY_NAME} ${NBLA_UTILS_LIBRARY_NAME})
-set_property(TARGET ${LIB_NAME} PROPERTY CXX_STANDARD 11)
+set_property(TARGET ${LIB_NAME} PROPERTY CXX_STANDARD 14)
 
 install(TARGETS nbla RUNTIME DESTINATION bin)
 install(TARGETS ${LIB_NAME} LIBRARY DESTINATION lib)

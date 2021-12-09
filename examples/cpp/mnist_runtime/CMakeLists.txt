@@ -14,4 +14,4 @@
 
 add_executable(mnist_runtime mnist_runtime.cpp)
 target_link_libraries(mnist_runtime ${NBLA_LIBRARY_NAME} ${NBLA_UTILS_LIBRARY_NAME})
-set_property(TARGET mnist_runtime PROPERTY CXX_STANDARD 11)
+set_property(TARGET mnist_runtime PROPERTY CXX_STANDARD 14)

@@ -163,7 +163,7 @@ else()
   endif()
 endif()
 
-set_property(TARGET ${LIB_NAME} PROPERTY CXX_STANDARD 11)
+set_property(TARGET ${LIB_NAME} PROPERTY CXX_STANDARD 14)
 
 
 install(TARGETS ${LIB_NAME} LIBRARY DESTINATION lib)
@@ -206,7 +206,7 @@ if (BUILD_TEST)
   target_link_libraries(test_nbla_utils gtest gtest_main)
   target_link_libraries(test_nbla_utils ${NBLA_LIBRARY_NAME})
   target_link_libraries(test_nbla_utils ${LIB_NAME})
-  set_property(TARGET test_nbla_utils PROPERTY CXX_STANDARD 11)
+  set_property(TARGET test_nbla_utils PROPERTY CXX_STANDARD 14)
   nbla_exclude_from_all(test_nbla_utils)
   add_test(NAME test_nbla_utils COMMAND test_nbla_utils
            WORKING_DIRECTORY ${CMAKE_BINARY_DIR})

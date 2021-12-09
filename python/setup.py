@@ -71,7 +71,7 @@ def extopts(library_name, library_dir):
         #   <https://stackoverflow.com/questions/10116724/clang-os-x-lion-cannot-find-cstdint>
         ext_opts.update(dict(
             extra_compile_args=[
-                '-std=c++11', '-stdlib=libc++', '-Wno-sign-compare',
+                '-std=c++14', '-stdlib=libc++', '-Wno-sign-compare',
                 '-Wno-unused-function', '-Wno-mismatched-tags',
                 '-mmacosx-version-min=10.7'],
             extra_link_args=['-Wl,-rpath,@loader_path/', '-stdlib=libc++',
@@ -81,7 +81,7 @@ def extopts(library_name, library_dir):
         # Linux
         ext_opts.update(dict(
             extra_compile_args=[
-                '-std=c++11', '-Wno-sign-compare', '-Wno-unused-function', '-Wno-cpp'],
+                '-std=c++14', '-Wno-sign-compare', '-Wno-unused-function', '-Wno-cpp'],
             runtime_library_dirs=['$ORIGIN/'],
         ))
     else:

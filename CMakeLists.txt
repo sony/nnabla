@@ -257,7 +257,7 @@ if(BUILD_CPP_LIB)
     add_dependencies(cpplibtest ${NBLA_LIBRARY_NAME})
     target_link_libraries(cpplibtest gtest gtest_main)
     target_link_libraries(cpplibtest ${NBLA_LIBRARY_NAME})
-    set_property(TARGET cpplibtest PROPERTY CXX_STANDARD 11)
+    set_property(TARGET cpplibtest PROPERTY CXX_STANDARD 14)
     nbla_exclude_from_all(cpplibtest)  # Exclude target from all or default build
     add_test(NAME cpplibtest COMMAND cpplibtest)
   endif()

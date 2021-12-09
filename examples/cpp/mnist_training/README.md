@@ -59,7 +59,7 @@ make
 The above command generates an executable `mnist_training` at the current directory.
 
 The build file `GNUmakefile` is simple.
-It links `libnnabla.so`, `libnnabla_utils.so` and `libz.so` with the executable generated from `main.cpp`, and compiles with C++11 option `-std=c++11`.
+It links `libnnabla.so`, `libnnabla_utils.so` and `libz.so` with the executable generated from `main.cpp`, and compiles with C++14 option `-std=c++14`.
 
 You can also compile an executable `mnist_training_cuda` that runs computation on your CUDA device.
 Please download and refer to `nnabla-ext-cuda` repository for details.

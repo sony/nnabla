@@ -14,4 +14,4 @@
 
 add_executable(cpp_graph_example main.cpp)
 target_link_libraries(cpp_graph_example ${NBLA_LIBRARY_NAME})
-set_property(TARGET cpp_graph_example PROPERTY CXX_STANDARD 11)
+set_property(TARGET cpp_graph_example PROPERTY CXX_STANDARD 14)
