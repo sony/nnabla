@@ -570,7 +570,7 @@ class ProtoNetwork:
         """
         import itertools
         if len(self.repeat_info) == 0:
-            return self
+            return self.clone()
         proto_network = ProtoNetwork(self.owner(), self.name, self.batch_size)
         # Detach from owner by using a hard-reference.
         proto_network.owner_ = self.owner()
@@ -658,10 +658,10 @@ class ProtoNetwork:
 
                 if pf.type == "RepeatStart":
                     n_pf = ProtoFunction(
-                        None, "Identity", pf.args, func_name, proto_network)
+                        None, "Identity", pf.args, '$EC$/' + func_name, proto_network)
                 elif pf.type == "RepeatEnd":
                     n_pf = ProtoFunction(
-                        None, "Identity", pf.args, func_name, proto_network)
+                        None, "Identity", pf.args, '$EC$/' + func_name, proto_network)
                 elif pf.type == "RecurrentOutput":
                     n_pf = ProtoFunction(
                         None, "Stack", {"axis": pf.recurrent_param.axis}, func_name, proto_network)
@@ -670,7 +670,7 @@ class ProtoNetwork:
                         None, "Split", {"axis": pf.recurrent_param.axis}, func_name, proto_network)
                 elif pf.type == "Delay":
                     n_pf = ProtoFunction(
-                        None, "Identity", pf.args, func_name, proto_network)
+                        None, "Identity", pf.args, '$EC$/' + func_name, proto_network)
                 else:
                     n_pf = ProtoFunction(
                         None, pf.type, pf.args, func_name, proto_network)
