@@ -321,8 +321,7 @@ void DeformableConvolution<T>::backward_impl(const Variables &inputs,
   if (propagate_down[0] || propagate_down[1] || propagate_down[2]) {
     col = col_.cast_data_and_get_pointer<T>(this->ctx_, true);
     offset = inputs[2]->get_data_pointer<T>(this->ctx_);
-    if (inputs.size() == 5 || (inputs.size() == 4 && inputs[3]->ndim() != 1) ||
-        propagate_down[3]) {
+    if (with_mask_ && propagate_down[3]) {
       mask = inputs[3]->get_data_pointer<T>(this->ctx_);
     }
   }
@@ -344,8 +343,7 @@ void DeformableConvolution<T>::backward_impl(const Variables &inputs,
     doff = inputs[2]->cast_grad_and_get_pointer<T>(this->ctx_, false);
   }
 
-  if ((inputs.size() == 5 || (inputs.size() == 4 && inputs[3]->ndim() != 1)) &&
-      propagate_down[3]) {
+  if (with_mask_ && propagate_down[3]) {
     if (!accum[3])
       inputs[3]->grad()->zero();
     dmask = inputs[3]->cast_grad_and_get_pointer<T>(this->ctx_, false);
@@ -368,8 +366,7 @@ void DeformableConvolution<T>::backward_impl(const Variables &inputs,
     if (propagate_down[1]) {
       // Backprop to weights
       // im2col
-      if (inputs.size() == 5 ||
-          (inputs.size() == 4 && inputs[3]->ndim() != 1)) {
+      if (with_mask_ && propagate_down[3]) {
         modulated_deformable_im2col_cpu<T, true>(
             x + n * inner_size_i_, offset + n * offset_size_i_,
             mask + n * mask_size_i_, channels_i_, spatial_shape_i_, kernel_,
@@ -402,8 +399,7 @@ void DeformableConvolution<T>::backward_impl(const Variables &inputs,
       // offset and mask are calculated at the same time
       T *doff_n = doff + n * offset_size_i_;
 
-      if (inputs.size() == 5 ||
-          (inputs.size() == 4 && inputs[3]->ndim() != 1)) {
+      if (with_mask_ && propagate_down[3]) {
         T *dmask_n = dmask + n * mask_size_i_;
         modulated_deformable_col2im_coord_cpu<T, true>(
             col, x + n * inner_size_i_, offset + n * offset_size_i_,
