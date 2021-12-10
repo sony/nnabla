@@ -130,7 +130,7 @@ protected:
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
 
-  std::unordered_map<InName, std::pair<int, Variable *>> input_variables_;
+  unordered_map<InName, std::pair<int, Variable *>> input_variables_;
   virtual bool grad_depends_input_data_impl(int i, int j) const {
     if (input_variables_.find(GAMMA) != input_variables_.end())
       return true;
@@ -152,7 +152,7 @@ protected:
 
 private:
   // Members only used in a naive implementation with composite
-  std::unordered_map<InName, CgVariablePtr> input_cg_variables_;
+  unordered_map<InName, CgVariablePtr> input_cg_variables_;
   CgVariablePtr last_output_cg_variable_;
   bool reset_cg_variables(const Variables &inputs, const Variables &outputs);
 };

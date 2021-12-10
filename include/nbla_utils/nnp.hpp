@@ -95,7 +95,7 @@ class TrainingConfigImpl;
  */
 class Network {
   friend NnpImpl;
-  std::unique_ptr<NetworkImpl> impl_;
+  unique_ptr<NetworkImpl> impl_;
   Network(NetworkImpl *impl);
 
 public:
@@ -149,7 +149,7 @@ public:
  */
 class Executor {
   friend NnpImpl;
-  std::unique_ptr<ExecutorImpl> impl_;
+  unique_ptr<ExecutorImpl> impl_;
   Executor(ExecutorImpl *impl);
 
 public:
@@ -225,7 +225,7 @@ public:
 // ----------------------------------------------------------------------
 class Optimizer {
   friend NnpImpl;
-  std::unique_ptr<OptimizerImpl> impl_;
+  unique_ptr<OptimizerImpl> impl_;
   Optimizer(OptimizerImpl *impl);
 
 public:
@@ -297,7 +297,7 @@ public:
 // ----------------------------------------------------------------------
 class Monitor {
   friend NnpImpl;
-  std::unique_ptr<MonitorImpl> impl_;
+  unique_ptr<MonitorImpl> impl_;
   Monitor(MonitorImpl *impl);
 
 public:
@@ -346,7 +346,7 @@ public:
 // ----------------------------------------------------------------------
 class TrainingConfig {
   friend NnpImpl;
-  std::unique_ptr<TrainingConfigImpl> impl_;
+  unique_ptr<TrainingConfigImpl> impl_;
   TrainingConfig(TrainingConfigImpl *impl);
 
 public:
@@ -407,7 +407,7 @@ public:
     @endcode
  */
 class Nnp {
-  std::unique_ptr<NnpImpl> impl_;
+  unique_ptr<NnpImpl> impl_;
 
 public:
   /** Constructor which sets default context.

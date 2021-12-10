@@ -23,8 +23,6 @@ namespace nbla {
 // like solver does.
 NBLA_REGISTER_COMMUNICATOR_SOURCE(DataParallelCommunicator);
 
-using std::make_shared;
-
 template <typename T>
 DataParallelCommunicator<T>::DataParallelCommunicator(const Context &ctx)
     : Communicator(ctx) {}

@@ -32,14 +32,14 @@ template <typename SINGLETON> SINGLETON *SingletonManager::get() {
   // TODO: Enable debug print
   // std::cout << "Creating a singleton \"" << typeid(SINGLETON).name() << "\""
   //           << std::endl;
-  r = new SINGLETON{};
+  r = NBLA_NEW_OBJECT(SINGLETON);
 
   auto deleter = []() -> void {
     // TODO: Enable debug print
     // std::cout << "Deleting a singleton \"" << typeid(SINGLETON).name() <<
     // "\""
     //          << std::endl;
-    delete r; // Static variable doesn't require capturing.
+    NBLA_DELETE_OBJECT(r); // Static variable doesn't require capturing.
     r = nullptr;
   };
   int id = s.count_;

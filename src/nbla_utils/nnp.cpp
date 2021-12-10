@@ -34,8 +34,7 @@ namespace nnp {
 // ----------------------------------------------------------------------
 // Network
 // ----------------------------------------------------------------------
-Network::Network(NetworkImpl *impl)
-    : impl_(std::unique_ptr<NetworkImpl>(impl)) {}
+Network::Network(NetworkImpl *impl) : impl_(unique_ptr<NetworkImpl>(impl)) {}
 
 void Network::replace_variable(const string &name, CgVariablePtr variable) {
   impl_->replace_variable(name, variable);
@@ -57,7 +56,7 @@ int Network::batch_size() const { return impl_->batch_size(); }
 // Executor
 // ----------------------------------------------------------------------
 Executor::Executor(ExecutorImpl *impl)
-    : impl_(std::unique_ptr<ExecutorImpl>(impl)) {}
+    : impl_(unique_ptr<ExecutorImpl>(impl)) {}
 string Executor::name() const { return impl_->name(); }
 string Executor::network_name() const { return impl_->network_name(); }
 void Executor::set_batch_size(int batch_size) {
@@ -77,7 +76,7 @@ void Executor::execute() { impl_->execute(); }
 // Optimizer
 // ----------------------------------------------------------------------
 Optimizer::Optimizer(OptimizerImpl *impl)
-    : impl_(std::unique_ptr<OptimizerImpl>(impl)) {}
+    : impl_(unique_ptr<OptimizerImpl>(impl)) {}
 
 string Optimizer::name() const { return impl_->name(); }
 string Optimizer::network_name() const { return impl_->network_name(); }
@@ -90,8 +89,7 @@ const float Optimizer::update(const int iter) { return impl_->update(iter); }
 // ----------------------------------------------------------------------
 // Monitor
 // ----------------------------------------------------------------------
-Monitor::Monitor(MonitorImpl *impl)
-    : impl_(std::unique_ptr<MonitorImpl>(impl)) {}
+Monitor::Monitor(MonitorImpl *impl) : impl_(unique_ptr<MonitorImpl>(impl)) {}
 
 string Monitor::name() const { return impl_->name(); }
 string Monitor::network_name() const { return impl_->network_name(); }
@@ -102,7 +100,7 @@ const float Monitor::monitor_epoch() { return impl_->monitor_epoch(); }
 // TrainingConfig
 // ----------------------------------------------------------------------
 TrainingConfig::TrainingConfig(TrainingConfigImpl *impl)
-    : impl_(std::unique_ptr<TrainingConfigImpl>(impl)) {}
+    : impl_(unique_ptr<TrainingConfigImpl>(impl)) {}
 
 const long long int TrainingConfig::max_epoch() const {
   return impl_->max_epoch();
@@ -117,7 +115,7 @@ const bool TrainingConfig::save_best() const { return impl_->save_best(); }
 // ----------------------------------------------------------------------
 // Nnp
 // ----------------------------------------------------------------------
-Nnp::Nnp(const nbla::Context &ctx) : impl_(new NnpImpl(ctx)) {
+Nnp::Nnp(const nbla::Context &ctx) : impl_(NBLA_NEW_OBJECT(NnpImpl, ctx)) {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 }
 
@@ -125,7 +123,7 @@ Nnp::~Nnp() {}
 
 bool Nnp::add(const string &filename) {
   int ep = filename.find_last_of(".");
-  std::string extname = filename.substr(ep, filename.size() - ep);
+  string extname = filename.substr(ep, filename.size() - ep);
 
   if (extname == ".prototxt" || extname == ".nntxt") {
     return impl_->add_prototxt(filename);
@@ -135,7 +133,7 @@ bool Nnp::add(const string &filename) {
     std::ifstream file(filename.c_str(), std::ios::binary | std::ios::ate);
     std::streamsize size = file.tellg();
     file.seekg(0, std::ios::beg);
-    std::vector<char> buffer(size);
+    vector<char> buffer(size);
     if (file.read(buffer.data(), size)) {
       return impl_->add_hdf5(buffer.data(), size);
     }

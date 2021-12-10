@@ -27,11 +27,6 @@
 
 namespace nbla {
 
-using std::string;
-using std::vector;
-using std::shared_ptr;
-using std::unordered_map;
-
 /** \addtogroup NNablaCoreGrp */
 /*@{*/
 

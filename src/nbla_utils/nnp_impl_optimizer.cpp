@@ -61,8 +61,7 @@ OptimizerImpl::OptimizerImpl(const nbla::Context &ctx,
     std::cout << "Update interval is forced to 1." << std::endl;
   }
 
-  data_iterator_ = shared_ptr<DataIteratorFromCacheFiles>(
-      new DataIteratorFromCacheFiles(dataset));
+  data_iterator_ = make_shared<DataIteratorFromCacheFiles>(dataset);
   network_->set_batch_size(data_iterator_->get_batch_size());
 }
 

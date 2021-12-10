@@ -23,9 +23,6 @@
 
 namespace nbla {
 
-using std::string;
-using std::vector;
-
 /** Context structure
 
 It will be used specifying device and array class etc.

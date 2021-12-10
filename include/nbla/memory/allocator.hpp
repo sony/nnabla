@@ -26,9 +26,6 @@
 
 namespace nbla {
 
-using std::unordered_map;
-using std::unique_ptr;
-
 // Forward declaration
 class Allocator;
 
@@ -121,7 +118,7 @@ public:
     @note A Allocator instance must be instantiated as a shared_ptr.
     @todo Support streams or events.
  */
-class NBLA_API Allocator : public std::enable_shared_from_this<Allocator> {
+class NBLA_API Allocator : public enable_shared_from_this<Allocator> {
 protected:
   unique_ptr<AllocatorCallback>
       callback_; ///< Callback could be set in a derived class.
@@ -132,7 +129,7 @@ protected:
 public:
   typedef unordered_map<string, int> MemCountMap;
 
-  std::function<void(void)> callback_tmp_ = nullptr;
+  function<void(void)> callback_tmp_ = nullptr;
 
   /** Constructor does nothing.
    */

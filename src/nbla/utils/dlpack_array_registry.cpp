@@ -17,14 +17,15 @@
 
 namespace nbla {
 
-DlpackArrayRegistry::ArrayToDLDeviceType
-    DlpackArrayRegistry::array_to_device_type_;
+using ArrayToDLDeviceType = map<string, DLDeviceType>;
+using DLDeviceTypeToArray = map<DLDeviceType, string>;
+using DLDeviceTypeToBackend = map<DLDeviceType, string>;
 
-DlpackArrayRegistry::DLDeviceTypeToArray
-    DlpackArrayRegistry::device_type_to_array_;
-
-DlpackArrayRegistry::DLDeviceTypeToBackend
-    DlpackArrayRegistry::device_type_to_backend_;
+struct DlpackArrayRegistryMaps {
+  DLDeviceTypeToArray device_type_to_array;
+  DLDeviceTypeToBackend device_type_to_backend;
+  ArrayToDLDeviceType array_to_device_type;
+};
 
 template <typename K, typename V>
 void raise_error(const map<K, V> &map, const string &key_name,
@@ -41,6 +42,8 @@ void raise_error(const map<K, V> &map, const string &key_name,
 Context DlpackArrayRegistry::create_context(const DLTensor &dl_tensor) {
   init_cpu();
 
+  auto *maps = SingletonManager::get<DlpackArrayRegistryMaps>();
+
   // Compute the array size
   Size_t size = 1;
   for (int i = 0; i < dl_tensor.ndim; i++) {
@@ -56,20 +59,20 @@ Context DlpackArrayRegistry::create_context(const DLTensor &dl_tensor) {
   // Array class
   string array_class = "";
   try {
-    array_class = device_type_to_array_.at(dev_t);
+    array_class = maps->device_type_to_array.at(dev_t);
   } catch (std::out_of_range &) {
-    raise_error(device_type_to_array_, "DLDeviceType", std::to_string(dev_t));
+    raise_error(maps->device_type_to_array, "DLDeviceType", to_string(dev_t));
   }
 
   // Device ID
-  const auto device_id = std::to_string(dl_tensor.ctx.device_id);
+  const auto device_id = to_string(dl_tensor.ctx.device_id);
 
   // Backend
   string backend = "";
   try {
-    backend = device_type_to_backend_.at(dev_t);
+    backend = maps->device_type_to_backend.at(dev_t);
   } catch (std::out_of_range &) {
-    raise_error(device_type_to_backend_, "DLDeviceType", std::to_string(dev_t));
+    raise_error(maps->device_type_to_backend, "DLDeviceType", to_string(dev_t));
   }
 
   auto str_dtpe = dtype_to_string(dtype);
@@ -82,10 +85,11 @@ Context DlpackArrayRegistry::create_context(const DLTensor &dl_tensor) {
 
 DLDeviceType
 DlpackArrayRegistry::array_to_device_type(const string &array_class) {
+  auto *maps = SingletonManager::get<DlpackArrayRegistryMaps>();
   try {
-    return array_to_device_type_.at(array_class);
+    return maps->array_to_device_type.at(array_class);
   } catch (std::out_of_range &) {
-    raise_error(array_to_device_type_, "Array class", array_class);
+    raise_error(maps->array_to_device_type, "Array class", array_class);
   }
   return kDLCPU;
 }
@@ -93,12 +97,16 @@ DlpackArrayRegistry::array_to_device_type(const string &array_class) {
 void DlpackArrayRegistry::add_map(const DLDeviceType device_type,
                                   const string &backend,
                                   const string &array_class) {
-  device_type_to_array_.insert({device_type, array_class});
-  device_type_to_backend_.insert({device_type, backend});
+  auto *maps = SingletonManager::get<DlpackArrayRegistryMaps>();
+  maps->device_type_to_array.insert({device_type, array_class});
+  maps->device_type_to_backend.insert({device_type, backend});
 }
 
 void DlpackArrayRegistry::add_map(const string &array_class,
                                   const DLDeviceType device_tyep) {
-  array_to_device_type_.insert({array_class, device_tyep});
+  auto *maps = SingletonManager::get<DlpackArrayRegistryMaps>();
+  maps->array_to_device_type.insert({array_class, device_tyep});
 }
+
+NBLA_INSTANTIATE_SINGLETON(NBLA_API, DlpackArrayRegistryMaps);
 }

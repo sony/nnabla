@@ -23,8 +23,6 @@
 
 namespace nbla {
 
-using std::shared_ptr;
-
 class NBLA_API Event {
 public:
   Event() {}

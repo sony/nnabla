@@ -26,10 +26,6 @@
 
 namespace nbla {
 
-using std::unordered_map;
-using std::unordered_set;
-using std::string;
-
 // Forward declaration
 class CgFunction;
 typedef shared_ptr<CgFunction> CgFunctionPtr;
@@ -43,7 +39,7 @@ struct CommunicatorBackwardCallback {
 typedef shared_ptr<CommunicatorBackwardCallback>
     CommunicatorBackwardCallbackPtr;
 
-typedef std::function<void(const CgFunctionPtr &ptr)> function_hook_type;
+typedef function<void(const CgFunctionPtr &ptr)> function_hook_type;
 
 /** Callback helper class for function callbacks during forward and backward
 class.
@@ -52,9 +48,9 @@ This is used from Python frontend.
  */
 class FunctionHookWithObject {
 public:
-  typedef std::function<void(void *)> setup_callback_type;
-  typedef std::function<void(void *)> cleanup_callback_type;
-  typedef std::function<void(void *, const CgFunctionPtr &f)> callback_type;
+  typedef function<void(void *)> setup_callback_type;
+  typedef function<void(void *)> cleanup_callback_type;
+  typedef function<void(void *, const CgFunctionPtr &f)> callback_type;
 
 private:
   void *obj_{nullptr};
@@ -99,8 +95,7 @@ class CgVariable {
   CgFunctionPtr parent_{nullptr}; ///< Function created this variable.
   int rank_{0};                   ///< Longest path from root variable.
   ///< Holds weak function references. <https://stackoverflow.com/a/22110715>
-  unordered_map<CgFunction *,
-                pair<std::weak_ptr<CgFunction>, FunctionReferenceInfo>>
+  unordered_map<CgFunction *, pair<weak_ptr<CgFunction>, FunctionReferenceInfo>>
       function_references_;
   size_t function_reference_count_{0}; ///< Number of function references
   bool allow_modify_data_{true};       ///< Whether the data can be in-placed.
@@ -356,16 +351,15 @@ public:
 
   /** Execute callback at functions in forward order in a graph.
    */
-  void
-  visit_function_recursive(CgFunctionPtr func,
-                           unordered_set<CgFunctionPtr> &fclosed,
-                           const bool recomputation,
-                           std::function<void(CgFunctionPtr)> forward_callback);
+  void visit_function_recursive(CgFunctionPtr func,
+                                unordered_set<CgFunctionPtr> &fclosed,
+                                const bool recomputation,
+                                function<void(CgFunctionPtr)> forward_callback);
 
   /** Execute callback at functions in backward order in a graph.
    */
   void visit_function_backward(
-      CgFunctionPtr func, std::function<void(CgFunctionPtr)> backward_callback,
+      CgFunctionPtr func, function<void(CgFunctionPtr)> backward_callback,
       vector<CommunicatorBackwardCallbackPtr> communicator_callbacks);
 };
 
@@ -382,8 +376,8 @@ class ClearCalledFlagRecorder {
 
   bool is_activated_{false};
 
-  std::vector<std::vector<std::pair<bool, bool>>> recorded_input_clear_flags_;
-  std::vector<std::vector<std::pair<bool, bool>>> recorded_output_clear_flags_;
+  vector<vector<std::pair<bool, bool>>> recorded_input_clear_flags_;
+  vector<vector<std::pair<bool, bool>>> recorded_output_clear_flags_;
 
 public:
   ~ClearCalledFlagRecorder();
@@ -401,20 +395,18 @@ public:
   void record(const CgFunctionPtr func);
 
   /** Get recorded clear flags. */
-  std::vector<std::vector<std::pair<bool, bool>>>
-  get_recorded_input_clear_flags() const;
+  vector<vector<std::pair<bool, bool>>> get_recorded_input_clear_flags() const;
 
   /** Get recorded clear flags. */
-  std::vector<std::vector<std::pair<bool, bool>>>
-  get_recorded_output_clear_flags() const;
+  vector<vector<std::pair<bool, bool>>> get_recorded_output_clear_flags() const;
 
 private:
   friend SingletonManager; // needs forward declaration
                            // Never called by users.
   ClearCalledFlagRecorder();
 
-  std::vector<std::pair<bool, bool>>
-  get_variable_clear_called_flag(const std::vector<CgVariablePtr> &vars);
+  vector<std::pair<bool, bool>>
+  get_variable_clear_called_flag(const vector<CgVariablePtr> &vars);
 
   DISABLE_COPY_AND_ASSIGN(ClearCalledFlagRecorder);
 };
@@ -423,10 +415,9 @@ NBLA_API void c_activate_clear_called_flag_recorder();
 
 NBLA_API void c_deactivate_clear_called_flag_recorder();
 
-NBLA_API std::vector<std::vector<std::pair<bool, bool>>>
-c_get_input_clear_called_flags();
+NBLA_API vector<vector<std::pair<bool, bool>>> c_get_input_clear_called_flags();
 
-NBLA_API std::vector<std::vector<std::pair<bool, bool>>>
+NBLA_API vector<vector<std::pair<bool, bool>>>
 c_get_output_clear_called_flags();
 }
 #endif

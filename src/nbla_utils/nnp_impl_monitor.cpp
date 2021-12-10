@@ -39,8 +39,7 @@ MonitorImpl::MonitorImpl(const nbla::Context &ctx, const ::Monitor &monitor,
                          shared_ptr<Network> network,
                          shared_ptr<DatasetImpl> dataset)
     : ctx_(ctx), monitor_proto_(monitor), network_(network), dataset_(dataset) {
-  data_iterator_ = shared_ptr<DataIteratorFromCacheFiles>(
-      new DataIteratorFromCacheFiles(dataset));
+  data_iterator_ = make_shared<DataIteratorFromCacheFiles>(dataset);
   network_->set_batch_size(data_iterator_->get_batch_size());
 }
 

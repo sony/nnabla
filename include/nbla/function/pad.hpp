@@ -52,7 +52,7 @@ Outputs:
  */
 
 typedef struct { int first, second; } PadItem;
-typedef std::vector<PadItem> PadList;
+typedef vector<PadItem> PadList;
 
 template <typename T>
 class Pad : public BaseFunction<const vector<int> &, const string &, float> {

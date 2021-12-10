@@ -153,12 +153,12 @@ public:
 
 void deleter(struct DLManagedTensor *self) {
   // Delete the members
-  delete[] self->dl_tensor.shape;
-  delete[] self->dl_tensor.strides;
-  delete static_cast<manager_ctx *>(self->manager_ctx);
+  delete_array(self->dl_tensor.shape);
+  delete_array(self->dl_tensor.strides);
+  delete_object(static_cast<manager_ctx *>(self->manager_ctx));
 
   // Finally delete itself.
-  delete self;
+  delete_object(self);
 }
 
 DLManagedTensor *to_dlpack_impl(const shared_ptr<Array> &arr_ptr,
@@ -204,13 +204,15 @@ DLManagedTensor *to_dlpack_impl(const shared_ptr<Array> &arr_ptr,
   dl_tensor.dtype.lanes = 1;
 
   // shape
-  dl_tensor.shape = new int64_t[dl_tensor.ndim]; // will deleted in deleter.
+  dl_tensor.shape =
+      new_array<int64_t>(dl_tensor.ndim); // will deleted in deleter.
   for (int i = 0; i < dl_tensor.ndim; i++) {
     dl_tensor.shape[i] = shape[i];
   }
 
   // strides
-  dl_tensor.strides = new int64_t[dl_tensor.ndim]; // will deleted in deleter.
+  dl_tensor.strides =
+      new_array<int64_t>(dl_tensor.ndim); // will deleted in deleter.
   for (int i = 0; i < dl_tensor.ndim; i++) {
     dl_tensor.strides[i] = strides[i];
   }
@@ -219,14 +221,14 @@ DLManagedTensor *to_dlpack_impl(const shared_ptr<Array> &arr_ptr,
   dl_tensor.byte_offset = 0;
 
   // Create a DLManagedTensor
-  auto dl_managed_tensor = new DLManagedTensor();
+  auto dl_managed_tensor = new_object<DLManagedTensor>();
 
   // dl_tensor
   dl_managed_tensor->dl_tensor = dl_tensor;
 
   // manager_ctx
   dl_managed_tensor->manager_ctx =
-      static_cast<void *>(new manager_ctx(arr_ptr));
+      static_cast<void *>(new_object<manager_ctx>(arr_ptr));
 
   // deleter
   dl_managed_tensor->deleter = deleter;

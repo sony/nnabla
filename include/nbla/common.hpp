@@ -37,10 +37,6 @@ maybe because they are uncategorized.
 
 namespace nbla {
 
-using std::vector;
-using std::ostringstream;
-using std::shared_ptr;
-
 typedef vector<int64_t> Shape_t; ///< Type of array shape and strides etc.
 typedef int64_t Size_t;          ///< Type of size of array
 
@@ -107,7 +103,7 @@ inline string byte_to_human_readable(long double byte) {
     byte /= div;
   }
 
-  std::ostringstream out;
+  ostringstream out;
   out.precision(2);
   out << std::fixed << byte;
 
@@ -117,10 +113,10 @@ inline string byte_to_human_readable(long double byte) {
 /** Scoped callback
 */
 class DestructorCallback {
-  std::function<void(void)> callback_;
+  function<void(void)> callback_;
 
 public:
-  inline DestructorCallback(std::function<void(void)> callback)
+  inline DestructorCallback(function<void(void)> callback)
       : callback_(callback) {}
   inline ~DestructorCallback() { callback_(); }
 };

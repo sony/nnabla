@@ -119,5 +119,6 @@ int main() {
     printf("%f\n", data_h[i]);
   }
 
+  SingletonManager::clear();
   return 0;
 }

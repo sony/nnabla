@@ -33,8 +33,6 @@
 #include <nbla/imperative.hpp>
 #include <vector>
 
-using std::vector;
-
 namespace nbla {
 
 NBLA_REGISTER_FUNCTION_HEADER(BatchNormalization, const vector<int> &, float,

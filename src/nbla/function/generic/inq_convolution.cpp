@@ -114,7 +114,7 @@ void INQConvolution<T, T1>::forward_impl(const Variables &inputs,
       // weights
       if (selection_algorithm_ == "largest_abs") {
         // fix weights with largest absolute value
-        std::vector<size_t> indices(inputs[1]->size());
+        vector<size_t> indices(inputs[1]->size());
         std::iota(begin(indices), end(indices), 0);
         std::sort(begin(indices), end(indices), [&](size_t a, size_t b) {
           return std::abs(weights[a]) > std::abs(weights[b]);

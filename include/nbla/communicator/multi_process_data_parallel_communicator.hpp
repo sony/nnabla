@@ -29,11 +29,7 @@ namespace nbla {
 
 NBLA_REGISTER_COMMUNICATOR_HEADER(MultiProcessDataParallelCommunicator);
 
-using std::string;
-using std::vector;
 using std::pair;
-using std::shared_ptr;
-using std::unordered_map;
 
 /** \addtogroup NNablaCoreGrp */
 /*@{*/

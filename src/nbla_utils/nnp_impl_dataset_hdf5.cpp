@@ -153,7 +153,7 @@ bool parse_hdf5_group(hid_t gid, vector<string> &data_names,
   return true;
 }
 
-bool read_file_to_str(const std::string &filename, std::string &data) {
+bool read_file_to_str(const string &filename, string &data) {
 
   std::ifstream file(filename.c_str(), std::ios::binary | std::ios::ate);
   if (!file) {

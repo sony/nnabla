@@ -19,8 +19,6 @@
 
 namespace nbla {
 
-using std::make_shared;
-
 vector<NdArrayPtr> execute(FunctionPtr func, const vector<NdArrayPtr> &inputs,
                            int n_outputs, vector<NdArrayPtr> outputs) {
   // Check inplace outputs size.

@@ -19,8 +19,6 @@
 
 namespace nbla {
 
-using std::make_shared;
-
 // Just a helper function.
 static inline const char *b2str(bool b) { return b ? "true" : "false"; }
 

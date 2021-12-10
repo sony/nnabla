@@ -21,8 +21,6 @@
 
 namespace nbla {
 
-using std::make_shared;
-
 void Variable::update_shape_info() {
   size_ = compute_size_by_shape(shape_);
   strides_ = get_c_contiguous_strides(shape_);
@@ -31,15 +29,15 @@ void Variable::update_shape_info() {
 
 Variable::Variable(const Shape_t &shape) : shape_(shape) {
   update_shape_info();
-  data_.reset(new NdArray(shape_));
-  grad_.reset(new NdArray(shape_));
+  data_ = make_shared<NdArray>(shape_);
+  grad_ = make_shared<NdArray>(shape_);
 }
 
 Variable::Variable(NdArrayPtr data) {
   shape_ = data->shape();
   update_shape_info();
   data_ = data;
-  grad_.reset(new NdArray(shape_));
+  grad_ = make_shared<NdArray>(shape_);
 }
 
 void Variable::reshape(const vector<int64_t> &shape, bool force) {

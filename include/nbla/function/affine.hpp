@@ -27,8 +27,6 @@
 
 namespace nbla {
 
-using std::string;
-
 NBLA_REGISTER_FUNCTION_HEADER(Affine, int);
 
 /** Affine also called as fully connected layer defined as

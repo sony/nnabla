@@ -16,6 +16,7 @@
 #define __NBLA_SOLVER_REGISTRY_HPP__
 
 #include <nbla/function_registry.hpp>
+#include <nbla/singleton_manager-internal.hpp>
 #include <nbla/solver.hpp>
 
 namespace nbla {
@@ -41,8 +42,10 @@ has an idea, please let me know or PR is welcome.
 #define NBLA_REGISTER_SOLVER_SOURCE(NAME, ...)                                 \
   FunctionRegistry<Solver NBLA_VA_ARGS(__VA_ARGS__)>                           \
       &get_##NAME##SolverRegistry() {                                          \
-    static FunctionRegistry<Solver NBLA_VA_ARGS(__VA_ARGS__)> registry;        \
-    return registry;                                                           \
+    struct NAME##RegistryHolder {                                              \
+      FunctionRegistry<Solver NBLA_VA_ARGS(__VA_ARGS__)> instance;             \
+    };                                                                         \
+    return SingletonManager::get<NAME##RegistryHolder>()->instance;            \
   }                                                                            \
                                                                                \
   shared_ptr<Solver> create_##NAME##Solver(                                    \
@@ -57,15 +60,13 @@ This will be used inside init method.
 */
 #define NBLA_REGISTER_SOLVER_IMPL(BASE, CLS, BACKEND, ...)                     \
   {                                                                            \
-    std::function<shared_ptr<Solver>(                                          \
-        const Context &NBLA_VA_ARGS(__VA_ARGS__))>                             \
+    function<shared_ptr<Solver>(const Context &NBLA_VA_ARGS(__VA_ARGS__))>     \
         func = [](NBLA_ARGDEFS(const Context &NBLA_VA_ARGS(__VA_ARGS__))) {    \
-          return shared_ptr<Solver>(                                           \
-              new CLS(NBLA_ARGS(const Context &NBLA_VA_ARGS(__VA_ARGS__))));   \
+          return make_shared<CLS>(                                             \
+              NBLA_ARGS(const Context &NBLA_VA_ARGS(__VA_ARGS__)));            \
         };                                                                     \
     typedef FunctionDbItem<Solver NBLA_VA_ARGS(__VA_ARGS__)> item_t;           \
-    get_##BASE##SolverRegistry().add(                                          \
-        shared_ptr<item_t>(new item_t{BACKEND, func}));                        \
+    get_##BASE##SolverRegistry().add(make_shared<item_t>(BACKEND, func));      \
   }
 #else
 /**
@@ -79,8 +80,10 @@ This will be used inside init method.
 
 #define NBLA_REGISTER_SOLVER_SOURCE(NAME, ...)                                 \
   FunctionRegistry<Solver, ##__VA_ARGS__> &get_##NAME##SolverRegistry() {      \
-    static FunctionRegistry<Solver, ##__VA_ARGS__> registry;                   \
-    return registry;                                                           \
+    struct NAME##RegistryHolder {                                              \
+      FunctionRegistry<Solver, ##__VA_ARGS__> instance;                        \
+    };                                                                         \
+    return SingletonManager::get<NAME##RegistryHolder>()->instance;            \
   }                                                                            \
                                                                                \
   shared_ptr<Solver> create_##NAME##Solver(                                    \
@@ -95,14 +98,12 @@ This will be used inside init method.
 */
 #define NBLA_REGISTER_SOLVER_IMPL(BASE, CLS, BACKEND, ...)                     \
   {                                                                            \
-    std::function<shared_ptr<Solver>(const Context &, ##__VA_ARGS__)> func =   \
+    function<shared_ptr<Solver>(const Context &, ##__VA_ARGS__)> func =        \
         [](NBLA_ARGDEFS(const Context &, ##__VA_ARGS__)) {                     \
-          return shared_ptr<Solver>(                                           \
-              new CLS(NBLA_ARGS(const Context &, ##__VA_ARGS__)));             \
+          return make_shared<CLS>(NBLA_ARGS(const Context &, ##__VA_ARGS__));  \
         };                                                                     \
     typedef FunctionDbItem<Solver, ##__VA_ARGS__> item_t;                      \
-    get_##BASE##SolverRegistry().add(                                          \
-        shared_ptr<item_t>(new item_t{BACKEND, func}));                        \
+    get_##BASE##SolverRegistry().add(make_shared<item_t>(BACKEND, func));      \
   }
 #endif
 }

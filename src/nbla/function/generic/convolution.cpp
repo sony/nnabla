@@ -218,7 +218,7 @@ void Convolution<T>::backward_impl(const Variables &inputs,
   T *dw = nullptr;
   T *db = nullptr;
   T *col = nullptr;
-  std::unique_ptr<ColVectorMap<T>> mdb;
+  unique_ptr<ColVectorMap<T>> mdb;
 
   if (propagate_down[0] || propagate_down[1]) {
     col = col_.cast_data_and_get_pointer<T>(this->ctx_, true);
@@ -239,7 +239,7 @@ void Convolution<T>::backward_impl(const Variables &inputs,
     if (!accum[2])
       inputs[2]->grad()->zero();
     db = inputs[2]->cast_grad_and_get_pointer<T>(this->ctx_, false);
-    mdb.reset(new ColVectorMap<T>(db, channels_o_));
+    mdb = make_unique<ColVectorMap<T>>(db, channels_o_);
   }
   // Sample loop
   for (int n = 0; n < outer_size_; ++n) {

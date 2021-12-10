@@ -29,7 +29,6 @@
 #include <nbla/functions.hpp>
 #include <nbla/auto_forward.hpp>
 
-using std::make_shared;
 % for name, snake_name, _ in function_list:
 #include <nbla/function/${snake_name}.hpp>
 % endfor

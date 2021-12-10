@@ -75,7 +75,7 @@ void QuantizeLinear<T>::saturate(Variable *inp, int min_range, int max_range) {
 }
 
 template <typename T>
-void QuantizeLinear<T>::round(Variable *inp, std::string round_mode) {
+void QuantizeLinear<T>::round(Variable *inp, string round_mode) {
   auto size = inp->size();
   auto x = inp->cast_data_and_get_pointer<T>(this->ctx_, false);
   if (round_mode == "HALF_AWAY_FROM_ZERO") {

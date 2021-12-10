@@ -26,14 +26,11 @@
 
 #include <vector>
 
-using std::vector;
-
 namespace nbla {
 
 NBLA_REGISTER_FUNCTION_HEADER(SyncBatchNormalization,
-                              const std::shared_ptr<Communicator> &,
-                              const std::string &, const vector<int> &, float,
-                              float, bool);
+                              const shared_ptr<Communicator> &, const string &,
+                              const vector<int> &, float, float, bool);
 
 /** Batch normalization with sync between other processes at training time
 defined as
@@ -74,14 +71,14 @@ https://hangzhang.org/PyTorch-Encoding/notes/syncbn.html
 template <typename T>
 class SyncBatchNormalization : public BatchNormalization<T> {
 protected:
-  std::shared_ptr<Communicator> comm_;
-  std::string group_;
+  shared_ptr<Communicator> comm_;
+  string group_;
   size_t num_processes_;
 
 public:
   SyncBatchNormalization(const Context &ctx,
-                         const std::shared_ptr<Communicator> &comm,
-                         const std::string &group, const vector<int> axes,
+                         const shared_ptr<Communicator> &comm,
+                         const string &group, const vector<int> axes,
                          float decay_rate, float eps, bool batch_stat)
       : BatchNormalization<T>(ctx, axes, decay_rate, eps, batch_stat,
                               false /* no_scale */, false /* no_bias */),

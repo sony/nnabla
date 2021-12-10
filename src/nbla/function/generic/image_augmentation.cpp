@@ -104,8 +104,8 @@ void ImageAugmentation<T>::image_augmentation(const Variables &inputs,
   const float i_w_out_half = 1.0f / w_out_half;
   const float i_h_out_half = 1.0f / h_out_half;
 
-  T *channel_brightness_buf = new T[num_ch * num_image];
-  T *channel_contrast_buf = new T[num_ch * num_image];
+  const auto channel_brightness_buf = make_unique<T[]>(num_ch * num_image);
+  const auto channel_contrast_buf = make_unique<T[]>(num_ch * num_image);
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
@@ -164,8 +164,8 @@ void ImageAugmentation<T>::image_augmentation(const Variables &inputs,
         contrast_;
     // std::cout << "global_contrast : " << global_contrast << "\n";
 
-    T *channel_brightness = channel_brightness_buf + iim * num_ch;
-    T *channel_contrast = channel_contrast_buf + iim * num_ch;
+    T *channel_brightness = channel_brightness_buf.get() + iim * num_ch;
+    T *channel_contrast = channel_contrast_buf.get() + iim * num_ch;
     for (int ic = 0; ic < num_ch; ++ic) {
       const float ch_brightness =
           brightness_each_
@@ -286,8 +286,6 @@ void ImageAugmentation<T>::image_augmentation(const Variables &inputs,
       }
     }
   }
-  delete[] channel_brightness_buf;
-  delete[] channel_contrast_buf;
 }
 
 template <typename T>

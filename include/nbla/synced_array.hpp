@@ -26,15 +26,13 @@
 
 namespace nbla {
 
-using std::map;
-using std::shared_ptr;
 using std::pair;
 
 /** Synchronized array interface that implicitly transfers and cast arrays
 over devices and data types.
 \ingroup NNablaCoreGrp
 */
-class NBLA_API SyncedArray : public std::enable_shared_from_this<SyncedArray> {
+class NBLA_API SyncedArray : public enable_shared_from_this<SyncedArray> {
   struct ArrayDesc {
     string key;
     string array_class;
@@ -139,7 +137,7 @@ public:
   /** Get the array class of the head.
    *
    */
-  inline std::string head_array_class() { return head_.array_class; }
+  inline string head_array_class() { return head_.array_class; }
 
   /** Get the number of arrays
   */
@@ -207,10 +205,10 @@ class SingletonManager; // Forward declaration for friend
 enum SyncedArrayCallbackTag { GET, CAST, CLEAR };
 
 /// Type of callback function for get, cast, and clear of SyncedArray.
-using synced_array_callback_func_type = std::function<void(
-    SyncedArrayPtr saptr, const SyncedArrayCallbackTag func_name,
-    const dtypes dtype, const Context &ctx, const bool write_only,
-    const bool first_creation, const bool off_recording)>;
+using synced_array_callback_func_type =
+    function<void(SyncedArrayPtr saptr, const SyncedArrayCallbackTag func_name,
+                  const dtypes dtype, const Context &ctx, const bool write_only,
+                  const bool first_creation, const bool off_recording)>;
 
 /**
 Singleton class to store a callback function for get, cast, and clear of

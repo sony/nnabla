@@ -36,7 +36,7 @@ namespace nnp {
 */
 struct FileResource {
   FILE *fp_;
-  FileResource(const std::string &filename);
+  FileResource(const string &filename);
   ~FileResource();
   bool read(char *buffer, size_t size);
   bool gets(char *buffer, size_t size);
@@ -118,9 +118,9 @@ private:
   int cache_file_data_size_;
   int data_size_;
   int batch_data_size_;
-  char *buffer_;
-  char *shuffle_buffer_;
-  std::queue<CacheFile *> file_queue_;
+  unique_ptr<char[]> buffer_;
+  unique_ptr<char[]> shuffle_buffer_;
+  queue<CacheFile *> file_queue_;
   dtypes data_type_;
   Shape_t shape_;
   string variable_name_;

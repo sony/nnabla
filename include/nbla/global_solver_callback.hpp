@@ -20,7 +20,7 @@
 
 namespace nbla {
 
-typedef std::function<void(void)> update_hook_type;
+typedef function<void(void)> update_hook_type;
 
 /**
 Singleton class for storing global function callbacks.

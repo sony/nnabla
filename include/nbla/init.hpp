@@ -22,9 +22,6 @@
 
 namespace nbla {
 
-using std::string;
-using std::vector;
-
 /**
 Initialize NNabla CPU features.
 

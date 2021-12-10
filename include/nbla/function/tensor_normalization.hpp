@@ -144,8 +144,7 @@ protected:
   bool output_stat_;
   bool need_adapter_;
   Shape_t bn_param_shape_;
-  std::unique_ptr<BatchNormalizationInOutAdapter> bn_in_adapter_,
-      bn_param_adapter_;
+  unique_ptr<BatchNormalizationInOutAdapter> bn_in_adapter_, bn_param_adapter_;
   shared_ptr<Function> f_batch_norm_;
 
 public:

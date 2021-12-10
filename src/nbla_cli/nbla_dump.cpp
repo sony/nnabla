@@ -46,7 +46,7 @@ bool nbla_dump(int argc, char *argv[]) {
   int i = 0, j = 0;
   for (auto it = names.begin(); it != names.end(); it++, i++) {
     std::cout << "  Executor No." << i << " Name [" << *it << "]" << std::endl;
-    shared_ptr<nbla::utils::nnp::Executor> exec = nnp.get_executor(*it);
+    std::shared_ptr<nbla::utils::nnp::Executor> exec = nnp.get_executor(*it);
     if (p.get<int>("batch_size") < 0) {
       std::cout << "    Using default batch size " << exec->batch_size() << " ."
                 << std::endl;

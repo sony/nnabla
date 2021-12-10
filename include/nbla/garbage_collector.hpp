@@ -22,7 +22,6 @@
 #include <vector>
 
 namespace nbla {
-using std::vector;
 
 /** Singleton for garbage collector registry.
 
@@ -34,7 +33,7 @@ using std::vector;
  */
 class NBLA_API GarbageCollector {
 public:
-  typedef std::function<void()> collector_type;
+  typedef function<void()> collector_type;
 
   /** Register a GC function with a form `void ()`.
    */

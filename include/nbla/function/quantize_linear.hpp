@@ -88,7 +88,7 @@ protected:
     // future.
     return true;
   }
-  NBLA_API virtual void round(Variable *inp, std::string round_mode);
+  NBLA_API virtual void round(Variable *inp, string round_mode);
   NBLA_API virtual void saturate(Variable *inp, int min_range, int max_range);
 };
 }

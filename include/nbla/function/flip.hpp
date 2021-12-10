@@ -66,7 +66,7 @@ public:
     return SingletonManager::get<Cpu>()->array_classes();
   }
 
-  std::vector<int> &axes() { return axes_; }
+  vector<int> &axes() { return axes_; }
   virtual bool grad_depends_output_data(int i, int o) const { return false; }
 
 protected:
@@ -83,9 +83,8 @@ protected:
   }
 
 private:
-  void flip_recursive(Variable *inp, const T *x, T *y,
-                      const std::vector<bool> &flip, bool add, int x_offset,
-                      int y_offset, int dim);
+  void flip_recursive(Variable *inp, const T *x, T *y, const vector<bool> &flip,
+                      bool add, int x_offset, int y_offset, int dim);
 };
 }
 #endif

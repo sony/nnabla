@@ -14,6 +14,7 @@
 
 #include <nbla/array_registry.hpp>
 #include <nbla/common.hpp>
+#include <nbla/singleton_manager-internal.hpp>
 
 #include <memory>
 #include <string>
@@ -21,14 +22,9 @@
 
 namespace nbla {
 
-using std::shared_ptr;
-using std::string;
-using std::vector;
-
 // Array group
 ArrayGroup::Registry_t &ArrayGroup::get_registry() {
-  static Registry_t registry_;
-  return registry_;
+  return *SingletonManager::get<Registry_t>();
 }
 
 void ArrayGroup::add_group(const string &array_class,
@@ -54,8 +50,7 @@ string ArrayGroup::get_group(const string &array_class) {
 
 // Array Factory
 ArrayCreator::Registry_t &ArrayCreator::get_registry() {
-  static Registry_t registry_;
-  return registry_;
+  return *SingletonManager::get<Registry_t>();
 }
 
 static void
@@ -97,8 +92,7 @@ void ArrayCreator::add_creator(const string &name, Creator creator,
 
 // Array Synchronizer
 ArraySynchronizer::Registry_t &ArraySynchronizer::get_registry() {
-  static Registry_t registry_;
-  return registry_;
+  return *SingletonManager::get<Registry_t>();
 }
 
 void ArraySynchronizer::synchronize(const string &src_class, Array *src_array,
@@ -109,7 +103,7 @@ void ArraySynchronizer::synchronize(const string &src_class, Array *src_array,
   pair<string, string> key{src_class, dst_class};
   NBLA_CHECK(registry.count(key) == 1, error_code::unclassified,
              [registry, key]() {
-               std::ostringstream ss;
+               ostringstream ss;
                ss << key.first << "-" << key.second << " is not in (";
                for (auto &kv : registry) {
                  ss << kv.first.first << "-" << kv.first.second << ", ";

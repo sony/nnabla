@@ -17,26 +17,17 @@
 
 #include <dlpack/dlpack.h> // third-party
 #include <nbla/context.hpp>
+#include <nbla/singleton_manager-internal.hpp>
 
 #include <map>
 
 namespace nbla {
-
-using std::map;
 
 /** DlpackArrayCreator class this is never be instantiated.
 
     This creator class is used only for DlpackArray.
 */
 class NBLA_API DlpackArrayRegistry {
-  using ArrayToDLDeviceType = map<string, DLDeviceType>;
-  using DLDeviceTypeToArray = map<DLDeviceType, string>;
-  using DLDeviceTypeToBackend = map<DLDeviceType, string>;
-
-  static DLDeviceTypeToArray device_type_to_array_;
-  static DLDeviceTypeToBackend device_type_to_backend_;
-  static ArrayToDLDeviceType array_to_device_type_;
-
 public:
   /** Interface to create a context for DlpackArray */
   static Context create_context(const DLTensor &dlp);

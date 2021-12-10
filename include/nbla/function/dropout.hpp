@@ -28,8 +28,6 @@
 
 namespace nbla {
 
-using std::string;
-
 NBLA_REGISTER_FUNCTION_HEADER(Dropout, double, int);
 
 /** Dropout defined as

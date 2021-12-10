@@ -25,8 +25,6 @@
 
 namespace nbla {
 
-using std::string;
-
 /** A callback Function.
 
 The callback functions of setup_impl, forward_impl and backward_mpl registered
@@ -36,21 +34,21 @@ at initialization are called.
 class Callback : public BaseFunction<> {
 
 public:
-  typedef std::function<void(void *, const Variables &inputs,
-                             const Variables &outputs)>
+  typedef function<void(void *, const Variables &inputs,
+                        const Variables &outputs)>
       setup_callback_type;
-  typedef std::function<void(void *, const Variables &inputs,
-                             const Variables &outputs)>
+  typedef function<void(void *, const Variables &inputs,
+                        const Variables &outputs)>
       forward_callback_type;
-  typedef std::function<void(
+  typedef function<void(
       void *, const Variables &inputs, const Variables &outputs,
       const vector<bool> &propagate_down, const vector<bool> &accum)>
       backward_callback_type;
-  typedef std::function<void(void *)> cleanup_callback_type;
+  typedef function<void(void *)> cleanup_callback_type;
 
-  typedef std::function<bool(void *, int, int)>
+  typedef function<bool(void *, int, int)>
       grad_depends_output_data_callback_type;
-  typedef std::function<bool(void *, int, int)>
+  typedef function<bool(void *, int, int)>
       grad_depends_input_data_callback_type;
 
 private:
@@ -83,7 +81,7 @@ public:
         grad_depends_input_data_callback_(gi) {}
   virtual ~Callback() { cleanup_callback_(obj_); }
   virtual shared_ptr<Function> copy() const {
-    return std::make_shared<Callback>(
+    return make_shared<Callback>(
         ctx_, obj_, min_outputs_, setup_callback_, forward_callback_,
         backward_callback_, cleanup_callback_,
         grad_depends_output_data_callback_, grad_depends_input_data_callback_);
@@ -97,9 +95,7 @@ public:
     return vector<dtypes>{get_dtype<float>()};
   }
   virtual string name() { return "Callback"; }
-  virtual vector<string> allowed_array_classes() {
-    return SingletonManager::get<Cpu>()->array_classes();
-  }
+  NBLA_API virtual vector<string> allowed_array_classes();
   virtual bool grad_depends_output_data(int i, int o) const {
     if (!grad_depends_output_data_callback_)
       return true;

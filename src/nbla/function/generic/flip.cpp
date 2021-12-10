@@ -37,8 +37,8 @@ void Flip<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
 
 template <typename T>
 void Flip<T>::flip_recursive(Variable *inp, const T *x, T *y,
-                             const std::vector<bool> &flip, bool add,
-                             int x_offset, int y_offset, int dim) {
+                             const vector<bool> &flip, bool add, int x_offset,
+                             int y_offset, int dim) {
   int current_x_offset = x_offset, current_y_offset = y_offset;
   const int y_stride = inp->strides()[dim];
   int x_stride = y_stride;

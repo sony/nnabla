@@ -25,10 +25,6 @@
 
 namespace nbla {
 
-using std::vector;
-using std::string;
-using std::shared_ptr;
-
 /**
 Base class of singleton classes for storing some handles or
 configs for computation on a backend.

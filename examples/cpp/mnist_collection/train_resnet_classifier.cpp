@@ -13,12 +13,12 @@
 // limitations under the License.
 // Include nnabla header files
 
+#include "resnet_training.hpp"
 #include <nbla/context.hpp>
 #include <stdio.h>
 #include <string.h>
-using namespace nbla;
 
-#include "resnet_training.hpp"
+using namespace nbla;
 
 /******************************************/
 // Example of mnist training

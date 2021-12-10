@@ -30,8 +30,6 @@ namespace nbla {
 
 using std::ceil;
 
-using std::vector;
-
 /**
    Get output shape of pooling from input configuration.
  */

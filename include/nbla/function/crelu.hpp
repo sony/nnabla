@@ -27,8 +27,6 @@
 
 namespace nbla {
 
-using std::string;
-
 NBLA_REGISTER_FUNCTION_HEADER(CReLU, int);
 
 /** Concatenated Rectified Linear Unit (CReLU) concatenates ReLU outputs of

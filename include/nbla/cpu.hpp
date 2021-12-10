@@ -24,10 +24,6 @@
 
 namespace nbla {
 
-using std::vector;
-using std::string;
-using std::unique_ptr;
-
 /**
 Singleton class for storing some handles or configs for CPU Computation.
 */

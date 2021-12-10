@@ -34,8 +34,7 @@ using std::max;
 namespace avg_pooling_impl {
 
 template <typename TI, typename TO, int NDIM>
-inline const std::array<TO, NDIM> v2a(const std::vector<TI> &v,
-                                      const int skip = 0) {
+inline const std::array<TO, NDIM> v2a(const vector<TI> &v, const int skip = 0) {
   std::array<TO, NDIM> a;
   for (int i = 0; i < NDIM; i++)
     a[i] = v.at(skip + i);

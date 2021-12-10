@@ -25,9 +25,6 @@
 
 namespace nbla {
 
-using std::string;
-using std::vector;
-
 NBLA_REGISTER_FUNCTION_HEADER(DeformableConvolution, int, // base_axis
                               const vector<int> &,        // pad
                               const vector<int> &,        // stride

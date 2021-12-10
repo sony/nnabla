@@ -36,7 +36,7 @@ public:
   typedef MemoryType memory_type;
   NaiveAllocator() {
 #if 0
-    callback_.reset(new PrintingAllocatorCallback(typeid(*this).name()));
+    callback_.reset(new_object<PrintingAllocatorCallback>(typeid(*this).name()));
 #endif
   }
 

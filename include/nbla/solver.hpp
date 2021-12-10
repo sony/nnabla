@@ -26,12 +26,7 @@
 
 namespace nbla {
 
-using std::string;
-using std::vector;
-using std::shared_ptr;
-using std::unordered_map;
-
-typedef std::function<void(void)> update_hook_type;
+typedef function<void(void)> update_hook_type;
 
 /** Callback helper class for update callbacks
 
@@ -39,9 +34,9 @@ This is used from Python frontend.
 */
 class UpdateHookWithObject {
 public:
-  typedef std::function<void(void *)> setup_callback_type;
-  typedef std::function<void(void *)> cleanup_callback_type;
-  typedef std::function<void(void *)> callback_type;
+  typedef function<void(void *)> setup_callback_type;
+  typedef function<void(void *)> cleanup_callback_type;
+  typedef function<void(void *)> callback_type;
 
 private:
   void *obj_{nullptr};

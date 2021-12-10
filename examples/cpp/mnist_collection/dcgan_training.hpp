@@ -18,7 +18,6 @@
 #include <stdio.h>
 #include <string>
 #include <vector>
-using namespace std;
 
 #include <nbla/auto_forward.hpp>
 #include <nbla/computation_graph/computation_graph.hpp>
@@ -30,13 +29,13 @@ using namespace std;
 
 #include <nbla_utils/parameters.hpp>
 
-using namespace nbla;
+#include "mnist_data.hpp"
+
 namespace f = nbla::functions;
 namespace pf = nbla::parametric_functions;
+using namespace nbla;
 using std::make_shared;
 
-#include "mnist_data.hpp"
-using std::make_shared;
 std::random_device seed_gen;
 std::default_random_engine engine(seed_gen());
 std::normal_distribution<> normal(0.0, 1.0);
@@ -273,7 +272,7 @@ bool dcgan_training_with_static_graph(nbla::Context ctx) {
         print_array(fake);
     }
   } catch (...) {
-    cout << "Exception in dcgan_training_with_static_graph.\n";
+    std::cout << "Exception in dcgan_training_with_static_graph.\n";
     fclose(fp);
     return false;
   }
@@ -404,7 +403,7 @@ bool dcgan_training_with_dynamic_graph(nbla::Context ctx) {
         print_array(fake);
     }
   } catch (...) {
-    cout << "Exception in dcgan_training_with_dynamic_graph.\n";
+    std::cout << "Exception in dcgan_training_with_dynamic_graph.\n";
     fclose(fp);
     return false;
   }

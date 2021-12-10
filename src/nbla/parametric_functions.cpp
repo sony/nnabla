@@ -32,7 +32,6 @@
 #include <nbla/function/deconvolution.hpp>
 #include <nbla/global_context.hpp>
 #include <nbla/parametric_functions.hpp>
-using std::make_shared;
 
 namespace nbla {
 

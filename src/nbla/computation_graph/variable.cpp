@@ -38,15 +38,9 @@
 
 namespace nbla {
 
-using std::make_shared;
-using std::set;
-using std::unordered_map;
-using std::unordered_set;
 using std::tuple;
 using std::make_tuple;
 using std::get;
-using std::unique_ptr;
-using std::vector;
 
 /** FunctionHookWithObject Implementation **/
 FunctionHookWithObject::FunctionHookWithObject() {}
@@ -653,7 +647,7 @@ public:
 void CgVariable::visit_function_recursive(
     CgFunctionPtr func, unordered_set<CgFunctionPtr> &fclosed,
     const bool as_recomputation,
-    std::function<void(CgFunctionPtr)> forward_callback) {
+    function<void(CgFunctionPtr)> forward_callback) {
 
   // A. Push the function to the closed list.
   fclosed.insert(func);
@@ -833,7 +827,7 @@ bool need_recompute_output(const CgFunctionPtr &f, const int output_idx) {
 }
 
 void CgVariable::visit_function_backward(
-    CgFunctionPtr p, std::function<void(CgFunctionPtr)> backward_callback,
+    CgFunctionPtr p, function<void(CgFunctionPtr)> backward_callback,
     vector<CommunicatorBackwardCallbackPtr> communicator_callbacks) {
   // Open list of next search candidate.
   unordered_map<CgFunctionPtr, uint64_t> ids;
@@ -958,8 +952,8 @@ void CgVariable::backward(
   // Scoped context.
   // Set flags used during backward of this variable to avoid clearing
   // buffer. Also, set the grad array passed as an argument.
-  std::vector<NdArrayPtr> bak_grads;
-  std::vector<NdArrayPtr> dummy_zero_grads;
+  vector<NdArrayPtr> bak_grads;
+  vector<NdArrayPtr> dummy_zero_grads;
   for (auto var : parent_->outputs()) {
     bak_grads.push_back(var->variable()->grad());
     NdArrayPtr dummpy_grad = NdArray::create(var->variable()->shape());
@@ -1011,7 +1005,7 @@ size_t CgVariable::function_reference_count() const {
 }
 
 void CgVariable::insert_function_reference(CgFunctionPtr func) {
-  std::weak_ptr<CgFunction> wp(func);
+  weak_ptr<CgFunction> wp(func);
   function_reference_count_++;
   auto it = function_references_.find(func.get());
   if (it != function_references_.end()) {
@@ -1052,8 +1046,8 @@ bool CgVariable::check_and_unmark_need_setup(CgFunctionPtr func) {
 }
 
 CgVariablePtr CgVariable::create_deep_copy(Context ctx, bool copy_grad) {
-  auto ret = std::make_shared<CgVariable>(this->variable()->shape(),
-                                          this->need_grad());
+  auto ret =
+      make_shared<CgVariable>(this->variable()->shape(), this->need_grad());
 
   dtypes dtype = this->variable()->data()->array()->dtype();
 
@@ -1084,10 +1078,10 @@ void ClearCalledFlagRecorder::deactivate() {
   recorded_output_clear_flags_.clear();
 }
 
-std::vector<std::pair<bool, bool>>
+vector<std::pair<bool, bool>>
 ClearCalledFlagRecorder::get_variable_clear_called_flag(
-    const std::vector<CgVariablePtr> &vars) {
-  std::vector<std::pair<bool, bool>> clear_called_flags;
+    const vector<CgVariablePtr> &vars) {
+  vector<std::pair<bool, bool>> clear_called_flags;
 
   for (const auto &var : vars) {
     bool data_flag = var->variable()->data()->array()->clear_called();
@@ -1109,12 +1103,12 @@ void ClearCalledFlagRecorder::record(const CgFunctionPtr func) {
       get_variable_clear_called_flag(func->outputs()));
 }
 
-std::vector<std::vector<std::pair<bool, bool>>>
+vector<vector<std::pair<bool, bool>>>
 ClearCalledFlagRecorder::get_recorded_input_clear_flags() const {
   return recorded_input_clear_flags_;
 }
 
-std::vector<std::vector<std::pair<bool, bool>>>
+vector<vector<std::pair<bool, bool>>>
 ClearCalledFlagRecorder::get_recorded_output_clear_flags() const {
   return recorded_output_clear_flags_;
 }

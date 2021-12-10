@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <nbla/singleton_manager.hpp>
 #include <nbla_utils/nnp.hpp>
 
 #ifdef WITH_CUDA
@@ -174,5 +175,7 @@ int main(int argc, char *argv[]) {
   }
   std::cout << std::endl;
   std::cout << "Prediction: " << prediction << std::endl;
+
+  nbla::SingletonManager::clear();
   return 0;
 }

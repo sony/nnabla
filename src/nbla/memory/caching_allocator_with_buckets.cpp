@@ -22,7 +22,7 @@
 #include <thread>
 
 static std::mutex m;
-static std::map<std::thread::id, int> thread_ids;
+static map<std::thread::id, int> thread_ids;
 static int thread_id = 0;
 inline int get_thread_id() {
   std::lock_guard<std::mutex> lock(m);
@@ -120,7 +120,7 @@ static void
 print_device_cache_map(const char *prefix, void *self,
                        const CachingAllocatorWithBucketsBase::DeviceCacheMap &m,
                        bool small) {
-  std::vector<size_t> sizes;
+  vector<size_t> sizes;
   for (auto &i : m) {
     sizes.push_back(i.second->bytes());
   }
@@ -280,7 +280,7 @@ CachingAllocatorWithBucketsBase::get_max_cache_bytes(const string &device_id) {
 }
 
 size_t CachingAllocatorWithBucketsBase::get_total_cache_bytes(
-    const std::string &device_id) {
+    const string &device_id) {
   size_t total_bytes = 0;
 
   // small
@@ -297,7 +297,7 @@ size_t CachingAllocatorWithBucketsBase::get_total_cache_bytes(
 }
 
 size_t CachingAllocatorWithBucketsBase::get_fragmentation_bytes(
-    const std::string &device_id) {
+    const string &device_id) {
   return get_total_cache_bytes(device_id) - get_max_cache_bytes(device_id);
 }
 
@@ -306,8 +306,8 @@ size_t CachingAllocatorWithBucketsBase::get_max_available_bytes(
   return get_max_cache_bytes(device_id);
 }
 
-std::vector<int> CachingAllocatorWithBucketsBase::get_used_memory_counts(
-    const std::string &device_id) {
+vector<int> CachingAllocatorWithBucketsBase::get_used_memory_counts(
+    const string &device_id) {
   // small
   auto small_cnt = small_memory_counter_[device_id];
 
