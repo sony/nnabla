@@ -5307,6 +5307,12 @@ Signal Processing:
         - constant
         - reflect
         default: '''reflect'''
+      as_istft_backward:
+        doc: If `True`, then forward execution behaves as backward execution of ISTFT,
+          treating input `x` as output gradient of ISTFT and outputs `y_r` and `y_i`
+          as inputs gradient of ISTFT. This option is only used in nn.grad operator.
+        type: bool
+        default: 'False'
     outputs:
       y_r:
         doc: Real part of STFT of size `batch_size x fft_size//2 + 1 x frame_size`.
@@ -5315,6 +5321,7 @@ Signal Processing:
     c_runtime: not support
     function_ids:
       iiiiBi: 327
+      iiiiBiB: 344
   ISTFT:
     snake_name: istft
     doc: |2+
@@ -5352,12 +5359,29 @@ Signal Processing:
           padding.
         type: bool
         default: 'True'
+      pad_mode:
+        doc: Padding mode corresponding to STFT `pad_mode`, which can be `'constant'`
+          or `'reflect'`. `'constant'` pads with `0`. This option is ignored for the
+          normal use of ISTFT. You need to set the same `pad_mode` only when `as_stft_backward
+          == True`.
+        type: string
+        available_values:
+        - constant
+        - reflect
+        default: '''reflect'''
+      as_stft_backward:
+        doc: If `True`, then forward execution behaves as backward execution of STFT,
+          treating inputs `y_r` and `y_i` as outputs gradient of STFT and output `x`
+          as input gradient of STFT. This option is only used in nn.grad operator.
+        type: bool
+        default: 'False'
     outputs:
       x:
         doc: Time domain sequence of size `batch_size x sample_size`.
     c_runtime: not support
     function_ids:
       iiiiB: 328
+      iiiiBiB: 345
 Stochasticity:
   Dropout:
     snake_name: dropout
