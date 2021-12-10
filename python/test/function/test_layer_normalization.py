@@ -80,15 +80,25 @@ def test_layer_normalization_forward(ctx, func_name, seed, x_shape, batch_axis, 
                     func_name=func_name, dstep=1e-2, atol_b=1e-2, backward=[False, False, False], disable_half_test=True)
 
 
+x_shape_and_batch_axis = [
+    # Outer batch axis cases
+    ((2, 3, 4, 4), 0),
+    ((16, 1), 0),
+    ((1, 1), 0),
+    # Inner batch axis cases
+    ((2, 3, 5, 7), 1),
+    ((2, 3, 5, 7), 3),
+    # Multiple batch axis cases
+    ((2, 3, 5, 7), [0, 2]),
+    ((2, 3, 5, 7), [3, 1]),
+    # time-series (T, B, C) or (B, T, C)
+    ((3, 2, 5), [0, 1]),
+]
+
+
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
-@pytest.mark.parametrize("x_shape , batch_axis", [((2, 3, 4, 4), 0),
-                                                  ((2, 4, 4, 3), 0),
-                                                  ((16, 1), 0),
-                                                  ((2, 4, 3), 0),
-                                                  # time-series (T, B, C) or (B, T, C)
-                                                  ((3, 2, 5), [0, 1])
-                                                  ])
+@pytest.mark.parametrize("x_shape , batch_axis", x_shape_and_batch_axis)
 @pytest.mark.parametrize("eps", [1e-05])
 @pytest.mark.parametrize("output_stat", [False, True])
 @pytest.mark.parametrize("no_scale", [False, True])
@@ -105,13 +115,7 @@ def test_layer_normalization_forward_backward(ctx, func_name, seed, x_shape, bat
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
-@pytest.mark.parametrize("x_shape , batch_axis", [((2, 3, 4, 4), 0),
-                                                  ((2, 4, 4, 3), 0),
-                                                  ((16, 1), 0),
-                                                  ((2, 4, 3), 0),
-                                                  # time-series (T, B, C) or (B, T, C)
-                                                  ((3, 2, 5), [0, 1])
-                                                  ])
+@pytest.mark.parametrize("x_shape , batch_axis", x_shape_and_batch_axis)
 @pytest.mark.parametrize("eps", [1e-05])
 @pytest.mark.parametrize("output_stat", [False])
 @pytest.mark.parametrize("no_scale", [False, True])
