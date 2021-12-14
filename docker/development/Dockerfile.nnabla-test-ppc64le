@@ -63,7 +63,7 @@ RUN apt-get install -y --no-install-recommends \
        unzip \
        wget \
        zip \
-       python3-dev \
+       python${PYVERNAME}-dev \
        python3-venv \
        python${PYVERNAME} \
        python${PYVERNAME}-venv \
