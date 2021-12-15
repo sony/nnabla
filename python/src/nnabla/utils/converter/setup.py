@@ -35,7 +35,7 @@ if __name__ == '__main__':
 
     install_requires = [
         'ply',
-        'tensorflow',
+        'tensorflow==2.5.1',
         'onnx_tf',
         'tf2onnx==1.7.2',
         'tensorflow-addons',
