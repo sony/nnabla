@@ -691,12 +691,12 @@ Neural Network Layer:
           K_N`).
         parameter: true
       offset:
-        doc: Offsets for deformable convolutions. Shape is fixed to :math:`(N, deformable_group
+        doc: Offsets for deformable convolutions. Shape is fixed to :math:`(N, deformable{\_}group
           \times 2 \times Kh \times Kw, H, W)`. Offsets must be calculated externally
           through a separate convolution layer.
       mask:
         doc: Normalized mask for deformable convolutions v2. Shape is fixed to :math:`(N,
-          deformable_group \times 2 \times Kh \times Kw, H, W)`. Masks must be calculated
+          deformable{\_}group \times Kh \times Kw, H, W)`. Masks must be calculated
           externally together with the offsets through a separate convolution layer.
         optional: true
       bias:
@@ -2134,9 +2134,9 @@ Normalization:
 
       .. math::
 
-          W_{sn} = \\frac{W}{\\sigma(W)}.
+          W_{sn} = \frac{W}{\sigma(W)}
 
-      where :math:`W` is the input matrix, and the :math:`\\sigma(W)` is the spectral norm of :math:`W`. The spectral norm is approximately computed by the power iteration.
+      where :math:`W` is the input matrix, and the :math:`\sigma(W)` is the spectral norm of :math:`W`. The spectral norm is approximately computed by the power iteration.
 
       References:
 
@@ -5934,7 +5934,7 @@ Stochasticity:
         default: 1
       share:
         doc: Use a same bounding box randomly picked over the feature dimension when
-          being True. Default is False.
+          being True. Default is True.
         type: bool
         default: 'True'
       inplace:
