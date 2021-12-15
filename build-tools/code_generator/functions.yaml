@@ -325,7 +325,7 @@ Neural Network Layer:
     snake_name: fused_convolution
     doc: |2
 
-      Fused operation of Convolution, Batch Normalization, Add2 and Activation.
+      Fused operation of Pad, Convolution, Batch Normalization, Add2 and Activation.
 
       This is an equivalent operation to the following,
       but may be more computationally efficient depending on the backend implementation
@@ -333,11 +333,12 @@ Neural Network Layer:
 
       .. code-block:: python
 
-        h = F.convolution(x, weight, bias, *conv_opts)
+        h = F.pad(x, *pad_opts)
+        h = F.convolution(h, weight, bias, pad=(0, ...), *conv_opts)
         h = F.batch_normalization(h, beta, gamma, mean, variance, *bn_opts)
         y = F.relu(h + z)
 
-      You can optionally disable either of batch normalization, residual addition and activation.
+      You can optionally disable either of pad, batch normalization, residual addition and activation.
     inputs:
       x:
         doc: N-D array of input.
@@ -380,7 +381,8 @@ Neural Network Layer:
         default: '1'
       pad:
         doc: |
-          `pad` in :meth:`~nnabla.functions.convolution`.
+          `pad_width` in :meth:`~nnabla.functions.pad`.
+          If `len(pad) == (len(x.shape) - (base_axis+1))`, considered as `pad` in :meth:`~nnabla.functions.convolution`.
         type: Shape
         default: (0,) * (len(x.shape) - (base_axis+1))
       stride:
@@ -450,12 +452,27 @@ Neural Network Layer:
           See the description of the `nonlinearity` argument.
         type: repeated float
         default: list()
+      pad_mode:
+        doc: |
+          `mode` in :meth:`~nnabla.functions.pad`.
+        type: string
+        available_values:
+        - constant
+        - reflect
+        - repeat
+        default: '''constant'''
+      constant_value:
+        doc: |
+          `constant_value` in :meth:`~nnabla.functions.pad`.
+        type: float
+        default: '0'
     outputs:
       y:
         doc: N-D array
     c_runtime: not support
     function_ids:
       iiIiIiIiBffBifF: 295
+      iiIiIiIiBffBifFif: 346
   DepthwiseConvolution:
     snake_name: depthwise_convolution
     doc: |2

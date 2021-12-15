@@ -28,7 +28,7 @@ namespace nbla {
 NBLA_REGISTER_FUNCTION_HEADER(FusedConvolution, int, const vector<int> &,
                               const vector<int> &, const vector<int> &, int,
                               bool, float, float, bool, const string &,
-                              const vector<float> &);
+                              const vector<float> &, const string &, float);
 
 /**
     @todo Write doc.
@@ -43,7 +43,8 @@ template <typename T>
 class FusedConvolution
     : public BaseFunction<int, const vector<int> &, const vector<int> &,
                           const vector<int> &, int, bool, float, float, bool,
-                          const string &, const vector<float> &> {
+                          const string &, const vector<float> &, const string &,
+                          float> {
 protected:
   int base_axis_;
   const vector<int> pad_;
@@ -56,8 +57,9 @@ protected:
   bool batch_stat_;
   const string nonlinearity_;
   const vector<float> nonlinearity_args_;
+  const string pad_mode_;
+  float constant_value_;
 
-public:
   // Name of input variables
   typedef int InName;
   const InName X = 0, WEIGHT = 1, BIAS = 2, BETA = 3, GAMMA = 4, MEAN = 5,
@@ -68,19 +70,22 @@ public:
                    const vector<int> &stride, const vector<int> &dilation,
                    int group, bool channel_last, float decay_rate, float eps,
                    bool batch_stat, const string &nonlinearity,
-                   const vector<float> &nonlinearity_args)
+                   const vector<float> &nonlinearity_args,
+                   const string &pad_mode, float constant_value)
       : BaseFunction(ctx, base_axis, pad, stride, dilation, group, channel_last,
                      decay_rate, eps, batch_stat, nonlinearity,
-                     nonlinearity_args),
+                     nonlinearity_args, pad_mode, constant_value),
         base_axis_(base_axis), pad_(pad), stride_(stride), dilation_(dilation),
         group_(group), channel_last_(channel_last), decay_rate_(decay_rate),
         eps_(eps), batch_stat_(batch_stat), nonlinearity_(nonlinearity),
-        nonlinearity_args_(nonlinearity_args) {}
+        nonlinearity_args_(nonlinearity_args), pad_mode_(pad_mode),
+        constant_value_(constant_value) {}
   virtual ~FusedConvolution() {}
   virtual shared_ptr<Function> copy() const {
     return create_FusedConvolution(
         ctx_, base_axis_, pad_, stride_, dilation_, group_, channel_last_,
-        decay_rate_, eps_, batch_stat_, nonlinearity_, nonlinearity_args_);
+        decay_rate_, eps_, batch_stat_, nonlinearity_, nonlinearity_args_,
+        pad_mode_, constant_value_);
   }
   virtual int min_inputs() { return 2; }
   virtual int min_outputs() { return 1; }
