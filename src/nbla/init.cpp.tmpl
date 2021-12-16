@@ -37,8 +37,13 @@
 % endif
 % endfor
 
+#include <mutex>
+
 namespace nbla {
 void init_cpu() {
+  static std::mutex m;
+  std::lock_guard<std::mutex> lock(m);
+
   static volatile bool is_initialized = false;
   if (is_initialized)
     return;
