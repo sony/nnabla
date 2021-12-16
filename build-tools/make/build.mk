@@ -19,6 +19,7 @@
 
 NNABLA_BUILD_INCLUDED = True
 
+NNABLA_EXT_CUDA_DIRECTORY ?= $(shell cd ../nnabla-ext-cuda && pwd)
 NNABLA_DIRECTORY ?= $(shell pwd)
 include $(NNABLA_DIRECTORY)/build-tools/make/options.mk
 
@@ -62,6 +63,7 @@ nnabla-doc:
 	&& cmake -DBUILD_CPP_LIB=ON \
 		-DBUILD_CPP_UTILS=OFF \
 		-DBUILD_PYTHON_PACKAGE=ON \
+		-DNNABLA_EXT_CUDA_DIRECTORY=$(NNABLA_EXT_CUDA_DIRECTORY)\
 		$(CMAKE_OPTS) \
 		$(NNABLA_DIRECTORY)
 	make -C $(DOC_DIRECTORY) -j$(PARALLEL_BUILD_NUM) all wheel doc

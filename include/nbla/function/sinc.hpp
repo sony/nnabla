@@ -29,8 +29,8 @@ NBLA_REGISTER_FUNCTION_HEADER(Sinc);
 /** @class Sinc
 @brief Sinc defined as
 @f[
-y_i = 1 if x_i = 0.
-y_i = \sin(x_i)/x_i otherwise.
+y_i = 1 \text{ if } x_i = 0.\\
+y_i = \sin(x_i)/x_i \text{, otherwise.}
 @f]
 
 Inputs:

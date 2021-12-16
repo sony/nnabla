@@ -25,7 +25,7 @@ namespace nbla {
 /** @class Atanh
 @brief Arc cosine (Atanh) defined as
 @f[
-y_i = \atanh (x_i).
+y_i = \mbox{arctanh} (x_i).
 @f]
 
 Inputs:

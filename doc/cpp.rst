@@ -19,3 +19,4 @@ The example `MNIST runtime <https://github.com/sony/nnabla/tree/master/examples/
     cpp/installation.rst
     cpp/command_line_interface.rst
     cpp/examples.rst
+    cpp/doc.rst

@@ -25,7 +25,7 @@ NBLA_REGISTER_SOLVER_HEADER(SgdW, float /*lr*/, float /*momentum*/,
 /** SGDW. This is defined as
 
 \f[
-v_t \leftarrow \gamma v_{t-1} - \eta \Delta w_t - (\eta / \eta_0)\lambda\w_t
+v_t \leftarrow \gamma v_{t-1} - \eta \Delta w_t - (\eta / \eta_0)\lambda w_t
 \f]
 
 
