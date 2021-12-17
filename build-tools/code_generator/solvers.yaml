@@ -18,8 +18,8 @@ SgdW:
     Stochastic gradient descent (SGD) optimizer with decoupled weight decay.
 
     .. math::
-        v_t \leftarrow \gamma v_{t-1} + \eta g_t - (\eta / \eta_0)\lambda v_{t-1}\\
-        w_{t+1} \leftarrow w_t - v_t
+        v_t &\leftarrow \gamma v_{t-1} + \eta g_t - (\eta / \eta_0)\lambda v_{t-1}\\
+        w_{t+1} &\leftarrow w_t - v_t
 
     where :math:`\lambda` is the decoupled weight decay rate.
 
@@ -393,9 +393,9 @@ AdaBound:
 
     .. math::
         w_{t+1} &\leftarrow w_t - \eta_t*m_t\\
-        \eta_t = clip( \alpha\frac{\sqrt{1 - \beta_2^t}}{(1 - \beta_1^t)(\sqrt{v_t} + \epsilon)}, \eta_l(t), \eta_u(t))\\
-        \eta_l(t) = (1 - (1/((1-\gamma)t+1)))\alpha^*\\
-        \eta_u(t) = (1 + (1/((1-\gamma)t)))\alpha^*
+        \eta_t &= clip( \alpha\frac{\sqrt{1 - \beta_2^t}}{(1 - \beta_1^t)(\sqrt{v_t} + \epsilon)}, \eta_l(t), \eta_u(t))\\
+        \eta_l(t) &= (1 - (1/((1-\gamma)t+1)))\alpha^*\\
+        \eta_u(t) &= (1 + (1/((1-\gamma)t)))\alpha^*
 
     where :math:`\alpha^*` (``final_lr``) is scaled by a factor defined as the current value of :math:`\alpha` (set by ``set_learning_rate(lr)``) over initial value of :math:`\alpha`, so that learnign rate scheduling is properly applied to both :math:`\alpha` and :math:`\alpha^*`.
 
@@ -477,7 +477,7 @@ AMSGRAD:
     .. math::
         m_t &\leftarrow \beta_1 m_{t-1} + (1 - \beta_1) g_t\\
         v_t &\leftarrow \beta_2 v_{t-1} + (1 - \beta_2) g_t^2\\
-        \hat{v_t} = \max(\hat{v_{t-1}}, v_t)\\
+        \hat{v_t} &= \max(\hat{v_{t-1}}, v_t)\\
         w_{t+1} &\leftarrow w_t - \alpha
             \frac{m_t}{\sqrt{\hat{v_t}} + \epsilon}
 
@@ -518,10 +518,10 @@ AMSBound:
 
     .. math::
         w_{t+1} &\leftarrow w_t - \eta_t*m_t\\
-        \eta_t = clip( \alpha\frac{\sqrt{1 - \beta_2^t}}{(1 - \beta_1^t)(\sqrt{\hat{v_t}} + \epsilon)}, \eta_l(t), \eta_u(t))\\
-        \hat{v_t} = \max(\hat{v_{t-1}}, v_t)\\
-        \eta_l(t) = (1 - (1/((1-\gamma)t+1)))\alpha^*\\
-        \eta_u(t) = (1 + (1/((1-\gamma)t)))\alpha^*
+        \eta_t &= clip( \alpha\frac{\sqrt{1 - \beta_2^t}}{(1 - \beta_1^t)(\sqrt{\hat{v_t}} + \epsilon)}, \eta_l(t), \eta_u(t))\\
+        \hat{v_t} &= \max(\hat{v_{t-1}}, v_t)\\
+        \eta_l(t) &= (1 - (1/((1-\gamma)t+1)))\alpha^*\\
+        \eta_u(t) &= (1 + (1/((1-\gamma)t)))\alpha^*
 
     where :math:`\alpha^*` (``final_lr``) is scaled by a factor defined as the current value of :math:`\alpha` (set by ``set_learning_rate(lr)``) over initial value of :math:`\alpha`, so that learnign rate scheduling is properly applied to both :math:`\alpha` and :math:`\alpha^*`.
 

@@ -17,33 +17,7 @@ import numpy as np
 import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context
-
-
-def ref_cumsum(x, axis, exclusive, reverse):
-
-    if reverse:
-        out = np.flip(np.cumsum(np.flip(x, axis=axis), axis=axis), axis=axis)
-    else:
-        out = np.cumsum(x, axis=axis)
-
-    if exclusive:
-
-        if axis < 0:
-            axis += out.ndim
-
-        shift_ = 1 if not reverse else -1
-        out = np.roll(out, shift_, axis=axis)
-        index = 0 if not reverse else -1
-        if axis == 0:
-            out[index, :, :] = 0
-        elif axis == 1:
-            out[:, index, :] = 0
-        elif axis == 2:
-            out[:, :, index] = 0
-        else:
-            raise NotImplementedError
-
-    return out
+from refs import cumsum as ref_cumsum
 
 
 @pytest.mark.parametrize("seed", [313])

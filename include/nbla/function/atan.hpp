@@ -25,7 +25,7 @@ namespace nbla {
 /** @class ATan
 @brief Arc tangent (ATan) defined as
 @f[
-y_i = \atan (x_i).
+y_i = \arctan (x_i).
 @f]
 
 Inputs:

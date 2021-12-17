@@ -22,7 +22,11 @@
 
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_HEADER(ISTFT, int, int, int, const string &, bool);
+NBLA_REGISTER_FUNCTION_HEADER(ISTFT, int, int, int, const string &, bool,
+                              const string &, bool);
+
+// Prototype declaration for cross referencing between STFT and ISTFT.
+template <typename T> class STFT;
 
 /**
     @todo Write doc.
@@ -34,32 +38,50 @@ Outputs:
 \ingroup FunctionImplGrp
  */
 template <typename T>
-class ISTFT : public BaseFunction<int, int, int, const string &, bool> {
+class ISTFT : public BaseFunction<int, int, int, const string &, bool,
+                                  const string &, bool> {
+  // STFT needs some ISTFT methods when `as_istft_backward == true`.
+  friend STFT<T>;
+
 protected:
   int window_size_;
   int stride_;
   int fft_size_;
   const string window_type_;
   bool center_;
+  const string pad_mode_;
+  bool as_stft_backward_;
 
-  shared_ptr<Function> mul2_;
-  shared_ptr<Function> div2_;
-  shared_ptr<Function> sub2_;
-  shared_ptr<Function> slice_;
-  shared_ptr<Function> deconv_;
-  Shape_t deconv_w_shape_;
-  Shape_t deconv_y_shape_;
+  FunctionPtr mul2_;
+  FunctionPtr add2_;
+  FunctionPtr slice_;
+  FunctionPtr deconv_;
+
+  // Intermediate buffers
+  Variable window_, idft_w_cos_, idft_w_sin_;
+  Variable conv_cos_, conv_sin_;
+  Variable x_cos_, x_sin_;
+  Variable add2_out_;
+  Variable deconv_out_; // grad array will be used
+  Variable inv_window_;
+
+  // Only for `as_stft_backward == true`.
+  shared_ptr<STFT<T>> stft_cpu_;
+  FunctionPtr pad_;
 
 public:
   ISTFT(const Context &ctx, int window_size, int stride, int fft_size,
-        const string &window_type, bool center)
-      : BaseFunction(ctx, window_size, stride, fft_size, window_type, center),
+        const string &window_type, bool center, const string &pad_mode,
+        bool as_stft_backward)
+      : BaseFunction(ctx, window_size, stride, fft_size, window_type, center,
+                     pad_mode, as_stft_backward),
         window_size_(window_size), stride_(stride), fft_size_(fft_size),
-        window_type_(window_type), center_(center) {}
+        window_type_(window_type), center_(center), pad_mode_(pad_mode),
+        as_stft_backward_(as_stft_backward) {}
   virtual ~ISTFT() {}
   virtual shared_ptr<Function> copy() const {
     return create_ISTFT(ctx_, window_size_, stride_, fft_size_, window_type_,
-                        center_);
+                        center_, pad_mode_, as_stft_backward_);
   }
   virtual int min_inputs() { return 2; }
   virtual int min_outputs() { return 1; }
@@ -78,6 +100,12 @@ protected:
                                    const Variables &outputs);
   NBLA_API virtual void calculate_conv_weight(Variable &conv_cos,
                                               Variable &conv_sin);
+  NBLA_API virtual void calculate_window(Context &ctx, Variable *window) const;
+  NBLA_API virtual void calculate_inv_window(Context &ctx,
+                                             Variable *inv_window);
+  NBLA_API virtual void apply_inv_window_forward(Variable *x, Variable *y);
+  NBLA_API virtual void apply_inv_window_backward(Variable *x, Variable *y,
+                                                  const bool accum);
   NBLA_API virtual void forward_impl(const Variables &inputs,
                                      const Variables &outputs);
   NBLA_API virtual void backward_impl(const Variables &inputs,

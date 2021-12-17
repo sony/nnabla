@@ -904,6 +904,25 @@ class TestRecomputation():
         self.check_recomputation(seed, graph, inputs)
 
     @pytest.mark.parametrize("seed", [313])
+    def test_grad_value_with_output_dependent_function(self, seed):
+        """
+        Gradient values are tested for the function which depends on output data.
+        Here, we test a following case that variable `h` will be recomputed and
+        its data is needed for the `F.swish` backward.
+        x -> F.swish -> h -> F.interpolate -> y
+        """
+        def graph(x0):
+            # F.swish -> F.interpolate
+            x1 = F.swish(x0)
+            x1.apply(recompute=True)
+            x2 = F.interpolate(x1, scale=(2,))
+            return x2
+
+        x = nn.Variable((2, 3), need_grad=True)
+        inputs = (x,)
+        self.check_recomputation(seed, graph, inputs)
+
+    @pytest.mark.parametrize("seed", [313])
     def test_with_persistent_flag(self, seed):
         x = nn.Variable((2, 3), need_grad=True)
 
@@ -1162,6 +1181,277 @@ class TestRecomputation():
         # Check unnecessary recomputation.
         y.forward(clear_no_need_grad=True)
         y.backward(function_pre_hook=fail_with_not_cleared_data)
+
+    @pytest.mark.parametrize("recompute_flag", [False, True])
+    def test_with_statement_variable_creation(self, recompute_flag):
+        """
+        Test for setting recompute flags with Python `with` statement.
+        """
+
+        # Create a new Variable
+        x1 = nn.Variable((2, 3))
+        assert x1.recompute == False
+
+        with nn.recompute(recompute_flag):
+            # Create Variable by `__cinit__()`
+            y1 = nn.Variable((2, 3))
+            assert y1.recompute == recompute_flag
+
+            # Create Variable by `create_from_cvariable()`
+            y2 = x1.reshape((3, 2), unlink=True)
+            assert y2.recompute == recompute_flag
+
+            # Create Variable by `create_from_cg_variable()`
+            y3 = F.relu(x1)
+            assert y3.recompute == recompute_flag
+
+            # Create Variable by `from_numpy_array()`
+            data = np.array((2, 3))
+            y4 = nn.Variable.from_numpy_array(data)
+            assert y4.recompute == recompute_flag
+
+            # Create Variable by `get_unlinked_variable()`
+            y5 = x1.get_unlinked_variable()
+            assert y5.recompute == recompute_flag
+
+            # Recompute flag for referenced Variable must not be overwritten.
+            # More detail tests are performed by `test_nested_with_statement`
+            y6 = x1
+            assert y6.recompute == False
+
+            # Direct function connection
+            y7 = F.relu(F.relu(x1))
+
+        # Create a new Variable after with statement
+        x2 = nn.Variable((2, 3))
+        assert x2.recompute == False
+
+        # Check recompute flag of forcibly got Pyhon Variable.
+        assert y7.parent.inputs[0].recompute == recompute_flag
+
+        # Check default recompute flag for nn.recompute()
+        with nn.recompute():
+            x = nn.Variable((2, 3))
+            assert x.recompute == True
+
+    # Recompute flag for first nest
+    @pytest.mark.parametrize("f1", [False, True])
+    # Recompute flag for second nest
+    @pytest.mark.parametrize("f2", [False, True])
+    # Recompute flag for third nest
+    @pytest.mark.parametrize("f3", [False, True])
+    def test_nested_with_statement(self, f1, f2, f3):
+        """
+        Test for nested Pyhon `with` statement of recomputation.
+        """
+
+        x0 = nn.Variable((2, 3))
+        assert x0.recompute == False
+
+        # Nest 1
+        with nn.recompute(f1):
+            x1 = nn.Variable((2, 3))
+            x0_1 = x0
+            assert x1.recompute == f1
+            assert x0_1.recompute == False
+
+            # Nest 2
+            with nn.recompute(f2):
+                x2 = nn.Variable((2, 3))
+                x0_2 = x0
+                x1_2 = x1
+                assert x2.recompute == f2
+                assert x0_2.recompute == False
+                assert x1_2.recompute == f1
+
+                # Nest 3
+                with nn.recompute(f3):
+                    x3 = nn.Variable((2, 3))
+                    x0_3 = x0
+                    x1_3 = x1
+                    x2_3 = x2
+                    assert x3.recompute == f3
+                    assert x0_3.recompute == False
+                    assert x1_3.recompute == f1
+                    assert x2_3.recompute == f2
+
+                x2 = nn.Variable((2, 3))
+                x0_2 = x0
+                x1_2 = x1
+                assert x2.recompute == f2
+                assert x0_2.recompute == False
+                assert x1_2.recompute == f1
+
+            x1 = nn.Variable((2, 3))
+            x0_1 = x0
+            assert x1.recompute == f1
+            assert x0_1.recompute == False
+
+        x0 = nn.Variable((2, 3))
+        assert x0.recompute == False
+
+    # Recompute flag for first `with` block
+    @pytest.mark.parametrize("f1", [False, True])
+    # Recompute flag for second `with` block
+    @pytest.mark.parametrize("f2", [False, True])
+    def test_sequential_with_statement(self, f1, f2):
+        """
+        Test for sequential use of with statement.
+        """
+        x = nn.Variable((2, 3))
+        assert x.recompute == False
+
+        # First `with` block
+        with nn.recompute(f1):
+            y = F.relu(x)
+            assert y.recompute == f1
+            y = F.sin(y)
+            assert y.recompute == f1
+
+        assert y.recompute == f1
+
+        y = F.relu(y)
+        assert y.recompute == False
+
+        # Second `with` block
+        with nn.recompute(f2):
+            y = F.relu(x)
+            assert y.recompute == f2
+            y = F.sin(y)
+            assert y.recompute == f2
+
+        assert y.recompute == f2
+
+        y = F.relu(y)
+        assert y.recompute == False
+
+    @pytest.mark.parametrize("recompute_flag", [False, True])
+    def test_recompute_fn_decorator(self, recompute_flag):
+        """
+        Test for setting recompute flags with function decorator `nn.recompute_fn()`.
+        """
+
+        # Specifying recompute flag
+        @nn.recompute_fn(recompute_flag)
+        def func2(x):
+            assert x.recompute == False
+            y = F.relu(x)
+            assert y.recompute == recompute_flag
+            return y
+
+        # Check recompute flags
+        x2 = nn.Variable((2, 3))
+        assert x2.recompute == False
+        y2 = func2(x2)
+        assert y2.recompute == recompute_flag
+
+    def test_recompute_fn_decorator_default_use(self):
+        """
+        Test for setting recompute flags with function decorator `nn.recompute_fn()` without specifying recompute flag.
+        """
+
+        # Default usage
+        @nn.recompute_fn()
+        def func1(x):
+            assert x.recompute == False
+            y = F.relu(x)
+            assert y.recompute == True
+            return y
+
+        # Check recompute flags
+        x1 = nn.Variable((2, 3))
+        assert x1.recompute == False
+        y1 = func1(x1)
+        assert y1.recompute == True
+
+    @pytest.mark.parametrize("recompute_flag", [False, True])
+    def test_recompute_fn_decorator_multiple_inputs_outputs(self, recompute_flag):
+        """
+        Test for the use of `nn.recompute_fn()` with a function which have multiple inputs, outpus, args and kwargs.
+        """
+
+        # Define sample function with multiple inputs and outputs
+        @nn.recompute_fn(recompute_flag)
+        def func(x1, x2, val, axis, reverse=False, alpha=0.2):
+            # Check args and kwargs passed correctly
+            assert val == 3.14
+            assert axis == 0
+            assert reverse == True
+            assert alpha == 0.3
+
+            y1 = F.cumsum(x1, axis, reverse=reverse)
+            y2 = x2 * val
+
+            y3 = y1 + y2
+            y3 = F.leaky_relu(y3, alpha=alpha)
+
+            # Check recompute flags for variables defined inside this function
+            assert y1.recompute == recompute_flag
+            assert y2.recompute == recompute_flag
+            assert y3.recompute == recompute_flag
+
+            return y2, y3
+
+        x1 = nn.Variable((2, 3))
+        x2 = nn.Variable((2, 3))
+
+        y1, y2 = func(x1, x2, 3.14, 0, alpha=0.3, reverse=True)
+        assert y1.recompute == recompute_flag
+        assert y2.recompute == recompute_flag
+
+    # Recompute flag for outer function
+    @pytest.mark.parametrize("f0", [False, True])
+    # Recompute flag for first inner function
+    @pytest.mark.parametrize("f1", [False, True])
+    # Recompute flag for second inner function
+    @pytest.mark.parametrize("f2", [False, True])
+    def test_nested_recompute_fn_decorator(self, f0, f1, f2):
+        """
+        Test for setting recompute flags with nested function decorator `nn.recompute_fn()`.
+        """
+
+        # First sub function
+        @nn.recompute_fn(f1)
+        def func1(x):
+            assert x.recompute == f0
+            y = F.relu(x)
+            assert y.recompute == f1
+            return y
+
+        # Second sub function
+        @nn.recompute_fn(f2)
+        def func2(x):
+            assert x.recompute == f0
+            y = F.sin(x)
+            assert y.recompute == f2
+            return y
+
+        # Main function
+        @nn.recompute_fn(f0)
+        def func0(x):
+            assert x.recompute == False
+            y = F.identity(x)
+            assert y.recompute == f0
+
+            # First inner function call
+            y = func1(y)
+            assert y.recompute == f1
+
+            y = F.relu(y)
+            assert y.recompute == f0
+
+            # Second inner function call
+            y = func2(y)
+            assert y.recompute == f2
+
+            y = F.identity(y)
+            assert y.recompute == f0
+            return y
+
+        # Call main function
+        x = nn.Variable((2, 3))
+        y = func0(x)
+        assert y.recompute == f0
 
 
 @pytest.mark.parametrize("inplace", [True, False])

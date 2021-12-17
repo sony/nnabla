@@ -46,6 +46,9 @@ def scope_function():
     # use cached array
     nn.prefer_cached_array(True)
 
+    # turn off re-computation
+    nn.set_global_recompute(False)
+
     yield
 
     # restore context

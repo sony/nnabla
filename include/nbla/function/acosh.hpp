@@ -25,7 +25,7 @@ namespace nbla {
 /** @class ACosh
 @brief Arc hyperbolic cosine (ACosh) defined as
 @f[
-y_i = \acosh (x_i).
+y_i = \mbox{arccosh} (x_i).
 @f]
 
 Inputs:

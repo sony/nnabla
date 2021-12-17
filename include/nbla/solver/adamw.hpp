@@ -25,7 +25,7 @@ NBLA_REGISTER_SOLVER_HEADER(AdamW, float, float, float, float, float);
 \f[
 \theta_{t+1} \leftarrow \theta - \alpha
 \frac{\sqrt{1 - \beta_2^t}}{1 - \beta_1^t}
-\frac{m_t}{\sqrt{v_t} + \epsilon} - \eta_t\lambda\w_{t-1}
+\frac{m_t}{\sqrt{v_t} + \epsilon} - \eta_t\lambda w_{t-1}
 \f]
 where \f$\theta_t\f$ is a gradient of a parameter, \f$m_t\f$ and \f$v_t\f$ are
 moving average and 0-mean variance of a sequence of gradients \f$t=0,...,t\f$.

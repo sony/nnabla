@@ -29,15 +29,14 @@ NBLA_REGISTER_FUNCTION_HEADER(ScatterNd, const vector<int> &, bool);
 
   The forward of :func:`~nnabla.functions.scatter_nd` is equivalent to:
 
-  .. code-block:: python
-
-    def scatter_nd(data, indices, shape):
-        import numpy as np
-        if isinstance(indices, np.ndarray)
-            indices = indices.tolist()
-        result = np.zeros(shape, dtype=data.dtype)
-        result[indices] = data
-        return result
+  @code{.py}
+  def scatter_nd(data, indices, shape):
+      import numpy as np
+      if isinstance(indices, np.ndarray)
+          indices = indices.tolist()
+      result = np.zeros(shape, dtype=data.dtype)
+      result[indices] = data
+      return result
 
   Examples:
 
@@ -53,6 +52,7 @@ NBLA_REGISTER_FUNCTION_HEADER(ScatterNd, const vector<int> &, bool);
     outputs:
       y:
         doc: N-D array of given `shape`.
+  @endcode
 
 Inputs:
 - N-D array input data

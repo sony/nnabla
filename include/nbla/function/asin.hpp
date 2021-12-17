@@ -25,7 +25,7 @@ namespace nbla {
 /** @class ASin
 @brief Arc sine (ASin) defined as
 @f[
-y_i = \asin (x_i).
+y_i = \arcsin (x_i).
 @f]
 
 Inputs:

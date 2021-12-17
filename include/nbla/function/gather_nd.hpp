@@ -34,14 +34,14 @@ NBLA_REGISTER_FUNCTION_HEADER(GatherNd);
   The forward of :func:`~nnabla.functions.gather_nd` is equivalent to the
   following Python code:
 
-  .. code-block:: python
-
+  @code{.py}
     def gather_nd(data, index):
         import numpy as np
         tmp_index = index.reshape(index.shape[0], -1)
         tmp_index = (idx + (Ellipsis,) for idx in zip(*new_index))
         out_shape = index.shape[1:] + data.shape[index.shape[0]:]
         return np.vstack(data[idx] for idx in tmp_index).reshape(*out_shape)
+  @endcode
 
 Inputs:
 

@@ -319,6 +319,9 @@ Constant:
 Arange:
   float: [float]
   half: [Half]
+Linspace:
+  float: [float]
+  half: [Half]
 Abs:
   float: [float]
   half: [Half]

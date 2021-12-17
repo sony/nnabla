@@ -67,23 +67,7 @@ public:
     return SingletonManager::get<Cpu>()->array_classes();
   }
   virtual string name() { return "CumProd"; }
-  // TODO: If any of data/grad storage is inplaced with any of output, you must
-  // override some of these. See doc in function.hpp.
-  // virtual int inplace_data(int i) const {
-  // }
-  // virtual int inplace_data_with(int i) const {
-  // }
-  // TODO: If you want to avoid clearing input buffers in any case, define this
-  // function returning true.
-  // virtual bool prohibit_clear_input_buffers() const {
-  //   return true;
-  // }
-  // TODO: If you want to avoid zero-ing gradient of inputs even when accum is
-  // true, uncomment the following function definition.
-  // virtual bool prohibit_zero_input_grad() const {
-  //   return true;
-  // }
-  virtual bool grad_depends_output_data(int i, int o) const { return true; }
+  virtual bool grad_depends_output_data(int i, int o) const { return false; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,
@@ -94,7 +78,6 @@ protected:
                                       const Variables &outputs,
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
-  virtual bool grad_depends_input_data_impl(int i, int j) const { return true; }
 };
 }
 #endif

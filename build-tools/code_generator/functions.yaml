@@ -691,12 +691,12 @@ Neural Network Layer:
           K_N`).
         parameter: true
       offset:
-        doc: Offsets for deformable convolutions. Shape is fixed to :math:`(N, deformable_group
+        doc: Offsets for deformable convolutions. Shape is fixed to :math:`(N, deformable{\_}group
           \times 2 \times Kh \times Kw, H, W)`. Offsets must be calculated externally
           through a separate convolution layer.
       mask:
         doc: Normalized mask for deformable convolutions v2. Shape is fixed to :math:`(N,
-          deformable_group \times 2 \times Kh \times Kw, H, W)`. Masks must be calculated
+          deformable{\_}group \times Kh \times Kw, H, W)`. Masks must be calculated
           externally together with the offsets through a separate convolution layer.
         optional: true
       bias:
@@ -2134,9 +2134,9 @@ Normalization:
 
       .. math::
 
-          W_{sn} = \\frac{W}{\\sigma(W)}.
+          W_{sn} = \frac{W}{\sigma(W)}
 
-      where :math:`W` is the input matrix, and the :math:`\\sigma(W)` is the spectral norm of :math:`W`. The spectral norm is approximately computed by the power iteration.
+      where :math:`W` is the input matrix, and the :math:`\sigma(W)` is the spectral norm of :math:`W`. The spectral norm is approximately computed by the power iteration.
 
       References:
 
@@ -3649,6 +3649,28 @@ Math:
         doc: 1-D array with the generated values.
     function_ids:
       fff: 131
+    c_runtime: not support
+  Linspace:
+    snake_name: linspace
+    doc: |2
+
+      Generate a one-dimensional vector/tensor of size `num` whose values are evenly spaced from `start` to `end`, inclusive.
+    inputs: {}
+    arguments:
+      start:
+        doc: Start value.
+        type: float
+      stop:
+        doc: End value.
+        type: float
+      num:
+        doc: Size of the constructed vector/tensor.
+        type: int64
+    outputs:
+      y:
+        doc: 1-D array with the generated values.
+    function_ids:
+      ffi: 343
     c_runtime: not support
   Abs:
     snake_name: abs
@@ -5285,6 +5307,12 @@ Signal Processing:
         - constant
         - reflect
         default: '''reflect'''
+      as_istft_backward:
+        doc: If `True`, then forward execution behaves as backward execution of ISTFT,
+          treating input `x` as output gradient of ISTFT and outputs `y_r` and `y_i`
+          as inputs gradient of ISTFT. This option is only used in nn.grad operator.
+        type: bool
+        default: 'False'
     outputs:
       y_r:
         doc: Real part of STFT of size `batch_size x fft_size//2 + 1 x frame_size`.
@@ -5293,6 +5321,7 @@ Signal Processing:
     c_runtime: not support
     function_ids:
       iiiiBi: 327
+      iiiiBiB: 344
   ISTFT:
     snake_name: istft
     doc: |2+
@@ -5330,12 +5359,29 @@ Signal Processing:
           padding.
         type: bool
         default: 'True'
+      pad_mode:
+        doc: Padding mode corresponding to STFT `pad_mode`, which can be `'constant'`
+          or `'reflect'`. `'constant'` pads with `0`. This option is ignored for the
+          normal use of ISTFT. You need to set the same `pad_mode` only when `as_stft_backward
+          == True`.
+        type: string
+        available_values:
+        - constant
+        - reflect
+        default: '''reflect'''
+      as_stft_backward:
+        doc: If `True`, then forward execution behaves as backward execution of STFT,
+          treating inputs `y_r` and `y_i` as outputs gradient of STFT and output `x`
+          as input gradient of STFT. This option is only used in nn.grad operator.
+        type: bool
+        default: 'False'
     outputs:
       x:
         doc: Time domain sequence of size `batch_size x sample_size`.
     c_runtime: not support
     function_ids:
       iiiiB: 328
+      iiiiBiB: 345
 Stochasticity:
   Dropout:
     snake_name: dropout
@@ -5884,7 +5930,7 @@ Stochasticity:
         default: 1
       share:
         doc: Use a same bounding box randomly picked over the feature dimension when
-          being True. Default is False.
+          being True. Default is True.
         type: bool
         default: 'True'
       inplace:

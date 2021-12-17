@@ -29,8 +29,8 @@ NBLA_REGISTER_FUNCTION_HEADER(TopNError, int, int);
 @f[
 y_i = \left \{
 \begin{array}{l}
-1 (x_i is not within Nth place) \\
-0 (x_i is within Nth place)
+1, &(x_i \text{ is not within Nth place}) \\
+0, &(x_i \text{ is within Nth place})
 \end{array}
 \right.
 @f]

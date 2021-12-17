@@ -25,12 +25,12 @@ namespace nbla {
 /** @class ATan2
 @brief Arc tangent 2 (ATan2) defined as
 @f[
-y_i = \atan (x1/x0) if x0 > 0,
-y_i = \atan (x1/x0) + \pi if x0 < 0 and x1 \geq 0,
-y_i = \atan (x1/x0) - \pi if x0 <0 and x1 < 0,
-y_i = \pi/2 if x0=0 and x1 > 0,
-y_i = -\pi/2 if x0=0 and x1 < 0,
-y_i = undefined if x0=0 and x1=0
+y_i = \arctan (x_1/x_0) \text{ if } x_0 > 0,\\
+y_i = \arctan (x_1/x_0) + \pi \text{ if } x_0 < 0 \text{ and } x_1 \geq 0,\\
+y_i = \arctan (x_1/x_0) - \pi \text{ if } x_0 < 0 \text{ and } x_1 < 0,\\
+y_i = \pi/2 \text{ if } x_0 = 0 \text{ and } x_1 > 0,\\
+y_i = -\pi/2 \text{ if } x_0 = 0 \text{ and } x_1 < 0,\\
+y_i = undefined \text{ if } x_0=0 \text{ and } x_1=0
 @f]
 
 Inputs:

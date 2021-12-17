@@ -280,3 +280,8 @@
   BoolScatter_Empty: 340
 37:
   ScatterNd_iIB: 342
+38:
+  Linspace_ffi: 343
+39:
+  ISTFT_iiiiBiB: 345
+  STFT_iiiiBiB: 344
