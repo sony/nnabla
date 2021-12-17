@@ -163,6 +163,28 @@ public:
   }
 
   DISABLE_COPY_AND_ASSIGN(Variable);
+
+private:
+  // This is a temporary workaround to share the member variable "mask" of
+  // the function Dropout to the derivative function dropout_backward
+  // without changing the backward compatibility of their user interfaces.
+  // This workaround depends on GradEndFunction of the nnabla.grad scheme.
+  // It guarantees the computation order (rank) from Dropout to
+  // dropout_backward. However this workaround is dangerous because the
+  // dependency is implicit.
+  // TODO: the overall refactoring of foward/backward/nnabla.grad to solve
+  //       this problem fundamentally.
+  using DropoutMaskWorkaroundDependingOnGradEndFunction = Ptr;
+  DropoutMaskWorkaroundDependingOnGradEndFunction dropout_mask_ = nullptr;
+  // The following friend functions are used to modify Variable object without
+  // changing the interface.
+
+  // Get the Variable holding a mask, meaning the externally accessible
+  // member variable of Dropout.
+  NBLA_API friend Ptr get_dropout_mask(Ptr dropout_input);
+  // Set the mask
+  NBLA_API friend void set_dropout_mask(Variable *dropout_input,
+                                        Ptr dropout_mask);
 };
 
 ///< Shared pointer of Variable.
