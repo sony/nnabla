@@ -47,7 +47,8 @@ RUN eval ${APT_OPTS} \
     python3-wheel \
     unzip \
     wget \
-    zip
+    zip \
+    liblzma-dev
 
 ############################################################ protobuf
 ENV PROTOVER=3.10.1
