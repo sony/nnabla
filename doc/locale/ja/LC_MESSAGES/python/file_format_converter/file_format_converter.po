@@ -281,7 +281,7 @@ msgstr ""
 
 #: ../../python/file_format_converter/file_format_converter.rst:158
 msgid ""
-"$ pip install -U tensorflow==1.5 onnx==1.4.1 onnx_tf\n"
+"$ pip install tensorflow==1.5 onnx==1.4.1 onnx_tf\n"
 "$ pip install https://github.com/onnx/tensorflow-onnx.git"
 msgstr ""
 
