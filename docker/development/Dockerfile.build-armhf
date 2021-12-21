@@ -85,6 +85,6 @@ RUN cat /tmp/deps/requirements.txt |grep -v onnx >/tmp/deps/r.txt
 RUN mv /tmp/deps/r.txt /tmp/deps/requirements.txt
 
 RUN pip3 install ${PIP_INS_OPTS} -r /tmp/deps/requirements.txt
-RUN pip3 install ${PIP_INS_OPTS} -r /tmp/deps/test_requirements.txt
+# RUN pip3 install ${PIP_INS_OPTS} -r /tmp/deps/test_requirements.txt
 
 ENV PATH /tmp/.local/bin:$PATH
