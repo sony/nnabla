@@ -30,7 +30,7 @@ make lenet
 The above command generates an executable `train_lenet_classifier` at the current directory.
 
 The makefile `GNUmakefile` is simple.
-It links `libnnabla.so` and `libz.so` with the executable generated from `train_lenet_classifier.cpp`, and compiles with C++11 option `-std=c++11`.
+It links `libnnabla.so` and `libz.so` with the executable generated from `train_lenet_classifier.cpp`, and compiles with C++14 option `-std=c++14`.
 
 You can also compile other executables by using make command with proper options.
 Also you can compile an executable `training_lenet_classifier_cuda` and other cuda versions that run computation on your CUDA device.

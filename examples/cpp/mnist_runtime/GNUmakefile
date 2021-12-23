@@ -13,10 +13,10 @@
 # limitations under the License.
 
 all: mnist_runtime.cpp
-	$(CXX) -std=c++11 -D TIMING -O -o mnist_runtime mnist_runtime.cpp -lnnabla -lnnabla_utils
+	$(CXX) -std=c++14 -D TIMING -O -o mnist_runtime mnist_runtime.cpp -lnnabla -lnnabla_utils
 
 cuda: mnist_runtime.cpp
-	$(CXX) -std=c++11 -D TIMING -D WITH_CUDA -O -o mnist_runtime_cuda mnist_runtime.cpp -lnnabla -lnnabla_utils -lnnabla_cuda$(CUDA_VERSION_SUFFIX)
+	$(CXX) -std=c++14 -D TIMING -D WITH_CUDA -O -o mnist_runtime_cuda mnist_runtime.cpp -lnnabla -lnnabla_utils -lnnabla_cuda$(CUDA_VERSION_SUFFIX)
 
 clean:
 	rm -f mnist_runtime
