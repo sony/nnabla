@@ -40,6 +40,7 @@ RUN apt-get update \
        libgl1-mesa-glx \
        python3.9 \
        python3-pip \
+       python3.9-distutils \
     && rm -rf /var/lib/apt/lists/*
 
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.9 0
