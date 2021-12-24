@@ -610,7 +610,7 @@ Import
 - Empty: Not support yet.
 
 
-Total: 107/122
+Total: 106/122
 
 .. table:: Tensorflow support status
 
@@ -653,7 +653,7 @@ Total: 107/122
       Cosh                     ✓      Cosh                                                                    
       Crelu                    ✓      Concatenate, MulScalar, ReLU                                            
       Cumsum                   X                                                          Not yet implemented.
-      DepthToSpace             ✓      Reshape, Transpose                                                      
+      DepthToSpace             △      Reshape, Transpose                                                      
       DepthwiseConv2d          △      Convolution, Pad, Reshape, Transpose                                    
       Div                      ✓      Div2                                                                    
       Elu                      ✓      ELU                                                                     
@@ -717,7 +717,7 @@ Total: 107/122
       Softmax                  ✓      Div2, Exp, Max, Reshape, Sub2, Sum, Transpose                           
       Softplus                 X      SoftPlus                                            Not yet implemented.
       Softsign                 ✓      SoftSign                                                                
-      SpaceToDepth             ✓      Reshape, Transpose                                                      
+      SpaceToDepth             △      Reshape, Transpose                                                      
       Split                    ✓      Split, Stack                                                            
       SplitV                   ✓      Split, Stack                                                            
       Sqrt                     ✓      PowScalar                                                               
@@ -734,7 +734,7 @@ Total: 107/122
       Tile                     ✓      Tile                                                                    
       TopKV2                   X                                                          Not yet implemented.
       Transpose                ✓      Transpose                                                               
-      TruncateDiv              ✓      Div2                                                                    
+      TruncateDiv              X      Div2                                                Not yet implemented.
       TruncateMod              X                                                          Not yet implemented.
       Unpack                   ✓      Reshape, Split, Stack                                                   
       Where                    △      Where                                                                   
@@ -1598,11 +1598,11 @@ Count 8/18
       Convolution                    ✓                      
       FusedConvolution                                      
       DepthwiseConvolution           ✓                      
-      Deconvolution                  ✓                      
+      Deconvolution                  △                      
       DepthwiseDeconvolution                                
       DeformableConvolution                                 
       AdaptiveSeparableConvolution                          
-      MaxPooling                     ✓                      
+      MaxPooling                     △                      
       AveragePooling                 ✓                      
       GlobalAveragePooling                                  
       SumPooling                     ✓                      
@@ -1631,7 +1631,7 @@ Count 11/22
       ELU              ✓                      
       SELU             ✓                      
       CReLU            ✓                      
-      CELU             ✓                      
+      CELU             △                      
       PReLU            ✓                      
       GELU                                    
       Mish                                    
@@ -1681,7 +1681,7 @@ Count 1/10
     =================  ========  =============
      NNabla Function    Status    Description 
     =================  ========  =============
-      Sum              ✓                      
+      Sum              △                      
       CumSum                                  
       Mean                                    
       Max                                     
@@ -1714,7 +1714,7 @@ Count 11/14
       AddScalar        ✓                      
       MulScalar        ✓                      
       PowScalar        ✓                      
-      RSubScalar       ✓                      
+      RSubScalar       △                      
       RDivScalar       ✓                      
       RPowScalar       ✓                      
     =================  ========  =============
@@ -1807,10 +1807,10 @@ Count 7/30
     =====================  ========  =============
       Concatenate          ✓                      
       Split                ✓                      
-      Stack                ✓                      
-      Slice                ✓                      
+      Stack                △                      
+      Slice                △                      
       Pad                                         
-      Transpose            ✓                      
+      Transpose            △                      
       Broadcast                                   
       BroadcastTo                                 
       Tile                                        
@@ -1932,7 +1932,7 @@ Count 6/14
       BinaryConnectAffine        ✓                      
       BinaryConnectConvolution   ✓                      
       BinaryWeightAffine         ✓                      
-      BinaryWeightConvolution    ✓                      
+      BinaryWeightConvolution    △                      
       INQAffine                                         
       INQConvolution                                    
       FixedPointQuantize                                
