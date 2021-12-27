@@ -7,3 +7,4 @@ sphinxcontrib-plantuml
 sphinxcontrib-seqdiag
 sphinxcontrib-toc
 funcparserlib==1.0.0a0
+breathe
