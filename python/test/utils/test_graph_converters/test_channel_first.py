@@ -22,12 +22,12 @@ import nnabla.experimental.graph_converters as GC
 
 from nnabla.ext_utils import get_extension_context
 
-from .ref_graphs.resnets import small_cl_resnet, small_cf_resnet
+from .ref_graphs.resnets import small_cl_resnet, small_bn_resnet
 from nbla_test_utils import list_context
 
 ctxs = list_context('Convolution')  # proxy to switch the context
 batch_size = 1
-resnet_ref = small_cf_resnet
+resnet_ref = small_bn_resnet
 
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)

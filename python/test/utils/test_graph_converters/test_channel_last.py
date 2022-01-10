@@ -22,7 +22,7 @@ import nnabla.experimental.graph_converters as GC
 
 from nnabla.ext_utils import get_extension_context
 
-from .ref_graphs.resnets import small_cf_resnet, small_cl_resnet
+from .ref_graphs.resnets import small_bn_resnet, small_cl_resnet
 from nbla_test_utils import list_context
 
 ctxs = list_context('Convolution')  # proxy to switch the context
@@ -33,7 +33,7 @@ resnet_ref = small_cl_resnet
 @pytest.mark.parametrize('ctx, func_name', ctxs)
 @pytest.mark.parametrize('seed', [313])
 @pytest.mark.parametrize('test', [True, False])
-@pytest.mark.parametrize('graph_ref, graph_act', [(resnet_ref, small_cf_resnet)])
+@pytest.mark.parametrize('graph_ref, graph_act', [(resnet_ref, small_bn_resnet)])
 def test_channel_last(ctx, func_name, seed, test, graph_ref, graph_act):
     from .graph_converter_test_utils import structure_tester, value_tester
 

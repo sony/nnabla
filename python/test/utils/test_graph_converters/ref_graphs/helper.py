@@ -30,8 +30,9 @@ def create_scale_bias(idx, maps, ndim=4, axes=[1]):
     return a, b
 
 
-def get_channel_axes(channel_last=False, dims=2):
-    return [dims+1] if channel_last else [1]
+def get_channel_axes(x, channel_last=False, dims=2):
+    assert dims+1 == x.ndim-1
+    return [x.ndim-1] if channel_last else [1]
 
 
 def create_conv_weight_bias(inp, maps=16, kernel=(3, 3),

@@ -61,7 +61,16 @@ class AddBiasModifier(FunctionModifier, BatchNormBase):
         super(AddBiasModifier, self).__init__()
 
     def modify(self, f, inputs):
-        if not f.info.type_name in self._fct_set:
+        fname = f.info.type_name
+        if not fname in self._fct_set:
+            return
+
+        # Next or Previous func is not BatchNorm
+        next_func = f.outputs[0].function_references[0]
+        prev_func = f.inputs[0].parent
+        if (prev_func == None
+                or prev_func.info.type_name != 'BatchNormalization') \
+                and next_func.info.type_name != 'BatchNormalization':
             return
 
         x = inputs[0]
@@ -72,7 +81,7 @@ class AddBiasModifier(FunctionModifier, BatchNormBase):
             return
 
         scope = self.get_parameter_scope(w)
-        n_outmaps = w.shape[0]
+        n_outmaps = w.shape[1] if fname == 'Affine' else w.shape[0]
         with nn.parameter_scope(scope):
             b = get_parameter_or_create(
                 'b', (n_outmaps, ), ConstantInitializer(), True, True)
@@ -125,12 +134,17 @@ class BatchNormalizationFoldingModifierInner(FunctionModifier, BatchNormBase):
         ip_func = f
         bn_func = next_func
         w_data, b_data = self._compute_folded_parameters(ip_func, bn_func)
-        ip_func.inputs[1].d = w_data
-        ip_func.inputs[2].d = b_data
 
         x = inputs[0]
-        w = ip_func.inputs[1]
-        b = ip_func.inputs[2]
+
+        scope = self.get_parameter_scope(inputs[1])
+        with nn.parameter_scope(scope):
+            w = get_parameter_or_create('w-folded',
+                                        inputs[1].shape, w_data,
+                                        inputs[1].need_grad)
+            b = get_parameter_or_create('b-folded',
+                                        inputs[2].shape, b_data,
+                                        inputs[2].need_grad)
 
         h = self.connect(f, x, w, b)
 

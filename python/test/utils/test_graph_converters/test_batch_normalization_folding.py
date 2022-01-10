@@ -41,10 +41,11 @@ resnet_ref = small_bn_folding_resnet
 @pytest.mark.parametrize('ctx, func_name', ctxs)
 @pytest.mark.parametrize('seed', [313])
 @pytest.mark.parametrize('test', [True])
-@pytest.mark.parametrize('w_bias', [True])
-@pytest.mark.parametrize('channel_last', [False, True])
+@pytest.mark.parametrize('w_bias', [True]) # TODO: dcn w_bias=False
+@pytest.mark.parametrize('channel_last', [True, False])
 @pytest.mark.parametrize('graph_ref, graph_act, opposite',
-                         [(resnet_ref, small_bn_resnet, False),
+                         [#(lenet_ref, bn_lenet, False)])#,
+                          (resnet_ref, small_bn_resnet, False),
                           (resnet_ref, small_bn_opp_resnet, True),
                           (small_dcn, small_bn_dcn, False),
                           (small_opp_dcn, small_bn_opp_dcn, True)])
@@ -79,8 +80,8 @@ def test_batch_normalization_folding(ctx, func_name, seed, test, w_bias,
         y_act = GC.GraphConverter(modifiers).convert(y_tgt)
 
         # Ref Graph
-        y_ref = graph_ref(x, test=test, channel_last=channel_last, dims=dims)
+        y_ref = graph_ref(x, channel_last=channel_last, dims=dims)
 
         # Test
         structure_tester(y_ref, y_act)
-        value_tester(y_tgt, y_act, rtol=6e-02, atol=5e-02)
+        value_tester(y_tgt, y_act, rtol=6e-04, atol=5e-04)

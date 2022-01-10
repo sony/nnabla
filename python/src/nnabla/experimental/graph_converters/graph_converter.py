@@ -76,19 +76,12 @@ class FunctionModifier(object):
 
         # Lookup
         inputs = self._map_func_inputs[f]
+
         if len(f.inputs) > 1:
             _inputs = [inp for inp in f.inputs]
-            idxs = []  # index of inpout variable which has already been saved
-            for inp in inputs:
-                for i in range(len(f.inputs)):
-                    finp = f.inputs[i]
-                    if inp.shape[1:] == finp.shape[1:] and i not in idxs:  # ignore batch size
-                        idxs.append(i)
-                        break
-            for i in range(len(idxs)):
-                idx = idxs[i]
-                _inputs[idx] = inputs[i]
-            inputs = _inputs
+            for i in range(len(inputs)):
+                if not inputs[i]:  # i-th input var has not been saved
+                    inputs[i] = _inputs[i]
 
         # Modify
         o = self.modify(f, inputs)
@@ -108,7 +101,11 @@ class FunctionModifier(object):
             if funcs == []:
                 return
             for func in funcs:
-                self._map_func_inputs[func].append(o1)
+                if len(self._map_func_inputs[func]) == 0:  # init to None
+                    self._map_func_inputs[func] = [None] * len(func.inputs)
+                for i, inp in enumerate(func.inputs):
+                    if o0 == inp:
+                        self._map_func_inputs[func][i] = o1
 
     def modify(self, f, inputs):
         """Modify the function.

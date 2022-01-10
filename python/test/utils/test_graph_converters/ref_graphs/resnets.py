@@ -62,7 +62,7 @@ def bn_self_folding_resblock(x, i, maps, kernel=(3, 3), pad=(1, 1),
                            channel_last=channel_last, with_bias=False)
         axes = get_channel_axes(h, channel_last)
         a, b = create_scale_bias(1, h.shape, axes=axes)
-        h = h * a + b
+        h = a * h + b
     return F.relu(h + x)
 
 
@@ -73,7 +73,7 @@ def small_bn_self_folding_resnet(image, channel_last=False, name='bn-self-foldin
                        with_bias=False, name='first-conv')
     axes = get_channel_axes(h, channel_last)
     a, b = create_scale_bias(1, h.shape, axes=axes)
-    h = h * a + b
+    h = a * h + b
     h = F.relu(h)
     h = F.max_pooling(h, (2, 2), channel_last=channel_last)
     h = bn_self_folding_resblock(
@@ -140,10 +140,10 @@ def small_bn_dcn(image, test=False, w_bias=False, channel_last=False, name='smal
     kernel = (3,) * dims
     pool_kernel = (2,) * dims
     pad = (1,) * dims
-    axes = get_channel_axes(channel_last, dims)
     with nn.parameter_scope('dcn-deconv1') as scope:
         h = PF.deconvolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
                              with_bias=w_bias, name='deconv1')
+        axes = get_channel_axes(h, channel_last, dims)
         h = PF.batch_normalization(
             h, axes=axes, batch_stat=not test, name='bn1')
         h = F.relu(h)
@@ -152,6 +152,7 @@ def small_bn_dcn(image, test=False, w_bias=False, channel_last=False, name='smal
     with nn.parameter_scope('dcn-deconv2') as scope:
         h = PF.deconvolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
                              with_bias=w_bias, name='deconv2')
+        axes = get_channel_axes(h, channel_last, dims)
         h = PF.batch_normalization(
             h, axes=axes, batch_stat=not test, name='bn2')
         h = F.relu(h)
@@ -160,6 +161,7 @@ def small_bn_dcn(image, test=False, w_bias=False, channel_last=False, name='smal
     with nn.parameter_scope('dcn-deconv3') as scope:
         h = PF.deconvolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
                              with_bias=w_bias, name='deconv3')
+        axes = get_channel_axes(h, channel_last, dims)
         h = PF.batch_normalization(
             h, axes=axes, batch_stat=not test, name='bn3')
         h = F.relu(h)
@@ -205,11 +207,11 @@ def small_bn_opp_dcn(image, test=False, w_bias=False, channel_last=False, name='
     kernel = (3,) * dims
     pool_kernel = (2,) * dims
     pad = (1,) * dims
-    axes = get_channel_axes(channel_last, dims)
     with nn.parameter_scope('dcn-deconv1') as scope:
         h = PF.deconvolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
                              with_bias=w_bias, name='deconv1')
         h = F.relu(h)
+        axes = get_channel_axes(h, channel_last, dims)
         h = PF.batch_normalization(
             h, axes=axes, batch_stat=not test, name='bn1')
         h = PF.deconvolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
@@ -220,6 +222,7 @@ def small_bn_opp_dcn(image, test=False, w_bias=False, channel_last=False, name='
         h = PF.deconvolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
                              with_bias=w_bias, name='deconv3')
         h = F.relu(h)
+        axes = get_channel_axes(h, channel_last, dims)
         h = PF.batch_normalization(
             h, axes=axes, batch_stat=not test, name='bn2')
         h = PF.deconvolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
@@ -230,6 +233,7 @@ def small_bn_opp_dcn(image, test=False, w_bias=False, channel_last=False, name='
         h = PF.deconvolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
                              with_bias=w_bias, name='deconv5')
         h = F.relu(h)
+        axes = get_channel_axes(h, channel_last, dims)
         h = PF.batch_normalization(
             h, axes=axes, batch_stat=not test, name='bn3')
         h = PF.deconvolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
@@ -731,9 +735,9 @@ def nonqnn_to_recording_resblock(x, cfg, maps, kernel=(3, 3), pad=(1, 1), stride
         with nn.parameter_scope('{}-Mul2'.format(name)):
             if not record_layers:
                 hr2 = recorder()(h, axes=axes)
-                h = hr2 * recorder()(a, axes=axes)
+                h = recorder()(a, axes=axes) * hr2
             else:
-                h = h * a
+                h = a * h
 
         with nn.parameter_scope('{}-Add2'.format(name)):
             if not record_layers:
@@ -782,9 +786,9 @@ def small_nonqnn_to_recording_resnet(image, config, test=False, channel_last=Fal
         with nn.parameter_scope('Mul2-{}'.format(func_id)):
             if not record_layers:
                 h = recorder()(h, axes=axes)
-                h = h * recorder()(a, axes=axes)
+                h = recorder()(a, axes=axes) * h
             else:
-                h = h * a
+                h = a * h
             func_id += 1
         with nn.parameter_scope('Add2-{}'.format(func_id)):
             if not record_layers:
