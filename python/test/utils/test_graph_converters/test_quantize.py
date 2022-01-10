@@ -33,7 +33,9 @@ from .ref_graphs.resnets import (small_bn_resnet,
                                  small_nonqnn_to_recording_skip_conv_fcn,
                                  small_bn_multi_fc_resnet,
                                  small_nonqnn_to_recording_skip_affine_resnet,
-                                 small_bn_opp_resnet)
+                                 small_recording_to_training_resnet,
+                                 small_bn_opp_resnet,
+                                 small_bn_r2t_resnet)
 
 
 ctxs = list_context('Convolution')  # proxy to switch the context
@@ -145,3 +147,102 @@ def test_nonqnn_to_recording(ctx, func_name, seed, test, w_bias, channel_last,
         # Test
         structure_tester(y_ref, y_act)
         value_tester(y_tgt, y_act, rtol=6e-02, atol=5e-02)
+
+
+@pytest.mark.parametrize('ctx, func_name', ctxs)
+@pytest.mark.parametrize('seed', [313])
+@pytest.mark.parametrize('precision_mode', [PrecisionMode.SIM_QNN])
+@pytest.mark.parametrize('graph_ref, graph_act',
+                         [(small_recording_to_training_resnet, small_bn_r2t_resnet)])
+def test_recording_to_training(ctx, func_name, seed, precision_mode, graph_ref, graph_act):
+    from .graph_converter_test_utils import structure_tester, value_tester
+
+    cfg = QNNConfig()
+    cfg.bn_folding = True
+    cfg.bn_self_folding = True
+    cfg.channel_last = False
+    cfg.precision_mode = precision_mode
+    cfg.skip_inputs_layers = []
+    cfg.skip_outputs_layers = []
+
+    # Random number
+    np.random.seed(seed)
+    rng = np.random.RandomState(seed)
+
+    # Graph
+    with nn.context_scope(ctx):
+        x_data = rng.randn(batch_size, 3, 32, 32)
+        gt_label = nn.Variable((batch_size, 1))
+        x = nn.Variable((batch_size, 3, 32, 32))
+
+        y_tgt = graph_act(x, test=False, w_bias=True)
+        loss = F.mean(F.softmax_cross_entropy(y_tgt, gt_label))
+        solver = S.Adam(0.001)
+        solver.set_parameters(nn.get_parameters(grad_only=True))
+        # train the float32 network
+        for i in range(100):
+            input_data = np.random.random((batch_size, 3, 32, 32))
+            input_label = np.random.randint(0, 10, size=(batch_size, 1))
+            gt_label.d = input_label
+            x.d = input_data
+            loss.forward()
+            loss.backward()
+            solver.update()
+
+        # BN folding & BN self folding
+        modifiers = []
+        if cfg.bn_folding:
+            modifiers.append(GC.BatchNormalizationFoldingModifier(
+                opposite=False, channel_last=cfg.channel_last))
+            modifiers.append(GC.BatchNormalizationFoldingModifier(
+                opposite=True, channel_last=cfg.channel_last))
+        # Go through BN self folding
+        if cfg.bn_self_folding:
+            modifiers.append(GC.BatchNormalizationSelfFoldingModifier())
+        if len(modifiers) > 0:
+            y_tgt_without_bn = GC.GraphConverter(modifiers).convert(y_tgt)
+            y_tgt.rewire_on(y_tgt_without_bn)
+
+        # convert to recording
+        funcrankrecorder = FunctionsRankRecorder()
+        y_tgt.visit(funcrankrecorder)
+        modifiers = [GC.QuantizeNonQNNToRecordingModifier(
+            funcrankrecorder.functions_ranks, config=cfg)]
+        y_act_rec = GC.GraphConverter(modifiers).convert(y_tgt)
+        y_tgt.rewire_on(y_act_rec)
+        y_tgt.need_grad = False
+        # solver.clear_parameters()
+        solver.set_parameters(nn.get_parameters(grad_only=True))
+        for i in range(100):
+            input_data = np.random.random((batch_size, 3, 32, 32))
+            input_label = np.random.randint(0, 10, size=(batch_size, 1))
+            gt_label.d = input_label
+            x.d = input_data
+            loss.forward()
+            loss.backward()
+            solver.update()
+
+        # Remove recorder
+        modifiers = []
+        modifiers.append(GC.RemoveFunctionModifier(
+            rm_funcs=[cfg.recorder_activation().name(),
+                      cfg.recorder_weight().name()]))
+        y_tgt = GC.GraphConverter(modifiers).convert(y_tgt)
+
+        # Collect functions rank
+        funcrankrecorder = FunctionsRankRecorder()
+        y_tgt.visit(funcrankrecorder)
+
+        # convert to training
+        modifiers = [GC.QuantizeRecordingToTrainingModifier(
+            funcrankrecorder.functions_ranks, config=cfg)]
+        y_act = GC.GraphConverter(modifiers).convert(y_tgt)
+        y_act.forward()
+        #
+        # # Ref Graph
+        y_ref = graph_ref(x, cfg, test=True)
+        #
+        # # Test
+        structure_tester(y_ref, y_act)
+    # value test is not applicable since it's between float and integer parameters
+    # value_tester(y_tgt, y_act, rtol=6e-01, atol=5e-01, forward=False)

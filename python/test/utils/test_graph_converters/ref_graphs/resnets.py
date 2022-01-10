@@ -829,6 +829,234 @@ def small_nonqnn_to_recording_resnet(image, config, test=False, channel_last=Fal
         return pred
 
 
+# BatchNormalization Small ResNet
+# For Recording to Training
+def small_bn_r2t_resnet(image, test=False, w_bias=False, channel_last=False,
+                        name='bn-graph-ref'):
+    h = image
+    h = PF.convolution(h, 16, kernel=(3, 3), pad=(1, 1), channel_last=channel_last,
+                       with_bias=w_bias, name='first-conv')
+    axes = get_channel_axes(h, channel_last)
+    h = PF.batch_normalization(
+        h, axes=axes, batch_stat=not test, name='first-bn')
+    h = F.relu(h)
+    h = F.max_pooling(h, (2, 2), channel_last=channel_last)
+    h = bn_resblock(h, maps=16, test=test, w_bias=w_bias,
+                    channel_last=channel_last, name='cb1')
+    h = bn_resblock(h, maps=16, test=test, w_bias=w_bias,
+                    channel_last=channel_last, name='cb2')
+    h = bn_resblock(h, maps=16, test=test, w_bias=w_bias,
+                    channel_last=channel_last, name='cb3')
+    h = bn_resblock(h, maps=16, test=test, w_bias=w_bias,
+                    channel_last=channel_last, name='cb4')
+    h = F.average_pooling(h, (2, 2), channel_last=channel_last)
+    pred = PF.affine(h, 10, name='fc')
+    return pred
+
+
+def get_fake_quantization_parameter(shape, name):
+    scale = nn.parameter.get_parameter_or_create(
+        'scale-{}'.format(name), shape)
+    scale.d = 1e-4
+    zero_point = nn.parameter.get_parameter_or_create(
+        'zeropoint-{}'.format(name), shape)
+    zero_point.d = 0
+    return scale, zero_point
+
+
+# Recording to Training Small ResNet
+def recording_to_training_resblock(x, cfg, maps, sx, zpx, kernel=(3, 3),
+                                   pad=(1, 1), stride=(1, 1), test=False,
+                                   channel_last=False, name='convblock'):
+    axes = get_channel_axes(x, channel_last)
+    rm = cfg.round_mode
+    nr = cfg.narrow_range
+    dt = cfg.dtype
+    sw, zpw, sb, zpb = None, None, None, None
+    get_scale_zeropoint = cfg.recorder_activation.get_scale_zeropoint
+
+    h = x
+    h1 = h
+    with nn.parameter_scope(name):
+        h1 = F.dequantize_linear(h, sx, zpx)
+
+    with nn.parameter_scope('{}-conv'.format(name)):
+        # Q->x->D
+        h = h1
+        w, b = create_conv_weight_bias(h, 16, kernel=kernel,
+                                       channel_last=channel_last, name=name)
+
+        # Q->w->D
+        sw, zpw = get_scale_zeropoint(w, axes=axes, narrow_range=nr, name='sw')
+        if sw is None:
+            shape = [1] * w.ndim
+            name = '{}-conv'.format(name) + '/' + 'sw'
+            sw, zpw = get_fake_quantization_parameter(shape, name)
+        w = F.quantize_linear(w, sw, zpw, rm, nr, dt)
+        w = F.dequantize_linear(w, sw, zpw)
+
+        # Q->b->D
+        sb = sx.reshape([1]) * sw.reshape([1])
+        sb = nn.Variable.from_numpy_array(sb.d)
+        zpb = zpx.reshape([1])
+        zpb = nn.Variable.from_numpy_array(zpb.d)
+        b = F.quantize_linear(b, sb, zpb, rm, nr, dt)
+        b = F.dequantize_linear(b, sb, zpb)
+
+        # D->F->Q
+        h = F.convolution(h, w, b, pad=pad, stride=stride,
+                          channel_last=channel_last)
+        sx, zpx = get_scale_zeropoint(h, axes=axes, narrow_range=nr, name='s')
+        if sx is None:
+            shape = [1] * h.ndim
+            name = '{}-conv'.format(name) + '/' + 's'
+            sx, zpx = get_fake_quantization_parameter(shape, name)
+        h = F.quantize_linear(h, sx, zpx, rm, nr, dt)
+
+    with nn.parameter_scope('{}-Add2'.format(name)):
+        # Q->x->D
+        h = F.dequantize_linear(h, sx, zpx)
+        h = h1 + h
+        # D->F->Q
+        sx, zpx = get_scale_zeropoint(h, axes=axes, narrow_range=nr, name='s')
+        if sx is None:
+            shape = [1] * h.ndim
+            name = '{}-Add2'.format(name) + '/' + 's'
+            sx, zpx = get_fake_quantization_parameter(shape, name)
+        h = F.quantize_linear(h, sx, zpx, rm, nr, dt)
+
+    with nn.parameter_scope('{}-ReLU'.format(name)):
+        # D->F->Q
+        h = F.dequantize_linear(h, sx, zpx)
+        h = F.relu(h)
+        sx, zpx = get_scale_zeropoint(h, axes=axes, narrow_range=nr, name='s')
+        if sx is None:
+            shape = [1] * h.ndim
+            name = '{}-ReLU'.format(name) + '/' + 's'
+            sx, zpx = get_fake_quantization_parameter(shape, name)
+        h = F.quantize_linear(h, sx, zpx, rm, nr, dt)
+
+    return h, sx, zpx
+
+
+def small_recording_to_training_resnet(image, config, test=False, channel_last=False,
+                                       name='bn-graph-ref'):
+    axes = get_channel_axes(image, channel_last)
+    rm = config.round_mode
+    nr = config.narrow_range
+    dt = config.dtype
+    sx, zpx, sw, zpw, sb, zpb = None, None, None, None, None, None
+    get_scale_zeropoint = config.recorder_activation.get_scale_zeropoint
+
+    h = image
+
+    # x->Q
+    sx, zpx = get_scale_zeropoint(h, axes=axes, narrow_range=nr, name='s')
+    if sx is None:
+        shape = [1] * h.ndim
+        name = 's'
+        sx, zpx = get_fake_quantization_parameter(shape, name)
+
+    h = F.quantize_linear(h, sx, zpx, rm, nr, dt)
+
+    with nn.parameter_scope('first-conv'):
+        # Q->x->D
+        h = F.dequantize_linear(h, sx, zpx)
+        w, b = create_conv_weight_bias(h, 16, kernel=(3, 3),
+                                       channel_last=channel_last, name=name)
+        # Q->w->D
+        sw, zpw = get_scale_zeropoint(w, axes=axes, narrow_range=nr, name='sw')
+        if sw is None:
+            shape = [1] * w.ndim
+            name = 'sw'
+            sw, zpw = get_fake_quantization_parameter(shape, name)
+
+        w = F.quantize_linear(w, sw, zpw, rm, nr, dt)
+        w = F.dequantize_linear(w, sw, zpw)
+
+        # Q->b->D
+        sb = sx.reshape([1]) * sw.reshape([1])
+        sb = nn.Variable.from_numpy_array(sb.d)
+        zpb = zpx.reshape([1])
+        zpb = nn.Variable.from_numpy_array(zpb.d)
+        b = F.quantize_linear(b, sb, zpb, rm, nr, dt)
+        b = F.dequantize_linear(b, sb, zpb)
+
+        # D->F->Q
+        h = F.convolution(h, w, b, pad=(1, 1), stride=(1, 1),
+                          channel_last=channel_last)
+        sx, zpx = get_scale_zeropoint(h, axes=axes, narrow_range=nr, name='s')
+        if sx is None:
+            shape = [1] * h.ndim
+            name = 's'
+            sx, zpx = get_fake_quantization_parameter(shape, name)
+        h = F.quantize_linear(h, sx, zpx, rm, nr, dt)
+    with nn.parameter_scope('ReLU-2'):
+        # D->F->Q
+        h = F.dequantize_linear(h, sx, zpx)
+        h = F.relu(h)
+        sx, zpx = get_scale_zeropoint(h, axes=axes, narrow_range=nr, name='s')
+        if sx is None:
+            shape = [1] * h.ndim
+            name = 'ReLU-2/s'
+            sx, zpx = get_fake_quantization_parameter(shape, name)
+        h = F.quantize_linear(h, sx, zpx, rm, nr, dt)
+    with nn.parameter_scope('MaxPooling-3'):
+        # D->F->Q
+        h = F.dequantize_linear(h, sx, zpx)
+        h = F.max_pooling(h, (2, 2), channel_last=channel_last)
+        sx, zpx = get_scale_zeropoint(h, axes=axes, narrow_range=nr, name='s')
+        if sx is None:
+            shape = [1] * h.ndim
+            name = 'MaxPooling-3/s'
+            sx, zpx = get_fake_quantization_parameter(shape, name)
+        h = F.quantize_linear(h, sx, zpx, rm, nr, dt)
+    h, sx, zpx = recording_to_training_resblock(h, config, 16, sx, zpx, test=test,
+                                                channel_last=channel_last, name='cb1')
+    h, sx, zpx = recording_to_training_resblock(h, config, 16, sx, zpx, test=test,
+                                                channel_last=channel_last, name='cb2')
+    h, sx, zpx = recording_to_training_resblock(h, config, 16, sx, zpx, test=test,
+                                                channel_last=channel_last, name='cb3')
+    h, sx, zpx = recording_to_training_resblock(h, config, 16, sx, zpx, test=test,
+                                                channel_last=channel_last, name='cb4')
+
+    with nn.parameter_scope('AveragePooling-16'):
+        # D->F->Q
+        h = F.dequantize_linear(h, sx, zpx)
+        h = F.average_pooling(h, (2, 2), channel_last=channel_last)
+        sx, zpx = get_scale_zeropoint(h, axes=axes, narrow_range=nr, name='s')
+        if sx is None:
+            shape = [1] * h.ndim
+            name = 'AveragePooling-16/s'
+            sx, zpx = get_fake_quantization_parameter(shape, name)
+        h = F.quantize_linear(h, sx, zpx, rm, nr, dt)
+    with nn.parameter_scope('fc'):
+        # Q->x->D
+        h = F.dequantize_linear(h, sx, zpx)
+        w, b = create_affine_weight_bias(h, 10, name=name)
+
+        # Q->w->D
+        sw, zpw = get_scale_zeropoint(w, axes=axes, narrow_range=nr, name='w')
+        if sw is None:
+            shape = [1] * w.ndim
+            name = 'fc/sw'
+            sw, zpw = get_fake_quantization_parameter(shape, name)
+        w = F.quantize_linear(w, sw, zpw, rm, nr, dt)
+        w = F.dequantize_linear(w, sw, zpw)
+
+        # Q->b->D
+        sb = sx.reshape([1]) * sw.reshape([1])
+        sb = nn.Variable.from_numpy_array(sb.d)
+        zpb = zpx.reshape([1])
+        zpb = nn.Variable.from_numpy_array(zpb.d)
+        b = F.quantize_linear(b, sb, zpb, rm, nr, dt)
+        b = F.dequantize_linear(b, sb, zpb)
+
+        # D->F->Q
+        pred = F.affine(h, w, b)
+        return pred
+
+
 # NonQNN to Specific Recording Position Small ResNet (Convolution, Affine)
 def nonqnn_to_specific_recording_pos_resblock(x, cfg, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1),
                                               test=False, channel_last=False,

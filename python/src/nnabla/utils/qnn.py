@@ -775,6 +775,12 @@ class QNNScheduler:
 
         """
         self.config = config
+        if config.niter_to_training <= 0 or config.niter_to_recording < 0:
+            raise ValueError(
+                'Please set niter_to_recording and niter_to_training correctly! niter_to_recording should be greater than or equal to 0. niter_to_training should be greater than 0')
+        if (config.niter_to_training - config.niter_to_recording) <= 0:
+            raise ValueError(
+                'Please set niter_to_recording and niter_to_training correctly! The number of steps between recording and training should be greater than the number of steps of one epoch training.')
         self.solver = solver
         self.counter = 0
         self.state = QNNState.NON_QNN
