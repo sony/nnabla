@@ -43,6 +43,18 @@ ARG PIP_INS_OPTS
 ARG PYTHONWARNINGS
 ARG CURL_OPTS
 ARG WGET_OPTS
+ARG PYTHON_VER
+
+ENV DEBIAN_FRONTEND noninteractive
+
+RUN eval ${APT_OPTS} \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+    software-properties-common \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN add-apt-repository ppa:deadsnakes/ppa
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -51,12 +63,13 @@ RUN apt-get update \
        curl \
        libglib2.0-0 \
        libgl1-mesa-glx \
-       python3.6 \
+       python${PYTHON_VER} \
        python3-pip \
+       python${PYTHON_VER}-distutils \
     && rm -rf /var/lib/apt/lists/*
 
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.6 0
-RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 0
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python${PYTHON_VER} 0
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python${PYTHON_VER} 0
 
 RUN pip3 install ${PIP_INS_OPTS} --upgrade pip
 RUN pip install ${PIP_INS_OPTS} wheel setuptools
@@ -66,4 +79,3 @@ COPY --from=flatc /usr/local/bin/flatc /usr/local/bin/flatc
 
 ARG NNABLA_VER
 RUN pip install ${PIP_INS_OPTS} nnabla==${NNABLA_VER} nnabla_converter==${NNABLA_VER}
-
