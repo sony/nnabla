@@ -596,28 +596,29 @@ class QNNState(Enum):
 # TODO : elaborate more
 
 
-class QNNConfig:
+class QATConfig:
     #: Extension Context. 'cpu', 'cuda' or 'cudnn'
     ext_name = "cudnn"
 
     #: Use zero-point (asymmetric) or not use (symmetric)
     zero_point = False
 
-    #: precision
+    #: Precision
     dtype = np.int8
     precision_mode = PrecisionMode.SIM_QNN
 
-    #: channel last (channel_first is only supported now)
+    #: Enable channel last (channel_first is only supported now)
     channel_last = False
 
     # (TODO: near future, normally used for weights)
-    #: channel-wise quantization
+    #: Enable channel-wise quantization
     channel_wise = False
 
     #: Step start to record
     niter_to_recording = 0
 
-    #: Step start to QAT
+    #: Step start to QAT.
+    #: The number of steps between recording and training should be greater than the number of steps of one epoch training.
     niter_to_training = -1
 
     #: Coerce to power-of-2 scale when transiting from the recording graph
@@ -637,11 +638,12 @@ class QNNConfig:
         #: not round
         NOTROUND = 'NOTROUND'
 
-    #: Member of :obj:`nnabla.utils.qnn.QNNConfig.RoundingMethod`.
-    #: Round scale to power-of-2.
+    #: Member of :obj:`nnabla.utils.qnn.QATConfig.RoundingMethod`.
+    #: Round the scale to power-of-2.
+    #: If you want to deploy the model with tensorrt, please enable this.
     pow2 = RoundingMethod.ROUND
 
-    #: narrow the lower-bound (e.g., when in int8, -128 -> -127)
+    #: Narrow the lower-bound (e.g., when in int8, -128 -> -127)
     narrow_range = False
 
     #: Round mode of quantize layer
@@ -649,10 +651,12 @@ class QNNConfig:
 
     # (TODO: decide by experiments for ImageNet classification and super resolution task)
 
-    #: BN folding
+    #: Enable Batch Normalization Folding.
+    #: Note that sometimes this can cause the training become unstable.
     bn_folding = True
 
-    #: BN self folding
+    #: Enable Batch Normalization Self-Folding.
+    #: Note that sometimes this can cause the training become unstable.
     bn_self_folding = True
 
     #: One of :obj:`nnabla.utils.qnn.MinMaxMinMaxRecorderCallback`,
@@ -687,7 +691,7 @@ class QNNConfig:
         #: Add recoder before/after a function
         BOTH = 1
 
-    #: Member of :obj:`nnabla.utils.qnn.QNNConfig.RecorderPosition`.
+    #: Member of :obj:`nnabla.utils.qnn.QATConfig.RecorderPosition`.
     #: Recorder position
     recorder_position = RecorderPosition.BEFORE
 
@@ -699,23 +703,24 @@ class QNNConfig:
     #: Skip quantizing outputs layers of network
     skip_outputs_layers = ['Affine']
 
-    #: QAT Learning_rate = NonQNN Learning_rate * learning_rate_scale
+    #: QAT Learning_rate = NonQNN Learning_rate * learning_rate_scale.
+    #: Recommend setting it to 0.1 or 0.01
     learning_rate_scale = 0.1
 
     #: Skip quantizing bias of Affine and bias of the Convolution function family
     skip_bias = False
 
 
-class QNNTensorRTConfig(QNNConfig):
-    pow2 = QNNConfig.RoundingMethod.ROUND
+class QATTensorRTConfig(QATConfig):
+    pow2 = QATConfig.RoundingMethod.ROUND
     bn_folding = False
     bn_self_folding = False
     record_layers = ["Convolution", "Deconvolution",
                      "Affine", "BatchMatmul", "ReLU"]
-    record_position = QNNConfig.RecorderPosition.BEFORE
+    record_position = QATConfig.RecorderPosition.BEFORE
 
 
-qnn_default_config = QNNTensorRTConfig()
+qat_default_config = QATTensorRTConfig()
 
 
 class FunctionsRankRecorder(object):
@@ -730,22 +735,22 @@ class FunctionsRankRecorder(object):
             self.rank += 1
 
 
-class QNNScheduler:
+class QATScheduler:
     """
     Scheduler for quantization aware training.
 
     Args:
-      config (:obj:`QNNConfig`): Quantized Neural Network Configuration
+      config (:obj:`QATConfig`): Quantization-Aware-Training Configuration
       solver (:obj:`nnabla.solver.Solver`): Neural Network Solver
 
     Example:
 
         .. code-block:: python
 
-            from nnabla.utils.qnn import QNNScheduler, QNNConfig, PrecisionMode
+            from nnabla.utils.qnn import QATScheduler, QATConfig, PrecisionMode
 
             # Set configuration
-            config = QNNConfig()
+            config = QATConfig()
             config.bn_folding = True
             config.bn_self_folding = True
             config.channel_last = False
@@ -753,27 +758,27 @@ class QNNScheduler:
             config.niter_to_recording = 1
             config.niter_to_training = 500
 
-            qnn_scheduler = QNNScheduler(config=config, solver=solver)
+            qat_scheduler = QATScheduler(config=config, solver=solver)
 
             # convert graph to enable quantization aware training.
-            qnn_scheduler(pred) # pred is output variable of training network
-            qnn_scheduler(vpred, training=False) # vpred is output variable of evaluation network
+            qat_scheduler(pred) # pred is the output variable of training network
+            qat_scheduler(vpred, training=False) # vpred is the output variable of evaluation network
 
             # Training loop
             for i in range(training_step):
-                qnn_wrapper.step()
+                qat_scheduler.step()
 
                 # Your training code here
 
             # save quantized nnp
-            qnn_scheduler.save('qnn.np', vimage, deploy=False) # vimage is input variable of evaluation network
+            qat_scheduler.save('qnn.np', vimage, deploy=False) # vimage is the input variable of network
     """
 
     # set default config
-    def __init__(self, config=qnn_default_config, solver=None):
+    def __init__(self, config=qat_default_config, solver=None):
         """
         Args:
-          config (:obj:`QNNConfig`):
+          config (:obj:`QATConfig`):
           solver (:obj: 'nnabla.solvers.Solver'): Neural Network Solver
 
         """
@@ -905,14 +910,14 @@ class QNNScheduler:
 
     def save(self, fname, inputs, batch_size=1, net_name='net', deploy=False):
         """
-        Save quantized network model to NNP file.
+        Save QAT network model to NNP file as default.
 
         Args:
           fname (str): NNP file name.
           inputs (:obj:`nnabla.Variable` or list of :obj:`nnabla.Variable`): Network inputs variables.
           batch_size (int): batch size.
           net_name (str): network name.
-          deploy (bool): Whether to apply QNN deployment conversion.
+          deploy (bool): Whether to apply QNN deployment conversion. deploy=True is not supported yet.
 
         Returns:
           None

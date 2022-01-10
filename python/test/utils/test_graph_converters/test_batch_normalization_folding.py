@@ -41,10 +41,10 @@ resnet_ref = small_bn_folding_resnet
 @pytest.mark.parametrize('ctx, func_name', ctxs)
 @pytest.mark.parametrize('seed', [313])
 @pytest.mark.parametrize('test', [True])
-@pytest.mark.parametrize('w_bias', [True]) # TODO: dcn w_bias=False
+@pytest.mark.parametrize('w_bias', [True])  # TODO: dcn w_bias=False
 @pytest.mark.parametrize('channel_last', [True, False])
 @pytest.mark.parametrize('graph_ref, graph_act, opposite',
-                         [#(lenet_ref, bn_lenet, False)])#,
+                         [  # (lenet_ref, bn_lenet, False)])#,
                           (resnet_ref, small_bn_resnet, False),
                           (resnet_ref, small_bn_opp_resnet, True),
                           (small_dcn, small_bn_dcn, False),

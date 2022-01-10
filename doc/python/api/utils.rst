@@ -11,5 +11,6 @@ Utils
     utils/dlpack.rst
     utils/rnn.rst
     utils/misc.rst
+    utils/quantization_aware_training.rst
 
 

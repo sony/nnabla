@@ -23,7 +23,7 @@ import nnabla.functions as F
 import nnabla.solvers as S
 
 
-from nnabla.utils.qnn import QNNConfig, PrecisionMode, FunctionsRankRecorder
+from nnabla.utils.qnn import QATConfig, PrecisionMode, FunctionsRankRecorder
 from nnabla.ext_utils import get_extension_context
 from nbla_test_utils import list_context
 from .ref_graphs.resnets import (small_bn_resnet,
@@ -60,31 +60,31 @@ skip_layers = [
                           self_folding, rec_lays, rec_pos, skip_lays',
                          [(small_nonqnn_to_recording_resnet, small_bn_resnet,
                            True, False, record_layers[0],
-                           QNNConfig.RecorderPosition.BEFORE,
+                           QATConfig.RecorderPosition.BEFORE,
                            skip_layers[0]),
                           (small_nonqnn_to_recording_resnet, small_bn_opp_resnet,
                            True, False, record_layers[0],
-                           QNNConfig.RecorderPosition.BEFORE,
+                           QATConfig.RecorderPosition.BEFORE,
                            skip_layers[0]),
                           (small_nonqnn_to_recording_resnet, small_bn_resnet,
                            False, True, record_layers[0],
-                           QNNConfig.RecorderPosition.BEFORE,
+                           QATConfig.RecorderPosition.BEFORE,
                            skip_layers[0]),
                           (small_nonqnn_to_recording_resnet, small_bn_resnet,
                            False, True, record_layers[1],
-                           QNNConfig.RecorderPosition.BEFORE,
+                           QATConfig.RecorderPosition.BEFORE,
                            skip_layers[0]),
                           (small_nonqnn_to_specific_recording_pos_resnet, small_bn_resnet,
                            True, True, record_layers[1],
-                           QNNConfig.RecorderPosition.BOTH,
+                           QATConfig.RecorderPosition.BOTH,
                            skip_layers[0]),
                           (small_nonqnn_to_recording_skip_conv_fcn, small_bn_fcn,
                            True, True, record_layers[0],
-                           QNNConfig.RecorderPosition.BEFORE,
+                           QATConfig.RecorderPosition.BEFORE,
                            skip_layers[1]),
                           (small_nonqnn_to_recording_skip_affine_resnet, small_bn_multi_fc_resnet,
                            True, True, record_layers[0],
-                           QNNConfig.RecorderPosition.BEFORE,
+                           QATConfig.RecorderPosition.BEFORE,
                            skip_layers[2])
                           ])
 def test_nonqnn_to_recording(ctx, func_name, seed, test, w_bias, channel_last,
@@ -95,7 +95,7 @@ def test_nonqnn_to_recording(ctx, func_name, seed, test, w_bias, channel_last,
         pytest.skip(
             'ChannelLast conversion is only supported in cuDNN context.')
 
-    cfg = QNNConfig()
+    cfg = QATConfig()
     cfg.bn_folding = folding
     cfg.bn_self_folding = self_folding
     cfg.channel_last = channel_last
@@ -157,7 +157,7 @@ def test_nonqnn_to_recording(ctx, func_name, seed, test, w_bias, channel_last,
 def test_recording_to_training(ctx, func_name, seed, precision_mode, graph_ref, graph_act):
     from .graph_converter_test_utils import structure_tester, value_tester
 
-    cfg = QNNConfig()
+    cfg = QATConfig()
     cfg.bn_folding = True
     cfg.bn_self_folding = True
     cfg.channel_last = False

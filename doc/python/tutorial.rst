@@ -18,3 +18,4 @@ If you want to run these step-by-step, follow the link and see the instruction f
     tutorial/mixed_precision_training.rst
     tutorial/multi_device_training.rst
     tutorial/function_list_and_converter.rst
+    tutorial/quantization_aware_training.rst
