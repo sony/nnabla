@@ -19,42 +19,10 @@ import nnabla as nn
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
 
-from .helper import create_scale_bias, get_channel_axes
-
-
-# Small Channel First ResNet
-def cf_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1),
-                test=False, channel_last=False, name='cf-convblock'):
-    axes = get_channel_axes(channel_last)
-    h = x
-    with nn.parameter_scope(name):
-        h = PF.convolution(h, maps, kernel=kernel, pad=pad, stride=stride,
-                           channel_last=channel_last, with_bias=False)
-        h = PF.batch_normalization(h, axes=axes, batch_stat=not test)
-    return F.relu(h + x)
-
-
-def small_cf_resnet(image, test=False, channel_last=False):
-    axes = get_channel_axes(channel_last)
-    h = image
-    h /= 255.0
-    h = PF.convolution(h, 16, kernel=(3, 3), pad=(1, 1), channel_last=channel_last,
-                       with_bias=False, name='first-cf-conv')
-    h = PF.batch_normalization(
-        h, axes=axes, batch_stat=not test, name='first-cf-bn')
-    h = F.relu(h)
-    h = F.max_pooling(h, (2, 2), channel_last=channel_last)
-    h = cf_resblock(h, maps=16, test=test,
-                    channel_last=channel_last, name='cf-cb1')
-    h = cf_resblock(h, maps=16, test=test,
-                    channel_last=channel_last, name='cf-cb2')
-    h = cf_resblock(h, maps=16, test=test,
-                    channel_last=channel_last, name='cf-cb3')
-    h = cf_resblock(h, maps=16, test=test,
-                    channel_last=channel_last, name='cf-cb4')
-    h = F.average_pooling(h, (2, 2), channel_last=channel_last)
-    pred = PF.affine(h, 10, name='cf-fc')
-    return pred
+from .helper import (create_scale_bias,
+                     create_conv_weight_bias,
+                     create_affine_weight_bias,
+                     get_channel_axes)
 
 
 # Small Channel Last ResNet
@@ -92,9 +60,9 @@ def bn_self_folding_resblock(x, i, maps, kernel=(3, 3), pad=(1, 1),
     with nn.parameter_scope(name):
         h = PF.convolution(h, maps, kernel=kernel, pad=pad, stride=stride,
                            channel_last=channel_last, with_bias=False)
-        axes = get_channel_axes(channel_last)
+        axes = get_channel_axes(h, channel_last)
         a, b = create_scale_bias(1, h.shape, axes=axes)
-        h = a * h + b
+        h = h * a + b
     return F.relu(h + x)
 
 
@@ -103,9 +71,9 @@ def small_bn_self_folding_resnet(image, channel_last=False, name='bn-self-foldin
     h /= 255.0
     h = PF.convolution(h, 16, kernel=(3, 3), pad=(1, 1), channel_last=channel_last,
                        with_bias=False, name='first-conv')
-    axes = get_channel_axes(channel_last)
+    axes = get_channel_axes(h, channel_last)
     a, b = create_scale_bias(1, h.shape, axes=axes)
-    h = a * h + b
+    h = h * a + b
     h = F.relu(h)
     h = F.max_pooling(h, (2, 2), channel_last=channel_last)
     h = bn_self_folding_resblock(
@@ -124,7 +92,6 @@ def small_bn_self_folding_resnet(image, channel_last=False, name='bn-self-foldin
 # BatchNormalization Small ResNet
 def bn_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1),
                 test=False, w_bias=False, channel_last=False, name='convblock', dims=2):
-    axes = get_channel_axes(channel_last, dims)
     h = x
     kernel = (3,) * dims
     pad = (1,) * dims
@@ -132,20 +99,21 @@ def bn_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1),
     with nn.parameter_scope(name):
         h = PF.convolution(h, maps, kernel=kernel, pad=pad, stride=stride,
                            channel_last=channel_last, with_bias=w_bias)
+        axes = get_channel_axes(h, channel_last, dims)
         h = PF.batch_normalization(h, axes=axes, batch_stat=not test)
     return F.relu(h + x)
 
 
 def small_bn_resnet(image, test=False, w_bias=False, channel_last=False, name='bn-graph-ref', dims=2):
-    axes = get_channel_axes(channel_last, dims)
-
     kernel = (3,) * dims
     pool_kernel = (2,) * dims
     pad = (1,) * dims
+
     h = image
     h /= 255.0
     h = PF.convolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
                        with_bias=w_bias, name='first-conv')
+    axes = get_channel_axes(h, channel_last, dims)
     h = PF.batch_normalization(
         h, axes=axes, batch_stat=not test, name='first-bn')
     h = F.relu(h)
@@ -309,10 +277,11 @@ def small_opp_dcn(image, test=False, w_bias=True, channel_last=False, name='smal
 # BatchNormalization Small ResNet Opposite
 def bn_opp_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1),
                     test=False, channel_last=False, name='convblock', dims=2):
-    axes = get_channel_axes(channel_last, dims)
+    axes = get_channel_axes(x, channel_last, dims)
     kernel = (3,) * dims
     pad = (1,) * dims
     stride = (1,) * dims
+
     with nn.parameter_scope(name):
         h = PF.batch_normalization(x, axes=axes, batch_stat=not test)
         z = h
@@ -322,17 +291,17 @@ def bn_opp_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1),
 
 
 def small_bn_opp_resnet(image, test=False, w_bias=False, channel_last=False, name='bn-graph-ref', dims=2):
-    axes = get_channel_axes(channel_last, dims)
-
     kernel = (3,) * dims
     pool_kernel = (2,) * dims
     pad = (1,) * dims
+
     h = image
     h /= 255.0
+    axes = get_channel_axes(h, channel_last, dims)
     h = PF.batch_normalization(
         h, axes=axes, batch_stat=not test, name='first-bn')
     h = PF.convolution(h, 16, kernel=kernel, pad=pad, channel_last=channel_last,
-                       with_bias=w_bias, name='first-conv')
+                       with_bias=True, name='first-conv')
     h = F.relu(h)
     h = F.max_pooling(
         h, pool_kernel, channel_last=channel_last) if dims > 1 else h
@@ -352,7 +321,7 @@ def small_bn_opp_resnet(image, test=False, w_bias=False, channel_last=False, nam
 
 # BatchNormalization Folding Small ResNet
 def bn_folding_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1),
-                        test=False, channel_last=False, name='convblock', dims=2):
+                        channel_last=False, name='convblock', dims=2):
     h = x
     kernel = (3,) * dims
     pad = (1,) * dims
@@ -363,7 +332,7 @@ def bn_folding_resblock(x, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1),
     return F.relu(h + x)
 
 
-def small_bn_folding_resnet(image, test=False, channel_last=False, name='bn-graph-ref', dims=2):
+def small_bn_folding_resnet(image, channel_last=False, name='bn-graph-ref', dims=2):
     h = image
     h /= 255.0
     kernel = (3,) * dims
@@ -374,13 +343,13 @@ def small_bn_folding_resnet(image, test=False, channel_last=False, name='bn-grap
     h = F.relu(h)
     h = F.max_pooling(
         h, pool_kernel, channel_last=channel_last) if dims > 1 else h
-    h = bn_folding_resblock(h, maps=16, test=test,
+    h = bn_folding_resblock(h, maps=16,
                             channel_last=channel_last, name='cb1', dims=dims)
-    h = bn_folding_resblock(h, maps=16, test=test,
+    h = bn_folding_resblock(h, maps=16,
                             channel_last=channel_last, name='cb2', dims=dims)
-    h = bn_folding_resblock(h, maps=16, test=test,
+    h = bn_folding_resblock(h, maps=16,
                             channel_last=channel_last, name='cb3', dims=dims)
-    h = bn_folding_resblock(h, maps=16, test=test,
+    h = bn_folding_resblock(h, maps=16,
                             channel_last=channel_last, name='cb4', dims=dims)
     h = F.average_pooling(
         h, pool_kernel, channel_last=channel_last) if dims > 1 else h
@@ -732,5 +701,341 @@ def depthwise_net_for_pruning(image, threshold, with_bias=False, channel_last=Fa
         axis = 1
         # force reset the weight value
         reset_the_weight_value(inputs, axis, threshold)
+
+        return pred
+
+
+# NonQNN to Recording Small ResNet
+def nonqnn_to_recording_resblock(x, cfg, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1),
+                                 test=False, channel_last=False, bn_self_folding=False,
+                                 record_layers=(), name='convblock'):
+    recorder = cfg.recorder_activation
+    recorder_weight = cfg.recorder_weight
+    axes = get_channel_axes(x, channel_last)
+
+    with nn.parameter_scope(name):
+        h = x
+
+    with nn.parameter_scope('{}-conv'.format(name)):
+        h = recorder()(h, axes=axes)
+        hr1 = h
+        w, b = create_conv_weight_bias(h, maps=maps, kernel=kernel,
+                                       channel_last=channel_last, name=name)
+        w = recorder_weight()(w, axes=axes, name='w')
+        b = recorder_weight()(b, axes=axes, name='b')
+        h = F.convolution(h, w, b, pad=pad, stride=stride,
+                          channel_last=channel_last)
+    if bn_self_folding:
+        a, b = create_scale_bias(1, h.shape, axes=axes)
+
+        with nn.parameter_scope('{}-Mul2'.format(name)):
+            if not record_layers:
+                hr2 = recorder()(h, axes=axes)
+                h = hr2 * recorder()(a, axes=axes)
+            else:
+                h = h * a
+
+        with nn.parameter_scope('{}-Add2'.format(name)):
+            if not record_layers:
+                hr3 = recorder()(h, axes=axes)
+                h = hr3 + recorder()(b, axes=axes)
+            else:
+                h = h + b
+    with nn.parameter_scope('{}/ReLU-Add2'.format(name)):
+        if not record_layers:
+            hr2 = recorder()(h, axes=axes)
+        else:
+            hr2 = h
+        h = hr2 + hr1
+
+    with nn.parameter_scope('{}-ReLU'.format(name)):
+        if not record_layers:
+            h = recorder()(h, axes=axes)
+        else:
+            h = h
+    return F.relu(h)
+
+
+def small_nonqnn_to_recording_resnet(image, config, test=False, channel_last=False,
+                                     bn_self_folding=False, record_layers=(), name='bn-graph-ref'):
+    recorder = config.recorder_activation
+    recorder_weight = config.recorder_weight
+    axes = get_channel_axes(image, channel_last)
+
+    h = image
+    func_id = 0
+    with nn.parameter_scope('MulScale-{}'.format(func_id)):
+        if not record_layers:
+            h = recorder()(h, axes=axes)
+        h /= 255.0
+        func_id += 1
+    with nn.parameter_scope('first-conv'):
+        h = recorder()(h, axes=axes)
+        w, b = create_conv_weight_bias(h, 16, kernel=(3, 3),
+                                       channel_last=channel_last, name=name)
+        w = recorder_weight()(w, axes=axes, name='w')
+        b = recorder_weight()(b, axes=axes, name='b')
+        h = F.convolution(h, w, b, pad=(1, 1), stride=(1, 1),
+                          channel_last=channel_last)
+    if bn_self_folding:
+        a, b = create_scale_bias(1, h.shape, axes=axes)
+        with nn.parameter_scope('Mul2-{}'.format(func_id)):
+            if not record_layers:
+                h = recorder()(h, axes=axes)
+                h = h * recorder()(a, axes=axes)
+            else:
+                h = h * a
+            func_id += 1
+        with nn.parameter_scope('Add2-{}'.format(func_id)):
+            if not record_layers:
+                h = recorder()(h, axes=axes)
+                h = h + recorder()(b, axes=axes)
+            else:
+                h = h + b
+            func_id += 1
+
+    with nn.parameter_scope('ReLU-{}'.format(func_id)):
+        if not record_layers:
+            h = recorder()(h, axes=axes)
+        h = F.relu(h)
+        func_id += 1
+    with nn.parameter_scope('MaxPooling-{}'.format(func_id)):
+        if not record_layers:
+            h = recorder()(h, axes=axes)
+        h = F.max_pooling(h, (2, 2), channel_last=channel_last)
+        func_id += 1
+    h = nonqnn_to_recording_resblock(h, config, maps=16, test=test,
+                                     channel_last=channel_last, bn_self_folding=bn_self_folding,
+                                     record_layers=record_layers, name='cb1')
+    h = nonqnn_to_recording_resblock(h, config, maps=16, test=test,
+                                     channel_last=channel_last, bn_self_folding=bn_self_folding,
+                                     record_layers=record_layers, name='cb2')
+    h = nonqnn_to_recording_resblock(h, config, maps=16, test=test,
+                                     channel_last=channel_last, bn_self_folding=bn_self_folding,
+                                     record_layers=record_layers, name='cb3')
+    h = nonqnn_to_recording_resblock(h, config, maps=16, test=test,
+                                     channel_last=channel_last, bn_self_folding=bn_self_folding,
+                                     record_layers=record_layers, name='cb4')
+    with nn.parameter_scope('AveragePooling-16'):
+        if not record_layers:
+            h = recorder()(h, axes=axes)
+        h = F.average_pooling(h, (2, 2), channel_last=channel_last)
+    with nn.parameter_scope('fc'):
+        h = recorder()(h, axes=axes)
+        w, b = create_affine_weight_bias(h, 10, name=name)
+        w = recorder_weight()(w, axes=axes, name='w')
+        b = recorder_weight()(b, axes=axes, name='b')
+        pred = F.affine(h, w, b)
+        return pred
+
+
+# NonQNN to Specific Recording Position Small ResNet (Convolution, Affine)
+def nonqnn_to_specific_recording_pos_resblock(x, cfg, maps, kernel=(3, 3), pad=(1, 1), stride=(1, 1),
+                                              test=False, channel_last=False,
+                                              bn_self_folding=False, record_layers=(), name='convblock'):
+    recorder = cfg.recorder_activation
+    recorder_weight = cfg.recorder_weight
+    axes = get_channel_axes(x, channel_last)
+
+    with nn.parameter_scope(name):
+        h = x
+
+    with nn.parameter_scope('{}-conv'.format(name)):
+        h = recorder()(h, axes=axes)
+        hr1 = h
+        w, b = create_conv_weight_bias(h, maps=maps, kernel=kernel,
+                                       channel_last=channel_last, name=name)
+        w = recorder_weight()(w, axes=axes, name='w')
+        b = recorder_weight()(b, axes=axes, name='b')
+        h = F.convolution(h, w, b, pad=pad, stride=stride,
+                          channel_last=channel_last)
+        h = recorder()(h, axes=axes)
+
+        h = h + hr1
+
+    return F.relu(h)
+
+
+def small_nonqnn_to_specific_recording_pos_resnet(image, config, test=False, channel_last=False,
+                                                  bn_self_folding=False, record_layers=(),
+                                                  name='bn-graph-ref'):
+    recorder = config.recorder_activation
+    recorder_weight = config.recorder_weight
+    axes = get_channel_axes(image, channel_last)
+
+    h = image
+    h /= 255.0
+
+    with nn.parameter_scope('first-conv'):
+        h = recorder()(h, axes=axes)
+        w, b = create_conv_weight_bias(h, 16, kernel=(3, 3),
+                                       channel_last=channel_last, name=name)
+        w = recorder_weight()(w, axes=axes, name='w')
+        b = recorder_weight()(b, axes=axes, name='b')
+        h = F.convolution(h, w, b, pad=(1, 1), stride=(1, 1),
+                          channel_last=channel_last)
+        h = recorder()(h, axes=axes)
+    h = F.relu(h)
+    h = F.max_pooling(h, (2, 2), channel_last=channel_last)
+    h = nonqnn_to_specific_recording_pos_resblock(h, config, maps=16, test=test,
+                                                  channel_last=channel_last, name='cb1')
+    h = nonqnn_to_specific_recording_pos_resblock(h, config, maps=16, test=test,
+                                                  channel_last=channel_last, name='cb2')
+    h = nonqnn_to_specific_recording_pos_resblock(h, config, maps=16, test=test,
+                                                  channel_last=channel_last, name='cb3')
+    h = nonqnn_to_specific_recording_pos_resblock(h, config, maps=16, test=test,
+                                                  channel_last=channel_last, name='cb4')
+    h = F.average_pooling(h, (2, 2), channel_last=channel_last)
+
+    with nn.parameter_scope('fc'):
+        h = recorder()(h, axes=axes)
+        w, b = create_affine_weight_bias(h, 10, name=name)
+        w = recorder_weight()(w, axes=axes, name='w')
+        b = recorder_weight()(b, axes=axes, name='b')
+        h = F.affine(h, w, b)
+    with nn.parameter_scope('fc-rec'):
+        pred = recorder()(h, axes=axes)
+
+    return pred
+
+
+def small_bn_fcn(image, test=False, w_bias=False, channel_last=False, name='bn-graph-ref'):
+    h = image
+    h /= 255.0
+    h = PF.convolution(h, 16, kernel=(3, 3), pad=(1, 1), channel_last=channel_last,
+                       with_bias=w_bias, name='first-conv')
+    axes = get_channel_axes(h, channel_last)
+    h = PF.batch_normalization(
+        h, axes=axes, batch_stat=not test, name='first-bn')
+    h = F.relu(h)
+    h = F.max_pooling(h, (2, 2), channel_last=channel_last)
+    h = bn_resblock(h, maps=16, test=test, w_bias=w_bias,
+                    channel_last=channel_last, name='cb1')
+    h = bn_resblock(h, maps=16, test=test, w_bias=w_bias,
+                    channel_last=channel_last, name='cb2')
+    h = bn_resblock(h, maps=16, test=test, w_bias=w_bias,
+                    channel_last=channel_last, name='cb3')
+    h = bn_resblock(h, maps=16, test=test, w_bias=w_bias,
+                    channel_last=channel_last, name='cb4')
+    h = F.average_pooling(h, (2, 2), channel_last=channel_last)
+    pred = PF.convolution(h, 16, kernel=(3, 3), pad=(1, 1), channel_last=channel_last,
+                          with_bias=w_bias, name='last-conv')
+    return pred
+
+
+def small_nonqnn_to_recording_skip_conv_fcn(image, config, test=False, channel_last=False,
+                                            bn_self_folding=False, record_layers=(),
+                                            name='bn-graph-ref'):
+    recorder = config.recorder_activation
+    recorder_weight = config.recorder_weight
+    axes = get_channel_axes(image, channel_last)
+
+    h = image
+    with nn.parameter_scope('MulScale-0'):
+        h = recorder()(h, axes=axes)
+        h /= 255.0
+    with nn.parameter_scope('first-conv'):  # skip recording first conv
+        w, b = create_conv_weight_bias(h, 16, kernel=(3, 3),
+                                       channel_last=channel_last, name=name)
+        h = F.convolution(h, w, b, pad=(1, 1), stride=(1, 1),
+                          channel_last=channel_last)
+    with nn.parameter_scope('ReLU-2'):
+        h = recorder()(h, axes=axes)
+        h = F.relu(h)
+    with nn.parameter_scope('MaxPooling-3'):
+        h = recorder()(h, axes=axes)
+        h = F.max_pooling(h, (2, 2), channel_last=channel_last)
+    h = nonqnn_to_recording_resblock(h, config, maps=16, test=test,
+                                     channel_last=channel_last, name='cb1')
+    h = nonqnn_to_recording_resblock(h, config, maps=16, test=test,
+                                     channel_last=channel_last, name='cb2')
+    h = nonqnn_to_recording_resblock(h, config, maps=16, test=test,
+                                     channel_last=channel_last, name='cb3')
+    h = nonqnn_to_recording_resblock(h, config, maps=16, test=test,
+                                     channel_last=channel_last, name='cb4')
+    with nn.parameter_scope('AveragePooling-16'):
+        h = recorder()(h, axes=axes)
+        h = F.average_pooling(h, (2, 2), channel_last=channel_last)
+    with nn.parameter_scope('last-conv'):  # skip recording last conv
+        w, b = create_conv_weight_bias(h, 16, kernel=(3, 3),
+                                       channel_last=channel_last, name=name)
+        pred = F.convolution(h, w, b, pad=(1, 1), stride=(1, 1),
+                             channel_last=channel_last)
+        return pred
+
+
+def small_bn_multi_fc_resnet(image, test=False, w_bias=False, channel_last=False, name='bn-graph-ref'):
+    h = image
+    h /= 255.0
+    h = PF.convolution(h, 16, kernel=(3, 3), pad=(1, 1), channel_last=channel_last,
+                       with_bias=w_bias, name='first-conv')
+    axes = get_channel_axes(h, channel_last)
+    h = PF.batch_normalization(
+        h, axes=axes, batch_stat=not test, name='first-bn')
+    h = F.relu(h)
+    h = F.max_pooling(h, (2, 2), channel_last=channel_last)
+    h = bn_resblock(h, maps=16, test=test, w_bias=w_bias,
+                    channel_last=channel_last, name='cb1')
+    h = bn_resblock(h, maps=16, test=test, w_bias=w_bias,
+                    channel_last=channel_last, name='cb2')
+    h = bn_resblock(h, maps=16, test=test, w_bias=w_bias,
+                    channel_last=channel_last, name='cb3')
+    h = bn_resblock(h, maps=16, test=test, w_bias=w_bias,
+                    channel_last=channel_last, name='cb4')
+    h = F.average_pooling(h, (2, 2), channel_last=channel_last)
+    h = PF.affine(h, 256, name='fc1')
+    h = PF.affine(h, 128, name='fc2')
+    pred = PF.affine(h, 10, name='fc3')
+    return pred
+
+
+def small_nonqnn_to_recording_skip_affine_resnet(image, config, test=False, channel_last=False,
+                                                 bn_self_folding=False, record_layers=(),
+                                                 name='bn-graph-ref'):
+    recorder = config.recorder_activation
+    recorder_weight = config.recorder_weight
+    axes = get_channel_axes(image, channel_last)
+
+    h = image
+    with nn.parameter_scope('MulScale-0'):
+        h = recorder()(h, axes=axes)
+        h /= 255.0
+    with nn.parameter_scope('first-conv'):
+        h = recorder()(h, axes=axes)
+        w, b = create_conv_weight_bias(h, 16, kernel=(3, 3),
+                                       channel_last=channel_last, name=name)
+        w = recorder_weight()(w, axes=axes, name='w')
+        b = recorder_weight()(b, axes=axes, name='b')
+        h = F.convolution(h, w, b, pad=(1, 1), stride=(1, 1),
+                          channel_last=channel_last)
+    with nn.parameter_scope('ReLU-2'):
+        h = recorder()(h, axes=axes)
+        h = F.relu(h)
+    with nn.parameter_scope('MaxPooling-3'):
+        h = recorder()(h, axes=axes)
+        h = F.max_pooling(h, (2, 2), channel_last=channel_last)
+    h = nonqnn_to_recording_resblock(h, config, maps=16, test=test,
+                                     channel_last=channel_last, name='cb1')
+    h = nonqnn_to_recording_resblock(h, config, maps=16, test=test,
+                                     channel_last=channel_last, name='cb2')
+    h = nonqnn_to_recording_resblock(h, config, maps=16, test=test,
+                                     channel_last=channel_last, name='cb3')
+    h = nonqnn_to_recording_resblock(h, config, maps=16, test=test,
+                                     channel_last=channel_last, name='cb4')
+    with nn.parameter_scope('AveragePooling-16'):
+        h = recorder()(h, axes=axes)
+        h = F.average_pooling(h, (2, 2), channel_last=channel_last)
+    with nn.parameter_scope('fc1'):  # skip recording first affine
+        w, b = create_affine_weight_bias(h, 256, name=name)
+        h = F.affine(h, w, b)
+    with nn.parameter_scope('fc2'):
+        h = recorder()(h, axes=axes)
+        w, b = create_affine_weight_bias(h, 128, name=name)
+        w = recorder_weight()(w, axes=axes, name='w')
+        b = recorder_weight()(b, axes=axes, name='b')
+        h = F.affine(h, w, b)
+    with nn.parameter_scope('fc3'):  # skip recording last affine
+        w, b = create_affine_weight_bias(h, 10, name=name)
+        pred = F.affine(h, w, b)
 
         return pred

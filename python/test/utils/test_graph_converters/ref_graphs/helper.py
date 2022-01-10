@@ -14,6 +14,8 @@
 
 from __future__ import absolute_import
 
+import numpy as np
+import nnabla as nn
 
 from nnabla.parameter import get_parameter_or_create
 
@@ -30,3 +32,29 @@ def create_scale_bias(idx, maps, ndim=4, axes=[1]):
 
 def get_channel_axes(channel_last=False, dims=2):
     return [dims+1] if channel_last else [1]
+
+
+def create_conv_weight_bias(inp, maps=16, kernel=(3, 3),
+                            channel_last=False, name=''):
+    if channel_last:
+        channels = inp.shape[-1]
+        filter_shape = tuple(kernel) + (channels, )
+    else:
+        channels = inp.shape[1]
+        filter_shape = (channels,) + tuple(kernel)
+
+    w = get_parameter_or_create("w-{}".format(name), (maps,) + filter_shape,
+                                None, True, True)
+    b = get_parameter_or_create("b-{}".format(name), (maps,),
+                                None, True, True)
+
+    return w, b
+
+
+def create_affine_weight_bias(inp, n_outmaps=10, name=''):
+    w = get_parameter_or_create("w-{}".format(name), [int(np.prod(inp.shape[1:]))] + [n_outmaps],
+                                None, True, True)
+    b = get_parameter_or_create("b-{}".format(name), (n_outmaps, ),
+                                None, True, True)
+
+    return w, b

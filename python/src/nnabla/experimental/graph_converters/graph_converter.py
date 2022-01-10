@@ -65,9 +65,7 @@ class FunctionModifier(object):
         """
         inps_cp = []
         for inp in inputs:
-            i = nn.Variable(inp.shape).apply(need_grad=inp.need_grad)
-            i.data = inp.data
-            i.grad = inp.grad
+            i = inp.get_unlinked_variable(need_grad=inp.need_grad)
             inps_cp.append(i)
         return inps_cp
 
@@ -78,8 +76,19 @@ class FunctionModifier(object):
 
         # Lookup
         inputs = self._map_func_inputs[f]
-        inputs = inputs + \
-            f.inputs[len(inputs):] if len(f.inputs) > 1 else inputs
+        if len(f.inputs) > 1:
+            _inputs = [inp for inp in f.inputs]
+            idxs = []  # index of inpout variable which has already been saved
+            for inp in inputs:
+                for i in range(len(f.inputs)):
+                    finp = f.inputs[i]
+                    if inp.shape[1:] == finp.shape[1:] and i not in idxs:  # ignore batch size
+                        idxs.append(i)
+                        break
+            for i in range(len(idxs)):
+                idx = idxs[i]
+                _inputs[idx] = inputs[i]
+            inputs = _inputs
 
         # Modify
         o = self.modify(f, inputs)
@@ -193,8 +202,7 @@ class GraphConverter(object):
         mfs = []
         for modifier in modifiers:
             if isinstance(modifier, (list)):
-                for sub_modifier in modifier:
-                    mfs += [sub_modifier]
+                mfs += self._prepare_modifiers(modifier)
             else:
                 mfs += [modifier]
         return mfs
