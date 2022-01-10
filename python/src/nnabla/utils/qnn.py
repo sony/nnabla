@@ -764,6 +764,9 @@ class QNNScheduler:
                 qnn_wrapper.step()
 
                 # Your training code here
+
+            # save quantized nnp
+            qnn_scheduler.save('qnn.np', vimage, deploy=False) # vimage is input variable of evaluation network
     """
 
     # set default config
@@ -899,3 +902,72 @@ class QNNScheduler:
             self._schedule_to_training()
 
         self.counter += 1
+
+    def save(self, fname, inputs, batch_size=1, net_name='net', deploy=False):
+        """
+        Save quantized network model to NNP file.
+
+        Args:
+          fname (str): NNP file name.
+          inputs (:obj:`nnabla.Variable` or list of :obj:`nnabla.Variable`): Network inputs variables.
+          batch_size (int): batch size.
+          net_name (str): network name.
+          deploy (bool): Whether to apply QNN deployment conversion.
+
+        Returns:
+          None
+        """
+
+        def _force_list(o):
+            if isinstance(o, (tuple)):
+                return list(o)
+            if not isinstance(o, (list)):
+                return [o]
+            return o
+
+        for i, elm in enumerate(self.registry):
+            pred, training = elm
+            if deploy:
+                assert self.state == QNNState.training
+                # TODO: Convert the training graph to deployment graph
+                # TODO: Save as nnp (we have to define nicely)
+            else:
+                if training:
+                    continue
+
+                from collections import defaultdict
+
+                inps = defaultdict(list)
+                otps = defaultdict(list)
+                ec_data = []
+                ec_otps = []
+
+                inputs = _force_list(inputs)
+                for i, inp in enumerate(inputs):
+                    key = 'x{}'.format(i)
+                    inps[key] = inp
+                    ec_data.append(key)
+
+                outputs = _force_list(pred)
+                for i, otp in enumerate(outputs):
+                    key = 'y{}'.format(i)
+                    otps[key] = otp
+                    ec_otps.append(key)
+
+                contents = {
+                    'networks': [
+                        {'name': net_name,
+                         'batch_size': batch_size,
+                         'outputs': otps,
+                         'names': inps
+                         }],
+                    'executors': [
+                        {'name': 'runtime',
+                         'network': net_name,
+                         'data': ec_data,
+                         'outputs': ec_otps
+                         }]
+                }
+
+                from nnabla.utils.save import save
+                save(fname, contents)
