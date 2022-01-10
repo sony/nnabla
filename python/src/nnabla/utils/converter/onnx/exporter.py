@@ -405,9 +405,9 @@ class OnnxExporter:
             "Flip": self.Flip,
             "OneHot": self.OneHot,
             "Unpooling": self.Unpooling_6,
-            "DepthwiseConvolution": partial(self.BaseConvolution, 'DepthwiseConvolution'),
-            "BinaryConnectConvolution": partial(self.BaseConvolution, 'BinaryConnectConvolution'),
-            "Convolution": partial(self.BaseConvolution, 'Convolution'),
+            "DepthwiseConvolution": partial(self.BaseConvolution, 'DepthwiseConvolution', '6'),
+            "BinaryConnectConvolution": partial(self.BaseConvolution, 'BinaryConnectConvolution', '6'),
+            "Convolution": partial(self.BaseConvolution, 'Convolution', '6'),
             "BinaryConnectAffine": partial(self.BaseAffine, "BinaryConnectAffine", '6'),
             "BinaryWeightAffine": partial(self.BinaryWeightAffine, '6'),
             "BinaryWeightConvolution": partial(self.BinaryWeightConvolution, '6'),
@@ -590,7 +590,9 @@ class OnnxExporter:
         table_op_set_tensorrt = {
             "MaxPooling": partial(self.BasePooling_6x, 'MaxPool', '11'),
             "AveragePooling": partial(self.BasePooling_6x, 'AveragePool', '11'),
-            "DequantizeLinear": self.DequantizeLinear_trt,
+            "DequantizeLinear": self.DequantizeLinear,
+            "Affine": partial(self.BaseAffine, "Affine", 'tensorrt'),
+            "DepthwiseConvolution": partial(self.BaseConvolution, 'DepthwiseConvolution', 'tensorrt'),
         }
         table_op_set_tensorrt = dict(table_op_set_11, **table_op_set_tensorrt)
 
@@ -799,7 +801,7 @@ class OnnxExporter:
 
         return nl
 
-    def BaseConvolution(self, func_name, func):
+    def BaseConvolution(self, func_name, opset, func):
         nl = []
         input_shape = np.array(
             [d for d in self._var_dict[func.input[0]].dim])
@@ -823,6 +825,14 @@ class OnnxExporter:
             proto_weight_shape = self._var_dict[inputs[1]]
             del proto_weight_shape.dim[:]
             proto_weight_shape.dim.extend(weight_shape)
+
+            if opset == 'tensorrt':
+                output_w_reshape_name = fork_name("output_w_reshape")
+                n = generate_reshape(self._model_proto.graph, func.input[1], output_w_reshape_name,
+                                     np.array(weight_shape))
+                nl.append(n)
+                inputs[1] = output_w_reshape_name
+
         else:
             raise ValueError('Internal error!')
 
@@ -1862,10 +1872,12 @@ class OnnxExporter:
             nl.append(n)
             inputs[0] = rout
 
-        # To support SNPE, default set to `transB=1`
-        if func.input[1] not in self._parameters:
-            raise ValueError(
-                "{} is not in network's parameters.".format(func.input[1]))
+        # For quantized weight
+        if opset != 'tensorrt':
+            # To support SNPE, default set to `transB=1`
+            if func.input[1] not in self._parameters:
+                raise ValueError(
+                    "{} is not in network's parameters.".format(func.input[1]))
 
         transB = 0
         if opset == '6x':
