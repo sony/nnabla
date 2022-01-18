@@ -15,7 +15,7 @@ The following software are required for installation:
 
 * Required software.
 
-  * Python>=3.6: PIP
+  * Python>=3.7: PIP
   * Microsoft Visual C++ 2015 Redistributable
 
 * Recommended.

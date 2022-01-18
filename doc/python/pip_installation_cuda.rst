@@ -17,7 +17,6 @@ CUDA vs cuDNN Compatibility
 ================== ============ =====================
 Package name       CUDA version cuDNN version
 ================== ============ =====================
-nnabla-ext-cuda100 10.0         7.6(Linux & Win)
 nnabla-ext-cuda102 10.2         8.0(Linux & Win)
 nnabla-ext-cuda110 11.0         8.0(Linux & Win)
 ================== ============ =====================
@@ -69,7 +68,7 @@ and check if all works.
   2018-06-26 15:20:36,257 [nnabla][INFO]: Initializing CUDA extension...
   2018-06-26 15:20:36,257 [nnabla][INFO]: Initializing cuDNN extension...
 
-**Note**: If you want to make sure the latest version will be installed, try to uninstall previously installed one with ``pip uninstall -y nnabla nnabla-ext-cuda100`` beforehand.
+**Note**: If you want to make sure the latest version will be installed, try to uninstall previously installed one with ``pip uninstall -y nnabla nnabla-ext-cuda102`` beforehand.
 
 
 .. _pip-installation-distributed:
@@ -77,7 +76,7 @@ and check if all works.
 Installation with Multi-GPU supported
 -------------------------------------
 
-Multi-GPU wheel package is only available on python3.6+.
+Multi-GPU wheel package is only available on python3.7+.
 
 .. _cuda-cudnn-compatibility:
 
@@ -87,12 +86,10 @@ CUDA vs cuDNN Compatibility
 =================================== ============ =============
 Package name                        CUDA version cuDNN version
 =================================== ============ =============
-nnabla-ext-cuda100-nccl2-mpi2-1-1  10.0         7.6
-nnabla-ext-cuda100-nccl2-mpi3-1-6  10.0         7.6
-nnabla-ext-cuda102-nccl2-mpi2-1-1  10.2         8.0
-nnabla-ext-cuda102-nccl2-mpi3-1-6  10.2         8.0
-nnabla-ext-cuda110-nccl2-mpi2-1-1  11.0         8.0
-nnabla-ext-cuda110-nccl2-mpi3-1-6  11.0         8.0
+nnabla-ext-cuda102-nccl2-mpi2-1-1   10.2         8.0
+nnabla-ext-cuda102-nccl2-mpi3-1-6   10.2         8.0
+nnabla-ext-cuda110-nccl2-mpi2-1-1   11.0         8.0
+nnabla-ext-cuda110-nccl2-mpi3-1-6   11.0         8.0
 =================================== ============ =============
 
 You can install as the following.

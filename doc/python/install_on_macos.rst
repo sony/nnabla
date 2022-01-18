@@ -15,7 +15,7 @@ We test the installation on macOS Sierra.
 
 The following software are required for installation:
 
-* Python>=3.6 (We'd recommend you to setup Python using Anaconda or `Miniconda <https://conda.io/miniconda.html>`_).
+* Python>=3.7 (We'd recommend you to setup Python using Anaconda or `Miniconda <https://conda.io/miniconda.html>`_).
 
   * pip (bundled in Conda Python)
   * wheel (bundled in Conda Python)
