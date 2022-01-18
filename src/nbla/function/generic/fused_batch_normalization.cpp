@@ -116,18 +116,39 @@ void FusedBatchNormalization<T>::backward_impl(
   NBLA_CHECK(bn_, error_code::value, "setup is not called.");
 
   // Naive non-fused implementation by layer composition.
+  Variable relu_buf(outputs[0]->shape());
+
+  // 1,2. Perform relu and add2 backward
+  this->relu_add2_backward(inputs, outputs, propagate_down, accum, relu_buf);
+
+  // 3. Perform BN backward
+  Variables inputs_bn(inputs.begin(), inputs.begin() + 5);
+  vector<bool> prop_down_bn_inputs(propagate_down.begin(),
+                                   propagate_down.begin() + 5);
+  vector<bool> accum_bn_inputs(accum.begin(), accum.begin() + 5);
+
+  Variables outputs_bn = outputs;
+  outputs_bn[0] = &relu_buf;
+  bn_->backward(inputs_bn, outputs_bn, prop_down_bn_inputs, accum_bn_inputs);
+}
+
+template <class T>
+void FusedBatchNormalization<T>::relu_add2_backward(
+    const Variables &inputs, const Variables &outputs,
+    const vector<bool> &propagate_down, const vector<bool> &accum,
+    Variable &relu_buf) {
+
   // 1. Perform ReLU backward
   bool prop_down_add2 = (inputs.size() == 6 && propagate_down[5]);
   bool prop_down_bn =
       std::accumulate(propagate_down.begin(), propagate_down.begin() + 3, false,
                       std::logical_or<bool>());
   auto y = outputs[0]->get_data_pointer<T>(this->ctx_);
-  Variable relu_x(outputs[0]->shape());
-  auto relu_dx = relu_x.cast_grad_and_get_pointer<T>(this->ctx_);
+  auto dx = relu_buf.cast_grad_and_get_pointer<T>(this->ctx_);
   auto dy = outputs[0]->get_grad_pointer<T>(this->ctx_);
   auto size = outputs[0]->size();
   if (prop_down_add2 || prop_down_bn) {
-    fused_batch_normalization::relu_backward(size, relu_dx, dy, y);
+    fused_batch_normalization::relu_backward(size, dx, dy, y);
   }
 
   // 2. Perform Add2 backward
@@ -136,16 +157,8 @@ void FusedBatchNormalization<T>::backward_impl(
   // nothing done for it.
   if (prop_down_add2) {
     auto dx1 = inputs[5]->cast_grad_and_get_pointer<T>(this->ctx_);
-    fused_batch_normalization::add2_backward(size, dx1, relu_dx, accum[5]);
+    fused_batch_normalization::add2_backward(size, dx1, dx, accum[5]);
   }
-  // 3. Perform BN backward
-  Variables inputs_bn(inputs.begin(), inputs.begin() + 5);
-  vector<bool> prop_down_bn_inputs(propagate_down.begin(),
-                                   propagate_down.begin() + 5);
-  vector<bool> accum_bn_inputs(accum.begin(), accum.begin() + 5);
-
-  Variables outputs_bn = outputs;
-  outputs_bn[0] = &relu_x;
-  bn_->backward(inputs_bn, outputs_bn, prop_down_bn_inputs, accum_bn_inputs);
 }
+
 } // namespace nbla
