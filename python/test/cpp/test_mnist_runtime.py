@@ -49,7 +49,7 @@ def test_examples_cpp_mnist_runtime(tmpdir, nnabla_examples_root, batch_size):
 
     # B. Run mnist training.
     script = os.path.join(nnabla_examples_root.path,
-                          'mnist-collection', 'classification.py')
+                          'image-classification/mnist-collection', 'classification.py')
     check_call(['python', script, '-i', '100'])
 
     # C. Get mnist_runtime results.

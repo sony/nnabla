@@ -14,7 +14,7 @@ Note: this example requires NNabla Python package also be installed.
 At first, you will train an MNIST classification model in Python-side. The example scripts of the MNIST classification training are provided in [NNabla Examples repository](https://github.com/sony/nnabla-examples). Clone or download it, then you can run train a classification model by the following commands.
 
 ```shell
-# at nnabla-examples/mnist-collection/
+# at nnabla-examples/image-classification/mnist-collection/
 python classification.py  # Optionally you can use -c cudnn option.
 ```
 

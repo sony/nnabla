@@ -37,7 +37,7 @@ Get `the examples <https://github.com/sony/nnabla-examples/archive/master.zip>`_
 
 .. code-block:: shell
 
-    cd nnabla-examples/mnist-collection/
+    cd nnabla-examples/image-classification/mnist-collection/
 
 
 Run MNIST classification.
