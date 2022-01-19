@@ -48,11 +48,17 @@ from nnabla.utils.learning_rate_scheduler import (
 
 
 def _networks(info, proto_graph):
+    def is_required(pf):
+        if pf.name.startswith('$EC$/'):
+            return True
+        return False
+
     # TODO: sharing variable among networks
     info.proto_graph = proto_graph
     proto_graph.expand_loop_control()
     for network in proto_graph.networks.values():
-        network.execute_on_proto(IdentityRemover(info.renamed_variables))
+        network.execute_on_proto(IdentityRemover(
+            info.renamed_variables, is_required=is_required))
         network(ctx=info.default_context, batch_size=info.batch_size)
     return proto_graph.networks
 
@@ -230,8 +236,12 @@ def _create_optimizer(ctx, o, networks, datasets, renamed):
             raise ValueError('Solver "' + o.solver.type +
                              '" is not supported.')
 
-    parameters = {v.name: v.variable_instance for v,
-                  local_lr in optimizer.parameter_learning_rate_multipliers.items() if local_lr > 0.0}
+    parameters = {}
+    for v, local_lr in optimizer.parameter_learning_rate_multipliers.items():
+        if local_lr > 0.0:
+            parameters[v.name] = v.variable_instance
+        else:
+            v.variable_instance.need_grad = False
     optimizer.solver.set_parameters(parameters)
     optimizer.parameters = OrderedDict(
         sorted(parameters.items(), key=lambda x: x[0]))

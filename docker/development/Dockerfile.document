@@ -47,11 +47,9 @@ ADD python/setup_requirements.txt /tmp/deps/
 RUN pip3 install ${PIP_INS_OPTS} -U -r /tmp/deps/setup_requirements.txt
 ADD python/requirements.txt /tmp/deps/
 RUN pip3 install ${PIP_INS_OPTS} -U -r /tmp/deps/requirements.txt
-ADD python/test_requirements.txt /tmp/deps/
-RUN pip3 install ${PIP_INS_OPTS} -U -r /tmp/deps/test_requirements.txt
-
-# Optional
-RUN pip3 install ${PIP_INS_OPTS} -U ipython
+ADD doc/requirements.txt /tmp/deps/
+RUN sed -i '/nnabla==/d' /tmp/deps/requirements.txt \
+    && pip3 install ${PIP_INS_OPTS} -U -r /tmp/deps/requirements.txt
 
 RUN apt-get -yqq update \
     && apt-get -yqq install --no-install-recommends \
@@ -75,23 +73,10 @@ RUN apt-get -yqq update \
 RUN apt-get -yqq update \
     && apt-get -yqq install --no-install-recommends \
         doxygen \
+        libclang-dev \
         fonts-freefont-ttf \
         graphviz \
         pandoc \
         plantuml \
-        unzip \
-    && pip3 install ${PIP_INS_OPTS} -U \
-        Sphinx \
-        pygments \
-        tensorflow \
-        tensorboardX \
-        recommonmark==0.4.0 \
-        sphinx-rtd-theme \
-        sphinxcontrib-actdiag \
-        sphinxcontrib-blockdiag \
-        sphinxcontrib-nwdiag \
-        sphinxcontrib-plantuml \
-        sphinxcontrib-seqdiag \
-        sphinxcontrib-toc \
     && apt-get -yqq clean \
     && rm -rf /var/lib/apt/lists/*

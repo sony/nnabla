@@ -43,6 +43,7 @@
 /python/src/nnabla/_init.h
 /python/src/nnabla/_nd_array.cpp
 /python/src/nnabla/_variable.cpp
+/python/src/nnabla/_dropout_workaround.cpp
 /python/src/nnabla/_version.py
 /python/src/nnabla/backward_functions.py
 /python/src/nnabla/clibtest
@@ -54,6 +55,7 @@
 /python/src/nnabla/function_bases.py
 /python/src/nnabla/nbla
 /python/src/nnabla/nnabla.lib
+/python/src/nnabla/recompute.cpp
 /python/src/nnabla/solver.cpp
 /python/src/nnabla/solver.pxd
 /python/src/nnabla/solver.pyx
@@ -101,3 +103,6 @@ tmp.*/
 
 # macOS
 .DS_store
+
+#vscode
+.vscode/

@@ -1,4 +1,5 @@
-nnabla==1.23.0.dev1
+nnabla==1.25.0.dev1
+Sphinx
 sphinx-rtd-theme
 sphinxcontrib-actdiag
 sphinxcontrib-blockdiag
@@ -6,4 +7,7 @@ sphinxcontrib-nwdiag
 sphinxcontrib-plantuml
 sphinxcontrib-seqdiag
 sphinxcontrib-toc
+breathe
+pygments
+recommonmark==0.4.0
 funcparserlib==1.0.0a0

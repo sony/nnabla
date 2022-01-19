@@ -27,7 +27,7 @@ NBLA_REGISTER_FUNCTION_HEADER(BatchInv);
 /** Invert source matrix
 The function is defined as
 @f[
-y = x^-1
+y = x^{-1}
 @f]
 
 Inputs:

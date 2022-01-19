@@ -222,9 +222,9 @@ def spectral_norm(w, u, dim=0, itr=1, eps=1e-12, test=False, output_u=False):
 
     .. math::
 
-        W_{sn} = \\frac{W}{\\sigma(W)}.
+        W_{sn} = \frac{W}{\sigma(W)}
 
-    where :math:`W` is the input matrix, and the :math:`\\sigma(W)` is the spectral norm of :math:`W`. The spectral norm is approximately computed by the power iteration.
+    where :math:`W` is the input matrix, and the :math:`\sigma(W)` is the spectral norm of :math:`W`. The spectral norm is approximately computed by the power iteration.
 
     References:
 
@@ -340,11 +340,11 @@ def slice(ctx, x, start=None, stop=None, step=None, n_outputs=-1, outputs=None):
     Args:
         x(~nnabla.Variable): N-D array
         start(repeated int64): Start indices for each axis
-            [default=``(0,) * len(x.shape)``]
+            [default= `(0,) * len(x.shape)` ]
         stop(repeated int64): Stop indices for each axis
-            [default=``tuple(x.shape)``]
+            [default= `tuple(x.shape)` ]
         step(repeated int64): Step indices for each axis
-            [default=``(1,) * len(x.shape)``]
+            [default= `(1,) * len(x.shape)` ]
 
     Returns:
         ~nnabla.Variable: Sliced N-D array
@@ -391,9 +391,9 @@ def mean_subtraction(x, mean, t, base_axis=1, update_running_mean=True):
         mean(~nnabla.Variable): N-D array of running mean (modified during forward execution).
         t(~nnabla.Variable): Scalar of num of iteration of running mean (modified during forward execution).
         base_axis(int): Base axis of Mean Subtraction operation. Dimensions up to base_axis is treated as sample dimension.
-            [default=``1``]
+            [default= `1` ]
         update_running_mean(bool): Update running mean during forward execution.
-            [default=``True``]
+            [default= `True` ]
 
     Returns:
         ~nnabla.Variable: N-D array.
@@ -965,7 +965,7 @@ def tile(x, reps):
     return tile_base(x, reps)
 
 
-def stft(x, window_size, stride, fft_size, window_type='hanning', center=True, pad_mode='reflect'):
+def stft(x, window_size, stride, fft_size, window_type='hanning', center=True, pad_mode='reflect', as_istft_backward=False):
     """Computes the short-time Fourier transform
 
     Args:
@@ -977,6 +977,9 @@ def stft(x, window_size, stride, fft_size, window_type='hanning', center=True, p
             For convenience, also `window_type=None` is supported which is equivalent to `window_type='rectangular'`.
         center (bool): If `True`, then the signal `x` is padded by half the FFT size using reflection padding.
         pad_mode (str): Padding mode, which can be `'constant'` or `'reflect'`. `'constant'` pads with `0`.
+        as_istft_backward: If `True`, then forward execution behaves as backward execution of ISTFT, 
+            treating input `x` as output gradient of ISTFT and outputs `y_r` and `y_i` as inputs gradient of ISTFT. 
+            This option is only used in nn.grad operator.
 
     Returns:
         Returns real and imaginary parts of STFT result.
@@ -987,7 +990,7 @@ def stft(x, window_size, stride, fft_size, window_type='hanning', center=True, p
     from .function_bases import stft as stft_base
     if window_type is None:
         window_type = "rectangular"
-    return stft_base(x, window_size, stride, fft_size, window_type, center, pad_mode)
+    return stft_base(x, window_size, stride, fft_size, window_type, center, pad_mode, as_istft_backward)
 
 
 def _stft_v1(x, window_size, stride, fft_size, window_type='hanning', center=True, pad_mode='reflect'):
@@ -1062,7 +1065,7 @@ def _stft_v1(x, window_size, stride, fft_size, window_type='hanning', center=Tru
     return y_r, y_i
 
 
-def istft(y_r, y_i, window_size, stride, fft_size, window_type='hanning', center=True):
+def istft(y_r, y_i, window_size, stride, fft_size, window_type='hanning', center=True, pad_mode='reflect', as_stft_backward=False):
     """Computes the inverse shoft-time Fourier transform
 
     Note: We use a constant square inverse window for the reconstruction
@@ -1078,6 +1081,11 @@ def istft(y_r, y_i, window_size, stride, fft_size, window_type='hanning', center
         window_type (str): Analysis window, can be either `hanning`, `hamming` or `rectangular`.
             For convenience, also `window_type=None` is supported which is equivalent to `window_type='rectangular'`.
         center (bool): If `True`, then it is assumed that the time-domain signal has centered frames.
+        pad_mode (str): Padding mode corresponding to STFT `pad_mode`, which can be `'constant'` or `'reflect'`. `'constant'` pads with `0`.
+            This option is ignored for the normal use of ISTFT. You need to set the same `pad_mode` only when `as_stft_backward == True`.
+        as_stft_backward (bool): If `True`, then forward execution behaves as backward execution of STFT,
+            treating inputs `y_r` and `y_i` as outputs gradient of STFT and output `x` as input gradient of STFT.
+            This option is only used in nn.grad operator.
 
     Returns:
         ~nnabla.Variable: Time domain sequence of size `batch_size x sample_size`.
@@ -1085,7 +1093,7 @@ def istft(y_r, y_i, window_size, stride, fft_size, window_type='hanning', center
     from .function_bases import istft as istft_base
     if window_type is None:
         window_type = "rectangular"
-    return istft_base(y_r, y_i, window_size, stride, fft_size, window_type, center)
+    return istft_base(y_r, y_i, window_size, stride, fft_size, window_type, center, pad_mode, as_stft_backward)
 
 
 def _istft_v1(y_r, y_i, window_size, stride, fft_size, window_type='hanning', center=True):
@@ -1168,62 +1176,6 @@ def _istft_v1(y_r, y_i, window_size, stride, fft_size, window_type='hanning', ce
         x = x[:, fft_size//2:-fft_size//2]
 
     return x
-
-
-def dropout(x, p=0.5, seed=-1, output_mask=False):
-    r"""Dropout.
-    Samples a number :math:`u` from a uniform distribution in :math:`[0, 1]`,
-    and ignores the input if :math:`u \leq p`.
-
-    .. math::
-
-        \begin{equation}
-            y = \left\{
-            \begin{array}{ll}
-                \frac{x}{1 - p} & (u > p) \\
-                0 & ({\rm otherwise})
-            \end{array} \right.
-        \end{equation}
-
-    Args:
-        x (Variable): An input variable.
-        p (float): math:`p` in definition. [default= `0.5` ]
-        seed (int): Random seed. When -1, seed is sampled from global random number generator. [default= `-1` ]
-        output_mask (bool): Whether or not to output mask. [default= `False` ]
-
-    Returns:
-        ~nnabla.Variable: N-D array.
-
-    Note:
-        Usually dropout only applied during training as below
-        (except `MC dropout`_). If you want to use dropout as an MC dropout, remove `if train:`.
-
-        .. code-block:: python
-
-            h = PF.affine(x, num_hidden)
-            if train:
-                h = F.dropout(h, 0.5)
-
-        reference: https://arxiv.org/abs/1506.02142
-
-    Note:
-        If you use nn.grad to a graph having dropout, you must set output_mask=True for all dropouts.
-        Otherwise, backward function of dropout raises ValueError when you call nn.grad.
-
-        .. code-block:: python
-
-            h = PF.affine(x, num_hidden)
-            h, mask = F.dropout(h, p=0.1, output_mask=True)
-            y = PF.affine(h, num_hidden)
-
-            grad = nn.grad([y], nn.get_parameters().values())
-
-
-    """
-    from .function_bases import dropout as dropout_base
-
-    n_outputs = 2 if output_mask else 1
-    return dropout_base(x, p, seed, output_mask, n_outputs)
 
 
 def gather_nd(data, indices):
@@ -1719,3 +1671,27 @@ def quantize_linear(x, scale, zero_point,
     y = quantize_linear_base(x, scale, zero_point,
                              round_mode, narrow_range, int_dtype)
     return y
+
+
+def linspace(start, stop, num):
+    r"""
+    Generate a one-dimensional vector/tensor of size `num` whose values are evenly spaced from `start` to `end`, inclusive.
+
+    Args:
+        start(float): Start value.
+        stop(float): End value.
+        num(int): Size of the constructed vector/tensor.
+
+    Returns:
+        ~nnabla.Variable: 1-D array with the generated values.
+    """
+    from .function_bases import linspace as linspace_base
+
+    if not isinstance(num, int):
+        raise TypeError(
+            "'{}' object cannot be interpreted as an integer".format(type(num).__name__))
+    if num < 0:
+        raise ValueError(
+            "Number of samples, {}, must be non-negative.".format(num))
+
+    return linspace_base(start, stop, num)

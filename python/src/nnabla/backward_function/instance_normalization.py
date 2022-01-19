@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+import nnabla.functions as F
 from .tensor_normalization import tensor_normalization_backward
 
 
@@ -29,5 +29,19 @@ def instance_normalization_backward(inputs, channel_axis=None, batch_axis=(0,), 
 
     # Reduce [H, W]
     axes = list(set(range(x.ndim)) - set(batch_axis + [channel_axis]))
-    dx, _ = tensor_normalization_backward(inputs, axes, eps, no_scale, no_bias)
-    return dx
+    grads, _ = tensor_normalization_backward(
+        inputs, axes, eps, no_scale, no_bias)
+    grads = list(grads)
+
+    # Backward for scale/bias (gamma/beta) broadcasting
+    for i in range(1, len(grads)):
+        affine_param = inputs[1 + i]  # gamma/beta
+        affine_param_grad = grads[i]
+        need_broadcast = False
+        for ba in batch_axis:
+            if affine_param.shape[ba] != affine_param_grad.shape[ba]:
+                need_broadcast = True
+
+        if need_broadcast:
+            grads[i] = F.sum(grads[i], axis=batch_axis, keepdims=True)
+    return tuple(grads)

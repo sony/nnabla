@@ -49,8 +49,8 @@ Install python requirements.
 
 ```shell
 cd nnabla
-sudo pip install -U -r python/setup_requirements.txt
-sudo pip install -U -r python/requirements.txt
+sudo pip install -r python/setup_requirements.txt
+sudo pip install -r python/requirements.txt
 ```
 
 Build the C++ core libraries and NNabla Python package.
@@ -85,7 +85,7 @@ For unit testing, some additional requirements should be installed.
 
 ```shell
 cd nnabla
-sudo pip install -U -r python/test_requirements.txt
+sudo pip install -r python/test_requirements.txt
 ```
 
 Then run(on nnabla directory):

@@ -16,10 +16,11 @@
 
 import nnabla.functions as F
 
-from .utils import no_grad, get_output
+from .utils import no_grad
+from .._dropout_workaround import _get_dropout_mask
 
 
-def dropout_backward(inputs, p=0.5, seed=-1, output_mask=False):
+def dropout_backward(inputs, p=0.5, seed=-1):
     """
     Args:
       inputs (list of nn.Variable): Incomming grads/inputs to/of the forward function.
@@ -28,15 +29,20 @@ def dropout_backward(inputs, p=0.5, seed=-1, output_mask=False):
     Return:
       list of Variable: Return the gradients wrt inputs of the corresponding function.
     """
+    # y = Dropout(x)
+    # dy: the back-propagated gradient of y
+    # xy: the back-propagated gradient of x
+    dy = inputs[0]
+    x = inputs[1]
 
-    if not output_mask:
-        raise ValueError(
-            "dropout_backward is supported for output_mask=True.")
-    dy0 = inputs[0]
-    dy1 = inputs[1]
-    x0 = inputs[2]
+    # Get mask to reproduce the random results of forward computation.
+    # This variable is always prepared for dropout_backward because
+    # GradEndFunction guarantees the computation order from dropout to
+    # dropout_backward.
+    mask = _get_dropout_mask(x)
+    mask = no_grad(mask)
+    # Protect mask before Dropout::backward uses and clear it.
+    mask.persistent = True
 
-    y1 = get_output(x0, "Dropout", nth_output=1)
-    m0 = y1.get_unlinked_variable()  # mask
-    dx0 = dy0 * m0 / (1 - p)
-    return dx0
+    dx = dy * mask / (1 - p)
+    return dx

@@ -25,7 +25,7 @@ namespace nbla {
 /** @class ASinh
 @brief Arc hyperbolic sine (ASinh) defined as
 @f[
-y_i = \asinh (x_i).
+y_i = \mbox{arcsinh} (x_i).
 @f]
 
 Inputs:

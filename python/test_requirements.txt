@@ -2,3 +2,5 @@ ipython
 pytest
 pytest-xdist[psutil]
 scipy
+librosa
+backports.lzma

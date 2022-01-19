@@ -39,7 +39,7 @@ RUN eval ${YUM_OPTS} \
         hdf5-devel \
         lapack-devel \
         libjpeg-devel \
-        liblzma-devel \
+        xz-devel \
         libpng-devel \
         redhat-lsb-core \
         rpm-build \
@@ -60,9 +60,9 @@ RUN eval ${YUM_OPTS} \
 ############################################################# gcc
 RUN mkdir /tmp/deps \
     && cd /tmp/deps \
-    && wget ${WGET_OPTS} http://ftp.tsukuba.wide.ad.jp/software/gcc/releases/gcc-4.9.2/gcc-4.9.2.tar.bz2 \
-    && tar xvfj gcc-4.9.2.tar.bz2 \
-    && cd gcc-4.9.2 \
+    && wget ${WGET_OPTS} http://ftp.tsukuba.wide.ad.jp/software/gcc/releases/gcc-6.5.0/gcc-6.5.0.tar.gz \
+    && tar zxf gcc-6.5.0.tar.gz \
+    && cd gcc-6.5.0 \
     && ./configure --disable-multilib --enable-languages=c,c++ \
     && make -j8 \
     && make install \
@@ -100,6 +100,8 @@ RUN mkdir /tmp/deps \
     && cmake \
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
         -Dprotobuf_BUILD_TESTS=OFF \
+        -DCMAKE_CXX_STANDARD=14 \
+        -D CMAKE_C_COMPILER=gcc CMAKE_CXX_COMPILER=g++ /usr/bin/gcc \
         ../cmake \
     && make -j8 \
     && make install \
@@ -151,7 +153,7 @@ ADD python/test_requirements.txt /tmp/deps/
 RUN if [ "${PYVERNAME}" == "3.6" ]; then wget ${WGET_OPTS} https://www.python.org/ftp/python/3.6.12/Python-3.6.12.tgz; fi \
 	&& if [ "${PYVERNAME}" == "3.7" ]; then wget ${WGET_OPTS} https://www.python.org/ftp/python/3.7.10/Python-3.7.10.tgz; fi \
 	&& if [ "${PYVERNAME}" == "3.8" ]; then wget ${WGET_OPTS} https://www.python.org/ftp/python/3.8.8/Python-3.8.8.tgz; fi \
-	&& if [ "${PYVERNAME}" == "3.9" ]; then wget ${WGET_OPTS} https://www.python.org/ftp/python/3.9.2/Python-3.9.2.tgz; fi \
+	&& if [ "${PYVERNAME}" == "3.9" ]; then wget ${WGET_OPTS} https://www.python.org/ftp/python/3.9.8/Python-3.9.8.tgz; fi \
 	&& tar -xzf Python-${PYVERNAME}*.tgz \
 	&& cd Python-${PYVERNAME}* \
 	&& ./configure --enable-optimizations \

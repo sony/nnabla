@@ -13,30 +13,30 @@
 # limitations under the License.
 
 all: train_lenet_classifier.cpp train_resnet_classifier.cpp train_vae.cpp train_dcgan.cpp train_siamese.cpp train_vat.cpp
-	$(CXX) -std=c++11 -O -o train_lenet_classifier train_lenet_classifier.cpp -lnnabla -lz -lnnabla_utils
-	$(CXX) -std=c++11 -O -o train_resnet_classifier train_resnet_classifier.cpp -lnnabla -lz -lnnabla_utils
-	$(CXX) -std=c++11 -O -o train_vae train_vae.cpp -lnnabla -lz -lnnabla_utils
-	$(CXX) -std=c++11 -O -o train_dcgan train_dcgan.cpp -lnnabla -lz -lnnabla_utils
-	$(CXX) -std=c++11 -O -o train_siamese train_siamese.cpp -lnnabla -lz -lnnabla_utils
-	$(CXX) -std=c++11 -O -o train_vat train_vat.cpp -lnnabla -lz -lnnabla_utils
+	$(CXX) -std=c++14 -O -o train_lenet_classifier train_lenet_classifier.cpp -lnnabla -lz -lnnabla_utils
+	$(CXX) -std=c++14 -O -o train_resnet_classifier train_resnet_classifier.cpp -lnnabla -lz -lnnabla_utils
+	$(CXX) -std=c++14 -O -o train_vae train_vae.cpp -lnnabla -lz -lnnabla_utils
+	$(CXX) -std=c++14 -O -o train_dcgan train_dcgan.cpp -lnnabla -lz -lnnabla_utils
+	$(CXX) -std=c++14 -O -o train_siamese train_siamese.cpp -lnnabla -lz -lnnabla_utils
+	$(CXX) -std=c++14 -O -o train_vat train_vat.cpp -lnnabla -lz -lnnabla_utils
 
 lenet: train_lenet_classifier.cpp
-	$(CXX) -std=c++11 -O -o train_lenet_classifier train_lenet_classifier.cpp -lnnabla -lz -lnnabla_utils
+	$(CXX) -std=c++14 -O -o train_lenet_classifier train_lenet_classifier.cpp -lnnabla -lz -lnnabla_utils
 
 resnet: train_resnet_classifier.cpp
-	$(CXX) -std=c++11 -O -o train_resnet_classifier train_resnet_classifier.cpp -lnnabla -lz -lnnabla_utils
+	$(CXX) -std=c++14 -O -o train_resnet_classifier train_resnet_classifier.cpp -lnnabla -lz -lnnabla_utils
 
 vae: train_vae.cpp
-	$(CXX) -std=c++11 -O -o train_vae train_vae.cpp -lnnabla -lz -lnnabla_utils
+	$(CXX) -std=c++14 -O -o train_vae train_vae.cpp -lnnabla -lz -lnnabla_utils
 
 dcgan: train_dcgan.cpp
-	$(CXX) -std=c++11 -O -o train_dcgan train_dcgan.cpp -lnnabla -lz -lnnabla_utils
+	$(CXX) -std=c++14 -O -o train_dcgan train_dcgan.cpp -lnnabla -lz -lnnabla_utils
 
 siamese: train_siamese.cpp
-	$(CXX) -std=c++11 -O -o train_siamese train_siamese.cpp -lnnabla -lz -lnnabla_utils
+	$(CXX) -std=c++14 -O -o train_siamese train_siamese.cpp -lnnabla -lz -lnnabla_utils
 
 vat: train_vat.cpp
-	$(CXX) -std=c++11 -O -o train_vat train_vat.cpp -lnnabla -lz -lnnabla_utils
+	$(CXX) -std=c++14 -O -o train_vat train_vat.cpp -lnnabla -lz -lnnabla_utils
 
 clean:
 	rm -f train_lenet_classifier

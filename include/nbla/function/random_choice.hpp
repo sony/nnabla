@@ -37,8 +37,7 @@ NBLA_REGISTER_FUNCTION_HEADER(RandomChoice, const vector<int> &, bool, int);
   populations and their weights from which samples are returned with the
   requested `shape` following all outermost dimensions of the input.
 
-  .. code-block:: python
-
+  @code{.py}
     import nnabla as nn
     import nnabla.functions as F
     import numpy as np
@@ -54,6 +53,7 @@ NBLA_REGISTER_FUNCTION_HEADER(RandomChoice, const vector<int> &, bool, int);
 
     # draw 12 samples with shape (3, 4) from each population
     y = F.random_choice(x, w, shape=(3, 4))  # y.shape => (2, 3, 4)
+  @endcode
 
   Note that weights must not be less than zero and for each population the
   sum of weights must be greater than zero. Additionally, sampling without
@@ -66,10 +66,10 @@ NBLA_REGISTER_FUNCTION_HEADER(RandomChoice, const vector<int> &, bool, int);
   Random sampling from an implicit array of index values (like categorical
   or multinomial) can be realized with input `x` constructed as indices.
 
-  .. code-block:: python
-
+  @code{.py}
     w = nn.Variable.from_numpy_array(np.array([1, 2, 3, 2, 1]))
     y = F.random_choice(F.arange(0, 5), w)
+  @endcode
 
 Inputs:
 

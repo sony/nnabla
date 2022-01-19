@@ -61,7 +61,7 @@ make
 
 The above command generates an executable `mnist_runtime` at the current directly.
 
-The build file `GNUmakefile` is really simple. It links `libnnabla.so` and `libnnabla_utils.so` with the executable generated from `mnist_runtime.cpp`, and compiles with C++11 option `-std=c++11`.
+The build file `GNUmakefile` is really simple. It links `libnnabla.so` and `libnnabla_utils.so` with the executable generated from `mnist_runtime.cpp`, and compiles with C++14 option `-std=c++14`.
 
 ```shell
 CUDA_VERSION_SUFFIX=-100_7 make cuda

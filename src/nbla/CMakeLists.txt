@@ -45,7 +45,7 @@ endif()
 add_library(${LIB_NAME} SHARED ${SOURCES})
 
 target_link_libraries(${LIB_NAME} ${NBLA_LINKER_LIBS})
-set_property(TARGET ${LIB_NAME} PROPERTY CXX_STANDARD 11)
+set_property(TARGET ${LIB_NAME} PROPERTY CXX_STANDARD 14)
 
 install(TARGETS ${LIB_NAME} LIBRARY DESTINATION lib)
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/nbla DESTINATION include)

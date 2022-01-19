@@ -187,8 +187,8 @@ def batch_normalization(x, beta, gamma, mean, variance, axes=[1], decay_rate=0.9
         of the mini-batch
 
         * :obj:`~nnabla.Variable`: Output of the batch normalization
-        * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`)
-        * :obj:`~nnabla.Variable`: Variance (if ``output_stat=True`)
+        * :obj:`~nnabla.Variable`: Mean (if `output_stat=True`)
+        * :obj:`~nnabla.Variable`: Variance (if `output_stat=True`)
 
     See Also:
         ``nnabla.function_bases.batch_normalization``.
@@ -297,8 +297,8 @@ def fused_batch_normalization(x, beta, gamma, mean, variance, z=None, axes=[1], 
         of the mini-batch
 
         * :obj:`~nnabla.Variable`: Output of the batch normalization
-        * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`)
-        * :obj:`~nnabla.Variable`: Variance (if ``output_stat=True`)
+        * :obj:`~nnabla.Variable`: Mean (if `output_stat=True`)
+        * :obj:`~nnabla.Variable`: Variance (if `output_stat=True`)
 
     See Also:
         ``nnabla.function_bases.batch_normalization``.
@@ -408,8 +408,8 @@ def sync_batch_normalization(x, beta, gamma, mean, variance, comm, group="world"
         of the mini-batch
 
         * :obj:`~nnabla.Variable`: Output of the batch normalization
-        * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`)
-        * :obj:`~nnabla.Variable`: Variance (if ``output_stat=True`)
+        * :obj:`~nnabla.Variable`: Mean (if `output_stat=True`)
+        * :obj:`~nnabla.Variable`: Variance (if `output_stat=True`)
 
     See Also:
         ``nnabla.function_bases.batch_normalization``.
@@ -522,8 +522,8 @@ def weight_standardization(w, channel_axis=0, eps=1e-05, output_stat=False):
 
     Returns:
         * :obj:`~nnabla.Variable`: Standardized output weight.
-        * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`)
-        * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
+        * :obj:`~nnabla.Variable`: Mean (if `output_stat=True`)
+        * :obj:`~nnabla.Variable`: Std (if `output_stat=True`)
 
     """
     from .function_bases import weight_standardization as weight_standardization_base
@@ -609,8 +609,8 @@ def layer_normalization(x, beta, gamma, batch_axis=0, eps=1e-05, output_stat=Fal
 
     Returns:
         * :obj:`~nnabla.Variable`: output variable which is normalized its statics and rescaled by alpha and beta.
-        * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`).
-        * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
+        * :obj:`~nnabla.Variable`: Mean (if `output_stat=True`).
+        * :obj:`~nnabla.Variable`: Std (if `output_stat=True`)
     """
     from .function_bases import layer_normalization as layer_normalization_base
     n_outputs = 3 if output_stat else 1
@@ -700,8 +700,8 @@ def instance_normalization(x, beta, gamma, channel_axis=1, batch_axis=0, eps=1e-
 
     Returns:
         * :obj:`~nnabla.Variable`: Normalized output variable.
-        * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`)
-        * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
+        * :obj:`~nnabla.Variable`: Mean (if `output_stat=True`)
+        * :obj:`~nnabla.Variable`: Std (if `output_stat=True`)
     """
     from .function_bases import instance_normalization as instance_normalization_base
     n_outputs = 3 if output_stat else 1
@@ -821,8 +821,8 @@ def group_normalization(x, beta, gamma, num_groups, channel_axis=1, batch_axis=0
 
     Returns:
         * :obj:`~nnabla.Variable`: Normalized output variable.
-        * :obj:`~nnabla.Variable`: Mean (if ``output_stat=True`)
-        * :obj:`~nnabla.Variable`: Std (if ``output_stat=True`)
+        * :obj:`~nnabla.Variable`: Mean (if `output_stat=True`)
+        * :obj:`~nnabla.Variable`: Std (if `output_stat=True`)
     """
     from .function_bases import group_normalization as group_normalization_base
     n_outputs = 3 if output_stat else 1

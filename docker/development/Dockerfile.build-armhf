@@ -47,7 +47,8 @@ RUN eval ${APT_OPTS} \
     python3-wheel \
     unzip \
     wget \
-    zip
+    zip \
+    liblzma-dev
 
 ############################################################ protobuf
 ENV PROTOVER=3.10.1
@@ -61,6 +62,8 @@ RUN mkdir /tmp/deps \
     && cmake \
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
         -Dprotobuf_BUILD_TESTS=OFF \
+        -DCMAKE_CXX_STANDARD=14 \
+        -D CMAKE_C_COMPILER=gcc CMAKE_CXX_COMPILER=g++ /usr/bin/gcc \
         ../cmake \
     && make -j8 \
     && make install \
@@ -84,6 +87,6 @@ RUN cat /tmp/deps/requirements.txt |grep -v onnx >/tmp/deps/r.txt
 RUN mv /tmp/deps/r.txt /tmp/deps/requirements.txt
 
 RUN pip3 install ${PIP_INS_OPTS} -r /tmp/deps/requirements.txt
-RUN pip3 install ${PIP_INS_OPTS} -r /tmp/deps/test_requirements.txt
+# RUN pip3 install ${PIP_INS_OPTS} -r /tmp/deps/test_requirements.txt
 
 ENV PATH /tmp/.local/bin:$PATH
