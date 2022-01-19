@@ -50,7 +50,7 @@ Export
 - ✓: Support to convert
 - X: Not support
 
-Total: 61/65
+Total: 60/65
 
 ONNX Export Sample Test(nnp --> onnx)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -104,7 +104,7 @@ Count 34/37
 ONNX Export Pretrained Model Test(nnp --> onnx)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Count 18/18
+Count 17/18
 
 
     ======================  =======  ====
@@ -118,7 +118,7 @@ Count 18/18
     Resnet-101_4_348_          ✓         
     Resnet-152_4_518_          ✓         
     Resnet-18_3_71_            ✓         
-    Resnet-34_4_128_           ✓         
+    Resnet-34_4_128_           X         
     Resnet-50_4_178_           ✓         
     ShuffleNet-0.5x_2_202_     ✓         
     ShuffleNet_2_202_          ✓         
@@ -204,7 +204,7 @@ Export
 - ✓: Support to convert
 - X: Not support
 
-Total: 61/65
+Total: 58/65
 
 Tensorflow Export Sample Test(nnp --> tf)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -258,13 +258,13 @@ Count 34/37
 Tensorflow Export Pretrained Models(nnp --> tf)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Count 18/18
+Count 15/18
 
 
     ======================  =======  ====
              Name           Support  Memo
     ======================  =======  ====
-    AlexNet_                   ✓         
+    AlexNet_                   X         
     DenseNet-161_2_570_        ✓         
     GoogLeNet_4_142_           ✓         
     MobileNet_1_86_            ✓         
@@ -274,8 +274,8 @@ Count 18/18
     Resnet-18_3_71_            ✓         
     Resnet-34_4_128_           ✓         
     Resnet-50_4_178_           ✓         
-    ShuffleNet-0.5x_2_202_     ✓         
-    ShuffleNet_2_202_          ✓         
+    ShuffleNet-0.5x_2_202_     X         
+    ShuffleNet_2_202_          X         
     SqueezeNet-1.0_2_70_       ✓         
     SqueezeNet-1.1_2_70_       ✓         
     VGG-11_                    ✓         
