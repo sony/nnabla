@@ -21,6 +21,7 @@
 #include <nbla/variable.hpp>
 
 #include <algorithm>
+#include <nbla/utils/axis_utils.hpp>
 
 namespace nbla {
 
@@ -30,6 +31,9 @@ NBLA_REGISTER_FUNCTION_SOURCE(RandomShift, const vector<int> &, const string &,
 template <typename T>
 void RandomShift<T>::setup_impl(const Variables &inputs,
                                 const Variables &outputs) {
+
+  refine_axis(base_axis_, inputs.at(0)->ndim());
+
   std::random_device rdev_;
   rgen_ = std::mt19937((seed_ == -1 ? rdev_() : seed_));
   size_ = inputs[0]->size() / inputs[0]->size(base_axis_);

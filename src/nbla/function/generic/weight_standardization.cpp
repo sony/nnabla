@@ -19,6 +19,7 @@
 
 #include <nbla/function/tensor_normalization.hpp>
 #include <nbla/imperative.hpp>
+#include <nbla/utils/axis_utils.hpp>
 
 namespace nbla {
 
@@ -30,11 +31,7 @@ void WeightStandardization<T>::setup_impl(const Variables &inputs,
   const auto w_shape = inputs[0]->shape();
   const int ndim = w_shape.size();
 
-  // check chennel_axis
-  NBLA_CHECK(0 <= channel_axis_ && channel_axis_ < ndim, error_code::value,
-             "channel_axis must be in the range of [0, ndim). channel_axis : "
-             "%d, ndim: {}.",
-             channel_axis_, ndim);
+  refine_axis(channel_axis_, inputs.at(0)->ndim());
 
   // convert channel_axis to axes for tensor_norm
   const vector<int> tn_axes = {channel_axis_};

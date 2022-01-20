@@ -38,7 +38,7 @@ template <typename T>
 class LayerNormalization
     : public BaseFunction<const vector<int> &, float, bool, bool> {
 protected:
-  const vector<int> batch_axis_;
+  vector<int> batch_axis_;
   float eps_;
   bool no_scale_, no_bias_;
 

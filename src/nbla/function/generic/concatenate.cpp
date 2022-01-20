@@ -16,6 +16,7 @@
 
 #include <nbla/array.hpp>
 #include <nbla/function/concatenate.hpp>
+#include <nbla/utils/axis_utils.hpp>
 #include <nbla/variable.hpp>
 
 namespace nbla {
@@ -26,16 +27,9 @@ template <typename T>
 void Concatenate<T>::setup_impl(const Variables &inputs,
                                 const Variables &outputs) {
   Shape_t shape = inputs[0]->shape();
-  if (axis_ < 0)
-    axis_ += shape.size();
+  refine_axis(axis_, shape.size());
 
-  NBLA_CHECK(axis_ >= 0, error_code::value,
-             "axis must not be less than zero, got %d", axis_);
   auto axis = static_cast<Shape_t::size_type>(this->axis_);
-  NBLA_CHECK(axis <= shape.size(), error_code::value,
-             "axis must be less than or equal to ndim of input. "
-             "axis: %d > ndim of input: %d.",
-             axis_, shape.size());
   inner_total_size_ = 0;
   for (Variables::size_type i = 0; i < inputs.size(); i++) {
     NBLA_CHECK(inputs[i]->shape().size() != 0, error_code::value,

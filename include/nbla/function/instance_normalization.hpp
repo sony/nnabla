@@ -39,7 +39,7 @@ class InstanceNormalization
     : public BaseFunction<int, const vector<int> &, float, bool, bool> {
 protected:
   int channel_axis_;
-  const vector<int> batch_axis_;
+  vector<int> batch_axis_;
   float eps_;
   bool no_scale_, no_bias_;
 

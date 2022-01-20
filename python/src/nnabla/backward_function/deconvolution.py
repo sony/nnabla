@@ -50,6 +50,9 @@ def deconvolution_backward(inputs, base_axis=1, pad=None, stride=None, dilation=
     x0 = inputs[1]
     w0 = inputs[2]
 
+    base_axis += x0.ndim*(base_axis < 0)
+    # base_axis += inputs[0].ndim*(base_axis < 0)
+
     ctx = nn.get_current_context()
     dfx = DeconvolutionDataGrad(
         ctx, base_axis, pad, stride, dilation, group, channel_last, output_padding)

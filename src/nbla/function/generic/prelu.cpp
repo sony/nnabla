@@ -21,6 +21,8 @@
 #include <algorithm>
 #include <cstring>
 
+#include <nbla/utils/axis_utils.hpp>
+
 namespace nbla {
 
 NBLA_REGISTER_FUNCTION_SOURCE(PReLU, int);
@@ -30,13 +32,10 @@ void PReLU<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   Shape_t shape_x = inputs[0]->shape();
   Shape_t shape_w = inputs[1]->shape();
 
-  NBLA_CHECK(base_axis_ >= 0, error_code::value,
-             "base_axis may not be less than zero, got %d", base_axis_);
+  refine_axis(base_axis_, inputs.at(0)->ndim());
+
   auto base_axis = static_cast<Shape_t::size_type>(base_axis_);
-  NBLA_CHECK(base_axis < shape_x.size(), error_code::value,
-             "base_axis must be less than ndim of inputs[0]. "
-             "base_axis: %d >= ndim of inputs[0]: %d.",
-             base_axis_, shape_x.size());
+
   NBLA_CHECK(inputs[1]->size() == 1 ||
                  (shape_w.size() == 1 && shape_w[0] == shape_x[base_axis]),
              error_code::value, "The negative slope must be a 1d "

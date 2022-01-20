@@ -31,6 +31,7 @@ def double_backward_for_batch(g_dx0, g_db0, g_dg0,
     # Prerequisite
     # axes reduced and denominator
     axes0 = [a for a in range(x0.ndim)]
+    axes = [a+x0.ndim*(a < 0) for a in axes]
     axes = list(set(axes0) - set(axes))
     F_sum = partial(F.sum, axis=axes, keepdims=True)
     F_mean = partial(F.mean, axis=axes, keepdims=True)
@@ -185,6 +186,9 @@ class BatchNormalizationBackward(PythonFunction):
 
         inputs_fwd, outputs_fwd = self._create_fwd_inputs_outputs(
             inputs, outputs)
+
+        self.axes = [a + inputs_fwd[0].ndim*(a < 0) for a in self.axes]
+
         self._func.setup(inputs_fwd, outputs_fwd)
         dx_shape = inputs_fwd[self.x0_idx - 1].shape
         db_shape = inputs_fwd[self.b0_idx -
@@ -291,6 +295,7 @@ def batch_normalization_backward(inputs, axes=(1,), decay_rate=0.9, eps=1e-05,
       list of Variable: Return the gradients wrt inputs of the corresponding function.
     """
     ctx = nn.get_current_context()
+    axes = [a+inputs[1].ndim*(a < 0) for a in axes]
     df = BatchNormalizationBackward(
         ctx, axes, decay_rate, eps, batch_stat, no_scale, no_bias)
     d_inputs = df(*inputs)
@@ -307,6 +312,9 @@ def batch_normalization_backward_backward(inputs, axes=(1,), decay_rate=0.9, eps
     Return:
       list of Variable: Return the gradients wrt inputs of the corresponding function.
     """
+
+    axes = [a+inputs[1].ndim*(a < 0) for a in axes]
+
     # Align variable indices
     v_idx = 1
     x_idx = 0

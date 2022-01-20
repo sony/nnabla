@@ -124,9 +124,10 @@ def ref_grad_inq_convolution(x, w, i, b, dy, base_axis, pad, stride, dilation, g
                          [((2, 2, 10, 10), (3, 2), 4, (3, 0), (1, 2), (2, 1), 3), ])
 @pytest.mark.parametrize("group", [1, 2])
 @pytest.mark.parametrize("with_bias", [True, False])
+@pytest.mark.parametrize("base_axis", [1, -3])
 @pytest.mark.parametrize("inq_iterations", [(10, 20), (0,), (0, 10)])
 def test_convolution_2d_forward_backward(inshape, kernel, outmaps, pad, stride,
-                                         dilation, group, with_bias, seed,
+                                         dilation, group, with_bias, base_axis, seed,
                                          num_bits, inq_iterations, ctx, func_name):
     from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
@@ -144,7 +145,6 @@ def test_convolution_2d_forward_backward(inshape, kernel, outmaps, pad, stride,
     else:
         inputs += [None]
 
-    base_axis = len(inshape) - 3
     selection_algorithm = 'largest_abs'
 
     function_tester(rng, F.inq_convolution, ref_inq_convolution, inputs,

@@ -94,7 +94,7 @@ def test_random_erase_forward(ctx, func_name, seed, prob,
 @pytest.mark.parametrize("n", [1, 3])
 @pytest.mark.parametrize("share", [True, False])
 @pytest.mark.parametrize("inplace", [False])
-@pytest.mark.parametrize("base_axis", [1])
+@pytest.mark.parametrize("base_axis", [1, -3])
 @pytest.mark.parametrize("func_seed", [412, -1])
 @pytest.mark.parametrize("channel_last", [False, True])
 @pytest.mark.parametrize("ste_fine_grained", [True, False])
@@ -161,7 +161,7 @@ def test_random_erase_backward(ctx, func_name, seed, prob,
 @pytest.mark.parametrize("n", [1, 3])
 @pytest.mark.parametrize("share", [True, False])
 @pytest.mark.parametrize("inplace", [False])
-@pytest.mark.parametrize("base_axis", [1])
+@pytest.mark.parametrize("base_axis", [1, -3])
 @pytest.mark.parametrize("func_seed", [412, -1])
 @pytest.mark.parametrize("channel_last", [False, True])
 def test_random_erase_recomputation(ctx, func_name, seed, prob,

@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <nbla/utils/axis_utils.hpp>
 
 namespace nbla {
 
@@ -30,13 +31,10 @@ NBLA_REGISTER_FUNCTION_SOURCE(RandomCrop, const vector<int> &, int, int);
 template <typename T>
 void RandomCrop<T>::setup_impl(const Variables &inputs,
                                const Variables &outputs) {
-  NBLA_CHECK(base_axis_ >= 0, error_code::value,
-             "base_axis may not be less than zero, got %d", base_axis_);
+
+  refine_axis(base_axis_, inputs.at(0)->ndim());
+
   auto base_axis = static_cast<Shape_t::size_type>(base_axis_);
-  NBLA_CHECK(base_axis < inputs[0]->shape().size(), error_code::value,
-             "base_axis must be less than ndim of inputs[0]. "
-             "base_axis: %d >= ndim of inputs[0]: %d.",
-             base_axis_, inputs[0]->shape().size());
 
   std::random_device rdev_;
   rgen_ = std::mt19937((seed_ == -1 ? rdev_() : seed_));

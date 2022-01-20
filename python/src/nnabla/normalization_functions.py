@@ -45,6 +45,7 @@ def _check_batch_axis_and_force_list(ndim, batch_axis):
 
 def _get_axes_excluding(ndim, axes):
     axes = _force_list(axes)
+    axes = [a+ndim*(a < 0) for a in axes]
 
     return [i for i in range(ndim) if i not in axes]
 
@@ -197,6 +198,7 @@ def batch_normalization(x, beta, gamma, mean, variance, axes=[1], decay_rate=0.9
     from .function_bases import batch_normalization as batch_normalization_base
     n_outputs = 3 if output_stat else 1
     axes = _force_list(axes)
+    axes = [a+len(x.shape)*(a < 0) for a in axes]
 
     assert batch_stat or (not output_stat)
 

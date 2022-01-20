@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <nbla/utils/axis_utils.hpp>
 
 namespace nbla {
 
@@ -29,14 +30,9 @@ template <typename T>
 void VATNoise<T>::setup_impl(const Variables &inputs,
                              const Variables &outputs) {
 
-  NBLA_CHECK(0 < base_axis_, error_code::value,
-             "base_axis_ must be grater than 0. base_axis: %d.", base_axis_);
+  refine_axis(base_axis_, inputs.at(0)->ndim());
 
   auto base_axis = static_cast<Shape_t::size_type>(base_axis_);
-  NBLA_CHECK(base_axis < inputs[0]->shape().size(), error_code::value,
-             "base_axis must be less than ndim of inputs[0]. "
-             "base_axis: %d >= ndim of inputs[0]: %d.",
-             base_axis_, inputs[0]->shape().size());
 
   NBLA_CHECK(inputs[0]->shape() == inputs[1]->shape(), error_code::value,
              "Dimensions of inputs must match. "

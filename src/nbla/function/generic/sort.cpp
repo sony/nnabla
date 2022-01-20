@@ -17,6 +17,7 @@
 #include <nbla/common.hpp>
 #include <nbla/function/sort.hpp>
 #include <nbla/function/transpose.hpp>
+#include <nbla/utils/axis_utils.hpp>
 #include <nbla/variable.hpp>
 #include <numeric>
 
@@ -26,23 +27,10 @@ NBLA_REGISTER_FUNCTION_SOURCE(Sort, int, bool, bool, bool);
 
 template <typename T>
 void Sort<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
-  if (this->axis > 0) {
-    NBLA_CHECK(static_cast<unsigned>(this->axis) < inputs[0]->shape().size(),
-               error_code::value,
-               "Sort axis must be less than the number of input dimensions "
-               "but axis %d >= ndim of x %d.",
-               this->axis, inputs[0]->shape().size());
-  }
-  if (this->axis < 0) {
-    NBLA_CHECK(inputs[0]->shape().size() + this->axis >= 0, error_code::value,
-               "Negative sort axis must not be less than -%d dimensions of "
-               "input variable, but got axis %d.",
-               inputs[0]->shape().size(), inputs[0]->shape().size(),
-               this->axis);
-    this->axis += inputs[0]->shape().size();
-  }
 
   const auto &shape = inputs[0]->shape();
+
+  refine_axis(axis, shape.size());
 
   this->inner_size = 1;
   for (int i = shape.size() - 1; i > this->axis; i--)

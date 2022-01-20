@@ -21,6 +21,8 @@ ctxs = list_context('KLMultinomial')
 
 
 def ref_kl_multinomial(p, q, base_axis):
+    base_axis = base_axis + p.ndim*(base_axis < 0)
+
     kl = np.sum(p * (np.log(p + 1.0e-8) - np.log(q + 1.0e-8)),
                 axis=tuple(range(base_axis, p.ndim)))
     return kl.reshape(kl.shape + (1,))
@@ -28,7 +30,7 @@ def ref_kl_multinomial(p, q, base_axis):
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
-@pytest.mark.parametrize("base_axis, shape", [(1, (3, 6)), (1, (5, 8, 7)), (2, (4, 7, 9))])
+@pytest.mark.parametrize("base_axis, shape", [(1, (3, 6)), (1, (5, 8, 7)), (-1, (4, 7, 9)), (2, (3, 6, 9))])
 def test_kl_multinomial_forward_backward(seed, ctx, base_axis, shape, func_name):
     from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
@@ -44,7 +46,7 @@ def test_kl_multinomial_forward_backward(seed, ctx, base_axis, shape, func_name)
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
-@pytest.mark.parametrize("base_axis, shape", [(1, (3, 6)), (1, (5, 8, 7)), (2, (4, 7, 9))])
+@pytest.mark.parametrize("base_axis, shape", [(1, (3, 6)), (1, (5, 8, 7)), (-2, (4, 7, 9))])
 def test_kl_multinomial_double_backward(seed, ctx, base_axis, shape, func_name):
     from nbla_test_utils import backward_function_tester
     rng = np.random.RandomState(seed)

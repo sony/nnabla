@@ -27,6 +27,9 @@ def instance_normalization_backward(inputs, channel_axis=None, batch_axis=(0,), 
     """
     x = inputs[1]
 
+    channel_axis += x.ndim*(channel_axis < 0)
+    batch_axis = [b + x.ndim*(b < 0) for b in batch_axis]
+
     # Reduce [H, W]
     axes = list(set(range(x.ndim)) - set(batch_axis + [channel_axis]))
     grads, _ = tensor_normalization_backward(

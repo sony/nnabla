@@ -63,8 +63,9 @@ def ref_deformable_convolution_2d(x, w, offset, mask, b, base_axis, pad, stride,
  ])
 @pytest.mark.parametrize("with_mask", [True, False])
 @pytest.mark.parametrize("channel_last", [True, False])
+@pytest.mark.parametrize("base_axis", [1, -3])
 def test_forward_backward_2d(inshape, kernel, out_channels, pad, stride, dilation, group,
-                             deformable_group, with_mask, channel_last, with_bias, seed, ctx, func_name):
+                             deformable_group, with_mask, channel_last, with_bias, base_axis, seed, ctx, func_name):
     if channel_last:
         pytest.skip(
             'channel_last=True is not supported in any backends so far.')
@@ -76,7 +77,6 @@ def test_forward_backward_2d(inshape, kernel, out_channels, pad, stride, dilatio
     rng = np.random.RandomState(seed)
 
     # Create arguments
-    base_axis = len(inshape) - len(kernel) - 1
     func_args = [base_axis, pad, stride, dilation, group,
                  deformable_group, channel_last]
 

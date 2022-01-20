@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <nbla/utils/axis_utils.hpp>
 
 namespace nbla {
 
@@ -32,6 +33,8 @@ void BatchNormalization<T>::setup_impl(const Variables &inputs,
   // Check axes
   NBLA_CHECK(axes_.size() == 1, error_code::not_implemented,
              "Specifying axis more than one is not supported so far.")
+
+  refine_axes(this->axes_, inputs.at(0)->ndim());
 
   // Check num of inputs and outputs.
   size_t ninputs = inputs.size();

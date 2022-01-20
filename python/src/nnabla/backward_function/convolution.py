@@ -51,6 +51,8 @@ def convolution_backward(inputs, base_axis=1, pad=None, stride=None,
     x0 = inputs[1]
     w0 = inputs[2]
 
+    base_axis += x0.ndim*(base_axis < 0)
+
     ctx = nn.get_current_context()
     dfx = ConvolutionDataGrad(
         ctx, base_axis, pad, stride, dilation, group, channel_last)

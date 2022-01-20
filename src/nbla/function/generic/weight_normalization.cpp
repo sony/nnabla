@@ -22,6 +22,7 @@
 #include <nbla/function/mul2.hpp>
 #include <nbla/function/pow_scalar.hpp>
 #include <nbla/function/sum.hpp>
+#include <nbla/utils/axis_utils.hpp>
 
 #include <nbla/imperative.hpp>
 
@@ -35,6 +36,9 @@ void WeightNormalization<T>::setup_impl(const Variables &inputs,
   auto ndim = inputs[0]->ndim();
   auto wshape = inputs[0]->shape();
   auto gshape = inputs[1]->shape();
+
+  refine_axis(dim_, ndim);
+
   NBLA_CHECK(gshape[0] == wshape[dim_], error_code::value,
              "g.shape[0] does not match w.shape[dim]. "
              "g.shape[0] = %d, w.shape[%d] = %d.",
@@ -43,9 +47,6 @@ void WeightNormalization<T>::setup_impl(const Variables &inputs,
              "ndim of g must be 1 (ndim of g = %d).", gshape.size());
   NBLA_CHECK(eps_ > 0, error_code::value, "eps must be positive. (eps = %f)",
              eps_);
-  NBLA_CHECK(dim_ >= 0 && dim_ < ndim, error_code::value,
-             "0 <= dim < %d must be true. (dim = %d, ndim = %d)", ndim, dim_,
-             ndim);
 
   // functions
   pow_scalar_0_ = create_PowScalar(ctx_, 2, false);

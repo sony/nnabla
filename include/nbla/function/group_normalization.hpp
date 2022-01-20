@@ -40,7 +40,7 @@ class GroupNormalization
 protected:
   int num_groups_;
   int channel_axis_;
-  const vector<int> batch_axis_;
+  vector<int> batch_axis_;
   float eps_;
   bool no_scale_, no_bias_;
 

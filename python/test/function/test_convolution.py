@@ -41,7 +41,7 @@ def ref_convolution(x, w, b, base_axis, pad, stride, dilation, group, channel_la
 
 
 def core_test_convolution_forward_backward(inshape, kernel, outmaps, pad, stride,
-                                           dilation, group, channel_last, with_bias, seed, ctx,
+                                           dilation, group, channel_last, with_bias, base_axis, seed, ctx,
                                            func_name):
     from nbla_test_utils import function_tester
     if func_name == 'ConvolutionCuda':
@@ -57,7 +57,6 @@ def core_test_convolution_forward_backward(inshape, kernel, outmaps, pad, stride
             pytest.skip(
                 'channel_last dilated convolution not work in CUDNN {}.'.format(version))
 
-    base_axis = len(inshape) - len(kernel) - 1
     inmaps = inshape[base_axis]
     if channel_last:
         t = refs.ChannelLastToFirstTranspose(len(inshape), len(kernel))
@@ -90,11 +89,12 @@ def core_test_convolution_forward_backward(inshape, kernel, outmaps, pad, stride
 @pytest.mark.parametrize("group", [1, 2])
 @pytest.mark.parametrize("channel_last", [False, True])
 @pytest.mark.parametrize("with_bias", [True, False])
+@pytest.mark.parametrize("base_axis", [1, -2])
 def test_convolution_1d_forward_backward(inshape, kernel, outmaps, pad, stride,
-                                         dilation, group, channel_last, with_bias, seed, ctx,
+                                         dilation, group, channel_last, with_bias, base_axis, seed, ctx,
                                          func_name):
     core_test_convolution_forward_backward(inshape, kernel, outmaps, pad, stride,
-                                           dilation, group, channel_last, with_bias, seed, ctx,
+                                           dilation, group, channel_last, with_bias, base_axis, seed, ctx,
                                            func_name)
 
 
@@ -108,11 +108,12 @@ def test_convolution_1d_forward_backward(inshape, kernel, outmaps, pad, stride,
 @pytest.mark.parametrize("group", [1, 2])
 @pytest.mark.parametrize("channel_last", [False, True])
 @pytest.mark.parametrize("with_bias", [True, False])
+@pytest.mark.parametrize("base_axis", [1, -3])
 def test_convolution_2d_forward_backward(inshape, kernel, outmaps, pad, stride,
-                                         dilation, group, channel_last, with_bias, seed, ctx,
+                                         dilation, group, channel_last, with_bias, base_axis, seed, ctx,
                                          func_name):
     core_test_convolution_forward_backward(inshape, kernel, outmaps, pad, stride,
-                                           dilation, group, channel_last, with_bias, seed, ctx,
+                                           dilation, group, channel_last, with_bias, base_axis, seed, ctx,
                                            func_name)
 
 
@@ -124,18 +125,19 @@ def test_convolution_2d_forward_backward(inshape, kernel, outmaps, pad, stride,
 @pytest.mark.parametrize("group", [1, 2])
 @pytest.mark.parametrize("channel_last", [False, True])
 @pytest.mark.parametrize("with_bias", [True, False])
+@pytest.mark.parametrize("base_axis", [1, -4])
 def test_convolution_3d_forward_backward(inshape, kernel, outmaps, pad, stride,
-                                         dilation, group, channel_last, with_bias, seed, ctx,
+                                         dilation, group, channel_last, with_bias, base_axis, seed, ctx,
                                          func_name):
     if channel_last:
         pytest.skip('3d')
     core_test_convolution_forward_backward(inshape, kernel, outmaps, pad, stride,
-                                           dilation, group, channel_last, with_bias, seed, ctx,
+                                           dilation, group, channel_last, with_bias, base_axis, seed, ctx,
                                            func_name)
 
 
 def core_test_convolution_double_backward(inshape, kernel, outmaps, pad, stride,
-                                          dilation, group, channel_last, with_bias, seed, ctx,
+                                          dilation, group, channel_last, with_bias, base_axis, seed, ctx,
                                           func_name, non_accum_check=True,
                                           atol_f=1e-4, atol_b=1e-3, atol_accum=8e-2, dstep=1e-3):
     from nbla_test_utils import backward_function_tester, grad_function_forward_function_output
@@ -153,7 +155,7 @@ def core_test_convolution_double_backward(inshape, kernel, outmaps, pad, stride,
             pytest.skip(
                 'channel_last dilated convolution not work in CUDNN {}.'.format(version))
 
-    base_axis = len(inshape) - len(kernel) - 1
+    # base_axis = len(inshape) - len(kernel) - 1
     inmaps = inshape[base_axis]
     if channel_last:
         t = refs.ChannelLastToFirstTranspose(len(inshape), len(kernel))
@@ -208,11 +210,12 @@ def core_test_convolution_double_backward(inshape, kernel, outmaps, pad, stride,
 @pytest.mark.parametrize("group", [1, 2])
 @pytest.mark.parametrize("channel_last", [False, True])
 @pytest.mark.parametrize("with_bias", [True, False])
+@pytest.mark.parametrize("base_axis", [1, -2])
 def test_convolution_1d_double_backward(inshape, kernel, outmaps, pad, stride,
-                                        dilation, group, channel_last, with_bias, seed, ctx,
+                                        dilation, group, channel_last, with_bias, base_axis, seed, ctx,
                                         func_name):
     core_test_convolution_double_backward(inshape, kernel, outmaps, pad, stride,
-                                          dilation, group, channel_last, with_bias, seed, ctx,
+                                          dilation, group, channel_last, with_bias, base_axis, seed, ctx,
                                           func_name, non_accum_check=True)
 
 
@@ -226,11 +229,12 @@ def test_convolution_1d_double_backward(inshape, kernel, outmaps, pad, stride,
 @pytest.mark.parametrize("group", [1, 2])
 @pytest.mark.parametrize("channel_last", [False, True])
 @pytest.mark.parametrize("with_bias", [True, False])
+@pytest.mark.parametrize("base_axis", [1, -3])
 def test_convolution_2d_double_backward(inshape, kernel, outmaps, pad, stride,
-                                        dilation, group, channel_last, with_bias, seed, ctx,
+                                        dilation, group, channel_last, with_bias, base_axis, seed, ctx,
                                         func_name):
     core_test_convolution_double_backward(inshape, kernel, outmaps, pad, stride,
-                                          dilation, group, channel_last, with_bias, seed, ctx,
+                                          dilation, group, channel_last, with_bias, base_axis, seed, ctx,
                                           func_name, non_accum_check=True)
 
 
@@ -242,8 +246,9 @@ def test_convolution_2d_double_backward(inshape, kernel, outmaps, pad, stride,
 @pytest.mark.parametrize("group", [1, 2])
 @pytest.mark.parametrize("channel_last", [False, True])
 @pytest.mark.parametrize("with_bias", [True, False])
+@pytest.mark.parametrize("base_axis", [1, -4])
 def test_convolution_3d_double_backward(inshape, kernel, outmaps, pad, stride,
-                                        dilation, group, channel_last, with_bias, seed, ctx,
+                                        dilation, group, channel_last, with_bias, base_axis, seed, ctx,
                                         func_name):
     if channel_last:
         pytest.skip('3d')
@@ -254,5 +259,5 @@ def test_convolution_3d_double_backward(inshape, kernel, outmaps, pad, stride,
         pytest.skip('Convolution 3-D for x86_64 and ppc64 are only supported.')
 
     core_test_convolution_double_backward(inshape, kernel, outmaps, pad, stride,
-                                          dilation, group, channel_last, with_bias, seed, ctx,
+                                          dilation, group, channel_last, with_bias, base_axis, seed, ctx,
                                           func_name, atol_accum=2e-1, non_accum_check=True)

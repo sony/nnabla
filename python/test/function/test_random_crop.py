@@ -87,12 +87,11 @@ def test_random_crop_forward_backward(seed, inshape, shape, ctx, func_name):
 @pytest.mark.parametrize("seed", [-1, 313])
 @pytest.mark.parametrize("inshape", [(8, 8, 8)])
 @pytest.mark.parametrize("shape", [None, (4, 4, 4,)])
-def test_random_crop_recomputation(seed, inshape, shape, ctx, func_name):
+@pytest.mark.parametrize("base_axis", [0, -1, -2])
+def test_random_crop_recomputation(seed, inshape, shape, base_axis, ctx, func_name):
     from nbla_test_utils import recomputation_test
     rng = np.random.RandomState(0)
     vinputs = [nn.Variable(inshape)]
-
-    base_axis = 0
     func_args = [shape, base_axis, seed]
     recomputation_test(rng=rng, func=F.random_crop, vinputs=vinputs,
                        func_args=func_args, func_kwargs={}, ctx=ctx)

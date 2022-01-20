@@ -16,6 +16,7 @@
 #include <nbla/array.hpp>
 #include <nbla/common.hpp>
 #include <nbla/function/gather.hpp>
+#include <nbla/utils/axis_utils.hpp>
 #include <nbla/utils/nd_index.hpp>
 #include <nbla/variable.hpp>
 #include <numeric>
@@ -40,16 +41,8 @@ void Gather<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   auto indices = inputs[1];
   auto xshape = x->shape();
   auto ishape = indices->shape();
-  if (axis_ < 0)
-    axis_ += xshape.size();
+  refine_axis(axis_, xshape.size());
 
-  NBLA_CHECK(axis_ >= batch_dims_, error_code::value,
-             "axis (%d) must be greater than or equal to batch_dims_ (%d).",
-             axis_, batch_dims_);
-  NBLA_CHECK(
-      x->ndim() >= axis_ + 1, error_code::value,
-      "ndim (%d) of inputs[0] must be greater than or equal to axis (%d) + 1.",
-      x->ndim(), axis_);
   NBLA_CHECK(x->ndim() >= batch_dims_, error_code::value,
              "ndim (%d) of inputs[0] must be greater than or equal to "
              "batch_dims (%d).",

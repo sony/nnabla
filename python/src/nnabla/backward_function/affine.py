@@ -47,6 +47,8 @@ def affine_backward(inputs, base_axis=1):
     x0 = inputs[1]
     w0 = inputs[2]
 
+    base_axis += inputs[0].ndim*(base_axis < 0)
+
     ctx = nn.get_current_context()
     dfx = AffineDataGrad(ctx, base_axis)
     dfw = AffineFilterGrad(ctx, base_axis)

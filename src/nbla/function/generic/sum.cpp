@@ -19,6 +19,7 @@
 #include <nbla/function/transpose.hpp>
 #include <nbla/imperative.hpp>
 #include <nbla/singleton_manager.hpp>
+#include <nbla/utils/axis_utils.hpp>
 #include <nbla/utils/eigen.hpp>
 #include <nbla/variable.hpp>
 
@@ -44,11 +45,10 @@ void Sum<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   int prev_a = -1;
   reduction_size_ = 1;
   Shape_t outshape;
+
+  refine_axes(axes_, ndim);
+
   for (int a : axes_) {
-    if (a < 0)
-      a += inshape.size();
-    NBLA_CHECK(a < ndim && a >= 0, error_code::value,
-               "Axes out of range. 0 <= %d < %d", a, ndim);
     for (int b = prev_a + 1; b < a; ++b) {
       transpose_axes.push_back(b);
       outshape.push_back(inshape[b]);

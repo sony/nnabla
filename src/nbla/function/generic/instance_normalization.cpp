@@ -20,6 +20,7 @@
 #include <nbla/function/broadcast.hpp>
 #include <nbla/function/tensor_normalization.hpp>
 #include <nbla/imperative.hpp>
+#include <nbla/utils/axis_utils.hpp>
 
 namespace nbla {
 
@@ -44,19 +45,8 @@ void InstanceNormalization<T>::setup_impl(const Variables &inputs,
   NBLA_CHECK(n_inputs == n_inputs_expect, error_code::value,
              "Number of inputs must be 1, 2 or 3.");
 
-  // check chennel_axis
-  NBLA_CHECK(0 <= channel_axis_ && channel_axis_ < ndim, error_code::value,
-             "channel_axis must be in the range of [0, ndim). channel_axis : "
-             "%d, ndim: {}.",
-             channel_axis_, ndim);
-  // check batch_axis
-  for (size_t i = 0; i < batch_axis_.size(); i++) {
-    const auto ba = batch_axis_[i];
-    NBLA_CHECK(0 <= ba && ba < ndim, error_code::value,
-               "each element of batch_axis must be in the range of [0, ndim). "
-               "batch_axis[%d] : %d, ndim: {}.",
-               i, ba, ndim);
-  }
+  refine_axis(channel_axis_, ndim);
+  refine_axes(batch_axis_, inputs.at(0)->ndim());
 
   // check whether broadcast is needed or not.
   // Unlike layer_norm and group_norm, only instance_norm can use bn scale bias

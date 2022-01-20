@@ -48,11 +48,15 @@ def ref_instance_normalization(x, beta, gamma, channel_axis, batch_axis, eps, ou
 def create_inputs(rng, x_shape, batch_axis, channel_axis, no_scale, no_bias, broadcast_affine_params):
     x = np.array(rng.randn(*x_shape).astype(np.float32))
 
+    channel_axis += len(x_shape)*(channel_axis < 0)
+
     if broadcast_affine_params:
         affine_param_shape = tuple([x_shape[i] if i in [channel_axis, ] else 1
                                     for i in range(len(x_shape))])
     else:
-        affine_param_shape = tuple([x_shape[i] if i in _force_list(batch_axis) + [channel_axis, ] else 1
+        batch_axis = _force_list(batch_axis)
+        batch_axis = [i+len(x_shape)*(i < 0) for i in batch_axis]
+        affine_param_shape = tuple([x_shape[i] if i in batch_axis + [channel_axis, ] else 1
                                     for i in range(len(x_shape))])
 
     beta = None if no_bias else rng.randn(
@@ -67,10 +71,12 @@ def create_inputs(rng, x_shape, batch_axis, channel_axis, no_scale, no_bias, bro
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("x_shape , batch_axis, channel_axis",
                          [((4, 32, 8, 8), 0, 1),  # convolution (NCHW)
+                          ((4, 32, 8, 8), -4, -3),  # convolution (NCHW)
                           ((4, 16, 16, 8), 0, 3),  # convolution (NHWC)
-                          ((16, 4), 0, 1),  # affine
+                          #   ((16, 4), 0, 1),  # affine
                           # time-series (T, B, C) or (B, T, C)
-                          ((10, 4, 16), [0, 1], 2)
+                          ((10, 4, 16), [0, 1], 2),
+                          ((10, 4, 16), [-3, 1], 2),
                           ])
 @pytest.mark.parametrize("eps", [1e-05])
 @pytest.mark.parametrize("output_stat", [False, True])
@@ -81,6 +87,7 @@ def test_instance_normalization_forward(ctx, func_name, seed, x_shape, batch_axi
     from nbla_test_utils import function_tester
 
     rng = np.random.RandomState(seed)
+    # import pdb; pdb.set_trace()
     x, beta, gamma = create_inputs(
         rng, x_shape, batch_axis, channel_axis, no_scale, no_bias, broadcast_affine_params)
 
@@ -92,10 +99,12 @@ def test_instance_normalization_forward(ctx, func_name, seed, x_shape, batch_axi
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("x_shape , batch_axis, channel_axis",
                          [((2, 4, 3, 3), 0, 1),  # convolution (NCHW)
+                          ((4, 32, 8, 8), -4, -3),  # convolution (NCHW)
                           ((2, 3, 3, 4), 0, 3),  # convolution (NHWC)
                           ((16, 4), 0, 1),  # affine
                           # time-series (T, B, C) or (B, T, C)
-                          ((5, 2, 6), [0, 1], 2)
+                          ((5, 2, 6), [0, 1], 2),
+                          ((5, 2, 6), [-3, -2], -1)
                           ])
 @pytest.mark.parametrize("eps", [1e-05])
 @pytest.mark.parametrize("output_stat", [False, True])
@@ -141,7 +150,8 @@ def test_instance_normalization_large_reduction_forward_backward(ctx, func_name,
                           ((2, 3, 3, 4), 0, 3),  # convolution (NHWC)
                           ((16, 4), 0, 1),  # affine
                           # time-series (T, B, C) or (B, T, C)
-                          ((5, 2, 6), [0, 1], 2)
+                          ((5, 2, 6), [0, 1], 2),
+                          ((5, 2, 6), [-3, -2], -1)
                           ])
 @pytest.mark.parametrize("eps", [1e-05])
 @pytest.mark.parametrize("output_stat", [False])

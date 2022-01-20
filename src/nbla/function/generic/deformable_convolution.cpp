@@ -17,6 +17,7 @@
 
 #include <nbla/array.hpp>
 #include <nbla/function/deformable_convolution.hpp>
+#include <nbla/utils/axis_utils.hpp>
 #include <nbla/utils/deformable-im2col-internal.hpp>
 #include <nbla/utils/eigen.hpp>
 #include <nbla/variable.hpp>
@@ -47,11 +48,8 @@ void DeformableConvolution<T>::setup_impl(const Variables &inputs,
   Shape_t shape_data = inputs[0]->shape();
   Shape_t shape_weights = inputs[1]->shape();
   Shape_t shape_offset = inputs[2]->shape();
-  NBLA_CHECK(base_axis_ < (int)(shape_data.size() - 1),
-             error_code::unclassified,
-             "base_axis must be less than ndim - 1 of inputs[0]. "
-             "base_axis: %d >= ndim of inputs[0] - 1: %d.",
-             base_axis_, shape_data.size() - 1);
+  refine_axis(base_axis_, inputs.at(0)->ndim());
+
   spatial_dims_ = shape_data.size() - base_axis_ - 1;
   NBLA_CHECK((int)shape_weights.size() == 2 + spatial_dims_, error_code::value,
              "Weights must be a tensor more than 3D.");

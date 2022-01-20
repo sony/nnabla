@@ -16,6 +16,7 @@
 
 #include <nbla/array.hpp>
 #include <nbla/function/categorical_cross_entropy.hpp>
+#include <nbla/utils/axis_utils.hpp>
 #include <nbla/variable.hpp>
 
 #include <algorithm>
@@ -32,14 +33,12 @@ void CategoricalCrossEntropy<T, Tl>::setup_impl(const Variables &inputs,
                                                 const Variables &outputs) {
 
   Shape_t in_shape = inputs[0]->shape();
+  refine_axis(axis_, in_shape.size());
+
   Shape_t label_shape = inputs[1]->shape();
-  if (axis_ < 0)
-    axis_ += in_shape.size();
+
   auto axis = static_cast<Shape_t::size_type>(this->axis_);
-  NBLA_CHECK(axis < in_shape.size(), error_code::value,
-             "axis must be less than ndim of inputs[0]. "
-             "axis: %d >= ndim of inputs[0]: %d.",
-             this->axis_, in_shape.size());
+
   NBLA_CHECK(label_shape.size() == in_shape.size(), error_code::value,
              "The length of each input dimension must match. "
              "inputs[1] length: %d != inputs[0] length: %d.",

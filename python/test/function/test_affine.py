@@ -33,7 +33,7 @@ def ref_affine(x, w, b, base_axis):
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("base_axis, weight_shape",
-                         [(1, (12, 2, 3)), (2, (4, 4))])
+                         [(1, (12, 2, 3)), (2, (4, 4)), (-1, (4, 4)), (-2, (12, 3, 4))])
 @pytest.mark.parametrize("bias", [True, False])
 def test_affine_forward_backward(seed, base_axis, weight_shape, bias,
                                  ctx, func_name):
@@ -56,7 +56,7 @@ def test_affine_forward_backward(seed, base_axis, weight_shape, bias,
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("base_axis, weight_shape",
-                         [(1, (12, 3, 4)), (2, (4, 4))])
+                         [(1, (12, 3, 4)), (2, (4, 4)), (-1, (4, 4)), (-2, (12, 3, 4))])
 @pytest.mark.parametrize("bias", [True, False])
 def test_affine_double_backward(seed, base_axis, weight_shape, bias,
                                 ctx, func_name):

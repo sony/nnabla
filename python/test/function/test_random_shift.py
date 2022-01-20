@@ -94,12 +94,12 @@ def test_random_shift_forward_backward(seed, inshape, shifts, border_mode, const
 @pytest.mark.parametrize("border_mode", ["nearest", "reflect", "constant"])
 @pytest.mark.parametrize("constant_value", [0, -100])
 @pytest.mark.parametrize("func_seed", [-1, 412])
-def test_random_shift_recomputation(seed, inshape, shifts, border_mode, constant_value, func_seed, ctx, func_name):
+@pytest.mark.parametrize("base_axis", [0, -1, -2])
+def test_random_shift_recomputation(seed, inshape, shifts, border_mode, constant_value, func_seed, base_axis, ctx, func_name):
     from nbla_test_utils import recomputation_test
     rng = np.random.RandomState(seed)
     vinputs = [nn.Variable(inshape)]
 
-    base_axis = 0
     func_args = [shifts, border_mode, constant_value, base_axis, func_seed]
     recomputation_test(rng=rng, func=F.random_shift, vinputs=vinputs,
                        func_args=func_args, func_kwargs={}, ctx=ctx)

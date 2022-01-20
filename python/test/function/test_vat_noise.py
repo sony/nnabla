@@ -23,6 +23,7 @@ ctxs = list_context('VATNoise')
 
 
 def ref_vat_noise(r, base_axis, eps):
+    base_axis = base_axis + r.ndim*(base_axis < 0)
     shape = r.shape
     r = r.reshape(shape[0:base_axis] + (np.prod(shape[base_axis:]), ))
     r = r / np.sqrt(np.sum(r**2, axis=base_axis)
@@ -33,7 +34,7 @@ def ref_vat_noise(r, base_axis, eps):
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
-@pytest.mark.parametrize("base_axis, shape", [(1, (3, 6)), (1, (5, 8)), (2, (3, 7, 13))])
+@pytest.mark.parametrize("base_axis, shape", [(1, (3, 6)), (1, (5, 8)), (2, (3, 7, 13)), (-1, (3, 6)), (-2, (3, 7, 13))])
 @pytest.mark.parametrize("eps", [10, 1.4])
 def test_vat_noise(seed, base_axis, shape, eps, ctx, func_name):
     rng = np.random.RandomState(313)

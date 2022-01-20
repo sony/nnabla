@@ -65,7 +65,7 @@ def ref_grad_binary_connect_affine(x, w, wb, b, dy, base_axis, quantize_zero_to,
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("base_axis, weight_shape",
-                         [(1, (12, 2, 3)), (2, (4, 4))])
+                         [(1, (12, 2, 3)), (2, (4, 4)), (-1, (4, 4)), (-2, (12, 2, 3))])
 @pytest.mark.parametrize("bias", [True, False])
 @pytest.mark.parametrize("quantize_zero_to", [0.0, -1.0, 1.0])
 def test_binary_connect_affine_forward_backward(seed, base_axis, weight_shape, bias, quantize_zero_to,

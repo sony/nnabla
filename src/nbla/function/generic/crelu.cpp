@@ -16,6 +16,7 @@
 
 #include <nbla/array.hpp>
 #include <nbla/function/crelu.hpp>
+#include <nbla/utils/axis_utils.hpp>
 #include <nbla/variable.hpp>
 
 #include <algorithm>
@@ -27,15 +28,10 @@ NBLA_REGISTER_FUNCTION_SOURCE(CReLU, int);
 template <typename T>
 void CReLU<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   Shape_t in_shape = inputs[0]->shape();
-  if (axis_ < 0)
-    axis_ += in_shape.size();
-  NBLA_CHECK(axis_ >= 0, error_code::value,
-             "axis may not be less than zero, got %d", axis_);
+  refine_axis(axis_, in_shape.size());
+
   auto axis = static_cast<Shape_t::size_type>(axis_);
-  NBLA_CHECK(axis < in_shape.size(), error_code::value,
-             "axis must be less than ndim of inputs[0]. "
-             "axis: %d >= ndim of input: %d.",
-             axis_, in_shape.size());
+
   in_shape[axis] *= 2;
   outputs[0]->reshape(in_shape, true);
   Size_t size = inputs[0]->size();

@@ -29,12 +29,17 @@ def ref_group_normalization(x, beta, gamma, num_groups, channel_axis, batch_axis
         raise ValueError()
 
     shape = x.shape[:channel_axis] + (num_groups, int(cdim / num_groups))
+
+    channel_axis += x.ndim*(channel_axis < 0)
+    batch_axis = _force_list(batch_axis)
+    batch_axis = [b + x.ndim*(b < 0) for b in batch_axis]
+
     if channel_axis < len(x.shape) - 1:
         shape += x.shape[channel_axis + 1:]
 
     tmp = x.reshape(shape).copy()
 
-    ignore_axes = _force_list(batch_axis) + [channel_axis, ]
+    ignore_axes = batch_axis + [channel_axis, ]
 
     axes = tuple(_get_axes_excluding(len(shape), ignore_axes))
 
@@ -74,10 +79,12 @@ def create_inputs(rng, x_shape, channel_axis, no_scale, no_bias):
 @pytest.mark.parametrize("num_groups", [2, 3])
 @pytest.mark.parametrize("x_shape , batch_axis, channel_axis",
                          [((4, 24, 8, 8), 0, 1),  # convolution (NCHW)
+                          ((4, 24, 8, 8), 0, -3),  # convolution (NCHW)
                           ((4, 16, 16, 6), 0, 3),  # convolution (NHWC)
                           ((8, 6), 0, 1),  # affine
                           # time-series (T, B, C) or (B, T, C)
-                          ((4, 3, 6), [0, 1], 2)
+                          ((4, 3, 6), [0, 1], 2),
+                          ((4, 3, 6), [0, -2], -1),
                           ])
 @pytest.mark.parametrize("eps", [1e-05])
 @pytest.mark.parametrize("output_stat", [False, True])
@@ -102,7 +109,8 @@ def test_group_normalization_forward(ctx, func_name, seed, num_groups, x_shape, 
                           ((2, 3, 3, 6), 0, 3),  # convolution (NHWC)
                           ((8, 6), 0, 1),  # affine
                           # time-series (T, B, C) or (B, T, C)
-                          ((4, 3, 6), [0, 1], 2)
+                          ((4, 3, 6), [0, 1], 2),
+                          ((4, 3, 6), [-3, -2], -1)
                           ])
 @pytest.mark.parametrize("eps", [1e-05])
 @pytest.mark.parametrize("output_stat", [False, True])
@@ -148,7 +156,8 @@ def test_group_normalization_large_spacial_forward_backward(ctx, func_name, seed
                           ((2, 3, 3, 6), 0, 3),  # convolution (NHWC)
                           ((8, 6), 0, 1),  # affine
                           # time-series (T, B, C) or (B, T, C)
-                          ((4, 3, 6), [0, 1], 2)
+                          ((4, 3, 6), [0, 1], 2),
+                          ((4, 3, 6), [0, -2], -1)
                           ])
 @pytest.mark.parametrize("eps", [1e-05])
 @pytest.mark.parametrize("output_stat", [False])

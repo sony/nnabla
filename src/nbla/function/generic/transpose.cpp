@@ -14,6 +14,7 @@
 
 #include <nbla/array.hpp>
 #include <nbla/function/transpose.hpp>
+#include <nbla/utils/axis_utils.hpp>
 #include <nbla/utils/nd_index.hpp>
 #include <nbla/variable.hpp>
 
@@ -29,6 +30,8 @@ void Transpose<T>::setup_impl(const Variables &inputs,
   vector<int> axes = this->axes_;
   const int ndim = inputs[0]->ndim();
 
+  refine_axes(axes_, ndim);
+
   NBLA_CHECK(static_cast<size_t>(ndim) == axes.size(), error_code::value,
              "Length of axes must be same as ndim of input. Given %d != %d.",
              ndim, axes.size());
@@ -37,18 +40,6 @@ void Transpose<T>::setup_impl(const Variables &inputs,
   Shape_t oshape(ndim);
 
   for (int i = 0; i < ndim; i++) {
-    if (axes[i] < 0) {
-      axes[i] += ishape.size();
-      NBLA_CHECK(axes[i] >= 0, error_code::value,
-                 "Absolute value of each element of axes must be less than "
-                 "that of input ndim. "
-                 "axes[%d]: %d >= ndim of input: %d.",
-                 i, abs(axes[i] - static_cast<int>(ishape.size())), ndim);
-    }
-    NBLA_CHECK(axes[i] < ndim, error_code::value,
-               "Each element of axes must be less than ndim of input. "
-               "axes[%d]: %d >= ndim of input: %d.",
-               i, axes[i], ndim);
     for (int j = 0; j < i; j++) {
       NBLA_CHECK(axes[i] != axes[j], error_code::value,
                  "Axes duplicated. axes[%d]: %d == axes[%d]: %d.", i, axes[i],

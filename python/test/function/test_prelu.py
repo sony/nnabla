@@ -30,7 +30,11 @@ def ref_prelu(x, w, base_axis=1):
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("inshape, wshape, base_axis",
                          [((2, 3, 2, 3, 2), tuple(), 4),
-                          ((2, 3, 1, 3), (3,), 1)])
+                          ((2, 3, 1, 3), (3,), 1),
+                          ((2, 3, 1, 3), (3,), -1),
+                          ((2, 5, 3, 6), (3,), -2)
+                          ]
+                         )
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 def test_prelu_forward_backward(seed, inshape, wshape, base_axis, ctx, func_name):
     from nbla_test_utils import cap_ignore_region, function_tester
@@ -46,7 +50,8 @@ def test_prelu_forward_backward(seed, inshape, wshape, base_axis, ctx, func_name
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("inshape, wshape, base_axis",
                          [((2, 3, 2, 3, 2), tuple(), 4),
-                          ((2, 3, 1, 3), (3,), 1)
+                          ((2, 3, 1, 3), (3,), 1),
+                          ((2, 5, 3, 6), (3,), -2)
                           ])
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 def test_prelu_double_backward(seed, inshape, wshape, base_axis, ctx, func_name):

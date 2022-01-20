@@ -25,6 +25,7 @@ ctxs = list_context('LayerNormalization')
 def ref_layer_normalization(x, beta, gamma, batch_axis, eps, output_stat):
     batch_axis = _force_list(batch_axis)
 
+    batch_axis = [b+x.ndim*(b < 0) for b in batch_axis]
     axes = tuple(_get_axes_excluding(len(x.shape), batch_axis))
 
     x_mean = x.mean(axis=axes, keepdims=True)
@@ -49,7 +50,7 @@ def create_inputs(rng, x_shape, batch_axis, no_scale, no_bias):
 
     stat_shape = list(x_shape)
     for baxis in _force_list(batch_axis):
-        stat_shape[baxis] = 1
+        stat_shape[baxis+len(x_shape)*(baxis < 0)] = 1
 
     beta = None if no_bias else rng.randn(*stat_shape).astype(np.float32)
     gamma = None if no_scale else rng.randn(*stat_shape).astype(np.float32)
@@ -61,10 +62,12 @@ def create_inputs(rng, x_shape, batch_axis, no_scale, no_bias):
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("x_shape , batch_axis", [((4, 3, 8, 8), 0),
                                                   ((4, 16, 16, 8), 0),
+                                                  ((4, 16, 16, 8), -4),
                                                   ((16, 1), 0),
                                                   ((3, 32, 4), 0),
                                                   # time-series (T, B, C) or (B, T, C)
-                                                  ((10, 4, 16), [0, 1])
+                                                  ((10, 4, 16), [0, 1]),
+                                                  ((10, 4, 16), [0, -2]),
                                                   ])
 @pytest.mark.parametrize("eps", [1e-05])
 @pytest.mark.parametrize("output_stat", [False, True])
@@ -72,7 +75,6 @@ def create_inputs(rng, x_shape, batch_axis, no_scale, no_bias):
 @pytest.mark.parametrize("no_bias", [False, True])
 def test_layer_normalization_forward(ctx, func_name, seed, x_shape, batch_axis, eps, output_stat, no_scale, no_bias):
     from nbla_test_utils import function_tester
-
     rng = np.random.RandomState(seed)
     x, beta, gamma = create_inputs(rng, x_shape, batch_axis, no_scale, no_bias)
 
@@ -88,11 +90,13 @@ x_shape_and_batch_axis = [
     # Inner batch axis cases
     ((2, 3, 5, 7), 1),
     ((2, 3, 5, 7), 3),
+    ((2, 3, 5, 7), -1),
     # Multiple batch axis cases
     ((2, 3, 5, 7), [0, 2]),
     ((2, 3, 5, 7), [3, 1]),
     # time-series (T, B, C) or (B, T, C)
     ((3, 2, 5), [0, 1]),
+    ((3, 2, 5), [0, -2]),
 ]
 
 

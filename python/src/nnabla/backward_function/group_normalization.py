@@ -34,6 +34,9 @@ def group_normalization_backward(inputs, num_groups=None, channel_axis=None, bat
     if not no_scale:
         gamma = inputs[g_idx]
 
+    channel_axis += x.ndim*(channel_axis < 0)
+    batch_axis = [b + x.ndim*(b < 0) for b in batch_axis]
+
     # Original input shape: [B, C, H, W]
     x_shape = list(x.shape)
 

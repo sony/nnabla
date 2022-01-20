@@ -15,6 +15,7 @@
 #include <nbla/array.hpp>
 #include <nbla/common.hpp>
 #include <nbla/function/top_k_data.hpp>
+#include <nbla/utils/axis_utils.hpp>
 #include <nbla/utils/top_k.hpp>
 #include <nbla/variable.hpp>
 
@@ -30,17 +31,9 @@ void TopKData<T>::setup_impl(const Variables &inputs,
   const auto k = k_;
   Shape_t x_shape = x->shape();
 
-  if (base_axis_ < 0)
-    base_axis_ += x_shape.size();
-  const auto base_axis = base_axis_;
+  refine_axis(base_axis_, x_shape.size());
 
-  NBLA_CHECK(base_axis_ >= 0, error_code::value,
-             "base_axis must not be less than zero, got %d", base_axis_);
-  NBLA_CHECK(static_cast<Shape_t::size_type>(base_axis_) < x_shape.size(),
-             error_code::value,
-             "base_axis must be less than dimensions of x, but "
-             "base_axis %d >= dimensions of x %d",
-             base_axis, x_shape.size());
+  const auto base_axis = base_axis_;
 
   NBLA_CHECK(k > 0, error_code::value,
              "k must not be less than 1, but k %d < 1", k);
