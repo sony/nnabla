@@ -117,7 +117,7 @@ def ref_grad_inq_affine(x, w, i, b, dy, base_axis, num_bits,
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("base_axis, weight_shape, num_bits",
-                         [(1, (12, 2, 3), 2), (2, (4, 4), 4)])
+                         [(1, (12, 2, 3), 2), (2, (4, 4), 4), (-2, (12, 2, 3), 2), (-1, (4, 4), 4)])
 @pytest.mark.parametrize("bias", [True, False])
 @pytest.mark.parametrize("inq_iterations", [(10, 20), (0,), (0, 10)])
 def test_inq_affine_forward_backward(seed, base_axis, weight_shape, num_bits,

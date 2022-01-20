@@ -22,6 +22,7 @@
 #include <nbla/function/mul2.hpp>
 #include <nbla/function/sub2.hpp>
 #include <nbla/imperative.hpp>
+#include <nbla/utils/axis_utils.hpp>
 
 namespace nbla {
 
@@ -50,10 +51,13 @@ void GroupNormalization<T>::setup_impl(const Variables &inputs,
              "Number of inputs must be 1, 2 or 3.");
 
   // check chennel_axis
-  NBLA_CHECK(0 <= channel_axis_ && channel_axis_ < ndim, error_code::value,
-             "channel_axis must be in the range of [0, ndim). channel_axis : "
-             "%d, ndim: {}.",
-             channel_axis_, ndim);
+  refine_axis(channel_axis_, ndim);
+  refine_axes(batch_axis_, inputs.at(0)->ndim());
+  // NBLA_CHECK(refine_axes<T>(batch_axis_, inputs.at(0)->ndim()),
+  // error_code::value,
+  //           "all axes elements must be in the range of [-ndim, ndim)."
+  //           "ndim: {}.",
+  //           ndim);
 
   const auto cdim = gn_x_shape_[channel_axis_];
   NBLA_CHECK(cdim % num_groups_ == 0, error_code::value,

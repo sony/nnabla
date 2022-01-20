@@ -28,6 +28,7 @@ def kl_multinomial_backward(inputs, base_axis=1):
     dy = inputs[0]
     p = inputs[1]
     q = inputs[2]
+    base_axis += p.ndim*(base_axis < 0)
     reshape = list(dy.shape[:base_axis]) + \
         [1 for _ in range(p.ndim - base_axis)]
     dy = F.reshape(dy, reshape, inplace=False)

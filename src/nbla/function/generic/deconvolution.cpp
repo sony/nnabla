@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <cstring>
 #include <memory>
+#include <nbla/utils/axis_utils.hpp>
 
 using std::max;
 
@@ -45,8 +46,9 @@ void Deconvolution<T>::setup_impl(const Variables &inputs,
   // Shape check
   Shape_t shape_out = inputs[0]->shape();
   Shape_t shape_weights = inputs[1]->shape();
-  NBLA_CHECK(base_axis_ >= 0, error_code::value,
-             "base_axis may not be less than zero, got %d", base_axis_);
+
+  refine_axis(base_axis_, inputs.at(0)->ndim());
+
   auto base_axis = static_cast<Shape_t::size_type>(base_axis_);
   NBLA_CHECK(base_axis + 1 < shape_out.size(), error_code::value,
              "base_axis must be less than ndim - 1 of inputs[0]. "

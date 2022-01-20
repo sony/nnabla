@@ -21,6 +21,7 @@ ctxs = list_context('WeightNormalization')
 
 
 def ref_weight_normalization(w, g, dim=0, eps=1e-12):
+    dim = dim + w.ndim*(dim < 0)
     axes = tuple([a for a in range(w.ndim) if a != dim])
     n = (np.sum(w ** 2, axes, keepdims=True) + eps) ** (-0.5)
     rshape = [1 if i != dim else s for i, s in enumerate(w.shape)]
@@ -34,7 +35,8 @@ def ref_weight_normalization(w, g, dim=0, eps=1e-12):
 @pytest.mark.parametrize("shape, dim", [
     ((16, 8, 3, 3), 0), ((8, 3, 3, 16), 3), ((8, 16, 3, 3), 2),
     ((16, 8, 3), 0), ((8, 3, 3), 2), ((8, 16, 3), 1),
-    ((16, 8), 0), ((8, 3), 1)
+    ((16, 8), 0), ((8, 3), 1),
+    ((8, 16, 3, 3), -3), ((8, 16, 3), -2), ((8, 3), -1)
 ])
 @pytest.mark.parametrize("eps", [1e-12])
 def test_weight_normalization_forward_backward(eps, dim, shape, seed, ctx, func_name):
@@ -53,7 +55,8 @@ def test_weight_normalization_forward_backward(eps, dim, shape, seed, ctx, func_
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("shape, dim", [
-    ((2, 4, 16, 32), 0), ((32, 16, 4, 2), 3)])
+    ((2, 4, 16, 32), 0), ((32, 16, 4, 2), 3),
+    ((16, 8, 3, 3), -4), ((8, 16, 3), -2), ((8, 16), -1)])
 @pytest.mark.parametrize("eps", [1e-12])
 def test_large_weight_normalization(eps, dim, shape, seed, ctx, func_name):
     if not func_name.endswith('Cuda'):
@@ -79,7 +82,8 @@ def test_large_weight_normalization(eps, dim, shape, seed, ctx, func_name):
 @pytest.mark.parametrize("shape, dim", [
     ((16, 8, 3, 3), 0), ((8, 3, 3, 16), 3), ((8, 16, 3, 3), 2),
     ((16, 8, 3), 0), ((8, 3, 3), 2), ((8, 16, 3), 1),
-    ((16, 8), 0), ((8, 3), 1)
+    ((16, 8), 0), ((8, 3), 1),
+    ((16, 8, 3, 3), -3), ((8, 16, 3), -2), ((8, 16), -1),
 ])
 @pytest.mark.parametrize("eps", [1e-12])
 def test_weight_normalization_double_backward(eps, dim, shape, seed, ctx, func_name):

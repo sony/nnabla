@@ -71,11 +71,11 @@ def ref_depthwise_deconvolution_2d(x, w, b, base_axis, pad, stride, dilation,
     ((3, 2, 10, 10), (3, 3), (3, 0), (1, 2), (2, 1), 2),
 ])
 @pytest.mark.parametrize("with_bias", [True, False])
+@pytest.mark.parametrize("base_axis", [1, -3])
 def test_depthwise_deconvolution_2d_forward_backward(inshape, kernel, pad,
                                                      stride, dilation, divisor,
-                                                     with_bias, seed, ctx,
+                                                     with_bias, base_axis, seed, ctx,
                                                      func_name):
-    base_axis = len(inshape) - 3
     sample_channels = inshape[base_axis]
     outmap_channels = sample_channels // divisor
     rng = np.random.RandomState(seed)

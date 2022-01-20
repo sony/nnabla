@@ -26,6 +26,7 @@ def weight_standardization_backward(inputs, channel_axis=None, eps=1e-05):
       list of Variable: Return the gradients wrt inputs of the corresponding function.
     """
     x = inputs[1]
+    channel_axis += inputs[0].ndim*(channel_axis < 0)
     axes = list(set(range(x.ndim)) - set([channel_axis]))
     no_scale = True
     no_bias = True

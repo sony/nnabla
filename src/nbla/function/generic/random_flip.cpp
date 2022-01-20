@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <nbla/utils/axis_utils.hpp>
 
 namespace nbla {
 
@@ -32,8 +33,13 @@ void RandomFlip<T>::setup_impl(const Variables &inputs,
                                const Variables &outputs) {
   std::random_device rdev_;
   rgen_ = std::mt19937((seed_ == -1 ? rdev_() : seed_));
+
+  refine_axis(base_axis_, inputs.at(0)->ndim());
+
   size_ = inputs[0]->size() / inputs[0]->size(base_axis_);
   outputs[0]->reshape(inputs[0]->shape(), true);
+
+  refine_axes(axes_, inputs.at(0)->ndim());
 }
 
 template <typename T>

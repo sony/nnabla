@@ -29,6 +29,7 @@ def weight_normalization_backward(inputs, dim=0, eps=1e-12):
     w = inputs[1]
     g = inputs[2]
     g_shape = g.shape
+    dim += w.ndim*(dim < 0)
 
     # Create inverted norm of w
     sum_axes = list(filter(lambda x: x != dim, range(w.ndim)))

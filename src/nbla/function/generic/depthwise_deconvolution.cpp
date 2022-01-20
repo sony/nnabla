@@ -16,6 +16,7 @@
  */
 
 #include <nbla/function/depthwise_deconvolution.hpp>
+#include <nbla/utils/axis_utils.hpp>
 #include <nbla/utils/eigen.hpp>
 #include <nbla/utils/fold_from_patches.hpp>
 #include <nbla/utils/unfold_to_patches.hpp>
@@ -59,13 +60,8 @@ void DepthwiseDeconvolution<T>::setup_impl(const Variables &inputs,
   Shape_t input_shape = input->shape();
   Shape_t weight_shape = weights->shape();
 
-  NBLA_CHECK(base_axis_ >= 0, error_code::value,
-             "base_axis may not be less than zero, got %d", base_axis_);
+  refine_axis(base_axis_, inputs.at(0)->ndim());
   auto base_axis = static_cast<Shape_t::size_type>(base_axis_);
-  NBLA_CHECK(base_axis < input_shape.size() - 1, error_code::value,
-             "base_axis must be less than ndim - 1 of inputs[0]. "
-             "base_axis: %d >= ndim of inputs[0] - 1: %d.",
-             base_axis_, input_shape.size() - 1);
 
   auto kernel_dims = input_shape.size() - base_axis - 1;
 

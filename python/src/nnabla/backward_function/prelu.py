@@ -30,6 +30,8 @@ def prelu_backward(inputs, base_axis=1):
     dy = inputs[0]
     x0 = inputs[1]
     w0 = inputs[2]
+
+    base_axis += x0.ndim*(base_axis < 0)
     m0 = F.greater_scalar(x0, 0)
     m1 = 1 - m0
     m0 = no_grad(m0)

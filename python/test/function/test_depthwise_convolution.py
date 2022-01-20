@@ -68,9 +68,9 @@ def ref_depthwise_convolution_2d(x, w, b, base_axis, pad, stride, dilation,
 ])
 @pytest.mark.parametrize("with_bias", [True, False])
 @pytest.mark.parametrize("multiplier", [1, 3])
+@pytest.mark.parametrize("base_axis", [1, -3])
 def test_forward_backward_2d(inshape, kernel, pad, stride, dilation, with_bias,
-                             multiplier, seed, ctx, func_name):
-    base_axis = len(inshape) - 3
+                             multiplier, base_axis, seed, ctx, func_name):
     sample_channels = inshape[base_axis]
     outmap_channels = sample_channels * multiplier
     rng = np.random.RandomState(seed)

@@ -20,6 +20,7 @@
 #include <nbla/variable.hpp>
 
 #include <algorithm>
+#include <nbla/utils/axis_utils.hpp>
 
 namespace nbla {
 
@@ -31,8 +32,9 @@ void Affine<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   Shape_t shape_weights = inputs[1]->shape();
   NBLA_CHECK(shape_weights.size() >= 2, error_code::value,
              "Weights(inputs[1]) must be matrix or tensor.");
-  NBLA_CHECK(base_axis_ >= 0, error_code::value,
-             "base_axis must be a positive number, got %d", base_axis_);
+
+  refine_axis(base_axis_, inputs.at(0)->ndim());
+
   auto base_axis = static_cast<Shape_t::size_type>(this->base_axis_);
   NBLA_CHECK(base_axis < shape_data.size(), error_code::value,
              "Base_axis must be less than ndim of input data(inputs[0]). "

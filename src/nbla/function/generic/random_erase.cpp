@@ -17,6 +17,7 @@
 #include <nbla/common.hpp>
 #include <nbla/function/random_erase.hpp>
 #include <nbla/random_manager.hpp>
+#include <nbla/utils/axis_utils.hpp>
 #include <nbla/variable.hpp>
 
 namespace nbla {
@@ -194,6 +195,9 @@ void random_erase_2d_backward(T *gx, const T *gy, const float *random_coords,
 template <typename T>
 void RandomErase<T>::setup_impl(const Variables &inputs,
                                 const Variables &outputs) {
+
+  refine_axis(base_axis_, inputs.at(0)->ndim());
+
   NBLA_CHECK(prob_ >= 0.0 && prob_ <= 1.0, error_code::value,
              "prob must be in [0.0, 1.0]. prob = %f.", prob_);
   NBLA_CHECK(area_ratios_.size() == 2, error_code::value,
@@ -203,10 +207,6 @@ void RandomErase<T>::setup_impl(const Variables &inputs,
   NBLA_CHECK(n_ > 0, error_code::value, "n must be positive. n = %d.", n_);
   NBLA_CHECK(replacements_.size() == 2, error_code::value,
              "Length of replacements must be 2.");
-  NBLA_CHECK((size_t)base_axis_ < inputs[0]->shape().size(), error_code::value,
-             "base_axis must be less than ndim of inputs[0]. "
-             "base_axis: %d >= ndim of inputs[0]: %d.",
-             base_axis_, inputs[0]->shape().size());
   NBLA_CHECK(
       inputs[0]->shape().size() - base_axis_ == 3, error_code::value,
       "Image (the number of the spatial dimensions is 2) is only supported.");

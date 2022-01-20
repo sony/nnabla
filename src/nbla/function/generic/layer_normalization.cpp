@@ -22,6 +22,7 @@
 #include <nbla/function/sub2.hpp>
 #include <nbla/function/tensor_normalization.hpp>
 #include <nbla/imperative.hpp>
+#include <nbla/utils/axis_utils.hpp>
 
 namespace nbla {
 
@@ -37,6 +38,8 @@ void LayerNormalization<T>::setup_impl(const Variables &inputs,
   output_stat_ = n_outputs == 3;
   const auto x_shape = inputs[0]->shape();
   const int ndim = x_shape.size();
+  refine_axes(batch_axis_, ndim);
+
   beta_idx_ = no_bias_ ? -1 : 1;
   gamma_idx_ = no_scale_ ? -1 : no_bias_ ? 1 : 2;
   auto tn_axes = batch_axis_;
@@ -53,15 +56,6 @@ void LayerNormalization<T>::setup_impl(const Variables &inputs,
     n_inputs_expect++;
   NBLA_CHECK(n_inputs == n_inputs_expect, error_code::value,
              "Number of inputs must be 1, 2 or 3.");
-
-  // check batch_axis
-  for (size_t i = 0; i < batch_axis_.size(); i++) {
-    const auto ba = batch_axis_[i];
-    NBLA_CHECK(0 <= ba && ba < ndim, error_code::value,
-               "each element of batch_axis must be in the range of [0, ndim). "
-               "batch_axis[%d] : %d, ndim: {}.",
-               i, ba, ndim);
-  }
 
   // check param shapes
   const auto beta = no_bias_ ? nullptr : inputs[beta_idx_];

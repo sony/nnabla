@@ -16,6 +16,7 @@
  */
 #include <nbla/array.hpp>
 #include <nbla/function/flip.hpp>
+#include <nbla/utils/axis_utils.hpp>
 #include <nbla/variable.hpp>
 
 #include <algorithm>
@@ -28,10 +29,7 @@ NBLA_REGISTER_FUNCTION_SOURCE(Flip, const vector<int> &);
 template <typename T>
 void Flip<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
 
-  for (std::size_t i = 0; i < axes_.size(); ++i) {
-    if (axes_[i] < 0)
-      axes_[i] += inputs[0]->shape().size();
-  }
+  refine_axes(this->axes_, inputs.at(0)->ndim());
 
   outputs[0]->reshape(inputs[0]->shape(), true);
   flip_.resize(inputs[0]->ndim());

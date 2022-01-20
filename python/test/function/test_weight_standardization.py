@@ -32,6 +32,8 @@ def rng():
 
 
 def ref_weight_standardization(w, channel_axis, eps, output_stat):
+    channel_axis = channel_axis + w.ndim*(channel_axis < 0)
+
     axes = tuple(_get_axes_excluding(len(w.shape), channel_axis))
 
     w_mean = w.mean(axis=axes, keepdims=True)
@@ -47,7 +49,10 @@ def ref_weight_standardization(w, channel_axis, eps, output_stat):
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("w_shape , channel_axis", [((32, 16, 3, 3), 0),  # convolution
+                                                    # convolution
+                                                    ((32, 16, 3, 3), -2),
                                                     ((8, 4, 16), 2),  # affine
+                                                    ((8, 4, 16), -1),  # affine
                                                     ])
 @pytest.mark.parametrize("eps", [1e-05])
 @pytest.mark.parametrize("output_stat", [False, True])
@@ -62,7 +67,10 @@ def test_weight_standardization_forward(rng, ctx, func_name, w_shape, channel_ax
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("w_shape , channel_axis", [((8, 4, 3, 3), 0),  # convolution
+                                                    # convolution
+                                                    ((32, 16, 3, 3), -2),
                                                     ((16, 1), 1),  # affine
+                                                    ((8, 4, 16), -1),  # affine
                                                     ((4, 2, 8), 2),  # affine
                                                     ])
 @pytest.mark.parametrize("eps", [1e-05])
@@ -78,7 +86,10 @@ def test_weight_standardization_forward_backward(rng, ctx, func_name, w_shape, c
 
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("w_shape , channel_axis", [((8, 4, 3, 3), 0),  # convolution
+                                                    # convolution
+                                                    ((32, 16, 3, 3), -4),
                                                     ((16, 1), 1),  # affine
+                                                    ((8, 4, 16), -1),  # affine
                                                     ((4, 2, 8), 2),  # affine
                                                     ])
 @pytest.mark.parametrize("eps", [1e-05])

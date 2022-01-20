@@ -32,6 +32,8 @@ def layer_normalization_backward(inputs, batch_axis=(0,), eps=1e-05, no_scale=Fa
     if not no_scale:
         gamma = inputs[g_idx]
 
+    batch_axis = tuple([b + x.ndim*(b < 0) for b in batch_axis])
+
     # w.r.t. x
     axes = list(set(range(x.ndim)) - set(batch_axis))
     dy_tn = dy * gamma if not no_scale else dy

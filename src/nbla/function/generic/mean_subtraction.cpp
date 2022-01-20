@@ -17,6 +17,7 @@
  */
 #include <nbla/array.hpp>
 #include <nbla/function/mean_subtraction.hpp>
+#include <nbla/utils/axis_utils.hpp>
 #include <nbla/variable.hpp>
 
 #include <algorithm>
@@ -40,15 +41,10 @@ void MeanSubtraction<T>::setup_impl(const Variables &inputs,
 
   // Check shape
   Shape_t shape_i = inputs[0]->shape();
-  if (this->base_axis_ < 0)
-    this->base_axis_ += shape_i.size();
-  NBLA_CHECK(base_axis_ >= 0, error_code::value,
-             "base_axis may not be less than zero, got %d", base_axis_);
+  refine_axis(base_axis_, shape_i.size());
+
   auto base_axis = static_cast<Shape_t::size_type>(base_axis_);
-  NBLA_CHECK(base_axis < shape_i.size(), error_code::value,
-             "base_axis must be less than ndim of inputs[0]. "
-             "base_axis: %d >= ndim of inputs[0]: %d.",
-             base_axis_, shape_i.size());
+
   Shape_t shape_m = shape_i;
   shape_m.erase(shape_m.begin(), shape_m.begin() + base_axis_);
   NBLA_CHECK(inputs[1]->shape() == shape_m, error_code::value,

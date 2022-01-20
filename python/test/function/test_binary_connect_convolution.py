@@ -74,10 +74,11 @@ def ref_grad_binary_connect_convolution(x, w, wb, b, dy, base_axis, pad, stride,
 @pytest.mark.parametrize("inshape, kernel, outmaps, pad, stride, dilation",
                          [((2, 2, 10, 10), (3, 2), 4, (3, 0), (1, 2), (2, 1)), ])
 @pytest.mark.parametrize("group", [1, 2])
+@pytest.mark.parametrize("base_axis", [1, -3])
 @pytest.mark.parametrize("with_bias", [True, False])
 @pytest.mark.parametrize("quantize_zero_to", [0.0, -1.0, 1.0])
 def test_convolution_2d_forward_backward(inshape, kernel, outmaps, pad, stride,
-                                         dilation, group, with_bias, quantize_zero_to, seed, ctx,
+                                         dilation, group, with_bias, quantize_zero_to, base_axis, seed, ctx,
                                          func_name):
     from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
@@ -85,7 +86,6 @@ def test_convolution_2d_forward_backward(inshape, kernel, outmaps, pad, stride,
     inmaps = inshape[-3]
     kshape = (outmaps,) + (inmaps // group,) + kernel
     k = rng.randn(*kshape).astype(np.float32)
-    base_axis = len(inshape) - 3
     b = None
     if with_bias:
         b = rng.randn(outmaps).astype(np.float32)

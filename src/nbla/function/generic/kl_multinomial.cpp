@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <nbla/utils/axis_utils.hpp>
 
 namespace nbla {
 
@@ -36,13 +37,9 @@ void KLMultinomial<T>::setup_impl(const Variables &inputs,
 
   Shape_t inshape = inputs[0]->shape();
 
-  NBLA_CHECK(base_axis_ >= 0, error_code::value,
-             "base_axis may not be less than zero, got %d", base_axis_);
+  refine_axis(base_axis_, inputs.at(0)->ndim());
+
   auto base_axis = static_cast<Shape_t::size_type>(base_axis_);
-  NBLA_CHECK(base_axis < inshape.size(), error_code::value,
-             "base_axis must be less than ndim of inputs[0]. "
-             "base_axis: %d >= ndim of inputs[0]: %d.",
-             base_axis_, inshape.size());
 
   Shape_t outshape(base_axis + 1);
   for (Shape_t::size_type i = 0; i < base_axis; i++) {
