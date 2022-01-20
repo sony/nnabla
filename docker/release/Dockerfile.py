@@ -79,3 +79,9 @@ COPY --from=flatc /usr/local/bin/flatc /usr/local/bin/flatc
 
 ARG NNABLA_VER
 RUN pip install ${PIP_INS_OPTS} nnabla==${NNABLA_VER} nnabla_converter==${NNABLA_VER}
+
+ARG WORK_PATH_ARG="/home/nnabla"
+ENV WORK_PATH_ENV=${WORK_PATH_ARG}
+COPY .entrypoint.sh ${WORK_PATH_ARG}/.entrypoint.sh
+RUN chmod +x ${WORK_PATH_ARG}/.entrypoint.sh
+ENTRYPOINT ["/bin/bash", "-c", "${WORK_PATH_ENV}/.entrypoint.sh \"${@}\"", "--"]
