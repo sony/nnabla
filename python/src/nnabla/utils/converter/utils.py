@@ -1,4 +1,5 @@
 # Copyright 2018,2019,2020,2021 Sony Corporation.
+# Copyright 2021 Sony Group Corporation.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -127,7 +128,7 @@ def get_api_level_info():
 
 @func_set_init
 def get_category_info_string():
-    header = '# Copyright (c) 2017 Sony Corporation. All Rights Reserved.\n' \
+    header = '# Copyright 2021 Sony Group Corporation. \n' \
         + '#\n' \
         + '# Licensed under the Apache License, Version 2.0 (the "License");\n' \
         + '# you may not use this file except in compliance with the License.\n' \
@@ -327,7 +328,7 @@ def func_set_export_yaml(func_dict, yaml_file):
             else:
                 func_info['func_type'] = ['None']
 
-    header = '# Copyright (c) 2017 Sony Corporation. All Rights Reserved.\n' \
+    header = '# Copyright 2021 Sony Group Corporation.\n' \
         + '#\n' \
         + '# Licensed under the Apache License, Version 2.0 (the "License");\n' \
         + '# you may not use this file except in compliance with the License.\n' \
