@@ -161,5 +161,12 @@ protected:
     }
     return false;
   }
+
+  NBLA_API virtual void relu_add2_backward(const Variables &inputs,
+                                           const Variables &outputs,
+                                           const vector<bool> &propagate_down,
+                                           const vector<bool> &accum,
+                                           Variable &relu_buf);
 };
+
 } // namespace nbla
