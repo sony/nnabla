@@ -81,6 +81,7 @@ protected:
   Context ctx_;                           ///< Storing context.
   vector<shared_ptr<Shape_t>> in_shapes;  ///< Storing input shapes.
   vector<shared_ptr<Shape_t>> out_shapes; ///< Storing output shapes.
+  vector<bool> cg_input_mask;
 
   /** Fall back function. If this is set at instantiation of Function, behavior
   of the function will be replaced with the fall-back function.
@@ -150,6 +151,15 @@ public:
   @sa setup_recompute()
   */
   void recompute(const Variables &inputs, const Variables &outputs);
+
+  /** Activate or deactivate inputs.
+  */
+  void set_active_input_mask(const vector<bool> &mask);
+
+  /* A flag to indicate if an input shall be considerd as active by the graph
+   * engine during forward and backward.
+   */
+  bool is_active_input(int i) const;
 
   /** Get Context used in this function.
   */

@@ -229,6 +229,12 @@ cdef class Function:
             list_to_vector_variable_p(inputs),
             list_to_vector_variable_p(outputs))
 
+    def set_active_input_mask(self, mask):
+        cdef vector[cpp_bool] c_mask
+        for elem in mask:
+            c_mask.push_back(bool(elem))
+        self.funp.function().get().set_active_input_mask(c_mask)
+
     @property
     def context(self):
         ccontext = self.funp.function().get().context()

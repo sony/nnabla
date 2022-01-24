@@ -663,8 +663,17 @@ void CgVariable::visit_function_recursive(
   bool need_grad = false; // No inputs not require grad
   bool need_setup = false;
   auto inputs = func->inputs();
-  for (auto input : inputs) {
-    auto parent = input->parent();
+
+  // std::cout << "visit_function_recursive " << func.get() << " "
+  //           << func->function()->name() << std::endl;
+
+  for (vector<CgVariablePtr>::size_type i = 0; i < inputs.size(); i++) {
+    if (!func->function()->is_active_input(i)) {
+      continue;
+    }
+    CgVariablePtr input = inputs[i];
+    CgFunctionPtr parent = input->parent();
+
     // B-1. Input with no parent doesn't require
     if (!parent) {
       if (as_recomputation) {
@@ -746,8 +755,8 @@ void CgVariable::visit_function_recursive(
 
   // F. Call callback function at this function.
   forward_callback(func);
-  // std::cout << max_rank << " " << func->function()->name() << " " <<
-  // func.get() << std::endl;
+  // std::cout << "fw " << max_rank << " " << func.get() << " "
+  //           << func->function()->name() << std::endl;
 }
 
 /**
@@ -860,13 +869,9 @@ void CgVariable::visit_function_backward(
 
     // Recompute cleared inputs and outputs
     fclosed.clear();
-    const int n_inputs = f->num_inputs();
-    const int n_outputs = f->num_outputs();
-    const auto function = f->function();
-    const auto inputs = f->inputs();
 
     // Recompute outputs
-    for (int i = 0; i < n_outputs; i++) {
+    for (size_t i = 0; i < f->num_outputs(); i++) {
       // Exec recomputation for i-th output data
       if (need_recompute_output(f, i)) {
         visit_function_recursive(
@@ -876,42 +881,40 @@ void CgVariable::visit_function_backward(
     }
 
     // Recompute inputs
-    for (int i = 0; i < n_inputs; i++) {
+    for (size_t i = 0; i < f->num_inputs(); i++) {
       // Exec recomputation for i-th input data
       if (need_recompute_input(f, i)) {
-        const auto parent = inputs[i]->parent();
         visit_function_recursive(
-            parent, fclosed, true /* as_recomputation */,
+            f->input(i)->parent(), fclosed, true /* as_recomputation */,
             [&forward_callback](CgFunctionPtr f) { forward_callback(f); });
       }
     }
 
-    // Callback
     backward_callback(f);
     // std::cout << (int)(get<1>(*rank_func)) << ": " << f->rank() << " "
-    //           << f->function()->name() << " " << f.get() << " " <<
-    //           open.size()
-    //           << std::endl;
+    //           << f->function()->name() << " " << f.get() << " "
+    //           << open.size() << std::endl;
 
-    //
-    for (auto &com_callback : communicator_callbacks) {
-      com_callback->on_finish_function_backward(f);
+    for (auto &callback : communicator_callbacks) {
+      callback->on_finish_function_backward(f);
     }
 
     // Propagate down.
     for (size_t i = 0; i < f->num_inputs(); i++) {
-      auto inp = inputs[i];
-      if (!inp->need_grad_state())
+      if (!(f->function()->is_active_input(i))) {
         continue;
-      auto p_i = inp->parent();
-      if (!p_i)
+      }
+      auto input = f->input(i);
+      if (!(input->need_grad_state() && input->has_parent())) {
         continue;
-      open.insert(make_tuple(-p_i->rank(), get_id(p_i), p_i));
+      }
+      auto parent = input->parent();
+      open.insert(make_tuple(-parent->rank(), get_id(parent), parent));
     }
   }
 
-  for (auto &com_callback : communicator_callbacks) {
-    com_callback->on_finish_backward();
+  for (auto &callback : communicator_callbacks) {
+    callback->on_finish_backward();
   }
 }
 
@@ -1086,7 +1089,7 @@ ClearCalledFlagRecorder::get_variable_clear_called_flag(
     const std::vector<CgVariablePtr> &vars) {
   std::vector<std::pair<bool, bool>> clear_called_flags;
 
-  for (const auto var : vars) {
+  for (const auto &var : vars) {
     bool data_flag = var->variable()->data()->array()->clear_called();
     bool grad_flag = var->variable()->grad()->array()->clear_called();
     clear_called_flags.push_back(std::make_pair(data_flag, grad_flag));

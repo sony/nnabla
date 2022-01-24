@@ -129,6 +129,10 @@ public:
    */
   inline size_t num_inputs() const { return inputs_.size(); }
 
+  /** Get the i-th input.
+   */
+  inline CgVariablePtr input(size_t i) { return inputs_.at(i); }
+
   /** Get number of outputs.
    */
   inline size_t num_outputs() const { return outputs_.size(); }

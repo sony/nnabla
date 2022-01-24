@@ -218,6 +218,10 @@ public:
    */
   inline CgFunctionPtr parent() { return parent_; }
 
+  /** Query if a parent function is set.
+   */
+  inline bool has_parent() { return parent_ != nullptr; }
+
   /** Get variable reference held in this instance.
    */
   inline VariablePtr variable() { return var_; }
