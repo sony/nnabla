@@ -59,3 +59,9 @@ RUN python3 -m pip install ${PIP_INS_OPTS} ipython
 
 ARG NNABLA_VER
 RUN pip install ${PIP_INS_OPTS} nnabla==${NNABLA_VER}
+
+ARG WORK_PATH_ARG="/home/nnabla"
+ENV WORK_PATH_ENV=${WORK_PATH_ARG}
+COPY .entrypoint-armhf.sh ${WORK_PATH_ARG}/.entrypoint.sh
+RUN chmod +x ${WORK_PATH_ARG}/.entrypoint.sh
+ENTRYPOINT ["/bin/bash", "-c", "${WORK_PATH_ENV}/.entrypoint.sh \"${@}\"", "--"]
