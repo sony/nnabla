@@ -75,7 +75,8 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-RUN curl ${CURL_OPTS} https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
+RUN if [ "${PYVERNAME}" = "3.6" ]; then curl ${CURL_OPTS} https://bootstrap.pypa.io/pip/${PYVERNAME}/get-pip.py -o get-pip.py; else \
+    curl ${CURL_OPTS} https://bootstrap.pypa.io/get-pip.py -o get-pip.py; fi \
     && python${PYVERNAME} get-pip.py ${PIP_INS_OPTS} \
     && rm get-pip.py
 
