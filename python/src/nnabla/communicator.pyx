@@ -100,7 +100,7 @@ cdef class Communicator:
         cdef _Variable x
         cdef string key
         for key, x in iteritems(ctx_param_dict[1]):
-            cparams.push_back(pair[string, shared_ptr[CVariable]](key, (< _Variable > x).varp.variable()))
+            cparams.push_back(pair[string, shared_ptr[CVariable]](key, (< _Variable > x).get_varp().variable()))
 
         self.communicatorp.add_context_and_parameters(
             pair[CContext, vector[pair[string, shared_ptr[CVariable]]]](ctx_param_dict[0], cparams))

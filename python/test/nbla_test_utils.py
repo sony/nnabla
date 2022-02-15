@@ -927,6 +927,7 @@ def backward_function_tester(rng, func, inputs=None,
     with nn.context_scope(ctx), nn.auto_forward(auto_forward):
         outputs0 = func(*(vinputs_identity + func_args), **func_kwargs)
         outputs0 = force_list(outputs0)
+        voutputs_identity = outputs0
         F.sink(*outputs0).forward(clear_no_need_grad=False)
     grad_voutputs = []
     for output in outputs0:
@@ -971,9 +972,12 @@ def backward_function_tester(rng, func, inputs=None,
     func_backward = registry[func_name]
     grad_vinputs = grad_voutputs + vinputs
     grad_vinputs_identity = grad_voutputs + vinputs_identity
+    vinput_identity_shapes = [inp.shape for inp in vinputs_identity]
+    voutput_identity_shapes = [inp.shape for inp in voutputs_identity]
     func_info_args = output.parent.info.args
     with nn.context_scope(ctx), nn.auto_forward(auto_forward):
-        ograds0 = func_backward(grad_vinputs_identity, **func_info_args)
+        ograds0 = func_backward(grad_voutputs, vinputs_identity, vinput_identity_shapes,
+                                voutputs_identity, voutput_identity_shapes, **func_info_args)
         ograds0 = force_list(ograds0)
         ograds0_ = list(filter(lambda o: o is not None, ograds0))
         F.sink(*ograds0_).forward(clear_no_need_grad=True)

@@ -13,6 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <nbla/auto_forward.hpp>
 #include <nbla/computation_graph/computation_graph.hpp>
 #include <nbla/computation_graph/function.hpp>
 #include <nbla/computation_graph/variable.hpp>
@@ -83,9 +84,32 @@ void FunctionHookWithObject::operator()(const CgFunctionPtr &f) {
   callback_(obj_, f);
 }
 
+void BaseCgVariable::update_python_user_reference_counts(const int diff) {
+  python_user_reference_counts += diff;
+  var_->update_python_user_reference_counts(diff);
+}
+
+void BaseCgVariable::set_variable(VariablePtr var) {
+  NBLA_CHECK(var, error_code::value, "No variable is passed.")
+
+  // New Variable traces the CgVariable tree.
+  var->update_python_user_reference_counts(python_user_reference_counts);
+
+  if (var_) {
+    // Old Variable purges the CgVariable tree.
+    var_->update_python_user_reference_counts(-python_user_reference_counts);
+  }
+
+  var_ = var;
+}
+
+BaseCgVariable::~BaseCgVariable() {
+  var_->update_python_user_reference_counts(-python_user_reference_counts);
+}
+
 /** CgVariable Implementation **/
 CgVariable::CgVariable() {
-  var_ = make_shared<Variable>(Shape_t{});
+  this->set_variable(make_shared<Variable>(Shape_t{}));
   set_recompute(get_global_recompute());
 }
 CgVariable::CgVariable(bool need_grad) : CgVariable() {
@@ -94,7 +118,7 @@ CgVariable::CgVariable(bool need_grad) : CgVariable() {
 }
 
 CgVariable::CgVariable(Shape_t shape) {
-  var_ = make_shared<Variable>(shape);
+  this->set_variable(make_shared<Variable>(shape));
   set_recompute(get_global_recompute());
 }
 CgVariable::CgVariable(Shape_t shape, bool need_grad) : CgVariable(shape) {
@@ -103,7 +127,7 @@ CgVariable::CgVariable(Shape_t shape, bool need_grad) : CgVariable(shape) {
 }
 
 CgVariable::CgVariable(VariablePtr var) {
-  var_ = var;
+  this->set_variable(var);
   set_recompute(get_global_recompute());
 }
 CgVariable::CgVariable(VariablePtr var, bool need_grad) : CgVariable(var) {
@@ -1062,6 +1086,75 @@ CgVariablePtr CgVariable::create_deep_copy(Context ctx, bool copy_grad) {
   }
 
   return ret;
+}
+
+// the vec is the inputs or outputs of a Function. If the target is found in the
+// vec, grad_depends_on_inputs/outputs is checked.
+bool find_grad_dependency(const CgVariable *const target,
+                          const vector<CgVariablePtr> &vec,
+                          std::function<bool(int, int)> grad_depends) {
+  const auto found =
+      std::find_if(vec.cbegin(), vec.cend(), [target](const CgVariablePtr v) {
+        return target == v.get();
+      });
+
+  if (found != vec.cend()) {
+    const size_t j = std::distance(vec.cbegin(), found);
+    for (size_t i = 0; i < vec.size(); i++) {
+      if (grad_depends(i, j)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+bool CgVariable::has_grad_dependency() {
+  // Check the grad dependency for the parent Function as an output.
+  if (parent_) {
+    std::function<bool(int, int)> grad_depends = [&](int i, int o) -> bool {
+      auto f = parent_->function();
+      return (f->grad_depends_output_data(i, o) ||
+              f->auto_grad_depends_output_data(i, o));
+    };
+    if (find_grad_dependency(this, parent_->outputs(), grad_depends)) {
+      return true;
+    }
+  }
+
+  // Check the grad dependency for the referred Function as an input.
+  for (const auto &pair : function_references_) {
+    if (const auto func = pair.second.first.lock()) {
+      std::function<bool(int, int)> grad_depends = [&](int i, int j) -> bool {
+        if (func->need_grad()) {
+          return (func->function()->grad_depends_input_data(i, j) ||
+                  func->function()->auto_grad_depends_input_data(i, j));
+        }
+        return false;
+      };
+      if (find_grad_dependency(this, func->inputs(), grad_depends)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+void CgVariable::clear_during_auto_forward() {
+  if ( // 1. This feature is only for auto-forward mode.
+      SingletonManager::get<AutoForward>()->get_auto_forward() &&
+      // 2. Persistent flag prohibits the memory release.
+      !persistent() &&
+      // 3. The input terminal of a graph prohibits the memory release.
+      parent() &&
+      // 4. The last reference of the same SyncedArray can release memory.
+      variable()->data()->array()->get_python_user_reference_counts() < 2 &&
+      // 5. This data must not be released if it is used when backprop.
+      !has_grad_dependency()) {
+    variable()->data()->array()->clear();
+  }
 }
 
 ClearCalledFlagRecorder::ClearCalledFlagRecorder() {}

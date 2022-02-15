@@ -548,6 +548,14 @@ void SyncedArray::remove_child(const SyncedArray *child) {
                   children_.end());
 }
 
+int SyncedArray::get_python_user_reference_counts() const {
+  return python_user_reference_counts;
+}
+
+void SyncedArray::update_python_user_reference_counts(const int diff) {
+  python_user_reference_counts += diff;
+}
+
 // Callback function
 SyncedArrayCallback::SyncedArrayCallback() : callback_func_(nullptr) {}
 

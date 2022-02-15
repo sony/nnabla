@@ -83,6 +83,6 @@ def forward_all(variables,
     size = len(variables)
     cg_variables.resize(size)
     for i in range(size):
-        cg_variables[i] = (<_Variable?> variables[i]).var
+        cg_variables[i] = (<_Variable?> variables[i]).get_var()
     with nogil:
         cforward_all(cg_variables, clear_buffer, clear_no_need_grad, function_pre_hook_c, function_post_hook_c)

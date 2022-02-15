@@ -22,6 +22,7 @@ import nnabla.functions as F
 import nnabla.parametric_functions as PF
 from nnabla.testing import assert_allclose, clear_called_flag_recorder
 from nbla_test_utils import list_context
+from nnabla.function import PythonFunction
 
 
 @pytest.mark.parametrize("seed", [313])
@@ -188,6 +189,192 @@ def test_graph_clear_buffer(seed):
                 if platform.machine() == 'ppc64le':
                     pytest.skip("This test fails on ppc64le")
                 assert np.all(g == g2)
+
+
+class FuncForTestClearBuffersInAutoForward(PythonFunction):
+    ''' A Function takes two inputs and two outputs, where one of the inputs
+        and one of the outputs have the grad dependency. 
+    '''
+    @property
+    def name(self):
+        return self.__class__.__name__
+
+    def min_outputs(self):
+        return 2
+
+    def setup_impl(self, inputs, outputs):
+        outputs[0].reset_shape(inputs[0].shape, True)
+        outputs[1].reset_shape(inputs[1].shape, True)
+
+    def forward_impl(self, inputs, outputs):
+        # Imperative call
+        outputs[0].data.copy_from(F.identity(inputs[0].data))
+        outputs[1].data.copy_from(F.identity(inputs[1].data))
+
+    def grad_depends_input_data(self, i, j):
+        # Only the inputs[0] has the grad dependency.
+        if j == 0:
+            return True
+        return False
+
+    def grad_depends_output_data(self, i, o):
+        # Only the outputs[0] has the grad dependency.
+        if o == 0:
+            return True
+        return False
+
+    def backward_impl(self, inputs, outputs, propagate_down, accum):
+        # Nothing to do
+        pass
+
+
+def func_for_test_clear_buffer_in_auto_forward(x0, x1, ctx=None):
+    return FuncForTestClearBuffersInAutoForward(ctx)(x0, x1)
+
+
+@pytest.mark.parametrize("persistent", [True, False])
+@pytest.mark.parametrize("unlinked_variable", [True, False])
+@pytest.mark.parametrize("need_grad", [True, False])
+def test_clear_buffers_in_auto_forward(persistent, unlinked_variable, need_grad):
+    def local_scope(x0, x1):
+        # Input layer
+        h0 = F.identity(x0)
+        h1 = F.identity(x1)
+
+        # Clear the grad-dependent Variable h0 when the layer functions
+        # associating with h0 have need_grad=False.
+        h0.need_grad = need_grad
+        h1.need_grad = need_grad
+
+        # Intermediate layer
+        h2, h3 = func_for_test_clear_buffer_in_auto_forward(h0, h1)
+
+        # Do not clear the persistent Variables
+        h1.persistent = persistent
+        h3.persistent = persistent
+
+        # The stand-alone unlinked variable is not cleared because it is dealt
+        # with the input of a graph consisting of the single node.
+        if unlinked_variable:
+            unlinked_h0 = h0.get_unlinked_variable()
+            unlinked_h1 = h1.get_unlinked_variable()
+            unlinked_h2 = h2.get_unlinked_variable()
+            unlinked_h3 = h3.get_unlinked_variable()
+
+        # Output layer
+        # Returning the NdArrays to check their memory clearance.
+        return h2 + h3, h0.data, h1.data, h2.data, h3.data
+
+    # Test
+    shape_input = [2, 3, 4]
+    x0 = nn.Variable(shape_input, need_grad=True)
+    x1 = nn.Variable(shape_input, need_grad=True)
+
+    with nn.auto_forward():
+        # Test to clear the variables in a local scope after the exit.
+        # h0, h1, h2, and h3 are expected to be deleted conditionally.
+        y, h0_ndarr, h1_ndarr, h2_ndarr, h3_ndarr = local_scope(x0, x1)
+
+        # Test to clear the variable after reassignment.
+        # y is expected to be deleted conditionally.
+        y.persistent = persistent
+        if unlinked_variable:
+            y_unlinked = y.get_unlinked_variable()
+        y_ndarr = y.data
+        y = F.identity(y)
+
+    assert h0_ndarr.clear_called == (
+        (not need_grad) and (not unlinked_variable))
+    assert h1_ndarr.clear_called == (
+        (not persistent) and (not unlinked_variable))
+    assert h2_ndarr.clear_called == False
+    assert h3_ndarr.clear_called == (
+        (not persistent) and (not unlinked_variable))
+    assert y_ndarr.clear_called == (
+        (not persistent) and (not unlinked_variable))
+
+
+def test_python_user_reference_counts():
+    shape = [2, 3, 4]
+
+    # Create a Variable
+    x0 = nn.Variable(shape)
+    assert x0.get_number_of_references == 1
+
+    # Shallow copy does not change the reference counts.
+    x0_shallow_copy = x0
+    assert x0.get_number_of_references == 1
+    assert x0_shallow_copy.get_number_of_references == 1
+
+    del x0_shallow_copy
+    assert x0.get_number_of_references == 1
+
+    # Getting numpy array does not change the reference counts
+    d = x0.d
+    assert x0.get_number_of_references == 1
+
+    # Getting NdArray does not change the reference counts. NdArray is not
+    # protected by automatic memory clearing both of this reference counting
+    # in dynamic-graph mode and of the graph engine in static-graph mode.
+    x0_data = x0.data
+    assert x0.get_number_of_references == 1
+
+    # Simple Function call does not change the reference counts.
+    y0 = F.identity(x0)
+    assert x0.get_number_of_references == 1
+
+    # Inplace Function call increases the reference counts. In this case,
+    # x0 and y0 share the same memory object via SyncedArray level.
+    y0 = F.reshape(x0, shape)
+    assert x0.get_number_of_references == 2
+    assert y0.get_number_of_references == 2
+
+    # Sharing NdArray increases the reference counts. In this case, x0 and x1
+    # x0 and y0 share the same memory object via NdArray level.
+    x1 = nn.Variable(shape)
+    assert x0.get_number_of_references == 2
+    assert y0.get_number_of_references == 2
+    assert x1.get_number_of_references == 1
+    x1.data = x0_data
+    assert x0.get_number_of_references == 3
+    assert y0.get_number_of_references == 3
+    assert x1.get_number_of_references == 3
+
+    # Sharing Variable increases the reference counts. In this case, y2 and x3
+    # share the same memory object via Variable level.
+    x2 = nn.Variable(shape)
+    x3 = nn.Variable(shape)
+    assert x2.get_number_of_references == 1
+    assert x3.get_number_of_references == 1
+    y2 = F.identity(x2)
+    x3.rewire_on(y2)
+    assert x2.get_number_of_references == 1
+    assert y2.get_number_of_references == 2
+    assert x3.get_number_of_references == 2
+
+    # Another way to share Variable. In this case, x4 and x5 share the same
+    # memory object via Variable level.
+    x4 = nn.Variable(shape)
+    assert x4.get_number_of_references == 1
+    x5 = x4.get_unlinked_variable()
+    assert x4.get_number_of_references == 2
+    assert x5.get_number_of_references == 2
+
+    # Note: The case of shareing CgVariable is not happen in the NNabla version
+    #       when this test is implemented because CgVariable and Varable are
+    #       are identical.
+
+    # Local scope changes the reference counts locally.
+    def local_scope(x6):
+        assert x6.get_number_of_references == 1
+        x7 = x6.get_unlinked_variable()
+        assert x6.get_number_of_references == 2
+        assert x7.get_number_of_references == 2
+
+    x6 = nn.Variable(shape, need_grad=True)
+    assert x6.get_number_of_references == 1
+    local_scope(x6)
+    assert x6.get_number_of_references == 1
 
 
 @pytest.mark.parametrize("seed", [311])

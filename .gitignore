@@ -46,6 +46,7 @@
 /python/src/nnabla/_variable.cpp
 /python/src/nnabla/_dropout_workaround.cpp
 /python/src/nnabla/_version.py
+/python/src/nnabla/auto_forward.cpp
 /python/src/nnabla/backward_functions.py
 /python/src/nnabla/clibtest
 /python/src/nnabla/communicator.cpp

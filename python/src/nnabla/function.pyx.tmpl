@@ -96,7 +96,7 @@ cdef vector[CgVariablePtr] list_to_vector_cg_variable(varlist) except *:
     size = len(varlist)
     vec.resize(size)
     for i in range(size):
-        vec[i] = (<_Variable?> varlist[i]).var
+        vec[i] = (<_Variable?> varlist[i]).get_var()
     return vec
 
 cdef vector[CVariable*] list_to_vector_variable_p(varlist) except *:
@@ -106,7 +106,7 @@ cdef vector[CVariable*] list_to_vector_variable_p(varlist) except *:
     size = len(varlist)
     vec.resize(size)
     for i in range(size):
-        vec[i] = (<_Variable?> varlist[i]).varp.variable().get()
+        vec[i] = (<_Variable?> varlist[i]).get_varp().variable().get()
     return vec
 
 cdef vector[cpp_bool] variables_to_prop_down_flags(varlist) except *:
@@ -114,7 +114,7 @@ cdef vector[cpp_bool] variables_to_prop_down_flags(varlist) except *:
     cdef int size = len(varlist)
     cdef vector[cpp_bool] ret
     for i in range(size):
-        ret.push_back((<_Variable?>varlist[i]).varp.need_grad_state())
+        ret.push_back((<_Variable?>varlist[i]).get_varp().need_grad_state())
     return ret
 
 cdef tuple vector_to_tuple_nd_array(const vector[NdArrayPtr] &vec):
@@ -253,8 +253,17 @@ cdef class Function:
     def min_outputs(self):
         return self.funp.function().get().min_outputs()
 
+    def grad_depends_input_data(self, int i, int j):
+        return self.funp.function().get().grad_depends_input_data(i, j)
+
     def grad_depends_output_data(self, int i, int o):
         return self.funp.function().get().grad_depends_output_data(i, o)
+
+    def auto_grad_depends_input_data(self, int i, int j):
+        return self.funp.function().get().auto_grad_depends_input_data(i, j)
+
+    def auto_grad_depends_output_data(self, int i, int o):
+        return self.funp.function().get().auto_grad_depends_output_data(i, o)
 
     def need_setup_recompute(self, int o):
         return self.funp.function().get().need_setup_recompute(o)

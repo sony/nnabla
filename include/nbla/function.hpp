@@ -210,6 +210,7 @@ public:
       boolean value. Otherwise, backward computation will be incorrect.
    */
   virtual bool grad_depends_output_data(int i, int o) const { return true; }
+
   /** Dependency flag for checking if in-grad depends on in-data.
 
       Checking if i-th input' gradient computation requires j-th input's data or
@@ -228,6 +229,47 @@ public:
     NBLA_CHECK(called_setup_, error_code::runtime,
                "Call setup before calling this function.");
     return grad_depends_input_data_impl(i, j);
+  }
+
+  /** Dependency flag to check if in-grad depends on out-data for auto grad.
+
+    Checking if i-th input's gradient computation requires o-th output's data
+    or not when auto grad (nnabla.grad). This method is refered in
+    auto-forward mode to clear memory consumption dynamically.
+
+    @param[in] i Input variable index.
+    @param[in] o Output variable index.
+
+    @note If the grad dependencies of the output are different between
+    Function::backward and auto grad, this function must be overridden to return
+    appropriate boolean value. Otherwise, auto grad computation will be
+    incorrect.
+  */
+  virtual bool auto_grad_depends_output_data(int i, int o) const {
+    // The default value "false" is unsafe because it causes the incorrect
+    // result of auto grad without the correct override. This value is set to
+    // avoid the implementation cost to override this method for all Functions.
+    // However it is expected to detect the incorrectness as the fails of
+    // auto-grad Function unittests (double backward test). Conversely the
+    // unittests must be design in that way.
+    return false;
+  }
+
+  /** Dependency flag to check if in-grad depends on in-data for auto grad.
+
+    Checking if i-th input's gradient computation requires j-th input's data or
+    not when auto grad (nnabla.grad). This method is refered in auto-forward
+    mode to clear memory consumption dynamically.
+
+    @param[in] i Input variable index.
+    @param[in] j Input variable index.
+
+  */
+  virtual bool auto_grad_depends_input_data(int i, int j) const final {
+    // See grad_depends_input_data for detail
+    NBLA_CHECK(called_setup_, error_code::runtime,
+               "Call setup before calling this function.");
+    return auto_grad_depends_input_data_impl(i, j);
   }
 
   /** Dependency flag for checking if i-th input is overwritten in forward or
@@ -378,6 +420,21 @@ protected:
     value for memory optimization.
   */
   virtual bool grad_depends_input_data_impl(int i, int j) const { return true; }
+
+  /**
+    The grad dependencies of the inputs are different between Function::backward
+    and auto grad, this function must be overridden to return appropriate
+    boolean value. Otherwise, auto grad computation will be incorrect.
+  */
+  virtual bool auto_grad_depends_input_data_impl(int i, int j) const {
+    // The default value "false" is unsafe because it causes the incorrect
+    // result of auto grad without the correct override. This value is set to
+    // avoid the implementation cost to override this method for all Functions.
+    // However it is expected to detect the incorrectness as the fails of
+    // auto-grad Function unittests (double backward test). Conversely the
+    // unittests must be design in that way.
+    return false;
+  }
 
   /**
     If any of inputs are overwritten in forward, this function must be

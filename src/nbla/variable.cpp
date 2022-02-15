@@ -21,23 +21,54 @@
 
 namespace nbla {
 
+using std::make_shared;
+
+void BaseVariable::update_python_user_reference_counts(const int diff) {
+  python_user_reference_counts += diff;
+  data_->update_python_user_reference_counts(diff);
+}
+
+void BaseVariable::set_data(NdArrayPtr data) {
+  NBLA_CHECK(data->shape() == shape_, error_code::value, "Shape must match.");
+
+  // New NdArray traces the Variable tree.
+  data->update_python_user_reference_counts(python_user_reference_counts);
+
+  if (data_) {
+    // Old NdArray purges the Variable tree.
+    data_->update_python_user_reference_counts(-python_user_reference_counts);
+  }
+
+  data_ = data;
+}
+
+BaseVariable::~BaseVariable() {
+  data_->update_python_user_reference_counts(-python_user_reference_counts);
+}
+
+void BaseVariable::set_grad(NdArrayPtr grad) {
+  NBLA_CHECK(grad->shape() == shape_, error_code::value, "Shape must match.");
+  grad_ = grad;
+}
+
 void Variable::update_shape_info() {
   size_ = compute_size_by_shape(shape_);
   strides_ = get_c_contiguous_strides(shape_);
   ndim_ = shape_.size();
 }
 
-Variable::Variable(const Shape_t &shape) : shape_(shape) {
+Variable::Variable(const Shape_t &shape) {
+  this->shape_ = shape;
   update_shape_info();
-  data_ = make_shared<NdArray>(shape_);
-  grad_ = make_shared<NdArray>(shape_);
+  this->set_data(make_shared<NdArray>(shape_));
+  this->set_grad(make_shared<NdArray>(shape_));
 }
 
 Variable::Variable(NdArrayPtr data) {
   shape_ = data->shape();
   update_shape_info();
-  data_ = data;
-  grad_ = make_shared<NdArray>(shape_);
+  this->set_data(data);
+  this->set_grad(make_shared<NdArray>(shape_));
 }
 
 void Variable::reshape(const vector<int64_t> &shape, bool force) {
@@ -47,8 +78,8 @@ void Variable::reshape(const vector<int64_t> &shape, bool force) {
   if (size_ == size) {
     shape_ = shape;
     update_shape_info();
-    data_->reshape(shape);
-    grad_->reshape(shape);
+    this->data()->reshape(shape);
+    this->grad()->reshape(shape);
     return;
   }
   NBLA_CHECK(force, error_code::value,
@@ -57,14 +88,14 @@ void Variable::reshape(const vector<int64_t> &shape, bool force) {
              size, size_);
   shape_ = shape;
   update_shape_info();
-  data_->reshape(shape_, true);
-  grad_->reshape(shape_, true);
+  this->data()->reshape(shape_, true);
+  this->grad()->reshape(shape_, true);
 }
 
 VariablePtr Variable::view() {
   auto v = make_shared<Variable>(shape_);
-  v->set_data(data_);
-  v->set_grad(grad_);
+  v->set_data(this->data());
+  v->set_grad(this->grad());
   return v;
 }
 
@@ -75,8 +106,8 @@ VariablePtr Variable::view(const Shape_t &shape) {
              "Given: %d != current: %d.",
              size, size_);
   auto v = make_shared<Variable>(shape);
-  v->set_data(data_->view(shape));
-  v->set_grad(grad_->view(shape));
+  v->set_data(this->data()->view(shape));
+  v->set_grad(this->grad()->view(shape));
   return v;
 }
 
@@ -85,15 +116,5 @@ Size_t Variable::size(Size_t axis) const {
     return size_;
   }
   return compute_size_by_shape(shape_, axis);
-}
-
-void Variable::set_data(NdArrayPtr data) {
-  NBLA_CHECK(data->shape() == shape_, error_code::value, "Shape must match.");
-  data_ = data;
-}
-
-void Variable::set_grad(NdArrayPtr grad) {
-  NBLA_CHECK(grad->shape() == shape_, error_code::value, "Shape must match.");
-  grad_ = grad;
 }
 }
