@@ -17,13 +17,164 @@
 import pickle
 import zlib
 from collections import OrderedDict
-from os.path import abspath, join, dirname
-
+from os.path import abspath, join, dirname, expanduser
+import glob
+import os
 import yaml
+from nnabla.utils import nnabla_pb2
+from nnabla.logger import logger
+
 
 _nnabla_func_info = None
+_nnabla_func_info_old = {}
+_nnabla_func_info_cur = {}
 _onnx_func_info = None
 _api_level_info = None
+_nnabla_func_info_versions = {}
+
+
+def load_yaml_ordered(stream, Loader=yaml.Loader, object_pairs_hook=OrderedDict):
+    class OrderedLoader(Loader):
+        pass
+
+    def construct_mapping(loader, node):
+        loader.flatten_mapping(node)
+        return object_pairs_hook(loader.construct_pairs(node))
+    OrderedLoader.add_constructor(
+        yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+        construct_mapping)
+    return yaml.load(stream, OrderedLoader)
+
+
+def load_function_info(yaml_file):
+    with open(yaml_file, 'r') as f:
+        ret = load_yaml_ordered(f)
+    ret2 = OrderedDict()
+    for _, cat in ret.items():
+        for func_name, func in cat.items():
+            ret2[func_name] = func
+    return ret2
+
+
+def download_func_info_yaml(nnp_version):
+    import urllib.request
+    cache_dir = os.path.join(expanduser("~"), ".nnabla")
+    if not os.path.exists(cache_dir):
+        os.makedirs(cache_dir)
+    yaml_file = os.path.join(cache_dir, f"function_info_{nnp_version}.yaml")
+    try:
+        logger.info(
+            f"Downloading function information for nnabla v{nnp_version}, it will take a few time...")
+        url = f"https://raw.githubusercontent.com/sony/nnabla/v{nnp_version}/build-tools/code_generator/functions.yaml"
+        logger.info(f"Retrieve from {url} ...")
+        urllib.request.urlretrieve(url, yaml_file)
+        logger.info(f"Function information is downloaded to: {yaml_file}")
+    except Exception as e:
+        print(e)
+
+
+def func_set_nnabla_version_decorate(nnp, nnp_version):
+    import re
+
+    pattern = re.compile(r'(?<!^)(?=[A-Z])')
+
+    def convert_from_camel_to_snake(name):
+        '''Get function name from camel to snake
+        '''
+        name = pattern.sub('_', name).lower()
+        return name
+
+    if nnp_version is None:
+        return nnp
+
+    network_name = nnp.protobuf.executor[0].network_name
+    exec_network = None
+    for n in nnp.protobuf.network:
+        if n.name == network_name:
+            exec_network = n
+            for f in n.function:
+                no_param = False
+                try:
+                    # Some snake name of function type does not follow the conversion rule
+                    # between camel and snake.
+                    eval(f"f.{convert_from_camel_to_snake(f.type) +'_param'}")
+                    f_param_name = f"f.{convert_from_camel_to_snake(f.type) +'_param'}"
+                    param_name = f"{convert_from_camel_to_snake(f.type) +'_param'}"
+                except AttributeError:
+                    try:
+                        eval(f"f.{f.type.lower() + '_param'}")
+                        f_param_name = f"f.{f.type.lower() + '_param'}"
+                        param_name = f"{f.type.lower() + '_param'}"
+                    except AttributeError:
+                        no_param = True
+
+                old_info = _nnabla_func_info_old[f.type]
+                cur_info = _nnabla_func_info_cur[f.type]
+
+                if no_param:
+                    if 'arguments' in old_info:
+                        raise ValueError(
+                            f"{f} is not supported for arguments imcompatible change.")
+                    else:
+                        continue
+
+                for arg_name, arg in cur_info['arguments'].items():
+                    if 'arguments' not in old_info:
+                        def_arg = cur_info['arguments'][arg_name]['default']
+                        arg = str(
+                            eval(f"{f_param_name}.{arg_name}"))
+                        if def_arg != arg:
+                            raise ValueError(
+                                f"{f} only support default argument: {arg_name}={def_arg}, but actual {arg_name}={arg}!")
+                        exec(f"f.ClearField('{param_name}')")
+                    elif arg_name not in old_info['arguments']:
+                        exec(
+                            f"{f_param_name}.ClearField('{arg_name}')")
+
+                if 'arguments' in old_info:
+                    for arg_name, arg in old_info['arguments'].items():
+                        if 'arguments' not in cur_info:
+                            raise ValueError(
+                                f"{f} is not supported for arguments imcompatible change.")
+                        if arg_name not in cur_info['arguments']:
+                            # default MUST exist
+                            if isinstance(arg, dict):
+                                assert 'default' in arg, "We assume 'default' value is set for this argument."
+                                exec(
+                                    f"{f_param_name} + '.' + {arg_name} = {arg['default']}")
+
+    if exec_network is not None:
+        proto = nnabla_pb2.NNablaProtoBuf()
+        network = proto.network.add()
+        network.CopyFrom(exec_network)
+        executor = proto.executor.add()
+        executor.CopyFrom(nnp.protobuf.executor[0])
+        for p in nnp.protobuf.parameter:
+            param = proto.parameter.add()
+            param.CopyFrom(p)
+        nnp.protobuf = proto
+
+    return nnp
+
+
+def extract_version_from_filename(yaml_file):
+    basename = os.path.basename(yaml_file)
+    basename = os.path.splitext(basename)[0]
+    splits = basename.split('_')
+    if len(splits) < 3:
+        return None
+    return splits[2]
+
+
+def load_yaml_from_cache_dir():
+    yaml_files = os.path.join(expanduser(
+        "~"), ".nnabla", "function_info_*.yaml")
+    func_yaml_files = glob.glob(yaml_files)
+    for yaml_file in func_yaml_files:
+        version = extract_version_from_filename(yaml_file)
+        if version is None:
+            continue
+        _nnabla_func_info_versions[version] = load_function_info(yaml_file)
 
 
 def func_set_init(func):
@@ -37,6 +188,7 @@ def func_set_init(func):
                 _nnabla_func_info = data['nnabla_func_info']
                 _onnx_func_info = data['onnx_func_info']
                 _api_level_info = data['api_level_info']
+            load_yaml_from_cache_dir()
         return func(*args)
     return __ensure_load_pickle
 
@@ -288,12 +440,104 @@ def func_set_import_onnx_config(config):
 
 
 @func_set_init
-def func_set_nnabla_support():
-    func_list = []
-    for cat, cat_info in _nnabla_func_info.items():
-        for func, func_info in cat_info.items():
-            func_list.append(func)
-    return set(func_list)
+def func_set_get_from_repo(nnp_version):
+    nnabla_func_info = _nnabla_func_info_versions.get(nnp_version, None)
+    if nnabla_func_info is None:
+        download_func_info_yaml(nnp_version)
+        load_yaml_from_cache_dir()
+        nnabla_func_info = _nnabla_func_info_versions.get(nnp_version, None)
+
+    if nnabla_func_info is None:
+        raise ValueError(f"nnabla v{nnp_version} does not exist?")
+
+    global _nnabla_func_info_old
+    _nnabla_func_info_old = nnabla_func_info
+
+    return set(list(nnabla_func_info.keys()))
+
+
+def _func_set_nnabla_unsupport():
+    """
+    This function performs compatibility check
+    """
+    cur_set = func_set_nnabla_support()
+    unsupported = set()
+    for f in cur_set:
+        cur_info = _nnabla_func_info_cur[f]
+        if f not in _nnabla_func_info_old:
+            unsupported.add(f)
+            continue
+
+        old_info = _nnabla_func_info_old[f]
+
+        # check input compatibility
+        for inp_name, inp_dict in cur_info['inputs'].items():
+            if inp_name not in old_info['inputs']:
+                unsupported.add(f)
+                break
+            old_inp_dict = old_info['inputs'][inp_name]
+            for attr_name, attr in inp_dict.items():
+                if attr_name == 'doc':
+                    continue
+                # Loose the check for `optional` change
+                # if attr_name not in old_inp_dict:
+                #     unsupported.add(f)
+                #     break
+                if attr_name in old_inp_dict:
+                    if old_inp_dict[attr_name] != attr:
+                        unsupported.add(f)
+                        break
+            if f in unsupported:
+                break
+
+        # check arguments compability
+        # if argment in old, not in new, set to old default value
+        #     if no default value, add to unsupported set
+        # if argment in new, not in old, remove it
+        if f not in unsupported:
+            if 'arguments' in cur_info and 'arguments' in old_info:
+                for arg_name, arg_dict in old_info['arguments'].items():
+                    if arg_name not in cur_info['arguments']:
+                        if 'default' not in arg_dict:
+                            unsupported.add(f)
+                            break
+
+        if f not in unsupported:
+            if len(cur_info['outputs']) != len(old_info['outputs']):
+                unsupported.add(f)
+    return unsupported
+
+
+@func_set_init
+def func_set_nnabla_support(version_spec=None):
+    if version_spec is None:
+        func_list = []
+        for cat, cat_info in _nnabla_func_info.items():
+            for func, func_info in cat_info.items():
+                func_list.append(func)
+        return set(func_list)
+    else:
+        nnp, nnp_version = version_spec
+        # load func_info to _nnabla_func_info_cur
+        for cat, cat_info in _nnabla_func_info.items():
+            for func, func_info in cat_info.items():
+                _nnabla_func_info_cur[func] = func_info
+        old_set = func_set_get_from_repo(nnp_version)
+        unsupported = _func_set_nnabla_unsupport()
+        # logger.info(f"The following functions are not supported in version: {nnp_version}:")
+        # for f in unsupported:
+        #     logger.info(f"{f}")
+        old_set -= unsupported
+        nnp_set = func_set_import_nnp(nnp)
+        if nnp_set & old_set != nnp_set:
+            unsupported_functions = nnp_set - old_set
+            logger.error(
+                f"The following functions are not supported in nnabla v{nnp_version} but appear in .nnp file.")
+            for f in unsupported_functions:
+                logger.error(f"{f}")
+            raise ValueError(
+                f"nnp file contains unsupported functions by nnabla version: {nnp_version}.")
+        return old_set
 
 
 @func_set_init
