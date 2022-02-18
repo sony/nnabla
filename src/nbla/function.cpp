@@ -34,21 +34,19 @@ void Function::setup(const Variables &inputs, const Variables &outputs) {
     fall_back_func_->setup(inputs, outputs);
     return;
   }
-  // Check if specified array_class by context matches to allowed array
-  // classes.
-  int array_class_index =
-      0; // Default array is 0-th array_class in allowed_array_classes().
-  for (vector<string>::size_type i = 0;
-       i < this->allowed_array_classes().size(); ++i) {
-    if (ctx_.array_class == this->allowed_array_classes()[i]) {
-      array_class_index = i;
-    }
-  }
-  ctx_.set_array_class(this->allowed_array_classes()[array_class_index]);
 
-  // Check number of inputs and outputs
-  auto &&in_types = this->in_types();
-  auto &&out_types = this->out_types();
+  //
+  // Check if the context array_class matches any of the functions allowed
+  // array classes. If not, choose the 0-th array class as default.
+  //
+  auto i = allowed_array_classes().size();
+  while ((i > 0) && (ctx_.array_class != allowed_array_classes().at(--i)))
+    ;
+  ctx_.set_array_class(allowed_array_classes().at(i));
+
+  //
+  // Check the number of inputs and outputs is at least the minimum required.
+  //
   auto min_inputs = static_cast<Variables::size_type>(this->min_inputs());
   auto min_outputs = static_cast<Variables::size_type>(this->min_outputs());
   NBLA_CHECK(min_inputs <= inputs.size(), error_code::value,
@@ -58,7 +56,6 @@ void Function::setup(const Variables &inputs, const Variables &outputs) {
              "%s needs at least %d outputs (given %d). ", this->name().c_str(),
              this->min_outputs(), outputs.size());
 
-  // Call setup implementation
   this->setup_impl(inputs, outputs);
 
   if (fall_back_func_) {
@@ -187,6 +184,39 @@ void Function::recompute(const Variables &inputs, const Variables &outputs) {
   }
   this->recompute_impl(inputs, outputs);
   called_setup_recompute_ = false;
+}
+
+//
+// Set a new function input mask where true values indicate that the graph
+// preceeding the corresponding function input shall be evaluated by the
+// graph engine, and false values disable that graph leading to the input.
+//
+// Functions that handle inactive inputs must have cg_input_mask set to the
+// same number of truth values as their inputs count. For all other functions
+// the cg_input_mask vector will be empty.
+//
+void Function::set_active_input_mask(const vector<bool> &mask) {
+  NBLA_CHECK(cg_input_mask.size() > 0, error_code::value,
+             "%s function does not allow to deactivate inputs.",
+             this->name().c_str());
+  NBLA_CHECK(mask.size() == cg_input_mask.size(), error_code::value,
+             "Mask size must match the number of %s function inputs.",
+             this->name().c_str());
+  cg_input_mask = mask;
+}
+
+//
+// Query the input mask value for the i-th output. This is used by the graph
+// engine to determine if the graph leading to this input must be considered.
+//
+// The cg_input_mask vector is either empty (for functions not handling
+// inactive inputs) or the same size as the number of inputs.
+//
+bool Function::is_active_input(int i) const {
+  if (i < this->cg_input_mask.size()) {
+    return cg_input_mask[i];
+  }
+  return true;
 }
 
 Context Function::context() const { return ctx_; }
