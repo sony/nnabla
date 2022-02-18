@@ -1,5 +1,6 @@
 #!/bin/bash
-# Copyright (c) 2021 Sony Corporation. All Rights Reserved.
+# Copyright 2021 Sony Corporation.
+# Copyright 2021,2022 Sony Group Corporation.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,4 +16,8 @@
 
 set -e
 
-$@
+if [ $# -eq 0 ]; then
+    exec "/bin/bash"
+else
+    exec "$@"
+fi

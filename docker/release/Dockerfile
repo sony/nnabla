@@ -1,5 +1,5 @@
 # Copyright 2018,2019,2020,2021 Sony Corporation.
-# Copyright 2021 Sony Group Corporation.
+# Copyright 2021,2022 Sony Group Corporation.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#Flatbuffer compiler
+# Flatbuffer compiler
 FROM ubuntu:18.04 as flatc
 
 RUN apt-get update \
@@ -80,8 +80,8 @@ COPY --from=flatc /usr/local/bin/flatc /usr/local/bin/flatc
 ARG NNABLA_VER
 RUN pip install ${PIP_INS_OPTS} nnabla==${NNABLA_VER} nnabla_converter==${NNABLA_VER}
 
-ARG WORK_PATH_ARG="/home/nnabla"
-ENV WORK_PATH_ENV=${WORK_PATH_ARG}
-COPY .entrypoint.sh ${WORK_PATH_ARG}/.entrypoint.sh
-RUN chmod +x ${WORK_PATH_ARG}/.entrypoint.sh
-ENTRYPOINT ["/bin/bash", "-c", "${WORK_PATH_ENV}/.entrypoint.sh \"${@}\"", "--"]
+# Entrypoint
+COPY .entrypoint.sh /opt/.entrypoint.sh
+RUN chmod +x /opt/.entrypoint.sh
+
+ENTRYPOINT ["/bin/bash", "-c", "/opt/.entrypoint.sh \"${@}\"", "--"]
