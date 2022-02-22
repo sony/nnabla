@@ -26,6 +26,7 @@ _exclude_dirs = ['.git', '.egg', 'cache', '.vscode', 'external',
 _exclude_files = [".gitignore", "LICENSE", "NOTICE", ".DS_Store"]
 _date_extract_regex = re.compile('(\\d{4}-\\d{2}-\\d{2})')
 _shebang = re.compile('#!.+')
+_exclude_regex = re.compile('update copyright')
 
 
 def execute_command(command):
@@ -37,9 +38,15 @@ def retrieve_commit_dates(filepath):
     parent = str(filepath.parent)
     os.chdir(parent)
     result = execute_command(
-        ['git', 'log', '--format="format:%ci"', '--reverse', filepath.name])
+        ['git', 'log', '--format="%ci,%s"', '--reverse', filepath.name])
     os.chdir(current_dir)
-    dates = _date_extract_regex.findall(result)
+    excluded = ""
+    for line in result.split('\n'):
+        if _exclude_regex.search(line):
+            continue
+        else:
+            excluded += line
+    dates = _date_extract_regex.findall(excluded)
     return dates
 
 
@@ -212,12 +219,14 @@ def list_up_files(root_dir, checkers):
 def main(args):
     types = {
         "script": (
-            [".py", ".cfg", ".ini", ".sh", ".mk",
-                ".cmake", "CMakeLists.txt", "Dockerfile"],
+            [".py", ".cfg", ".ini", ".sh", ".mk", ".pyx",
+                ".cmake", "CMakeLists.txt", "Dockerfile",
+             ".pxd"],
             "#"
         ),
         "c": (
-            [".c", ".cpp", ".h", ".hpp"],
+            [".c", ".cpp", ".h", ".hpp", ".cu", ".cuh",
+             ".proto"],
             "//"
         ),
         "bat": (

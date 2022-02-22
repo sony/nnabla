@@ -1,7 +1,8 @@
 License
 =======
 
-Copyright (c) 2017 Sony Corporation. All rights reserved.
+Copyright 2017 Sony Corporation.
+Copyright 2021 Sony Group Corporation.
 
 
 Apache License
