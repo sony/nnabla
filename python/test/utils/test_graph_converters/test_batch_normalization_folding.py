@@ -53,9 +53,9 @@ def test_batch_normalization_folding(ctx, func_name, seed, test, w_bias,
                                      channel_last, graph_ref, graph_act, opposite, dims):
     from .graph_converter_test_utils import structure_tester, value_tester
 
-    if channel_last == True and not func_name.endswith('Cudnn'):
+    if (channel_last == True or dims != 2) and not func_name.endswith('Cudnn'):
         pytest.skip(
-            'ChannelLast conversion is only supported in cuDNN context.')
+            'ChannelLast conversion and 1D,3D Conv/Deconv conversion are only supported in cuDNN context.')
 
     with nn.context_scope(ctx):
         # Random number
