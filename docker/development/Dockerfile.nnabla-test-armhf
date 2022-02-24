@@ -96,7 +96,7 @@ RUN mkdir /tmp/deps \
 RUN python3 -m pip install ${PIP_INS_OPTS} --upgrade pip
 RUN echo "[global]" >/etc/pip.conf
 RUN echo "extra-index-url=https://www.piwheels.org/simple" >> /etc/pip.conf
-RUN python3 -m pip install ${PIP_INS_OPTS} --no-cache-dir numpy
+RUN python3 -m pip install ${PIP_INS_OPTS} --no-cache-dir numpy==1.21.4
 RUN python3 -m pip install ${PIP_INS_OPTS} --no-cache-dir scipy\<1.4
 RUN python3 -m pip install ${PIP_INS_OPTS} --no-cache-dir \
     autopep8 \
