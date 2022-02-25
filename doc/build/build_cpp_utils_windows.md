@@ -16,7 +16,7 @@
 
 
 ```bat
-    choco install -y python3 --version=3.6.8
+    choco install -y python3 --version=3.7.6
 ```
 
 ## Build
