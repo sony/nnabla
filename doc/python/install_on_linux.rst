@@ -12,7 +12,7 @@ Prerequisites
 This installation instruction describes how to install NNabla using pip
 on almost any Linux 64-bit systems.
 
-The supported Python versions for provided binary packages are 3.5(not recommended), 3.6 and 3.7. It is recommended to use `Miniconda <https://conda.io/miniconda.html>`_ as a Python distribution. The following is a simple procedure to install Miniconda Python.
+The supported Python versions for provided binary packages are 3.7, 3.8, 3.9. It is recommended to use `Miniconda <https://conda.io/miniconda.html>`_ as a Python distribution. The following is a simple procedure to install Miniconda Python.
 
 .. code-block:: shell
 
@@ -24,7 +24,7 @@ The supported Python versions for provided binary packages are 3.5(not recommend
     # Restart your bash or source ~/.bashrc
 
     # Switch the default Python version
-    conda install -y python={version number e.g. 3.6}
+    conda install -y python={version number e.g. 3.7}
 
 Installation
 ------------

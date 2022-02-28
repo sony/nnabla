@@ -35,12 +35,12 @@ msgstr "このインストールの手順では、ほとんどの Linux 64-bit �
 
 #: ../../python/install_on_linux.rst:15
 msgid ""
-"The supported Python versions for provided binary packages are 3.5(not "
-"recommended), 3.6 and 3.7. It is recommended to use `Miniconda "
+"The supported Python versions for provided binary packages are 3.7,"
+" 3.8 and 3.9. It is recommended to use `Miniconda "
 "<https://conda.io/miniconda.html>`_ as a Python distribution. The "
 "following is a simple procedure to install Miniconda Python."
 msgstr ""
-"提供するバイナリパッケージをサポートしている Python のバージョンは 3.5 ( 推奨できません )、3.6、3.7 です。Python "
+"提供するバイナリパッケージをサポートしている Python のバージョンは 3.7 、3.8、3.9 です。Python "
 "のディストリビューションとして `Miniconda <https://conda.io/miniconda.html>`_ "
 "を使うことを推奨します。Miniconda の Python をインストールする簡単な手順は、次の通りです。"
 
@@ -56,7 +56,7 @@ msgid ""
 "# Restart your bash or source ~/.bashrc\n"
 "\n"
 "# Switch the default Python version\n"
-"conda install -y python={version number e.g. 3.6}"
+"conda install -y python={version number e.g. 3.7}"
 msgstr ""
 
 #: ../../python/install_on_linux.rst:30

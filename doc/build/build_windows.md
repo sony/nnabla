@@ -32,7 +32,7 @@ You can build windows binary with following command.
     build-tools\msvc\build_cpplib.bat
     build-tools\msvc\build_wheel.bat PYTHON_VERSION
 ```
-The python version we tested is 3.6, 3.7 and 3.8.
+The python version we tested is 3.7, 3.8 and 3.9.
 
 Then you can run test with following.
 ```bat

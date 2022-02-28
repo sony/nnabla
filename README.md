@@ -29,7 +29,6 @@ Above command is for version 11.0 CUDA Toolkit.
 
 for other versions:  
 `pip install nnabla-ext-cuda102` for CUDA version 10.2.  
-`pip install nnabla-ext-cuda100` for CUDA version 10.0.  
   
 CUDA ver. 10.1, ver. 9.x, ver. 8.x are not supported now.  
 
