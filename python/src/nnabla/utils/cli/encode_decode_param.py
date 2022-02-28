@@ -16,6 +16,7 @@
 from __future__ import print_function
 
 import os
+import urllib.parse
 
 import nnabla as nn
 import numpy as np
@@ -44,10 +45,7 @@ def load_param_in_txt(name, filepath):
 # subcommands
 # ===========
 def decode_param_command(args, **kwargs):
-    try:
-        os.makedirs(args.outdir)
-    except OSError:
-        pass  # python2 does not support exists_ok arg
+    os.makedirs(args.outdir, exist_ok=True)
 
     # Load parameter
     logger.log(99, 'Loading parameters...')
@@ -57,13 +55,9 @@ def decode_param_command(args, **kwargs):
     params = get_parameters(grad_only=False)
     for key, variable in params.items():
         logger.log(99, key)
-        file_path = args.outdir + os.sep + key.replace('/', '~') + '.txt'
-        dir = os.path.dirname(file_path)
-        try:
-            os.makedirs(dir)
-        except:
-            pass  # python2 does not support exists_ok arg
-
+        file_path = os.path.join(args.outdir,
+                                 urllib.parse.quote(key, safe='/ ').replace('/', '~') + '.txt')
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
         save_param_in_txt(variable.d, file_path)
 
     logger.log(99, 'Decode Parameter Completed.')
@@ -76,10 +70,10 @@ def encode_param_command(args, **kwargs):
         args.indir) if os.path.isfile(os.path.join(args.indir, f))]
     logger.log(99, 'Loading parameters...')
     for file_path in in_files:
-        logger.log(99, file_path)
-        load_param_in_txt(os.path.splitext(file_path)[0].replace(
-            '~', '/'), os.path.join(args.indir, file_path))
-
+        key = urllib.parse.unquote(
+            os.path.splitext(file_path)[0].replace('~', '/'))
+        logger.log(99, key)
+        load_param_in_txt(key, os.path.join(args.indir, file_path))
     # Save parameter
     logger.log(99, 'Saving parameters...')
     save_parameters(args.param)
