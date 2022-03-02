@@ -53,6 +53,7 @@ def test_reduce(seed, dst, inplace, division, comm_nccl_opts):
     # Variables
     x_list = []
     x_data_list = []
+    x_d_list = []
     num_layers = 20
     rng = np.random.RandomState(seed)
     for l in range(num_layers):
@@ -60,6 +61,7 @@ def test_reduce(seed, dst, inplace, division, comm_nccl_opts):
         x_data_list.append(x_data)
         x = nn.Variable(x_data.shape)
         x.d = x_data * (device_id + 1)
+        x_d_list.append(x.d.copy())
         x_list.append(x)
 
     # Reduce
@@ -72,4 +74,8 @@ def test_reduce(seed, dst, inplace, division, comm_nccl_opts):
 
         # Check
         for x, ref in zip(x_list, refs):
+            assert_allclose(x.d, ref, rtol=1e-3, atol=1e-6)
+
+    else:
+        for x, ref in zip(x_list, x_d_list):
             assert_allclose(x.d, ref, rtol=1e-3, atol=1e-6)
