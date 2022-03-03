@@ -33,7 +33,7 @@ SET protobuf_protoc_executable=%protobuf_bin_folder%\protoc.exe
 
 IF EXIST %protobuf_library% (
    ECHO libprotobuf already exists. Skipping...
-   EXIT /b
+   EXIT /b 0
 )
 
 IF NOT EXIST %protobuf_folder% (
@@ -49,6 +49,7 @@ CD build-folder
 cmake.exe -G "%generate_target%" -Dprotobuf_MSVC_STATIC_RUNTIME=OFF -Dprotobuf_BUILD_TESTS=OFF ..\cmake || GOTO :error
 cmake.exe --build . --config %build_type% || GOTO :error
 
+exit /b
 
 :error
 ECHO failed with error code %errorlevel%.

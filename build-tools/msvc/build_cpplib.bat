@@ -1,5 +1,5 @@
-@ECHO OFF
 REM Copyright 2018,2019,2020,2021 Sony Corporation.
+REM Copyright 2021 Sony Group Corporation.
 REM
 REM Licensed under the Apache License, Version 2.0 (the "License");
 REM you may not use this file except in compliance with the License.
@@ -19,11 +19,11 @@ REM Usage:
 REM   build_cpplib.bat [VISUAL_STUDIO_ EDITION]
 REM     (optional) VISUAL_STUDIO_ EDITION: 2015 or 2019(experimental)
 REM
-
+@ECHO ON
 SETLOCAL
 
 REM Environment
-CALL %~dp0tools\env.bat 3.6 %1 || GOTO :error
+CALL %~dp0tools\env.bat 3.8 %1 || GOTO :error
 SET third_party_folder=%nnabla_root%\third_party
 
 REM Build third party libraries.
@@ -35,10 +35,16 @@ REM Get pre-built lz4 and zstd libraries
 CALL %~dp0tools\get_liblz4.bat || GOTO :error
 CALL %~dp0tools\get_libzstd.bat || GOTO :error
 
+@ECHO ON
+
 REM Build CPP library.
 ECHO "--- CMake options for C++ build ---"
 set nnabla_debug_options=
 IF [%build_type%] == [Debug] SET nnabla_debug_options=-DCMAKE_CXX_FLAGS="/bigobj"
+
+ECHO -----------------------------------------
+ECHO nnabla_build_folder=%nnabla_build_folder%
+ECHO -----------------------------------------
 
 IF NOT EXIST %nnabla_build_folder% MD %nnabla_build_folder%
 IF NOT EXIST %nnabla_build_folder%\bin MD %nnabla_build_folder%\bin
