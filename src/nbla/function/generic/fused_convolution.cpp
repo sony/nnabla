@@ -1,5 +1,5 @@
 // Copyright 2020,2021 Sony Corporation.
-// Copyright 2021 Sony Group Corporation.
+// Copyright 2021,2022 Sony Group Corporation.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ namespace nbla {
 NBLA_REGISTER_FUNCTION_SOURCE(FusedConvolution, int, const vector<int> &,
                               const vector<int> &, const vector<int> &, int,
                               bool, float, float, bool, const string &,
-                              const vector<float> &);
+                              const vector<float> &, const string &, float);
 
 template <typename T>
 void FusedConvolution<T>::get_optional_input_pointers(const Variables &inputs) {
@@ -138,13 +138,41 @@ void FusedConvolution<T>::setup_impl(const Variables &inputs,
 
   this->get_optional_input_pointers(inputs);
 
+  auto cg_x = create_cgvariable_from_variable(input_variables_[X].second, true);
+  input_cg_variables_[X] = cg_x;
+  auto last_out = cg_x;
+
+  // ----------------------------------------------------------------
+  // Pad
+  // ----------------------------------------------------------------
+  size_t spatial_dims = input_variables_[X].second->ndim() - base_axis_ - 1;
+  NBLA_CHECK(pad_.size() == spatial_dims || pad_.size() == 2 * spatial_dims,
+             error_code::value, "pad size mismatch. pad size (%d) must be "
+                                "spatial dims (%d) or 2 * spatial dims (%d).",
+             pad_.size(), spatial_dims, 2 * spatial_dims);
+  const auto skip_pad_func = pad_.size() == spatial_dims &&
+                             pad_mode_ == "constant" && constant_value_ == 0.0f;
+  const auto conv_pad = skip_pad_func ? pad_ : vector<int>(spatial_dims, 0);
+  if (!skip_pad_func) {
+    vector<int> pad_width;
+    if (pad_.size() == spatial_dims) {
+      pad_width.reserve(2 * spatial_dims);
+      for (const auto &pad : pad_) {
+        pad_width.push_back(pad);
+        pad_width.push_back(pad);
+      }
+    } else { // if (pad_.size() == 2 * spatial_dims)
+      pad_width = pad_;
+    }
+    last_out = functions::pad(ctx_, last_out, pad_width, pad_mode_,
+                              constant_value_)[0];
+  }
+
   // ----------------------------------------------------------------
   // Convolution
   // ----------------------------------------------------------------
-  auto cg_x = create_cgvariable_from_variable(input_variables_[X].second, true);
   auto cg_weight =
       create_cgvariable_from_variable(input_variables_[WEIGHT].second, true);
-  input_cg_variables_[X] = cg_x;
   input_cg_variables_[WEIGHT] = cg_weight;
   CgVariablePtr cg_bias;
   if (input_variables_[BIAS].second) {
@@ -152,9 +180,9 @@ void FusedConvolution<T>::setup_impl(const Variables &inputs,
         create_cgvariable_from_variable(input_variables_[BIAS].second, true);
     input_cg_variables_[BIAS] = cg_bias;
   }
-  auto last_out =
-      functions::convolution(ctx_, cg_x, cg_weight, cg_bias, base_axis_, pad_,
-                             stride_, dilation_, group_, channel_last_)[0];
+  last_out = functions::convolution(ctx_, last_out, cg_weight, cg_bias,
+                                    base_axis_, conv_pad, stride_, dilation_,
+                                    group_, channel_last_)[0];
 
   // ----------------------------------------------------------------
   // BatchNormalization

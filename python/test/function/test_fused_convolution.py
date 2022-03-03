@@ -16,11 +16,10 @@ import pytest
 import numpy as np
 import nnabla as nn
 import nnabla.functions as F
+import nnabla.ext_utils as ext_utils
 from nbla_test_utils import list_context
-from nnabla.testing import assert_allclose
 
 ctxs = list_context('FusedConvolution')
-cpu_context = nn.Context(["cpu:float"])
 
 
 class RefFusedConvolutionGraph(object):
@@ -28,7 +27,7 @@ class RefFusedConvolutionGraph(object):
     def __init__(self, x, weight, bias, beta, gamma, rmean, rvar, z,
                  base_axis, pad, stride, dilation, group, channel_last,
                  decay_rate, eps, batch_stat,
-                 nonlinearity, nonlinearity_args):
+                 nonlinearity, nonlinearity_args, pad_mode, constant_value):
 
         from collections import OrderedDict
         inputs = OrderedDict()
@@ -57,8 +56,17 @@ class RefFusedConvolutionGraph(object):
         if z is not None:
             zvar = nn.Variable.from_numpy_array(z)
             inputs['z'] = zvar
-        h = F.convolution(xvar, weightvar, biasvar, base_axis,
-                          pad, stride, dilation, group, channel_last)
+
+        spatial_dims = xvar.ndim - (base_axis + 1)
+        assert(len(pad) == spatial_dims or len(pad) == 2 * spatial_dims)
+        if len(pad) == spatial_dims:
+            pad_width = tuple(p for _ in range(2) for p in pad)
+        else:  # if len(pad) == 2 * spatial_dims:
+            pad_width = pad
+        h = F.pad(xvar, pad_width, pad_mode, constant_value)
+        conv_pad = (0,) * spatial_dims
+        h = F.convolution(h, weightvar, biasvar, base_axis,
+                          conv_pad, stride, dilation, group, channel_last)
         if beta is not None:
             h = F.batch_normalization(h, betavar, gammavar, rmeanvar, rvarvar,
                                       [h.ndim - 1 if channel_last else base_axis],
@@ -101,24 +109,26 @@ def ref_activation(x, nonlinearity, nonlinearity_args):
     raise ValueError("unknown nonlinearity type {}".format(nonlinearity))
 
 
-def ref_fused_convolution(x, weight, bias, beta, gamma, rmean, rvar, z,
+def ref_fused_convolution(ctx, x, weight, bias, beta, gamma, rmean, rvar, z,
                           base_axis, pad, stride, dilation, group, channel_last,
                           decay_rate, eps, batch_stat,
-                          nonlinearity, nonlinearity_args):
-
-    with nn.context_scope(cpu_context):
-        graph = RefFusedConvolutionGraph(**locals())
+                          nonlinearity, nonlinearity_args, pad_mode, constant_value):
+    args = locals().copy()
+    del args['ctx']
+    with nn.context_scope(ctx):
+        graph = RefFusedConvolutionGraph(**args)
     return graph.get_output()
 
 
-def ref_grad_fused_convolution(x, weight, bias, beta, gamma, rmean, rvar, z, dy,
+def ref_grad_fused_convolution(ctx, x, weight, bias, beta, gamma, rmean, rvar, z, dy,
                                base_axis, pad, stride, dilation, group, channel_last,
                                decay_rate, eps, batch_stat,
-                               nonlinearity, nonlinearity_args, need_grad_flags):
+                               nonlinearity, nonlinearity_args, pad_mode, constant_value, need_grad_flags):
     args = locals().copy()
+    del args['ctx']
     del args['dy']
     del args['need_grad_flags']
-    with nn.context_scope(cpu_context):
+    with nn.context_scope(ctx):
         graph = RefFusedConvolutionGraph(**args)
     return graph.get_grads(dy, need_grad_flags=need_grad_flags)
 
@@ -127,8 +137,10 @@ def create_inputs(rng, kernel, pad, stride, dilation, group, with_bias, bn, add2
     from refs import get_conv_out_size
     bs = 2
     hw = (5, 5)
-    ohw = tuple(get_conv_out_size(s, kernel, pad, stride, dilation)
-                for s in hw)
+    total_pad = 2 * pad[0] if len(pad) == 1 else pad[0] + pad[1]
+    pad_hw = tuple(s + total_pad for s in hw)
+    ohw = tuple(get_conv_out_size(s, kernel, 0, stride, dilation)
+                for s in pad_hw)
     ichannels = 4
     ochannels = 6
     kernels = (kernel, kernel)
@@ -170,10 +182,27 @@ def create_inputs(rng, kernel, pad, stride, dilation, group, with_bias, bn, add2
     return x, weight, bias, beta, gamma, rmean, rvar, z
 
 
-@pytest.mark.parametrize("seed", [1223, 726])
+def run_test(func_name, ctx, ref_ctx, rng, inputs, func_args, backward, atol_b, atol_accum):
+
+    from nbla_test_utils import function_tester
+
+    def ref_fused_convolution_float(*args):
+        return ref_fused_convolution(ref_ctx, *args)
+
+    def ref_grad_fused_convolution_float(*args, **kwargs):
+        return ref_grad_fused_convolution(ref_ctx, *args, **kwargs)
+
+    function_tester(rng, F.fused_convolution, ref_fused_convolution_float,
+                    inputs, ref_grad=ref_grad_fused_convolution_float,
+                    func_args=func_args, backward=backward, ctx=ctx,
+                    func_name=func_name, atol_f=0, atol_b=atol_b,
+                    atol_accum=atol_accum, disable_half_test=True)
+
+
+@pytest.mark.parametrize("seed", [313, 314])
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("kernel", [3])
-@pytest.mark.parametrize("pad", [1])
+@pytest.mark.parametrize("pad", [(1, ), (2, 1)])
 @pytest.mark.parametrize("stride", [2])
 @pytest.mark.parametrize("dilation", [1])
 @pytest.mark.parametrize("group", [2])
@@ -196,13 +225,19 @@ def create_inputs(rng, kernel, pad, stride, dilation, group, with_bias, bn, add2
     ('leaky_relu', [0.2]),
     ('elu', [0.1]),
     ('elu', [0.2]),
-    ('relu6', [])])
-def test_fused_convolution(seed, kernel, pad, stride, dilation, group, channel_last, decay_rate, eps, nonlinearity, nonlinearity_args, with_bias, bn, add2, ctx, func_name):
+    ('relu6', [])
+])
+@pytest.mark.parametrize("pad_mode, constant_value", [
+    ('constant', 0.0),
+    ('constant', 1.0),
+    ('reflect', 0.0),
+    ('repeat', 0.0)
+])
+def test_fused_convolution(seed, kernel, pad, stride, dilation, group, channel_last, decay_rate, eps, nonlinearity, nonlinearity_args, pad_mode, constant_value, with_bias, bn, add2, ctx, func_name):
 
-    from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
     inputs = list(create_inputs(rng, kernel, pad, stride,
-                                dilation, group, with_bias, bn, add2, channel_last))
+                  dilation, group, with_bias, bn, add2, channel_last))
     base_axis = 1
     batch_stat = True if bn is None else bn
     bn_backward = [None, None, None, None]
@@ -210,11 +245,25 @@ def test_fused_convolution(seed, kernel, pad, stride, dilation, group, channel_l
         bn_backward = [True, True, False, False]
     elif bn is False:
         bn_backward = [True, True, True, True]
-    function_tester(rng, F.fused_convolution, ref_fused_convolution,
-                    inputs,
-                    ref_grad=ref_grad_fused_convolution,
-                    func_args=[base_axis, (pad, pad), (stride, stride), (dilation, dilation), group, channel_last,
-                               decay_rate, eps, batch_stat, nonlinearity, nonlinearity_args],
-                    backward=[True, True, True if with_bias else None] +
-                    bn_backward + [True if add2 else None],
-                    ctx=ctx, func_name=func_name, dstep=1e-2, atol_b=1e-2)
+
+    func_args = [base_axis, (*pad, *pad), (stride, stride), (dilation, dilation),
+                 group, channel_last, decay_rate, eps, batch_stat, nonlinearity,
+                 nonlinearity_args, pad_mode, constant_value]
+    backward = [True, True, True if with_bias else None] + \
+        bn_backward + [True if add2 else None]
+
+    # Run float test
+    cpu_ctx_float = nn.Context(["cpu:float"])
+    run_test(func_name, ctx, cpu_ctx_float, rng, inputs,
+             func_args, backward, atol_b=1e-6, atol_accum=1e-6)
+
+    # Run half test
+    # Compare cpp half implementation with python reference.
+    cpu_ctx_half = nn.Context(["cpu:half"])
+    ext, dtype = ctx.backend[0].split(':')
+    assert dtype == 'float'
+    ctx_half = ext_utils.get_extension_context(ext, type_config='half')
+    ctx_half.device_id = ctx.device_id
+
+    run_test(func_name, ctx_half, cpu_ctx_half, rng, inputs,
+             func_args, backward, atol_b=5e-2, atol_accum=5e-2)
