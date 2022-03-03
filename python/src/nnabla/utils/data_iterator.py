@@ -22,6 +22,7 @@ Detailed design document is :doc:`/doc/designs/data_iterator`.
 
 import atexit
 import threading
+import queue
 
 import numpy
 import six
@@ -85,16 +86,16 @@ class DataIterator(object):
         self._variables = data_source.variables
         self._num_of_variables = len(data_source.variables)
         self._batch_size = batch_size
-        self._epoch = -1
 
         self._epoch_end_callbacks = list(epoch_end_callbacks)
         self._epoch_begin_callbacks = list(epoch_begin_callbacks)
 
         self._size = data_source.size
 
+        self._n_reset = 0
+        self._queue = queue.Queue()
         self._reset()
-        self._current_epoch = -1
-        self._current_data = None
+        self._current_epoch = 0
 
         self._use_thread = use_thread
         if self._use_thread:
@@ -183,33 +184,31 @@ class DataIterator(object):
         return self._batch_size
 
     def _reset(self):
-        self._callback_epoch_end()
-        self._epoch += 1
-        self._callback_epoch_begin()
         self._data_source.reset()
 
     def _next(self):
+        n_reset = 0
         data = [[] for x in self._variables]
 
         if self._data_source.position + self._batch_size > self._size:
             if self._stop_exhausted:
-                self._current_data = None
+                self._queue.put((None, 0))
                 return
 
         for b in range(self._batch_size):
             d = self._data_source.next()
             if d is None:
-                self._current_data = None
+                self._queue.put((None, 0))
                 return
 
             if self._data_source.position >= self._size and not self._stop_exhausted:
+                n_reset += 1
                 self._reset()
 
             for i, v in enumerate(self._variables):
                 data[i].append(d[i])
 
-        self._current_data = (self._epoch, tuple(
-            [numpy.array(x) for x in data]))
+        self._queue.put((tuple([numpy.array(x) for x in data]), n_reset))
 
     def next(self):
         '''next
@@ -223,28 +222,30 @@ class DataIterator(object):
         Returns:
             tuple: tuple of data for mini-batch in numpy.ndarray.
         '''
+        if not self._use_thread:
+            self._next()
+        data, n_reset = self._queue.get()
+        self._queue.task_done()
         if self._use_thread:
-            # Wait for finish previous thread.
             self._next_thread.join()
-
-            if self._current_data is None:
-                if self._stop_exhausted and self._data_source.position + self._batch_size >= self._size:
-                    raise StopIteration
-                logger.log(99, 'next() got None retrying.')
+        if data is None:
+            if self._stop_exhausted and self._data_source.position + self._batch_size >= self._size:
+                raise StopIteration
+            if self._use_thread:
+                logger.log(99, 'next() got None retrying...')
                 self._next_thread = threading.Thread(target=self._next)
                 self._next_thread.start()
+                data, n_reset = self._queue.get()
+                self._queue.task_done()
                 self._next_thread.join()
-
-            self._current_epoch, data = self._current_data
-            # Start next thread.
+        if self._use_thread:
             self._next_thread = threading.Thread(target=self._next)
             self._next_thread.start()
-        else:
-            self._next()
-            if self._current_data is None:
-                raise StopIteration
-            self._current_epoch, data = self._current_data
-
+        for _ in range(n_reset):
+            if self._current_epoch >= 0:
+                self._callback_epoch_end()
+            self._current_epoch += 1
+            self._callback_epoch_begin()
         return data
 
     def slice(self, rng, num_of_slices=None, slice_pos=None,
