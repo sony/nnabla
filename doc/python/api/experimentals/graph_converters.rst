@@ -38,3 +38,9 @@ Function Modifiers
 .. autoclass:: nnabla.experimental.graph_converters.IdentityModifier
 
 .. autoclass:: nnabla.experimental.graph_converters.NoGradModifier
+
+.. autoclass:: nnabla.experimental.graph_converters.PruningModifier
+
+    .. automethod:: __init__
+
+
