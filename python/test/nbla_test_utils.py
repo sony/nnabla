@@ -20,6 +20,7 @@ import nnabla as nn
 import nnabla.ext_utils as ext_utils
 import nnabla.functions as F
 import nnabla.utils.converter
+import nnabla.dtypes as dtypes
 from nnabla.testing import assert_allclose
 import numpy
 import numpy as np
@@ -506,6 +507,9 @@ def create_function_nnp(inputs, outputs, func_name, func_args, func_kwargs):
                             exec('param.{}.dim.extend(list(a))'.format(arg_name))
                     else:
                         exec('param.{}.extend(a)'.format(arg_name))
+                elif isinstance(a, type):
+                    exec('param.{} = {}'.format(
+                        arg_name, dtypes.np_dtpye_to_int[a]))
                 else:
                     if 'repeated' in arg['type']:
                         exec('param.{}.extend([a])'.format(arg_name))
