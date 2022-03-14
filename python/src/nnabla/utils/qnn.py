@@ -653,11 +653,11 @@ class QATConfig:
 
     #: Enable Batch Normalization Folding.
     #: Note that sometimes this can cause the training become unstable.
-    bn_folding = True
+    bn_folding = False
 
     #: Enable Batch Normalization Self-Folding.
     #: Note that sometimes this can cause the training become unstable.
-    bn_self_folding = True
+    bn_self_folding = False
 
     #: One of :obj:`nnabla.utils.qnn.MinMaxMinMaxRecorderCallback`,
     #: :obj:`nnabla.utils.qnn.AbsMaxRecorderCallback`,
@@ -713,8 +713,8 @@ class QATConfig:
 
 class QATTensorRTConfig(QATConfig):
     pow2 = QATConfig.RoundingMethod.ROUND
-    bn_folding = False
-    bn_self_folding = False
+    bn_folding = True
+    bn_self_folding = True
     record_layers = ["Convolution", "Deconvolution",
                      "Affine", "BatchMatmul", "ReLU"]
     record_position = QATConfig.RecorderPosition.BEFORE
