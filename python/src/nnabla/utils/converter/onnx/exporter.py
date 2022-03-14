@@ -448,6 +448,7 @@ class OnnxExporter:
             "LayerNormalization": partial(self.LayerNormalization, '6'),
             "InstanceNormalization": partial(self.InstanceNormalization, '6'),
             "WeightNormalization": partial(self.WeightNormalization, '6'),
+            "GroupNormalization": partial(self.GroupNormalization, '6'),
         }
 
         table_op_set_7 = {
@@ -3901,6 +3902,182 @@ class OnnxExporter:
             "Mul",
             [mul_out1, pow_out2],
             func.output
+        )
+        nl.append(n)
+
+        return nl
+
+    def GroupNormalization(self, opset, func):
+        def cycle_index(index, list_len):
+            mod = index % list_len
+            return mod if mod >= 0 else mod + list_len
+
+        nl = []
+
+        # set input
+        beta = None
+        gamma = None
+        if len(func.input) == 2:
+            if func.input[1] == 'gamma':
+                gamma = func.input[1]
+            elif func.input[1] == 'beta':
+                beta = func.input[1]
+        elif len(func.input) == 3:
+            beta = func.input[1]
+            gamma = func.input[2]
+
+        # set pp
+        pp = func.group_normalization_param
+        gn = pp.num_groups if hasattr(pp, 'num_groups') else 1
+        channel_axis = [pp.channel_axis] if hasattr(
+            pp, 'channel_axis') else [1]
+        batch_axis = [pp.batch_axis] if hasattr(pp, 'batch_axis') else [0]
+        eps = pp.eps if hasattr(pp, 'eps') else 1e-05
+        no_scale = pp.no_scale if hasattr(pp, 'no_scale') else False
+        no_bias = pp.no_bias if hasattr(pp, 'no_bias') else False
+
+        channel_axis = np.array(channel_axis).flatten()
+        batch_axis = np.array(batch_axis).flatten()
+
+        x_shape = list(self._var_dict[func.input[0]].dim[:])
+        len_x_shape = len(x_shape)
+
+        for i in range(len(channel_axis)):
+            channel_axis[i] = cycle_index(channel_axis[i], len_x_shape)
+        for i in range(len(batch_axis)):
+            batch_axis[i] = cycle_index(batch_axis[i], len_x_shape)
+
+        channel_num = np.prod([x_shape[i] for i in channel_axis])
+        if channel_num != channel_num // gn * gn:
+            raise ValueError(
+                "The channel dim of 'x' must be integer multiple of `num_groups`.")
+
+        # set x_reshape set axes
+        x_shape_reshape = []
+        axes = []
+        i_num = 0
+        for i in range(len(x_shape)):
+            if i == channel_axis[0]:
+                x_shape_reshape.extend([gn, x_shape[i] // gn])
+                i_num += 1
+                axes.append(i + i_num)
+            elif i in batch_axis:
+                x_shape_reshape.extend([x_shape[i]])
+            else:
+                x_shape_reshape.extend([x_shape[i]])
+                axes.append(i + i_num)
+
+        reshape_out = fork_name(func.input[0]) + "_reshape"
+        n = generate_reshape(self._model_proto.graph, func.input[0], reshape_out,
+                             np.array(x_shape_reshape))
+        nl.append(n)
+
+        # ReduceMean
+        mean_out = fork_name(func.input[0]) + "_reducemean"
+        n = onnx.helper.make_node(
+            'ReduceMean',
+            [reshape_out],
+            [mean_out],
+            axes=axes,
+            keepdims=True
+        )
+        nl.append(n)
+
+        # Sub, (x - m)
+        sub_out = fork_name(func.input[0]) + "_sub"
+        n = onnx.helper.make_node("Sub",
+                                  [reshape_out, mean_out],
+                                  [sub_out]
+                                  )
+        nl.append(n)
+
+        # (x-m)(x-m)
+        mul_out_m = fork_name(func.input[0]) + "_mul"
+        n = onnx.helper.make_node(
+            'Mul',
+            [sub_out, sub_out],
+            [mul_out_m],
+        )
+        nl.append(n)
+
+        # x_var
+        var_out_ = fork_name(func.input[0]) + "_reducemean"
+        n = onnx.helper.make_node(
+            'ReduceMean',
+            [mul_out_m],
+            [var_out_],
+            axes=axes,
+            keepdims=True
+        )
+        nl.append(n)
+
+        constant0 = fork_name("constant")
+        c = generate_constant(constant0, func.name + "_constant0",
+                              TensorProto.FLOAT, [1],
+                              [eps])
+        nl.append(c)
+
+        # Add, (x_var + eps)
+        add_out = fork_name(func.input[0]) + "_add"
+        n = onnx.helper.make_node(
+            "Add",
+            [var_out_, constant0],
+            [add_out]
+        )
+        nl.append(n)
+
+        # sqrt, (x_var + eps) ** 0.5
+        sqrt_out = fork_name(func.input[0]) + "_sqrt"
+        n = onnx.helper.make_node("Sqrt",
+                                  [add_out],
+                                  [sqrt_out])
+        nl.append(n)
+
+        # Div
+        dout = fork_name(func.input[0]) + "_div"
+        n = onnx.helper.make_node("Div",
+                                  [sub_out, sqrt_out],
+                                  [dout])
+        nl.append(n)
+
+        # Reshape
+        reshape1_out = fork_name(func.input[0]) + "_reshape"
+        n = generate_reshape(self._model_proto.graph, dout, reshape1_out,
+                             np.array(x_shape))
+        nl.append(n)
+
+        beta_gamma_dims = np.prod([x_shape[i] for i in channel_axis])
+        beta_gamma_shape = [x_shape[i] if i in channel_axis else 1
+                            for i in range(len(x_shape))]
+
+        if None == gamma:
+            gamma = 'gamma'
+            c = generate_constant(gamma, func.name + "_constant_g",
+                                  TensorProto.FLOAT, beta_gamma_shape,
+                                  [1.0] * beta_gamma_dims)
+            nl.append(c)
+        if None == beta:
+            beta = 'beta'
+            c = generate_constant(beta, func.name + "_constant_b",
+                                  TensorProto.FLOAT, beta_gamma_shape,
+                                  [0.0] * beta_gamma_dims)
+            nl.append(c)
+
+        # Mul gamma
+        mul_out = fork_name(func.input[0]) + "_mul"
+        n = onnx.helper.make_node(
+            'Mul',
+            [reshape1_out, gamma],
+            [mul_out],
+        )
+        nl.append(n)
+
+        # Add, beta
+        add_beta_out = fork_name(func.input[0]) + "_add"
+        n = onnx.helper.make_node(
+            "Add",
+            [mul_out, beta],
+            [func.output[0]]
         )
         nl.append(n)
 
