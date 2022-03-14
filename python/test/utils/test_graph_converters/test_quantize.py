@@ -24,7 +24,6 @@ import nnabla.solvers as S
 
 
 from nnabla.utils.qnn import QATConfig, PrecisionMode, FunctionsRankRecorder
-from nnabla.ext_utils import get_extension_context
 from nbla_test_utils import list_context
 from .ref_graphs.resnets import (small_bn_resnet,
                                  small_nonqnn_to_recording_resnet,
@@ -40,15 +39,6 @@ from .ref_graphs.resnets import (small_bn_resnet,
 
 ctxs = list_context('Convolution')  # proxy to switch the context
 batch_size = 1
-record_layers = [
-    [],  # If empty add to all layers
-    ['Convolution', 'Affine']
-]
-skip_layers = [
-    [],
-    ['Convolution'],
-    ['Affine']
-]
 
 
 @pytest.mark.parametrize('ctx, func_name', ctxs)
@@ -59,33 +49,33 @@ skip_layers = [
 @pytest.mark.parametrize('graph_ref, graph_act, folding, \
                           self_folding, rec_lays, rec_pos, skip_lays',
                          [(small_nonqnn_to_recording_resnet, small_bn_resnet,
-                           True, False, record_layers[0],
+                           True, False, [],
                            QATConfig.RecorderPosition.BEFORE,
-                           skip_layers[0]),
+                           []),
                           (small_nonqnn_to_recording_resnet, small_bn_opp_resnet,
-                           True, False, record_layers[0],
+                           True, False, [],
                            QATConfig.RecorderPosition.BEFORE,
-                           skip_layers[0]),
+                           []),
                           (small_nonqnn_to_recording_resnet, small_bn_resnet,
-                           False, True, record_layers[0],
+                           False, True, [],
                            QATConfig.RecorderPosition.BEFORE,
-                           skip_layers[0]),
+                           []),
                           (small_nonqnn_to_recording_resnet, small_bn_resnet,
-                           False, True, record_layers[1],
+                           False, True, ['Convolution', 'Affine'],
                            QATConfig.RecorderPosition.BEFORE,
-                           skip_layers[0]),
+                           []),
                           (small_nonqnn_to_specific_recording_pos_resnet, small_bn_resnet,
-                           True, True, record_layers[1],
+                           True, True, ['Convolution', 'Affine'],
                            QATConfig.RecorderPosition.BOTH,
-                           skip_layers[0]),
+                           []),
                           (small_nonqnn_to_recording_skip_conv_fcn, small_bn_fcn,
-                           True, True, record_layers[0],
+                           True, True, [],
                            QATConfig.RecorderPosition.BEFORE,
-                           skip_layers[1]),
+                           ['Convolution']),
                           (small_nonqnn_to_recording_skip_affine_resnet, small_bn_multi_fc_resnet,
-                           True, True, record_layers[0],
+                           True, True, [],
                            QATConfig.RecorderPosition.BEFORE,
-                           skip_layers[2])
+                           ['Affine'])
                           ])
 def test_nonqnn_to_recording(ctx, func_name, seed, test, w_bias, channel_last,
                              graph_ref, graph_act, folding, self_folding, rec_lays, rec_pos, skip_lays):
