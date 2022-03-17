@@ -230,6 +230,7 @@ Array Manipulation
 .. autofunction:: flip
 .. autofunction:: shift
 .. autofunction:: sort
+.. autofunction:: shape
 .. autofunction:: reshape
 .. autofunction:: one_hot
 .. autofunction:: assign

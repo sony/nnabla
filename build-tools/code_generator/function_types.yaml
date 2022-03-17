@@ -382,6 +382,9 @@ Sort:
 Reshape:
   float: [float]
   half: [Half]
+Shape:
+  float: [float]
+  half: [Half]
 MatrixDiag:
   float: [float]
   half: [Half]
