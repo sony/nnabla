@@ -23,6 +23,7 @@ import nnabla.utils.converter
 from nnabla.testing import assert_allclose
 import numpy
 import numpy as np
+import platform as pf
 
 
 def ext_to_camel(ext):
@@ -861,12 +862,13 @@ def convert_to_complex_array(x_float2, dtype=np.complex64):
 
 def backward_function_tester(rng, func, inputs=None,
                              func_args=[], func_kwargs={},
+                             rtol_accum=1e-5,
                              atol_f=1e-4, atol_b=1e-3, atol_accum=5e-2,
                              dstep=1e-3, backward=None, backward_b=None,
                              ctx=None, non_accum_check=False, skip_backward_check=False, insert_identity=[],
                              auto_forward=False):
     """ Automatic testing of backward function and backward pass of `func` by comparing it.
-    The backward pass of `func` is the reference; therefore, 
+    The backward pass of `func` is the reference; therefore,
     the backward pass of `func` must be tested first!
 
     Syntax of `ref_func`: inputs, parameters
@@ -876,6 +878,8 @@ def backward_function_tester(rng, func, inputs=None,
         ctx = nn.Context()
     if backward is None:
         backward = [True for _ in inputs]
+    if pf.machine() == "aarch64":
+        rtol_accum = 1e-3
 
     def create_variables(inputs, backward):
         vinputs = []
@@ -1077,7 +1081,7 @@ def backward_function_tester(rng, func, inputs=None,
             s0, s1 = sep
             analytical_grad = analytical_grads[s0:s1]
             numerical_grad = numerical_grads[s0:s1]
-            assert_allclose(analytical_grad, numerical_grad, atol=atol_accum,
+            assert_allclose(analytical_grad, numerical_grad, rtol=rtol_accum, atol=atol_accum,
                             err_msg="Backward (accum) of the backward function ({}) wrt {}-th / {} input fails.".format(
                                 func_backward.__name__, k, ninputs))
 
