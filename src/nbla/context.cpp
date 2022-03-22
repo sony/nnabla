@@ -28,7 +28,7 @@ Context &Context::set_backend(const vector<string> &backend) {
   for (auto it = this->backend.begin(); it != this->backend.end(); it++) {
     if (it->find(':') == string::npos) {
       // The default type config is float.
-      *it = *it + std::string(":float");
+      *it = *it + string(":float");
     }
   }
   return *this;

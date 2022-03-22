@@ -242,9 +242,9 @@ void RandomErase<T>::random_erase(const Variables &inputs,
   T *y = outputs[0]->cast_data_and_get_pointer<T>(this->ctx_, true);
 
   // Generate N x B (x C) x 5, 5 is {prob, Se, re, xe, ye}
-  this->random_coordinates_ =
-      this->share_ ? std::make_shared<NdArray>(Shape_t{N, B, 5})
-                   : std::make_shared<NdArray>(Shape_t{N, B, C, 5});
+  this->random_coordinates_ = this->share_
+                                  ? make_shared<NdArray>(Shape_t{N, B, 5})
+                                  : make_shared<NdArray>(Shape_t{N, B, C, 5});
   float *random_coords =
       this->random_coordinates_->cast(get_dtype<float>(), this->ctx_)
           ->template pointer<float>();

@@ -88,7 +88,7 @@ void VirtualCachingAllocatorBase::alloc_physical_memory(
 
 void VirtualCachingAllocatorBase::alloc_physical_memory_with_retry(
     size_t alloc_bytes, const string &device_id, size_t &p_mem_bytes,
-    std::vector<PhysicalMemoryPtr> &p_mems) {
+    vector<PhysicalMemoryPtr> &p_mems) {
   // Retry allocation logic.
   try {
     // Additionally allocate physical memory if needed.

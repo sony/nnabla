@@ -26,23 +26,21 @@ void PrintingAllocatorCallback::on_alloc(size_t bytes,
                                          const string &device_id) {
   std::cout << format_string(
                    "PrintingAllocatorCallback::on_alloc(%s, %s) in %s.",
-                   std::to_string(bytes).c_str(), device_id.c_str(),
-                   name_.c_str())
+                   to_string(bytes).c_str(), device_id.c_str(), name_.c_str())
             << std::endl;
 }
 void PrintingAllocatorCallback::on_free(size_t bytes, const string &device_id) {
   std::cout << format_string(
                    "PrintingAllocatorCallback::on_free(%s, %s) in %s.",
-                   std::to_string(bytes).c_str(), device_id.c_str(),
-                   name_.c_str())
+                   to_string(bytes).c_str(), device_id.c_str(), name_.c_str())
             << std::endl;
 }
 void PrintingAllocatorCallback::on_free_unused_device_caches(
     const string &device_id, size_t freed_bytes) {
   std::cout << format_string("PrintingAllocatorCallback::on_free_unused_device_"
                              "caches(%s, %s) in %s.",
-                             device_id.c_str(),
-                             std::to_string(freed_bytes).c_str(), name_.c_str())
+                             device_id.c_str(), to_string(freed_bytes).c_str(),
+                             name_.c_str())
             << std::endl;
 }
 void PrintingAllocatorCallback::on_allocation_failure() {

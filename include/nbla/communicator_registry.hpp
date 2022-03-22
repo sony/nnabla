@@ -56,15 +56,15 @@ This will be used inside init method.
 */
 #define NBLA_REGISTER_COMMUNICATOR_IMPL(BASE, CLS, BACKEND, ...)               \
   {                                                                            \
-    std::function<shared_ptr<Communicator>(                                    \
+    function<shared_ptr<Communicator>(                                         \
         const Context &NBLA_VA_ARGS(__VA_ARGS__))>                             \
         func = [](NBLA_ARGDEFS(const Context &NBLA_VA_ARGS(__VA_ARGS__))) {    \
-          return shared_ptr<Communicator>(                                     \
-              new CLS(NBLA_ARGS(const Context &NBLA_VA_ARGS(__VA_ARGS__))));   \
+          return make_shared<CLS>(                                             \
+              NBLA_ARGS(const Context &NBLA_VA_ARGS(__VA_ARGS__)));            \
         };                                                                     \
     typedef FunctionDbItem<Communicator NBLA_VA_ARGS(__VA_ARGS__)> item_t;     \
     get_##BASE##CommunicatorRegistry().add(                                    \
-        shared_ptr<item_t>(new item_t{BACKEND, func}));                        \
+        make_shared<item_t>(BACKEND, func));                                   \
   }
 #else
 /**
@@ -95,14 +95,13 @@ This will be used inside init method.
 */
 #define NBLA_REGISTER_COMMUNICATOR_IMPL(BASE, CLS, BACKEND, ...)               \
   {                                                                            \
-    std::function<shared_ptr<Communicator>(const Context &, ##__VA_ARGS__)>    \
-        func = [](NBLA_ARGDEFS(const Context &, ##__VA_ARGS__)) {              \
-          return shared_ptr<Communicator>(                                     \
-              new CLS(NBLA_ARGS(const Context &, ##__VA_ARGS__)));             \
+    function<shared_ptr<Communicator>(const Context &, ##__VA_ARGS__)> func =  \
+        [](NBLA_ARGDEFS(const Context &, ##__VA_ARGS__)) {                     \
+          return make_shared<CLS>(NBLA_ARGS(const Context &, ##__VA_ARGS__));  \
         };                                                                     \
     typedef FunctionDbItem<Communicator, ##__VA_ARGS__> item_t;                \
     get_##BASE##CommunicatorRegistry().add(                                    \
-        shared_ptr<item_t>(new item_t{BACKEND, func}));                        \
+        make_shared<item_t>(BACKEND, func));                                   \
   }
 #endif
 }

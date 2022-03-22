@@ -19,8 +19,6 @@
 #include <nbla/solver/weight_decay.hpp>
 
 namespace nbla {
-using std::shared_ptr;
-using std::make_shared;
 
 NBLA_REGISTER_SOLVER_SOURCE(SgdW, float, float, float);
 

@@ -25,7 +25,7 @@ using std::pair;
 // Forward declaration
 class CgFunction;
 typedef shared_ptr<CgFunction> CgFunctionPtr;
-typedef std::function<void(const CgFunctionPtr &ptr)> function_hook_type;
+typedef function<void(const CgFunctionPtr &ptr)> function_hook_type;
 
 /**
 Singleton class for storing global function callbacks.

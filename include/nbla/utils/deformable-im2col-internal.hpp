@@ -15,9 +15,7 @@
 #ifndef __NBLA_UTILS_DEFORMABLE_IM2COL_INTERNAL_HPP__
 #define __NBLA_UTILS_DEFORMABLE_IM2COL_INTERNAL_HPP__
 
-#include <vector>
-
-using std::vector;
+#include <nbla/common.hpp>
 
 namespace nbla {
 

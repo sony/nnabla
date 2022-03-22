@@ -23,10 +23,7 @@
 
 namespace nbla {
 
-using std::map;
-using std::unordered_map;
 using std::tuple;
-using std::make_shared;
 
 /** A base class of CachingAllocatorWithBuckets.
 
@@ -142,7 +139,7 @@ class CachingAllocatorWithBuckets : public CachingAllocatorWithBucketsBase {
 public:
   CachingAllocatorWithBuckets() : CachingAllocatorWithBucketsBase() {
 #if 0
-    this->callback_.reset(new PrintingAllocatorCallback(
+    this->callback_.reset(new_object<PrintingAllocatorCallback>(
         typeid(CachingAllocatorWithBuckets<memory_type>).name()));
 #endif
   }

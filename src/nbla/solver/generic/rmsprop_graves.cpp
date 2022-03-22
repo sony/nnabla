@@ -20,8 +20,6 @@
 #include <nbla/solver/weight_decay.hpp>
 
 namespace nbla {
-using std::make_shared;
-using std::shared_ptr;
 
 NBLA_REGISTER_SOLVER_SOURCE(RMSpropGraves, float, float, float, float);
 

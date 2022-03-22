@@ -21,8 +21,6 @@
 
 namespace nbla {
 
-using std::vector;
-
 Array::Array(const Size_t size, dtypes dtype, const Context &ctx,
              AllocatorMemory &&mem)
     : size_(size), dtype_(dtype), ctx_(ctx), mem_(std::move(mem)) {}

@@ -21,8 +21,6 @@
 
 namespace nbla {
 
-using std::make_shared;
-
 static void set_function_inputs(CgFunctionPtr func,
                                 const vector<CgVariablePtr> &inputs) {
   // Check need_grad
@@ -210,11 +208,10 @@ void GlobalClearBufferState::set(bool clear_buffer, bool clear_no_need_grad) {
   clear_buffer_[tid] = clear_buffer;
   clear_no_need_grad_[tid] = clear_no_need_grad;
 }
-std::unique_ptr<GlobalClearBufferState::ScopedState>
+unique_ptr<GlobalClearBufferState::ScopedState>
 GlobalClearBufferState::state(bool clear_buffer, bool clear_no_need_grad) {
-  return std::unique_ptr<GlobalClearBufferState::ScopedState>(
-      new GlobalClearBufferState::ScopedState(this, clear_buffer,
-                                              clear_no_need_grad));
+  return make_unique<GlobalClearBufferState::ScopedState>(this, clear_buffer,
+                                                          clear_no_need_grad);
 }
 GlobalClearBufferState::ScopedState::ScopedState(GlobalClearBufferState *self,
                                                  bool clear_buffer,

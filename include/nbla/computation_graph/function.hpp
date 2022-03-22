@@ -43,7 +43,7 @@ class CgFunction {
   /* Wrapper object of output CgVariable.
    */
   struct OutputWrapper {
-    std::weak_ptr<CgVariable> weak_reference;
+    weak_ptr<CgVariable> weak_reference;
     /*
       Output variables are weakly referenced to avoid circular dependencies,
       which means output variables may be deleted before it is used.

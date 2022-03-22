@@ -29,7 +29,7 @@ static bool sync_debug_enabled() {
   if (env_c == nullptr) {
     return true;
   }
-  std::string env = std::string(env_c);
+  string env = string(env_c);
   try {
     if (std::stoi(env) == 0) {
       return false;

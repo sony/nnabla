@@ -72,8 +72,8 @@ void TopKData<T>::forward_impl(const Variables &inputs,
   auto y_data = y->cast_data_and_get_pointer<T>(this->ctx_);
   auto tk_idx = top_k_idx_.cast_data_and_get_pointer<size_t>(this->ctx_);
 
-  std::function<void(const T *, const size_t, const size_t, size_t *)>
-      top_k_func = this->abs_ ? top_k_abs<T> : top_k<T>;
+  function<void(const T *, const size_t, const size_t, size_t *)> top_k_func =
+      this->abs_ ? top_k_abs<T> : top_k<T>;
 
   for (int s = 0; s < this->ns_; s++) {
     top_k_func(x_data, this->ss_, this->k_, tk_idx);

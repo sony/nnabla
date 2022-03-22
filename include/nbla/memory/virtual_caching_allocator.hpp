@@ -24,9 +24,6 @@
 #include <nbla/memory/allocator.hpp>
 
 namespace nbla {
-using std::queue;
-using std::make_shared;
-using std::multimap;
 
 typedef std::chrono::time_point<std::chrono::high_resolution_clock> Tp;
 
@@ -98,8 +95,8 @@ public:
 
   typedef pair<Tp, shared_ptr<Memory>> MemPtrWithTime;
   typedef multimap<size_t, MemPtrWithTime> MappedCache;
-  typedef std::priority_queue<MemPtrWithTime, vector<MemPtrWithTime>,
-                              std::greater<MemPtrWithTime>>
+  typedef priority_queue<MemPtrWithTime, vector<MemPtrWithTime>,
+                         std::greater<MemPtrWithTime>>
       Wlist;
 
   void set_chunk_size(size_t size);

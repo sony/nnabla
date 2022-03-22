@@ -19,6 +19,8 @@ namespace nbla {
 SingletonManager *SingletonManager::self_ = nullptr;
 
 void SingletonManager::clear() {
+  if (self_ == nullptr)
+    return;
   SingletonManager &s = get_self();
   for (int i = 0; i < s.count_; ++i) {
     erase_by_id(i); // Delete singleton if it's active.
@@ -27,6 +29,9 @@ void SingletonManager::clear() {
   s.singletons_.clear();
   s.adr2id_.clear();
   s.count_ = 0;
+  // Delete self
+  self_ = nullptr;
+  NBLA_DELETE_OBJECT(&s);
 }
 
 void SingletonManager::erase_by_id(int id) {
@@ -42,7 +47,7 @@ void SingletonManager::erase_by_id(int id) {
 SingletonManager &SingletonManager::get_self() {
   // TODO: thread-safe
   if (!self_) {
-    self_ = new SingletonManager();
+    self_ = NBLA_NEW_OBJECT(SingletonManager);
   }
   return *self_;
 }
@@ -71,14 +76,14 @@ const void *NNabla::ones(Size_t size, dtypes dtype, const Context &ctx) {
   std::lock_guard<decltype(mtx_ones_)> lock(mtx_ones_);
   auto it = ones_.find(tid);
   if (it == ones_.end()) {
-    ones = std::make_shared<SyncedArray>(size);
+    ones = make_shared<SyncedArray>(size);
     ones->fill(1);
     ones_[tid] = ones;
     return async_get(ones, dtype, ctx);
   }
   ones = it->second;
   if (size > ones->size()) {
-    ones = std::make_shared<SyncedArray>(size);
+    ones = make_shared<SyncedArray>(size);
     ones->fill(1);
     ones_[tid] = ones;
   }
@@ -91,14 +96,14 @@ const void *NNabla::zeros(Size_t size, dtypes dtype, const Context &ctx) {
   std::lock_guard<decltype(mtx_zeros_)> lock(mtx_zeros_);
   auto it = zeros_.find(tid);
   if (it == zeros_.end()) {
-    zeros = std::make_shared<SyncedArray>(size);
+    zeros = make_shared<SyncedArray>(size);
     zeros->zero();
     ones_[tid] = zeros;
     return async_get(zeros, dtype, ctx);
   }
   zeros = it->second;
   if (size > zeros->size()) {
-    zeros = std::make_shared<SyncedArray>(size);
+    zeros = make_shared<SyncedArray>(size);
     zeros->zero();
     ones_[tid] = zeros;
   }

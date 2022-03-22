@@ -14,10 +14,10 @@
 
 #include <nbla/backend_registry.hpp>
 #include <nbla/common.hpp>
+#include <nbla/singleton_manager-internal.hpp>
 
 namespace nbla {
 
-using std::stringstream;
 using std::getline;
 
 void BackendUtils::add_backend(const string &backend_name,
@@ -28,8 +28,7 @@ void BackendUtils::add_backend(const string &backend_name,
 }
 
 BackendUtils::Registry_t &BackendUtils::get_registry() {
-  static Registry_t registry_;
-  return registry_;
+  return *SingletonManager::get<Registry_t>();
 }
 
 string get_key(const Context ctx) {

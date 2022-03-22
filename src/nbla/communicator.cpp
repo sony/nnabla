@@ -20,8 +20,6 @@
 
 namespace nbla {
 
-using std::make_shared;
-
 Communicator::Communicator(const Context &ctx) : ctx_(ctx) {}
 
 Communicator::~Communicator() {}

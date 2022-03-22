@@ -15,9 +15,10 @@
 #ifndef __NBLA_UTILS_TOPK_HPP__
 #define __NBLA_UTILS_TOPK_HPP__
 
+#include <nbla/common.hpp>
+
 #include <algorithm>
 #include <utility>
-#include <vector>
 
 namespace nbla {
 
@@ -36,7 +37,7 @@ inline void top_k(const T *x, const size_t n, const size_t k, size_t *out) {
     }
   };
 
-  std::vector<std::pair<T, size_t>> heap(k);
+  vector<std::pair<T, size_t>> heap(k);
   for (size_t i = 0; i < k; ++i) {
     heap[i] = std::make_pair(x[i], i);
   }
@@ -71,7 +72,7 @@ inline void top_k_abs(const T *x, const size_t n, const size_t k, size_t *out) {
     }
   };
 
-  std::vector<std::pair<T, size_t>> heap(k);
+  vector<std::pair<T, size_t>> heap(k);
   for (size_t i = 0; i < k; ++i) {
     heap[i] = std::make_pair(x[i] < 0 ? -x[i] : x[i], i);
   }

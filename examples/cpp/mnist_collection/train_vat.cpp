@@ -16,9 +16,10 @@
 #include <nbla/context.hpp>
 #include <stdio.h>
 #include <string.h>
-using namespace nbla;
 
 #include "vat_training.hpp"
+
+using namespace nbla;
 
 /******************************************/
 // Example of mnist training

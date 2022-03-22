@@ -20,7 +20,6 @@
 #include <nbla/exception.hpp>
 #include <nbla/initializer.hpp>
 #include <nbla/random_manager.hpp>
-using std::make_shared;
 
 namespace nbla {
 

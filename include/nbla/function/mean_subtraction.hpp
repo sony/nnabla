@@ -24,8 +24,6 @@
 
 #include <vector>
 
-using std::vector;
-
 namespace nbla {
 
 NBLA_REGISTER_FUNCTION_HEADER(MeanSubtraction, int, bool);

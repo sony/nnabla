@@ -49,6 +49,21 @@ typedef int ssize_t;
 #include <archive_entry.h>
 
 namespace nbla {
+
+struct ShutdownProtobuf {
+  ~ShutdownProtobuf() { google::protobuf::ShutdownProtobufLibrary(); }
+};
+NBLA_INSTANTIATE_SINGLETON(NBLA_API, ShutdownProtobuf);
+
+static void register_protobuf_shutdown() {
+  // Create ShutdownProtobuf instance in SingletonManager.
+  // It calls google::protobuf::ShutdownProtobufLibrary() at
+  // SingletonManager::clear().
+  SingletonManager::get<ShutdownProtobuf>();
+}
+}
+
+namespace nbla {
 namespace utils {
 namespace nnp {
 
@@ -79,7 +94,7 @@ void NetworkImpl::build() {
 
     NBLA_LOG_INFO("      function name:{} type:{}", func.name(), func.type());
 
-    std::vector<nbla::CgVariablePtr> finputs;
+    vector<nbla::CgVariablePtr> finputs;
     // std::cout << func.name() << ":";
     for (auto inp = func.input().begin(); inp != func.input().end(); inp++) {
       // std::cout << " " << *inp;
@@ -144,7 +159,7 @@ NetworkImpl::get_cgvariable_or_create(const string &name) {
   }
   // TODO: set need_grad
   // std::cout << "(c)";
-  auto cg_v = std::make_shared<nbla::CgVariable>(shape);
+  auto cg_v = make_shared<nbla::CgVariable>(shape);
   // Register variable
   variables_.insert({name, cg_v});
   return cg_v;
@@ -256,7 +271,7 @@ void ExecutorImpl::execute() {
 // NnpImpl
 // ----------------------------------------------------------------------
 NnpImpl::NnpImpl(const nbla::Context &ctx)
-    : ctx_(ctx), proto_(new NNablaProtoBuf()) {}
+    : ctx_(ctx), proto_(make_unique<NNablaProtoBuf>()) {}
 
 int NnpImpl::get_network_repeat_nest_depth(const ::Network &orig) {
   // get max nest depth.
@@ -271,16 +286,15 @@ int NnpImpl::get_network_repeat_nest_depth(const ::Network &orig) {
   return max_nest_depth;
 }
 
-std::vector<std::string> NnpImpl::create_suffixes(std::string prefix,
-                                                  std::vector<std::string> ids,
-                                                  std::vector<int> times) {
-  std::vector<std::string> suffixes;
-  std::string id = ids.at(0);
+vector<string> NnpImpl::create_suffixes(string prefix, vector<string> ids,
+                                        vector<int> times) {
+  vector<string> suffixes;
+  string id = ids.at(0);
   ids.erase(ids.begin());
   int max = times.at(0);
   times.erase(times.begin());
   for (int i = 0; i < max; i++) {
-    std::string suffix = prefix + "_" + id + "[" + std::to_string(i) + "]";
+    string suffix = prefix + "_" + id + "[" + to_string(i) + "]";
     if (ids.size() > 0) {
       auto sub = create_suffixes(suffix, ids, times);
       std::copy(sub.begin(), sub.end(), std::back_inserter(suffixes));
@@ -291,11 +305,10 @@ std::vector<std::string> NnpImpl::create_suffixes(std::string prefix,
   return suffixes;
 }
 
-std::vector<std::string>
-NnpImpl::create_var_suffixes(std::map<std::string, int> repeat_info,
-                             ::Variable var) {
-  std::vector<std::string> ids;
-  std::vector<int> times;
+vector<string> NnpImpl::create_var_suffixes(map<string, int> repeat_info,
+                                            ::Variable var) {
+  vector<string> ids;
+  vector<int> times;
   for (int j = 0; j < var.repeat_id_size(); j++) {
     auto rid = var.repeat_id(j);
     ids.push_back(rid);
@@ -304,11 +317,10 @@ NnpImpl::create_var_suffixes(std::map<std::string, int> repeat_info,
   return create_suffixes("", ids, times);
 }
 
-std::vector<std::string>
-NnpImpl::create_func_suffixes(std::map<std::string, int> repeat_info,
-                              ::Function func) {
-  std::vector<std::string> ids;
-  std::vector<int> times;
+vector<string> NnpImpl::create_func_suffixes(map<string, int> repeat_info,
+                                             ::Function func) {
+  vector<string> ids;
+  vector<int> times;
   for (int j = 0; j < func.repeat_id_size(); j++) {
     auto rid = func.repeat_id(j);
     ids.push_back(rid);
@@ -318,7 +330,7 @@ NnpImpl::create_func_suffixes(std::map<std::string, int> repeat_info,
 }
 
 ::Network NnpImpl::expand_network(const ::Network &orig) {
-  auto expander = std::unique_ptr<NetworkExpander>(new NetworkExpander(orig));
+  auto expander = make_unique<NetworkExpander>(orig);
   ::Network net = expander->execute();
 
 #ifdef DEBUG_NETWORK_EXPANDER
@@ -328,7 +340,7 @@ NnpImpl::create_func_suffixes(std::map<std::string, int> repeat_info,
   return net;
 }
 
-const ::Network &NnpImpl::search_network(std::string name) {
+const ::Network &NnpImpl::search_network(string name) {
   NBLA_LOG_INFO("    Searching net {}", name);
   for (int i = 0; i < proto_->network_size(); i++) {
     if (proto_->network(i).name() == name) {
@@ -346,25 +358,24 @@ bool NnpImpl::add_archive(void *archive) {
   int r = ARCHIVE_OK;
   while ((r = archive_read_next_header(a, &entry)) == ARCHIVE_OK) {
     ssize_t size = (ssize_t)archive_entry_size(entry);
-    char *buffer = new char[size];
-    assert(buffer);
-    ssize_t read_size = archive_read_data(a, buffer, size);
+    auto buffer = make_unique<char[]>(size);
+    assert(buffer.get());
+    ssize_t read_size = archive_read_data(a, buffer.get(), size);
     if (read_size != size) {
       return false;
     }
-    std::string entryname(archive_entry_pathname(entry));
+    string entryname(archive_entry_pathname(entry));
 
     int ep = entryname.find_last_of(".");
-    std::string ext = entryname.substr(ep, entryname.size() - ep);
+    string ext = entryname.substr(ep, entryname.size() - ep);
 
     if (ext == ".prototxt" || ext == ".nntxt") {
-      add_prototxt(buffer, size);
+      add_prototxt(buffer.get(), size);
     } else if (ext == ".protobuf") {
-      add_protobuf(buffer, size);
+      add_protobuf(buffer.get(), size);
     } else if (ext == ".h5") {
-      add_hdf5(buffer, size);
+      add_hdf5(buffer.get(), size);
     }
-    delete[] buffer;
   }
   return true;
 }
@@ -375,7 +386,7 @@ void NnpImpl::update_parameters() {
     const string &name = it->variable_name();
     Shape_t shape(it->shape().dim().begin(), it->shape().dim().end());
     bool need_grad = it->need_grad();
-    CgVariablePtr cg_v = std::make_shared<CgVariable>(shape, need_grad);
+    CgVariablePtr cg_v = make_shared<CgVariable>(shape, need_grad);
     float *data =
         cg_v->variable()->template cast_data_and_get_pointer<float>(kCpuCtx);
     auto &p_data = it->data();
@@ -390,27 +401,26 @@ void NnpImpl::update_parameters() {
   proto_->clear_parameter(); // Reset all parameters consumed.
 }
 
-bool NnpImpl::add_prototxt(std::string filename) {
+bool NnpImpl::add_prototxt(string filename) {
+  register_protobuf_shutdown();
   int fd = open(filename.c_str(), O_RDONLY);
-  google::protobuf::io::ZeroCopyInputStream *input =
-      new google::protobuf::io::FileInputStream(fd);
-  google::protobuf::TextFormat::Merge(input, proto_.get());
-  delete input;
+  google::protobuf::io::FileInputStream input(fd);
+  google::protobuf::TextFormat::Merge(&input, proto_.get());
   close(fd);
   update_parameters();
   return true;
 }
 
 bool NnpImpl::add_prototxt(char *buffer, int size) {
-  google::protobuf::io::ZeroCopyInputStream *input =
-      new google::protobuf::io::ArrayInputStream(buffer, size);
-  google::protobuf::TextFormat::Merge(input, proto_.get());
-  delete input;
+  register_protobuf_shutdown();
+  google::protobuf::io::ArrayInputStream input(buffer, size);
+  google::protobuf::TextFormat::Merge(&input, proto_.get());
   update_parameters();
   return true;
 }
 
-bool NnpImpl::add_protobuf(std::string filename) {
+bool NnpImpl::add_protobuf(string filename) {
+  register_protobuf_shutdown();
   ParameterVector pv;
   bool ret = load_parameters_pb(pv, filename);
   if (!ret) {
@@ -424,6 +434,7 @@ bool NnpImpl::add_protobuf(std::string filename) {
 }
 
 bool NnpImpl::add_protobuf(char *buffer, int size) {
+  register_protobuf_shutdown();
   ParameterVector pv;
   bool ret = load_parameters_pb(pv, buffer, size);
   if (!ret) {
@@ -472,8 +483,8 @@ shared_ptr<Network> NnpImpl::get_network(const string &name) {
     NBLA_LOG_INFO("Initial data of {} was found.", it->name());
     parameters.insert({found->first, found->second});
   }
-  return shared_ptr<Network>(
-      new Network(new NetworkImpl(ctx_, network, parameters)));
+  auto *impl = NBLA_NEW_OBJECT(NetworkImpl, ctx_, network, parameters);
+  return shared_ptr<Network>(NBLA_NEW_OBJECT(Network, impl));
 }
 
 vector<string> NnpImpl::get_executor_names() {
@@ -491,8 +502,9 @@ shared_ptr<Executor> NnpImpl::get_executor(const string &name) {
     if (it->name() != name) {
       continue;
     }
-    return shared_ptr<Executor>(
-        new Executor(new ExecutorImpl(*it, get_network(it->network_name()))));
+    auto *impl =
+        NBLA_NEW_OBJECT(ExecutorImpl, *it, get_network(it->network_name()));
+    return shared_ptr<Executor>(NBLA_NEW_OBJECT(Executor, impl));
   }
   NBLA_ERROR(error_code::value, "Executor `%s` not found from [%s].",
              name.c_str(),
@@ -536,9 +548,10 @@ shared_ptr<Optimizer> NnpImpl::get_optimizer(const string &name) {
     if (it->dataset_name_size() != 1) {
       NBLA_ERROR(error_code::value, "Currently only one dataset supported.");
     }
-    return shared_ptr<Optimizer>(new Optimizer(
-        new OptimizerImpl(ctx_, *it, get_network(it->network_name()),
-                          get_dataset(it->dataset_name()[0]))));
+    auto *impl = NBLA_NEW_OBJECT(OptimizerImpl, ctx_, *it,
+                                 get_network(it->network_name()),
+                                 get_dataset(it->dataset_name()[0]));
+    return shared_ptr<Optimizer>(NBLA_NEW_OBJECT(Optimizer, impl));
   }
   NBLA_ERROR(error_code::value, "Optimizer `%s` not found", name.c_str());
 }
@@ -561,10 +574,10 @@ shared_ptr<DatasetImpl> NnpImpl::get_dataset(const string &name) {
 
 #if defined(NBLA_UTILS_WITH_NPY)
     // Npy Support
-    return shared_ptr<DatasetNpyCache>(new DatasetNpyCache(*it));
+    return make_shared<DatasetNpyCache>(*it);
 #elif defined(NBLA_UTILS_WITH_HDF5)
     // HDF5 Support
-    return shared_ptr<DatasetHDF5Impl>(new DatasetHDF5Impl(*it));
+    return make_shared<DatasetHDF5Impl>(*it);
 #else
 #warning("No cache file format is defined.");
 #endif
@@ -590,16 +603,17 @@ shared_ptr<Monitor> NnpImpl::get_monitor(const string &name) {
     if (it->dataset_name_size() != 1) {
       NBLA_ERROR(error_code::value, "Currently only one dataset supported.");
     }
-    return shared_ptr<Monitor>(
-        new Monitor(new MonitorImpl(ctx_, *it, get_network(it->network_name()),
-                                    get_dataset(it->dataset_name()[0]))));
+    auto *impl =
+        NBLA_NEW_OBJECT(MonitorImpl, ctx_, *it, get_network(it->network_name()),
+                        get_dataset(it->dataset_name()[0]));
+    return shared_ptr<Monitor>(NBLA_NEW_OBJECT(Monitor, impl));
   }
   NBLA_ERROR(error_code::value, "Monitor `%s` not found", name.c_str());
 }
 
 shared_ptr<TrainingConfig> NnpImpl::get_training_config() {
-  return shared_ptr<TrainingConfig>(
-      new TrainingConfig(new TrainingConfigImpl(proto_->training_config())));
+  auto *impl = NBLA_NEW_OBJECT(TrainingConfigImpl, proto_->training_config());
+  return shared_ptr<TrainingConfig>(NBLA_NEW_OBJECT(TrainingConfig, impl));
 }
 }
 }

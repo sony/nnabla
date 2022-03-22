@@ -37,7 +37,7 @@ string get_error_string(error_code code) {
     CASE_ERROR_STRING(runtime);
 #undef CASE_ERROR_STRING
   }
-  return std::string();
+  return string();
 }
 
 // -------------------------------------------------------------------------
@@ -46,7 +46,7 @@ string get_error_string(error_code code) {
 Exception::Exception(error_code code, const string &msg, const string &func,
                      const string &file, int line)
     : code_(code), msg_(msg), func_(func), file_(file), line_(line) {
-  std::ostringstream ss;
+  ostringstream ss;
   ss << get_error_string(code_) << " error in " << func_ << std::endl
      << file_ << ":" << line_ << std::endl
      << msg_ << std::endl;

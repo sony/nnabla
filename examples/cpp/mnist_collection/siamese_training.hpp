@@ -16,23 +16,24 @@
 #include <stdio.h>
 #include <string>
 #include <vector>
-using namespace std;
 
 #include <nbla/computation_graph/computation_graph.hpp>
 #include <nbla/solver/adam.hpp>
-using namespace nbla;
-using std::make_shared;
+
 #include <nbla/auto_forward.hpp>
 #include <nbla/functions.hpp>
 #include <nbla/global_context.hpp>
 #include <nbla/parametric_functions.hpp>
 #include <nbla_utils/parameters.hpp>
 
+#include "mnist_data.hpp"
+
 namespace f = nbla::functions;
 namespace pf = nbla::parametric_functions;
 namespace utl = nbla::utils;
 
-#include "mnist_data.hpp"
+using namespace nbla;
+using std::make_shared;
 
 /******************************************/
 // Example of Siamese Model Design
@@ -242,7 +243,7 @@ bool siamese_training_with_static_graph(nbla::Context ctx) {
       }
     }
   } catch (...) {
-    cout << "Exception in siamese_training_with_static_graph.\n";
+    std::cout << "Exception in siamese_training_with_static_graph.\n";
     fclose(fp);
     return false;
   }
@@ -355,7 +356,7 @@ bool siamese_training_with_dynamic_graph(nbla::Context ctx) {
       }
     }
   } catch (...) {
-    cout << "Exception in siamese_training_with_dynamic_graph.\n";
+    std::cout << "Exception in siamese_training_with_dynamic_graph.\n";
     fclose(fp);
     return false;
   }

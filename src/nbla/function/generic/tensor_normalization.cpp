@@ -75,10 +75,10 @@ void TensorNormalization<T>::setup_impl(const Variables &inputs,
   // batch_norm adapter
   need_adapter_ = this->axes_.size() != 1;
   if (need_adapter_) {
-    bn_in_adapter_.reset(
-        new BatchNormalizationInOutAdapter(ctx_, ndim, x_shape, axes_));
-    bn_param_adapter_.reset(
-        new BatchNormalizationInOutAdapter(ctx_, ndim, bn_param_shape_, axes_));
+    bn_in_adapter_ =
+        make_unique<BatchNormalizationInOutAdapter>(ctx_, ndim, x_shape, axes_);
+    bn_param_adapter_ = make_unique<BatchNormalizationInOutAdapter>(
+        ctx_, ndim, bn_param_shape_, axes_);
 
     const int bn_axis = ndim - axes_.size();
     // ndim of batch_norm input x will be 1 when ndim - axes_.size() == 0. In

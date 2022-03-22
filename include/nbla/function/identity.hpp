@@ -27,8 +27,6 @@
 
 namespace nbla {
 
-using std::string;
-
 NBLA_REGISTER_FUNCTION_HEADER(Identity);
 
 /** Identify outputs the input as-is. There is no need to use this layer

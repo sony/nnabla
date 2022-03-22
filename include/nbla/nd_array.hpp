@@ -21,8 +21,6 @@
 
 namespace nbla {
 
-using std::make_shared;
-
 /** Dtype and backend agnostic multi-dimensional array.
  */
 class NdArray {

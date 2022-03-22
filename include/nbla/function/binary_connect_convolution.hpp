@@ -28,9 +28,6 @@
 
 namespace nbla {
 
-using std::string;
-using std::vector;
-
 NBLA_REGISTER_FUNCTION_HEADER(BinaryConnectConvolution,
                               int,                 // base_axis
                               const vector<int> &, // pad

@@ -21,8 +21,6 @@
 
 #include <memory>
 
-using std::shared_ptr;
-
 namespace nbla {
 
 /** User interface for Array and passed to Function.

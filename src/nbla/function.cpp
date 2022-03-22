@@ -20,8 +20,6 @@
 
 namespace nbla {
 
-using std::make_shared;
-
 Function::Function(const Context &ctx) : ctx_(ctx), fall_back_func_(nullptr) {}
 
 Function::~Function() {}

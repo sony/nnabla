@@ -36,7 +36,6 @@ void clear_param(pair<string, Params> &kv) {
 }
 #endif
 
-using std::make_shared;
 using std::make_pair;
 
 /** UpdateHookWithObject Implementation **/

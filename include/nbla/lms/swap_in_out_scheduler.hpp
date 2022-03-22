@@ -41,14 +41,9 @@ template <> struct hash<nbla::dtypes> {
 
 namespace nbla {
 
-using std::vector;
-using std::unordered_map;
-using std::string;
 using std::accumulate;
-using std::weak_ptr;
 using std::reference_wrapper;
 using std::pair;
-using std::set;
 
 /** A class which manages GPU memory usage and schedules swap in/out
     throughout network computation.

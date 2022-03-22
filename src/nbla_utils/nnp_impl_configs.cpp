@@ -38,8 +38,8 @@ GlobalConfigImpl::create_context(const ::Context &ctx) {
   vector<string> backends;
   backends.insert(backends.begin(), ctx.backends().begin(),
                   ctx.backends().end());
-  return shared_ptr<nbla::Context>(
-      new Context(backends, ctx.array_class(), ctx.device_id()));
+  return make_shared<nbla::Context>(backends, ctx.array_class(),
+                                    ctx.device_id());
 }
 
 shared_ptr<nbla::Context> GlobalConfigImpl::default_context() {

@@ -28,17 +28,13 @@
 
 namespace nbla {
 
-using std::string;
-using std::unordered_map;
-using std::shared_ptr;
-
 /** BackendUtils class
 
 This class is never be instantiated.
  */
 class NBLA_API BackendUtils {
 public:
-  typedef std::function<BackendBase *(void)> BackendGetter;
+  typedef function<BackendBase *(void)> BackendGetter;
   typedef unordered_map<string, BackendGetter> Registry_t;
 
   /** Register new synchronizer

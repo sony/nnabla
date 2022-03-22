@@ -67,7 +67,7 @@ const nbla::Context kCpuCtx{{"cpu:float"}, "CpuCachedArray", "0"};
 // ----------------------------------------------------------------------
 bool load_variable_list(const string &path, vector<string> &data_names) {
   ifstream cache_info_file(path + "/cache_info.csv");
-  std::string variable_name;
+  string variable_name;
   while (std::getline(cache_info_file, variable_name)) {
     data_names.push_back(variable_name);
   }
@@ -84,7 +84,7 @@ bool search_for_cache_files(const string &path,
                             vector<shared_ptr<CacheFile>> &cache_files) {
 
   ifstream cache_index_info(path + "/cache_index.csv");
-  std::string line;
+  string line;
   while (std::getline(cache_index_info, line)) {
     string filename = path + "/" + line.substr(0, line.find(","));
     cache_files.push_back(make_shared<CacheFile>(filename, data_names));
@@ -95,7 +95,7 @@ bool search_for_cache_files(const string &path,
 // ----------------------------------------------------------------------
 // FileResource
 // ----------------------------------------------------------------------
-FileResource::FileResource(const std::string &filename)
+FileResource::FileResource(const string &filename)
     : fp_(fopen(filename.c_str(), "rb")) {}
 
 FileResource::~FileResource() {
@@ -140,24 +140,20 @@ VariableDesc::VariableDesc()
 // VariableBuffer
 // ----------------------------------------------------------------------
 VariableBuffer::VariableBuffer()
-    : buffer_(nullptr), data_type_(dtypes::UBYTE), block_size_(0), shape_() {}
+    : buffer_(), data_type_(dtypes::UBYTE), block_size_(0), shape_() {}
 
-VariableBuffer::~VariableBuffer() {
-  if (buffer_) {
-    delete[] buffer_;
-  }
-}
+VariableBuffer::~VariableBuffer() {}
 
 void VariableBuffer::from_buffer(const void *buffer, dtypes data_type,
                                  int block_size, Shape_t shape) {
   if (buffer_ == nullptr) {
-    buffer_ = new char[block_size];
+    buffer_ = make_unique<char[]>(block_size);
   }
 
   data_type_ = data_type;
   block_size_ = block_size;
   shape_ = shape;
-  memcpy(buffer_, buffer, block_size);
+  memcpy(buffer_.get(), buffer, block_size);
 }
 
 NdArrayPtr VariableBuffer::to_ndarray() {
@@ -206,7 +202,7 @@ NdArrayPtr VariableBuffer::to_ndarray() {
     break;
   }
 
-  memcpy(buffer, buffer_, block_size_);
+  memcpy(buffer, buffer_.get(), block_size_);
   return v;
 }
 
@@ -389,9 +385,9 @@ RingBuffer::RingBuffer(const vector<shared_ptr<CacheFile>> &cache_files,
                        const vector<int> &idx_list, bool shuffle)
     : cache_files_(cache_files), idx_list_(idx_list), shuffle_(shuffle),
       prev_index_(0), current_(0), start_(0), total_(0), total_buffer_size_(0),
-      cache_file_data_size_(0), data_size_(0), batch_data_size_(0),
-      buffer_(nullptr), shuffle_buffer_(0), file_queue_(),
-      data_type_(dtypes::FLOAT), shape_(), variable_name_(variable_name) {
+      cache_file_data_size_(0), data_size_(0), batch_data_size_(0), buffer_(),
+      shuffle_buffer_(), file_queue_(), data_type_(dtypes::FLOAT), shape_(),
+      variable_name_(variable_name) {
 
   for (auto f : cache_files_) {
     file_queue_.push(f.get());
@@ -409,15 +405,12 @@ RingBuffer::RingBuffer(const vector<shared_ptr<CacheFile>> &cache_files,
   batch_data_size_ = compute_size_by_shape(shape_) * word_size;
   total_buffer_size_ = cache_file_data_size_ * NUM_OF_CACHE_FILE;
 
-  buffer_ = new char[total_buffer_size_];
-  shuffle_buffer_ = new char[cache_file_data_size_];
+  buffer_ = make_unique<char[]>(total_buffer_size_);
+  shuffle_buffer_ = make_unique<char[]>(cache_file_data_size_);
   fill_buffer(0);
 }
 
-RingBuffer::~RingBuffer() {
-  delete[] buffer_;
-  delete[] shuffle_buffer_;
-}
+RingBuffer::~RingBuffer() {}
 
 void RingBuffer::fill_buffer(int load_size) {
   while (load_size <= total_buffer_size_ - cache_file_data_size_) {
@@ -428,15 +421,15 @@ void RingBuffer::fill_buffer(int load_size) {
     }
     auto file = file_queue_.front();
     if (shuffle_) {
-      char *dest = buffer_ + load_size;
-      file->read_data(variable_name_, shuffle_buffer_);
+      char *dest = buffer_.get() + load_size;
+      file->read_data(variable_name_, shuffle_buffer_.get());
       for (size_t t = 0; t < idx_list_.size(); ++t) {
         const int s = idx_list_[t];
         const int d = data_size_;
-        memcpy(dest + t * d, shuffle_buffer_ + s * d, d);
+        memcpy(dest + t * d, shuffle_buffer_.get() + s * d, d);
       }
     } else {
-      file->read_data(variable_name_, buffer_ + load_size);
+      file->read_data(variable_name_, buffer_.get() + load_size);
     }
     file_queue_.pop();
     load_size += cache_file_data_size_;
@@ -448,7 +441,8 @@ void RingBuffer::fill_up() {
   int used_buffer_size = current_ * batch_data_size_;
   if (used_buffer_size < cache_file_data_size_)
     return;
-  memmove(buffer_, buffer_ + used_buffer_size, total_ - used_buffer_size);
+  memmove(buffer_.get(), buffer_.get() + used_buffer_size,
+          total_ - used_buffer_size);
 
   fill_buffer(total_ - used_buffer_size);
 
@@ -465,7 +459,7 @@ void RingBuffer::read_batch_data(int idx, shared_ptr<VariableBuffer> v) {
     current_ = 0;
   }
   prev_index_ = idx;
-  char *src_buffer = buffer_ + (idx - start_) * block_size;
+  char *src_buffer = buffer_.get() + (idx - start_) * block_size;
   v->from_buffer(src_buffer, data_type_, block_size, shape_);
   ++current_;
 }

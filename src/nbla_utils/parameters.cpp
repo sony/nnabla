@@ -66,7 +66,7 @@ string get_extension(const string &filename) {
 }
 
 #ifdef NBLA_UTILS_WITH_HDF5
-bool parse_hdf5_dataset(std::string name, hid_t did, ParameterVector &pv) {
+bool parse_hdf5_dataset(string name, hid_t did, ParameterVector &pv) {
   hid_t sp = H5Dget_space(did);
   int rank = H5Sget_simple_extent_ndims(sp);
   hsize_t dims[rank];
@@ -75,15 +75,16 @@ bool parse_hdf5_dataset(std::string name, hid_t did, ParameterVector &pv) {
   H5T_class_t t_class = H5Tget_class(tid);
 
   hsize_t size = H5Dget_storage_size(did);
-  std::string variable_name = name.substr(1, name.length());
+  string variable_name = name.substr(1, name.length());
 
   NBLA_LOG_INFO("Dataset Name:[{}] type: {} size: {}", variable_name, t_class,
                 size);
 
-  float *buffer = new float[size / sizeof(float)];
+  auto buffer = make_unique<float[]>(size / sizeof(float));
   assert(buffer);
   // TODO: Other data types than float.
-  err = H5Dread(did, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, buffer);
+  err = H5Dread(did, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT,
+                buffer.get());
   if (err >= 0) {
     Shape_t shape(dims, dims + rank);
     // fix crash bug by replacing bool with int,
@@ -95,17 +96,15 @@ bool parse_hdf5_dataset(std::string name, hid_t did, ParameterVector &pv) {
       H5Aclose(att);
     }
 
-    CgVariablePtr cg_v = std::make_shared<CgVariable>(shape, need_grad);
+    CgVariablePtr cg_v = make_shared<CgVariable>(shape, need_grad);
     float *data =
         cg_v->variable()->template cast_data_and_get_pointer<float>(cpu_ctx);
     for (int i = 0; i < size / sizeof(float); i++) {
       data[i] = buffer[i];
     }
     pv.push_back({variable_name, cg_v});
-    delete[] buffer;
     return true;
   }
-  delete[] buffer;
   NBLA_ERROR(error_code::not_implemented, "HDF5 is not enabled when build.");
   return false;
 }
@@ -135,10 +134,10 @@ bool parse_hdf5_group(hid_t gid, ParameterVector &pv) {
         }
         case H5G_DATASET: {
           hid_t did = H5Dopen(gid, name, H5P_DEFAULT);
-          std::string dataset_name(group_name);
+          string dataset_name(group_name);
           if (dataset_name != "/")
             dataset_name += "/";
-          dataset_name += std::string(name);
+          dataset_name += string(name);
           parse_hdf5_dataset(dataset_name, did, pv);
           H5Dclose(did);
           break;
@@ -168,7 +167,7 @@ void create_h5_group(hid_t file_id, const string &filename) {
     return;
   } else {
     H5G_info_t group_info;
-    std::string base_name = filename.substr(0, ep);
+    string base_name = filename.substr(0, ep);
     herr_t err = H5Gget_info_by_name(file_id, base_name.c_str(), &group_info,
                                      H5P_DEFAULT);
     if (err >= 0) {
@@ -194,7 +193,7 @@ void load_parameters_from_proto(NNablaProtoBuf &param, ParameterVector &pv) {
     const string &name = it->variable_name();
     Shape_t shape(it->shape().dim().begin(), it->shape().dim().end());
     bool need_grad = it->need_grad();
-    CgVariablePtr cg_v = std::make_shared<CgVariable>(shape, need_grad);
+    CgVariablePtr cg_v = make_shared<CgVariable>(shape, need_grad);
     float *data =
         cg_v->variable()->template cast_data_and_get_pointer<float>(cpu_ctx);
     auto &p_data = it->data();
@@ -243,7 +242,7 @@ bool load_parameters_h5(ParameterVector &pv, string filename) {
   std::ifstream file(filename.c_str(), std::ios::binary | std::ios::ate);
   std::streamsize size = file.tellg();
   file.seekg(0, std::ios::beg);
-  std::vector<char> buffer(size);
+  vector<char> buffer(size);
   if (file.read(buffer.data(), size)) {
     return load_parameters_h5(pv, buffer.data(), size);
   }
@@ -259,16 +258,14 @@ bool load_parameters_pb(ParameterVector &pv, char *buffer, int size) {
   constexpr int size_128_mb = 128 << 20;
 #endif
   NNablaProtoBuf param;
-  std::unique_ptr<google::protobuf::io::ZeroCopyInputStream> input(
-      new google::protobuf::io::ArrayInputStream(buffer, size));
-  std::unique_ptr<google::protobuf::io::CodedInputStream> coded_input(
-      new google::protobuf::io::CodedInputStream(input.get()));
+  google::protobuf::io::ArrayInputStream input(buffer, size);
+  google::protobuf::io::CodedInputStream coded_input(&input);
 #if GOOGLE_PROTOBUF_VERSION < 3006001
-  coded_input->SetTotalBytesLimit(size_1024_mb, size_128_mb);
+  coded_input.SetTotalBytesLimit(size_1024_mb, size_128_mb);
 #else
-  coded_input->SetTotalBytesLimit(size_1024_mb);
+  coded_input.SetTotalBytesLimit(size_1024_mb);
 #endif
-  param.ParseFromCodedStream(coded_input.get());
+  param.ParseFromCodedStream(&coded_input);
 
   load_parameters_from_proto(param, pv);
   return true;

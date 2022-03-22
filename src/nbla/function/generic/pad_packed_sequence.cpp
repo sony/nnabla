@@ -83,7 +83,7 @@ void PadPackedSequence<U>::forward_impl(const Variables &inputs,
       padded_sequence->cast_data_and_get_pointer<U>(ctx_);
   auto data_lengths = lengths->cast_data_and_get_pointer<int>(cpu_ctx);
 
-  namespace rnn = function::utils::rnn;
+  namespace rnn = ::nbla::utils::rnn;
   // Compute lengths
   rnn::compute_lengths(data_batch_sizes, batch_sizes->size(), data_lengths);
   // Unpack
@@ -132,7 +132,7 @@ void PadPackedSequence<U>::backward_impl(const Variables &inputs,
   auto grad_padded_sequence = padded_sequence->get_grad_pointer<U>(ctx_);
 
   // Pack
-  namespace rnn = function::utils::rnn;
+  namespace rnn = ::nbla::utils::rnn;
   if (accum[0]) {
     if (batch_first_) {
       if (TL > T)

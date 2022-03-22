@@ -18,8 +18,6 @@
 
 namespace nbla {
 
-using std::make_shared;
-
 void NdArray::update_shape_info() {
   size_ = compute_size_by_shape(shape_);
   strides_ = get_c_contiguous_strides(shape_);
@@ -28,7 +26,7 @@ void NdArray::update_shape_info() {
 
 NdArray::NdArray(const Shape_t &shape) : shape_(shape) {
   update_shape_info();
-  array_.reset(new SyncedArray(size_));
+  array_ = make_shared<SyncedArray>(size_);
 }
 
 NdArray::NdArray(SyncedArrayPtr array, const Shape_t &shape) : shape_(shape) {
@@ -54,7 +52,7 @@ void NdArray::reshape(const Shape_t &shape, bool force) {
                                        "(clearing data).");
   shape_ = shape;
   update_shape_info();
-  array_.reset(new SyncedArray(size_));
+  array_ = make_shared<SyncedArray>(size_);
 }
 
 NdArrayPtr NdArray::view(const Shape_t &shape) {

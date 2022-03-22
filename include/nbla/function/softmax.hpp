@@ -27,9 +27,6 @@
 
 namespace nbla {
 
-using std::string;
-using std::make_shared;
-
 NBLA_REGISTER_FUNCTION_HEADER(Softmax, int);
 
 /** Softmax normalization defined as

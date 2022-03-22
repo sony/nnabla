@@ -250,7 +250,7 @@ void FusedConvolution<T>::setup_impl(const Variables &inputs,
   last_out->variable()->set_grad(outputs[0]->grad());
   // Call all setup again to ensure inplaced variable is refer to the correct
   // array.
-  std::unordered_set<CgFunctionPtr> fclosed;
+  unordered_set<CgFunctionPtr> fclosed;
   last_out->visit_function_recursive(last_out->parent(), fclosed,
                                      false /* as_recomputation */,
                                      [](CgFunctionPtr fn) { fn->setup(); });
@@ -315,7 +315,7 @@ void FusedConvolution<T>::backward_impl(const Variables &inputs,
   }
 
   // Propagate need_grad states
-  std::unordered_set<CgFunctionPtr> fclosed;
+  unordered_set<CgFunctionPtr> fclosed;
   last_output_cg_variable_->visit_function_recursive(
       last_output_cg_variable_->parent(), fclosed, false /* recomputation */,
       [](CgFunctionPtr fn) {});

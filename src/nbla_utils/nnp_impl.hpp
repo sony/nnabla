@@ -49,11 +49,6 @@ namespace nbla {
 namespace utils {
 namespace nnp {
 
-using std::unordered_map;
-using std::shared_ptr;
-using std::unique_ptr;
-using std::string;
-
 // Forward dec
 class NnpImpl;
 
@@ -253,7 +248,7 @@ private:
   VariableBuffer(const VariableBuffer &) = delete;
   VariableBuffer &operator=(const VariableBuffer &) = delete;
 
-  char *buffer_;
+  unique_ptr<char[]> buffer_;
   dtypes data_type_;
   int block_size_;
   Shape_t shape_;
@@ -308,7 +303,7 @@ private:
   vector<shared_ptr<std::thread>> workers_;
   uint32_t iter_;
   bool req_exit_;
-  std::queue<queue_data_type> queue_;
+  queue<queue_data_type> queue_;
   mutable std::mutex mutex_;
   std::condition_variable full_cond_;
   std::condition_variable empty_cond_;
@@ -476,15 +471,14 @@ class NnpImpl {
 
   void update_parameters();
   int get_network_repeat_nest_depth(const ::Network &orig);
-  std::vector<std::string> create_suffixes(std::string prefix,
-                                           std::vector<std::string> ids,
-                                           std::vector<int> times);
-  std::vector<std::string>
-  create_var_suffixes(std::map<std::string, int> repeat_info, ::Variable var);
-  std::vector<std::string>
-  create_func_suffixes(std::map<std::string, int> repeat_info, ::Function func);
+  vector<string> create_suffixes(string prefix, vector<string> ids,
+                                 vector<int> times);
+  vector<string> create_var_suffixes(map<string, int> repeat_info,
+                                     ::Variable var);
+  vector<string> create_func_suffixes(map<string, int> repeat_info,
+                                      ::Function func);
   ::Network expand_network(const ::Network &orig);
-  const ::Network &search_network(std::string name);
+  const ::Network &search_network(string name);
 
   NnpImpl(const nbla::Context &ctx);
 
@@ -492,9 +486,9 @@ public:
   ~NnpImpl() {}
 
   bool add_archive(void *archive);
-  bool add_prototxt(std::string filename);
+  bool add_prototxt(string filename);
   bool add_prototxt(char *buffer, int size);
-  bool add_protobuf(std::string filename);
+  bool add_protobuf(string filename);
   bool add_protobuf(char *buffer, int size);
   bool add_hdf5(char *buffer, int size);
   vector<string> get_network_names();

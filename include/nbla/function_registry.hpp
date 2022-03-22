@@ -19,6 +19,7 @@
 #include <nbla/exception.hpp>
 #include <nbla/function.hpp>
 #include <nbla/preprocessor_magic.hpp>
+#include <nbla/singleton_manager-internal.hpp>
 
 #include <functional>
 #include <memory>
@@ -32,8 +33,8 @@ namespace nbla {
 /**
 */
 template <typename Item>
-std::string print_function_items(vector<shared_ptr<Item>> items) {
-  std::ostringstream ss;
+string print_function_items(vector<shared_ptr<Item>> items) {
+  ostringstream ss;
   ss << "[";
   for (auto &&item : items) {
     ss << item->backend << ", ";
@@ -67,7 +68,7 @@ public:
                "Any of [%s] could not be found in %s",
                string_join(backend, ", ").c_str(),
                print_function_items<Item>(items_).c_str());
-    return (*it)->function;
+    return (*it)->func;
   }
 
   /**
@@ -81,10 +82,12 @@ Item of FunctionDb that stores backend key and a creator function (with variadic
 template args).
 */
 template <typename Base, typename... Args> struct FunctionDbItem {
-  typedef std::function<shared_ptr<Base>(const Context &ctx, Args...)>
-      function_t;
+  typedef function<shared_ptr<Base>(const Context &ctx, Args...)> function_t;
   string backend;
-  function_t function;
+  function_t func;
+
+  FunctionDbItem(string backend, const function_t &func)
+      : backend(backend), func(func) {}
 };
 
 /**
@@ -129,8 +132,10 @@ has an idea, please let me know or PR is welcome.
 #define NBLA_REGISTER_FUNCTION_SOURCE(NAME, ...)                               \
   NBLA_API FunctionRegistry<Function NBLA_VA_ARGS(__VA_ARGS__)>                \
       &get_##NAME##Registry() {                                                \
-    static FunctionRegistry<Function NBLA_VA_ARGS(__VA_ARGS__)> registry;      \
-    return registry;                                                           \
+    struct NAME##RegistryHolder {                                              \
+      FunctionRegistry<Function NBLA_VA_ARGS(__VA_ARGS__)> instance;           \
+    };                                                                         \
+    return SingletonManager::get<NAME##RegistryHolder>()->instance;            \
   }                                                                            \
                                                                                \
   NBLA_API shared_ptr<Function> create_##NAME(                                 \
@@ -145,14 +150,13 @@ This will be used inside init method.
 */
 #define NBLA_REGISTER_FUNCTION_IMPL(BASE, CLS, BACKEND, ...)                   \
   {                                                                            \
-    std::function<shared_ptr<Function>(                                        \
-        const Context &NBLA_VA_ARGS(__VA_ARGS__))>                             \
+    function<shared_ptr<Function>(const Context &NBLA_VA_ARGS(__VA_ARGS__))>   \
         func = [](NBLA_ARGDEFS(const Context &NBLA_VA_ARGS(__VA_ARGS__))) {    \
-          return shared_ptr<Function>(                                         \
-              new CLS(NBLA_ARGS(const Context &NBLA_VA_ARGS(__VA_ARGS__))));   \
+          return make_shared<CLS>(                                             \
+              NBLA_ARGS(const Context &NBLA_VA_ARGS(__VA_ARGS__)));            \
         };                                                                     \
     typedef FunctionDbItem<Function NBLA_VA_ARGS(__VA_ARGS__)> item_t;         \
-    get_##BASE##Registry().add(shared_ptr<item_t>(new item_t{BACKEND, func})); \
+    get_##BASE##Registry().add(make_shared<item_t>(BACKEND, func));            \
   }
 
 #else
@@ -166,8 +170,10 @@ This will be used inside init method.
 
 #define NBLA_REGISTER_FUNCTION_SOURCE(NAME, ...)                               \
   FunctionRegistry<Function, ##__VA_ARGS__> &get_##NAME##Registry() {          \
-    static FunctionRegistry<Function, ##__VA_ARGS__> registry;                 \
-    return registry;                                                           \
+    struct NAME##RegistryHolder {                                              \
+      FunctionRegistry<Function, ##__VA_ARGS__> instance;                      \
+    };                                                                         \
+    return SingletonManager::get<NAME##RegistryHolder>()->instance;            \
   }                                                                            \
                                                                                \
   shared_ptr<Function> create_##NAME(                                          \
@@ -182,13 +188,12 @@ This will be used inside init method.
 */
 #define NBLA_REGISTER_FUNCTION_IMPL(BASE, CLS, BACKEND, ...)                   \
   {                                                                            \
-    std::function<shared_ptr<Function>(const Context &, ##__VA_ARGS__)> func = \
+    function<shared_ptr<Function>(const Context &, ##__VA_ARGS__)> func =      \
         [](NBLA_ARGDEFS(const Context &, ##__VA_ARGS__)) {                     \
-          return shared_ptr<Function>(                                         \
-              new CLS(NBLA_ARGS(const Context &, ##__VA_ARGS__)));             \
+          return make_shared<CLS>(NBLA_ARGS(const Context &, ##__VA_ARGS__));  \
         };                                                                     \
     typedef FunctionDbItem<Function, ##__VA_ARGS__> item_t;                    \
-    get_##BASE##Registry().add(shared_ptr<item_t>(new item_t{BACKEND, func})); \
+    get_##BASE##Registry().add(make_shared<item_t>(BACKEND, func));            \
   }
 #endif
 }

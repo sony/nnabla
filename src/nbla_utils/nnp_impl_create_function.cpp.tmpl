@@ -37,11 +37,11 @@ from utils.type_conv import type_from_proto
 
 def proto_to_ctype(name, arg):
     if arg['type'] == 'Shape':
-        return 'std::vector<int> arg_{0}(param.{0}().dim().begin(), param.{0}().dim().end())'.format(name)
+        return 'vector<int> arg_{0}(param.{0}().dim().begin(), param.{0}().dim().end())'.format(name)
     if arg['type'] == 'repeated int64':
-        return 'std::vector<int> arg_{0}(param.{0}().begin(), param.{0}().end())'.format(name)
+        return 'vector<int> arg_{0}(param.{0}().begin(), param.{0}().end())'.format(name)
     if arg['type'] == 'repeated float':
-        return 'std::vector<float> arg_{0}(param.{0}().begin(), param.{0}().end())'.format(name)
+        return 'vector<float> arg_{0}(param.{0}().begin(), param.{0}().end())'.format(name)
     return '{0} arg_{1} = param.{1}()'.format(type_from_proto[arg['type']]['cpp_var'], name)
     
 %>
@@ -109,7 +109,7 @@ shared_ptr<nbla::CgFunction> NetworkImpl::create_cgfunction(const ::Function& fu
 % endfor
 % endif
     nbla::FunctionPtr fp = create_${name}(ctx_${''.join([', arg_' + argname for argname in func.get('arguments', {}).keys()])});
-    return std::make_shared<nbla::CgFunction>(fp);
+    return make_shared<nbla::CgFunction>(fp);
   }
 % endfor
   return nullptr;

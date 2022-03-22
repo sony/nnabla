@@ -314,7 +314,7 @@ void DeformableConvolution<T>::backward_impl(const Variables &inputs,
   T *dmask = nullptr;
   T *col = nullptr;
 
-  std::unique_ptr<ColVectorMap<T>> mdb;
+  unique_ptr<ColVectorMap<T>> mdb;
 
   if (propagate_down[0] || propagate_down[1] || propagate_down[2]) {
     col = col_.cast_data_and_get_pointer<T>(this->ctx_, true);
@@ -350,13 +350,13 @@ void DeformableConvolution<T>::backward_impl(const Variables &inputs,
     if (!accum[4])
       inputs[4]->grad()->zero();
     db = inputs[4]->cast_grad_and_get_pointer<T>(this->ctx_, false);
-    mdb.reset(new ColVectorMap<T>(db, channels_o_));
+    mdb = make_unique<ColVectorMap<T>>(db, channels_o_);
   } else if ((inputs.size() == 4 && inputs[3]->ndim() == 1) &&
              propagate_down[3]) {
     if (!accum[3])
       inputs[3]->grad()->zero();
     db = inputs[3]->cast_grad_and_get_pointer<T>(this->ctx_, false);
-    mdb.reset(new ColVectorMap<T>(db, channels_o_));
+    mdb = make_unique<ColVectorMap<T>>(db, channels_o_);
   }
   // Sample loop
   for (int n = 0; n < outer_size_; ++n) {

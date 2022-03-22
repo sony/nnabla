@@ -23,8 +23,6 @@ namespace nbla {
 // like solver does.
 NBLA_REGISTER_COMMUNICATOR_SOURCE(MultiProcessDataParallelCommunicator);
 
-using std::make_shared;
-
 template <typename T>
 MultiProcessDataParallelCommunicator<T>::MultiProcessDataParallelCommunicator(
     const Context &ctx)

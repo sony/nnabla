@@ -26,8 +26,6 @@
 
 namespace nbla {
 
-using std::vector;
-
 NBLA_REGISTER_FUNCTION_HEADER(FusedBatchNormalization, const vector<int> &,
                               float, float, bool, const string &);
 

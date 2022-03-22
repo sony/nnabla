@@ -21,7 +21,6 @@
 #include <nbla/function/transpose.hpp>
 
 namespace nbla {
-using std::vector;
 
 /**
  * @brief This class can be used to transform a variable memory format to
@@ -150,7 +149,7 @@ public:
                                                     const bool accum);
 };
 
-using ChannelFirstAdaptorPtr = std::shared_ptr<ChannelFirstAdaptor>;
+using ChannelFirstAdaptorPtr = shared_ptr<ChannelFirstAdaptor>;
 }
 
 #endif

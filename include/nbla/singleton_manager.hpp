@@ -27,8 +27,6 @@
 #include <nbla/synced_array.hpp>
 
 namespace nbla {
-using std::unique_ptr;
-using std::unordered_map;
 
 /** API for getting or creating and deleting any singleton classes.
 
@@ -72,7 +70,7 @@ public:
 private:
   int count_; ///< How many singletons in this registry.
   ///< Hash map from ID to a pair of address and deleter function.
-  unordered_map<int, pair<uintptr_t, std::function<void()>>> singletons_;
+  unordered_map<int, pair<uintptr_t, function<void()>>> singletons_;
   unordered_map<uintptr_t, int> adr2id_; ///< Hash map from address to ID.
 
   static SingletonManager

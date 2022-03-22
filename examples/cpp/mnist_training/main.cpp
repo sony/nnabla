@@ -14,10 +14,11 @@
 
 #include <iostream>
 #include <nbla/context.hpp>
-using namespace std;
-using namespace nbla;
 
 #include "mnist_training.hpp"
+
+using namespace std;
+using namespace nbla;
 
 /******************************************/
 // Example of mnist training

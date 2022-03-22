@@ -24,9 +24,8 @@
 namespace nbla {
 
 NBLA_REGISTER_FUNCTION_SOURCE(SyncBatchNormalization,
-                              const std::shared_ptr<Communicator> &,
-                              const std::string &, const vector<int> &, float,
-                              float, bool);
+                              const shared_ptr<Communicator> &, const string &,
+                              const vector<int> &, float, float, bool);
 
 template <typename T>
 void SyncBatchNormalization<T>::setup_impl(const Variables &inputs,

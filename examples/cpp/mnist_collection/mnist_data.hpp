@@ -21,11 +21,15 @@
 #include <string>
 #include <vector>
 #include <zlib.h>
-using namespace std;
 
 #include <nbla/computation_graph/variable.hpp>
 #include <nbla/context.hpp>
+
+using std::vector;
+using std::string;
 using std::make_shared;
+using nbla::Context;
+using nbla::CgVariablePtr;
 
 /******************************************/
 // Example of data provider
@@ -37,7 +41,8 @@ vector<vector<uint8_t>> read_images(const string &train,
 
   gzFile fp = gzopen((data_root + filename).c_str(), "rb");
   if (fp == NULL) {
-    cerr << "This sample requires mnist data downloaded before." << endl;
+    std::cerr << "This sample requires mnist data downloaded before."
+              << std::endl;
     exit(0);
   }
 
@@ -71,7 +76,8 @@ vector<uint8_t> read_labels(const string &train, const string &data_root,
 
   gzFile fp = gzopen((data_root + filename).c_str(), "rb");
   if (fp == NULL) {
-    cerr << "This sample requires mnist data downloaded before." << endl;
+    std::cerr << "This sample requires mnist data downloaded before."
+              << std::endl;
     exit(0);
   }
 

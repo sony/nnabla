@@ -27,9 +27,6 @@
 
 namespace nbla {
 
-using std::shared_ptr;
-using std::string;
-using std::map;
 using std::pair;
 
 /** Array classes which can be get/cast without copy. */
@@ -56,8 +53,8 @@ private:
 /** ArrayCreator class this is never be instantiated. */
 class NBLA_API ArrayCreator {
 public:
-  typedef std::function<Array *(const Size_t, dtypes, const Context &)> Creator;
-  typedef std::function<Context(const Context &ctx)> FilterContext;
+  typedef function<Array *(const Size_t, dtypes, const Context &)> Creator;
+  typedef function<Context(const Context &ctx)> FilterContext;
   typedef map<string, pair<Creator, FilterContext>> Registry_t;
 
   /** Interface to create array */
@@ -85,7 +82,7 @@ private:
 */
 class NBLA_API ArraySynchronizer {
 public:
-  typedef std::function<void(Array *, Array *, const int)> Synchronizer;
+  typedef function<void(Array *, Array *, const int)> Synchronizer;
   typedef map<pair<string, string>, Synchronizer> Registry_t;
 
   /** Synchronize array
@@ -123,9 +120,9 @@ NBLA_API void synchronizer_default(Array *src, Array *dst,
 
 #define NBLA_REGISTER_ARRAY_CREATOR(CLS)                                       \
   {                                                                            \
-    std::function<Array *(const Size_t, dtypes, const Context &)> func =       \
+    function<Array *(const Size_t, dtypes, const Context &)> func =            \
         [](const Size_t size, dtypes dtype, const Context &ctx) {              \
-          return new CLS(size, dtype, ctx);                                    \
+          return new_object<CLS>(size, dtype, ctx);                            \
         };                                                                     \
     ArrayCreator::add_creator(#CLS, func, CLS::filter_context);                \
   }

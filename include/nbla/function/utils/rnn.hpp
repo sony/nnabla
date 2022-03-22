@@ -20,7 +20,6 @@
 #include <nbla/function_registry.hpp>
 
 namespace nbla {
-namespace function {
 namespace utils {
 namespace rnn {
 
@@ -237,7 +236,6 @@ inline void unpack_batch_first(const U *packed_sequence, const int *batch_sizes,
 
 } // rnn
 } // utils
-} // function
 } // nbla
 
 #endif

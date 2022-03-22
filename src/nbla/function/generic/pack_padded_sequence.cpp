@@ -78,7 +78,7 @@ void PackPaddedSequence<U>::forward_impl(const Variables &inputs,
   auto data_packed_sequence =
       packed_sequence->cast_data_and_get_pointer<U>(ctx_);
   auto data_batch_sizes = batch_sizes->cast_data_and_get_pointer<int>(cpu_ctx);
-  namespace rnn = function::utils::rnn;
+  namespace rnn = ::nbla::utils::rnn;
   // Compute batch_sizes
   rnn::compute_batch_sizes(data_lengths, lengths->size(), data_batch_sizes);
   // Pack
@@ -118,7 +118,7 @@ void PackPaddedSequence<U>::backward_impl(const Variables &inputs,
   auto grad_packed_sequence = packed_sequence->get_grad_pointer<U>(ctx_);
   auto data_batch_sizes = batch_sizes->get_data_pointer<int>(cpu_ctx);
   // Unpack
-  namespace rnn = function::utils::rnn;
+  namespace rnn = ::nbla::utils::rnn;
   if (accum[0]) {
     if (batch_first_) {
       rnn::unpack_batch_first<U, true>(grad_packed_sequence, data_batch_sizes,

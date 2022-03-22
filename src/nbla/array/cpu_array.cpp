@@ -23,10 +23,6 @@
 
 namespace nbla {
 
-using std::vector;
-using std::shared_ptr;
-using std::make_shared;
-
 CpuArray::CpuArray(const Size_t size, dtypes dtype, const Context &ctx)
     : Array::Array(size, dtype, ctx,
                    SingletonManager::get<Cpu>()->naive_allocator()->alloc(

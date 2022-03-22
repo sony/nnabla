@@ -43,16 +43,16 @@ private:
 private:
   ::Network expand_;
   const ::Network &network_;
-  std::list<::Function> sorted_;
-  std::unordered_map<std::string, VisitState> visitor_state_;
+  list<::Function> sorted_;
+  unordered_map<string, VisitState> visitor_state_;
   bool old_naming_;
-  std::map<std::string, vector<std::string>> param_original_names_;
-  std::map<std::string, vector<std::string>> delay_var_;
-  std::map<std::string, vector<std::string>> repeat_end_var_;
-  std::map<std::string, vector<std::string>> repeat_start_var_;
+  map<string, vector<string>> param_original_names_;
+  map<string, vector<string>> delay_var_;
+  map<string, vector<string>> repeat_end_var_;
+  map<string, vector<string>> repeat_start_var_;
 };
 
-template <typename T> bool is_in(std::string k, const T &m) {
+template <typename T> bool is_in(string k, const T &m) {
   return (m.find(k) != m.end());
 };
 

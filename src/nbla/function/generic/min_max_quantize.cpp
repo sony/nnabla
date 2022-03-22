@@ -87,7 +87,7 @@ void MinMaxQuantize<T>::setup_impl(const Variables &inputs,
       axes.push_back(i);
   }
   // Compute broadcast shape
-  std::vector<int> bshape(x->shape().size());
+  vector<int> bshape(x->shape().size());
   for (Shape_t::size_type i = 0; i < x->shape().size(); i++) {
     bshape[i] = x->shape()[i];
   }

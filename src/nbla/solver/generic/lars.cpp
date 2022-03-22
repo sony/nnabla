@@ -21,8 +21,6 @@
 #include <numeric>
 
 namespace nbla {
-using std::shared_ptr;
-using std::make_shared;
 
 NBLA_REGISTER_SOLVER_SOURCE(Lars, float, float, float, float);
 

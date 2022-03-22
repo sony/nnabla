@@ -112,8 +112,7 @@ public:
       auto c = SingletonManager::get<GlobalClearBufferState>()->clear_buffer();
       @endcode
    */
-  std::unique_ptr<ScopedState> state(bool clear_buffer,
-                                     bool clear_no_need_grad);
+  unique_ptr<ScopedState> state(bool clear_buffer, bool clear_no_need_grad);
 
 private:
   friend SingletonManager;

@@ -29,4 +29,8 @@ void Callback::backward_impl(const Variables &inputs, const Variables &outputs,
                              const vector<bool> &accum) {
   backward_callback_(obj_, inputs, outputs, propagate_down, accum);
 }
+
+vector<string> Callback::allowed_array_classes() {
+  return SingletonManager::get<Cpu>()->array_classes();
+}
 }

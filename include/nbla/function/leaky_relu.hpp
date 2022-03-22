@@ -27,8 +27,6 @@
 
 namespace nbla {
 
-using std::string;
-
 NBLA_REGISTER_FUNCTION_HEADER(LeakyReLU, float, bool);
 
 /** Leaky Rectified Linear Unit (LeakyReLU) defined as

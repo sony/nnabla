@@ -15,8 +15,7 @@
 #ifndef __NBLA_UTILS_UNFOLD_TO_PATCHES_HPP__
 #define __NBLA_UTILS_UNFOLD_TO_PATCHES_HPP__
 
-#include <vector>
-using std::vector;
+#include <nbla/common.hpp>
 
 namespace nbla {
 template <typename T>

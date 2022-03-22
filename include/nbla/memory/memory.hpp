@@ -22,9 +22,7 @@
 
 namespace nbla {
 
-using std::string;
 using std::size_t;
-using std::shared_ptr;
 
 /** Memory status on the device.
  */
@@ -63,7 +61,7 @@ public:
 };
 
 typedef shared_ptr<PhysicalMemory> PhysicalMemoryPtr;
-typedef std::vector<PhysicalMemoryPtr> VecPhysicalMemoryPtr;
+typedef vector<PhysicalMemoryPtr> VecPhysicalMemoryPtr;
 
 /** \addtogroup NNablaCoreGrp */
 /*@{*/

@@ -32,9 +32,7 @@
 #include <vector>
 
 namespace nbla {
-using std::string;
 using std::snprintf;
-using std::vector;
 
 /** In NNabla, exceptions are thrown through this macro. Error codes are
     defined in enum class nbla::error_code. See also NBLA_CHECK.

@@ -25,7 +25,6 @@
 #endif
 
 namespace nbla {
-using std::make_shared;
 // ----------------------------------------------------------------------
 // CpuMemory implementation
 // ----------------------------------------------------------------------
@@ -44,11 +43,11 @@ CpuMemory::~CpuMemory() {
                     "Trying to free memory which has a prev (allocated "
                     "by another memory and split previously).");
   DEBUG_LOG("%s: %zu at %p\n", __func__, this->bytes(), ptr_);
-  ::free(ptr_);
+  ::nbla::free(ptr_);
 }
 
 bool CpuMemory::alloc_impl() {
-  ptr_ = ::malloc(this->bytes());
+  ptr_ = ::nbla::malloc(this->bytes());
   DEBUG_LOG("%s: %zu at %p\n", __func__, this->bytes(), ptr_);
   return bool(ptr_);
 }
@@ -62,7 +61,7 @@ shared_ptr<Memory> CpuMemory::divide_impl(size_t second_start) {
   size_t out_bytes = this->bytes() - second_start;
   void *out_ptr = (void *)((uint8_t *)ptr_ + second_start);
   return shared_ptr<Memory>(
-      new CpuMemory(out_bytes, this->device_id(), out_ptr));
+      NBLA_NEW_OBJECT(CpuMemory, out_bytes, this->device_id(), out_ptr));
 }
 
 void CpuMemory::merge_next_impl(Memory *from) {

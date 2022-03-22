@@ -14,7 +14,6 @@
 
 #include <nbla/function/rnn.hpp>
 
-using std::make_shared;
 namespace nbla {
 
 NBLA_REGISTER_FUNCTION_SOURCE(RNN, int, const string &, float, bool, bool);

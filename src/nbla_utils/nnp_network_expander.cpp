@@ -56,10 +56,10 @@ const int MAX_NAME_LEN = 512;
 #ifdef DEBUG_NETWORK_EXPANDER
 void dump_proto_network(const ::Network &network) {
   static int c = 0;
-  std::string output;
+  string output;
   google::protobuf::TextFormat::PrintToString(network, &output);
   std::ofstream network_proto_file;
-  std::string network_pb_txt = "network_nntxt_" + std::to_string(c++) + ".txt";
+  string network_pb_txt = "network_nntxt_" + to_string(c++) + ".txt";
   network_proto_file.open(network_pb_txt, std::ios::out);
   network_proto_file << output;
   network_proto_file.close();

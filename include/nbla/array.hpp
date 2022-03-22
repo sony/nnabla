@@ -39,7 +39,7 @@ namespace nbla {
 
 This is extended to implement a new array class (see CpuArray, CudaArray etc.).
 */
-class Array : public std::enable_shared_from_this<Array> {
+class Array : public enable_shared_from_this<Array> {
 protected:
   /// Size of array.
   Size_t size_;

@@ -27,8 +27,6 @@
 
 namespace nbla {
 
-using std::string;
-
 NBLA_REGISTER_FUNCTION_HEADER(ReLU, bool);
 
 /** Rectified Linear Unit (ReLU) defined as

@@ -35,7 +35,6 @@
 #include <nbla/function/deconvolution.hpp>
 #include <nbla/functions.hpp>
 #include <nbla/initializer.hpp>
-using std::make_shared;
 namespace f = nbla::functions;
 
 namespace nbla {
