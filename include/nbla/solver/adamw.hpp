@@ -58,7 +58,6 @@ protected:
   float beta1_; ///< \f$\beta_1\f$
   float beta2_; ///< \f$\beta_2\f$
   float eps_;   ///< \f$\epsilon\f$
-  float wd_;
   float init_alpha_;
 
   // Functions.

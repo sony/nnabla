@@ -58,7 +58,6 @@ protected:
   float momentum_;
   float coefficient_;
   float eps_;
-  float decay_rate_;
 
   virtual void set_state_impl(const string &key, VariablePtr param) override;
   virtual void remove_state_impl(const string &key) override;

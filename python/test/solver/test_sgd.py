@@ -24,6 +24,7 @@ ctxs = list_context('Sgd')
 class RefSgd(RefSolver):
 
     def __init__(self, lr):
+        super().__init__()
         self.lr = lr
 
     def _set_state_impl(self, key, param):

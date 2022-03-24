@@ -24,6 +24,7 @@ ctxs = list_context('RMSprop')
 class RefRMSprop(RefSolver):
 
     def __init__(self, lr, decay, eps):
+        super().__init__()
         self.lr = lr
         self.decay = decay
         self.eps = eps

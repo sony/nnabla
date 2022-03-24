@@ -24,6 +24,7 @@ ctxs = list_context('Momentum')
 class RefMomentum(RefSolver):
 
     def __init__(self, lr, momentum):
+        super().__init__()
         self.lr = lr
         self.momentum = momentum
         self.v = {}

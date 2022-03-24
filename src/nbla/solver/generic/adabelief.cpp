@@ -1,4 +1,5 @@
 // Copyright 2020,2021 Sony Corporation.
+// Copyright 2022 Sony Group Corporation.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,9 +30,9 @@ template <typename T>
 AdaBelief<T>::AdaBelief(const Context &ctx, float alpha, float beta1,
                         float beta2, float eps, float wd, bool amsgrad,
                         bool weight_decouple, bool fixed_decay, bool rectify)
-    : Solver(ctx), alpha_(alpha), beta1_(beta1), beta2_(beta2), eps_(eps),
-      wd_(wd), amsgrad_(amsgrad), weight_decouple_(weight_decouple),
-      fixed_decay_(fixed_decay), rectify_(rectify) {}
+    : Solver(ctx, weight_decouple, wd), alpha_(alpha), beta1_(beta1),
+      beta2_(beta2), eps_(eps), amsgrad_(amsgrad), fixed_decay_(fixed_decay),
+      rectify_(rectify) {}
 
 template <typename T> AdaBelief<T>::~AdaBelief() {}
 
@@ -82,7 +83,8 @@ void AdaBelief<T>::update_impl(const string &key, VariablePtr param) {
 
   const bool sgd_update = (rectify_ && rho_t <= 4.0);
   const float alpha_t = sgd_update ? alpha_ : alpha_ * r_t / bias_correction1;
-  const float decay_ratio = fixed_decay_ ? wd_ : wd_ * alpha_;
+  const float decay_ratio = fixed_decay_ ? this->weight_decay_rate_
+                                         : this->weight_decay_rate_ * alpha_;
 
   T *m = s1->cast_data_and_get_pointer<T>(this->ctx_);
   T *s = s2->cast_data_and_get_pointer<T>(this->ctx_);
@@ -98,7 +100,7 @@ void AdaBelief<T>::update_impl(const string &key, VariablePtr param) {
     m[i] = beta1_ * m[i] + (1 - beta1_) * g[i];
     s[i] = beta2_ * s[i] + (1 - beta2_) * std::pow(g[i] - m[i], 2);
 
-    if (weight_decouple_) {
+    if (this->weight_decay_is_fused()) {
       theta[i] = theta[i] - theta[i] * decay_ratio;
     }
 

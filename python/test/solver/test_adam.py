@@ -24,6 +24,7 @@ ctxs = list_context('Adam')
 class RefAdam(RefSolver):
 
     def __init__(self, alpha, beta1, beta2, eps):
+        super().__init__()
         self.alpha = alpha
         self.beta1 = beta1
         self.beta2 = beta2

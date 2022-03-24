@@ -1,4 +1,5 @@
 // Copyright 2017,2018,2019,2020,2021 Sony Corporation.
+// Copyright 2022 Sony Group Corporation.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -77,7 +78,15 @@ operator=(const UpdateHookWithObject &rhs) {
 void UpdateHookWithObject::operator()() { callback_(obj_); }
 
 /** Solver Implementation**/
-Solver::Solver(const Context &ctx) : ctx_(ctx), setup_called_(false) {}
+Solver::Solver(const Context &ctx) : Solver(ctx, false, 0.0f) {}
+
+Solver::Solver(const Context &ctx, bool wd_is_fused)
+    : Solver(ctx, wd_is_fused, 0.0f) {}
+
+Solver::Solver(const Context &ctx, bool wd_is_fused, float weight_decay_rate)
+    : ctx_(ctx), setup_called_(false), weight_decay_is_fused_(wd_is_fused),
+      default_weight_decay_rate_(weight_decay_rate),
+      weight_decay_rate_(weight_decay_rate) {}
 
 Solver::~Solver() {}
 
@@ -167,6 +176,10 @@ void Solver::set_states(const vector<pair<string, SolverState>> &states) {
   }
 }
 
+bool Solver::weight_decay_is_fused() const {
+  return this->weight_decay_is_fused_;
+}
+
 void Solver::zero_grad() {
   for (auto &kv : params_) {
     SyncedArrayPtr g = kv.second.p->grad()->array();
@@ -213,10 +226,17 @@ void Solver::update(update_hook_type pre_callback,
     clear_param(kv);
 #endif
   }
+
+  // Always reset weight decay
+  this->weight_decay_rate_ = this->default_weight_decay_rate_;
 }
 
 void Solver::weight_decay(float decay_rate, update_hook_type pre_callback,
                           update_hook_type post_callback) {
+  if (this->weight_decay_is_fused()) {
+    this->weight_decay_rate_ = decay_rate;
+    return;
+  }
   if (decay_rate == 0)
     return;
   for (auto &kv : params_) {

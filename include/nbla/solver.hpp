@@ -1,4 +1,5 @@
 // Copyright 2017,2018,2019,2020,2021 Sony Corporation.
+// Copyright 2022 Sony Group Corporation.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -112,22 +113,65 @@ protected:
   unordered_map<string, Params> params_; ///< Hash map of parameters
   bool setup_called_;
 
-public:
-  /** Constructor takes at least context and parameters.
+  /**
+     Specify whether weight decay is fused into update.
+  */
+  const bool weight_decay_is_fused_;
+
+  /**
+     The default value of weight decay rate (valid only if
+     weight_decay_is_fused_ returns true).
+     This decay rate will be used unless you call weight_decay to set a decay
+     rate for the next update() call.
+  */
+  const float default_weight_decay_rate_;
+
+  /**
+     Weight decay rate temporarily specified by weight_decay() (valid only if
+     weight_decay_is_fused_ is true).
+     This decay rate value will expire after update() and will revert to the
+     default_weight_decay_rate_.
+  */
+  float weight_decay_rate_;
+
+  /** Constructor takes a context
+  */
+  Solver(const Context &ctx);
+
+  /** Constructor to set a weight_decay_is_fused_ flag to the class instance.
+   */
+  Solver(const Context &ctx, bool wd_is_fused);
+
+  /** Constructor to set a weight_decay_is_fused_ flag and the default weight
+  decay rate to the class instance.
+
+  For Solver instances which weight_decay_is_fused_ is true (the weight decay
+  operation is fused into the udpate oepration), the weight_decay_rate specified
+  to the constructor is used in the update operation by default. If you call
+  weight_decay, the specified decay rate is stored in the instance until it's
+  consumed by the update function for lazy evaluation.
 
   @param ctx Context
+  @param wd_is_used Specify if the weight decay operation is fused into the
+  update operation. The default is false.
+  @param weight_decay_rate The default weight decay value. The default is 0.
   */
-  explicit Solver(const Context &ctx);
+  Solver(const Context &ctx, bool wd_is_fused, float weight_decay_rate);
+
+public:
   virtual ~Solver() = 0;
 
   ///< Name of Solver class, usually class name.
   virtual string name() = 0;
 
-  ///< Learning rate
   virtual float learning_rate() = 0;
 
   ///< Set learning rate
   virtual void set_learning_rate(float learning_rate) = 0;
+
+  /** Whether the weight decay is lazily evaluated at update_impl.
+   */
+  bool weight_decay_is_fused() const;
 
   /** Zeroing grads for all #params_. This is usually called before running
   a sequence of Function::backward() for propagating whole computation graph.
@@ -303,7 +347,7 @@ protected:
 
 #define NBLA_DECL_WEIGHT_DECAY()                                               \
   virtual void weight_decay_impl(const string &key, VariablePtr param,         \
-                                 float decay_rate)
+                                 float decay_rate);
 
 #define NBLA_DEF_WEIGHT_DECAY(SOLVER, WEIGHT_DECAY_FUNC)                       \
   template <typename T>                                                        \

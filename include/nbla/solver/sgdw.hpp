@@ -23,12 +23,34 @@ namespace nbla {
 NBLA_REGISTER_SOLVER_HEADER(SgdW, float /*lr*/, float /*momentum*/,
                             float /*wd*/);
 
-/** SGDW. This is defined as
+/** SGDW.
 
 \f[
-v_t \leftarrow \gamma v_{t-1} - \eta \Delta w_t - (\eta / \eta_0)\lambda w_t
+m_{t} &\leftarrow \gamma m_{t-1} + \eta_t \alpha g_t\\
+w_{t} &\leftarrow w_{t-1} - m_{t} - \eta_t \lambda w_{t-1}
 \f]
+where \f$g_t\f$ denotes a gradient,
+\f$m_t\f$ is momentum of the gradient initialized with 0 at \f$t=0\f$,
+\f$\eta _t\f$ is the scheduled learning rate,
+\f$\lambda\f$ is the decoupled weight decay rate set by weight_decay method
+(lazy evaluation),
+and the rest is described in the argument documentation.
 
+@param lr Initial learning rate (\f$\alpha\f$). Note that you have to manage the
+scheduled
+learning rate \f$\eta_t\f$ yourelf. By denoting learning rate updated at the
+set_learning_rate  by \f$\alpha_t\f$,
+we define \f$\eta_t = \frac{\alpha_t}{\alpha}\f$.
+@param momentum Decay rate of momentum (\f$\gamma\f$).
+@param wd The default weight decay rate (\f$\lambda\f$). The weight decay
+operation is fused into the
+update operation in SgdW. It uses this default decay rate unless you overwrite a
+decay rate
+via weight_decay for the next call of update.
+
+@sa See the paper linked below for more details.
+Loshchilov and Hutter, Decoupled Weight Decay Regularization.
+https://arxiv.org/abs/1711.05101
 
 \ingroup SolverImplGrp
 */
@@ -44,10 +66,7 @@ public:
 protected:
   float lr_; ///< learning rate
   float momentum_;
-  float wd_;
   float init_lr_;
-
-  unordered_map<string, VariablePtr> state_;
 
   virtual void set_state_impl(const string &key, VariablePtr param);
   virtual void remove_state_impl(const string &key);

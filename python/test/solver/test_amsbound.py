@@ -24,6 +24,7 @@ ctxs = list_context('AMSBound')
 class RefAMSBound(RefSolver):
 
     def __init__(self, alpha, beta1, beta2, eps, final_lr, gamma, bias_correction):
+        super().__init__()
         self.alpha = alpha
         self.init_alpha = alpha
         self.beta1 = beta1
