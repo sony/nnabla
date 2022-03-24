@@ -590,3 +590,58 @@ AMSBound:
       type: bool
       default: False
       doc: Apply bias correction to moving averages defined in ADAM. Note this does not appear in the paper.
+
+
+Lamb:
+  snake_name: lamb
+  doc: |
+    LAMB optimizer.
+
+    .. math::
+        m_t &\leftarrow \beta_1 m_{t-1} + (1 - \beta_1) g_t\\
+        v_t &\leftarrow \beta_2 v_{t-1} + (1 - \beta_2) g_t^2\\
+        \hat{m} &= m_t / (1-\beta_1^t)\\
+        \hat{v} &= v_t / (1-\beta_2^t)\\
+        r &= \frac{\hat{m}}{\sqrt{\hat{v}}+\epsilon}\\
+        w_t &\leftarrow w_{t-1} - \eta_t \frac{\phi (\|w_{t-1}\|)}{\|r + \lambda w_{t-1} \|} \left(r + \lambda w_{t-1} \right)
+
+    where :math:`g_t` denotes a gradient,
+    :math:`m_t` and :math:`v_t` are 1st and 2nd order momentum of the gradient initialized with 0 at :math:`t=0`,
+    :math:`\lambda` is the decoupled weight decay rate set by :py:meth:`~nnabla.solver.Solver.weight_decay` method (lazy evaluation),
+    :math:`\phi` is a scaling function defined as :math:`\phi(z)=\min\{\max\{z, \gamma_l\}, \gamma_u\}`,
+    and the rest is described in the arguments.
+
+  references:
+    - |
+      `Yang You, Jing Li, Sashank Reddi. Large Batch Optimization for Deep Learning: Training BERT in 76 minutes.
+      <https://arxiv.org/abs/1904.00962>`_
+
+  arguments:
+    eta:
+      type: float
+      doc: Learning rate (:math:`\eta_t`).
+      default: 1e-3
+    beta1:
+      type: float
+      doc: Decay rate of first-order momentum (:math:`\beta_1`).
+      default: 0.9
+    beta2:
+      type: float
+      doc: Decay rate of second-order momentum (:math:`\beta_2`).
+      default: 0.999
+    gamma_l:
+      type: float
+      doc: Lower bound of the clamp scaling function :math:`\phi` (:math:`\gamma_l`).
+      default: 0.0
+    gamma_u:
+      type: float
+      doc: Upper bound the clamp scaling function :math:`\phi` (:math:`\gamma_u`).
+      default: 10.0
+    eps:
+      type: float
+      doc: Small value for avoiding zero division (:math:`\epsilon`).
+      default: 1e-6
+    bias_correction:
+      type: bool
+      doc: Whether to apply bias correction in momentum computation :math:`\hat{m}` and :math:`\hat{v}`.
+      default: False
