@@ -41,8 +41,8 @@ class RefSgdW(MixinWeightDecayFused, RefSolver):
 
 def _update_momentum(p, g, v, lr, momentum, wd, init_lr):
     eta_t = lr / init_lr
-    v[...] = v * momentum + lr * g - eta_t * wd * v
-    p[...] = p - v
+    v[...] = v * momentum + lr * g
+    p[...] = p - v - eta_t * wd * p
 
 
 @pytest.mark.parametrize("ctx, solver_name", ctxs)

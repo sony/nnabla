@@ -52,10 +52,11 @@ void SgdW<T>::update_impl(const string &key, VariablePtr param) {
   T *v = v_->cast_data_and_get_pointer<T>(this->ctx_);
   const T *grad = param->get_grad_pointer<T>(this->ctx_);
   T *data = param->cast_data_and_get_pointer<T>(this->ctx_);
-  std::transform(grad, grad + size, v, v, [this](T g, T v) {
-    return momentum_ * v + lr_ * g - (lr_ / init_lr_) * wd_ * v;
-  });
-  std::transform(v, v + size, data, data, [this](T v, T x) { return x - v; });
+  const auto decay_rate = (lr_ / init_lr_) * weight_decay_rate_;
+  std::transform(grad, grad + size, v, v,
+                 [this](T g, T v) { return momentum_ * v + lr_ * g; });
+  std::transform(v, v + size, data, data,
+                 [decay_rate](T v, T x) { return x - v - decay_rate * x; });
   auto &t = state.t;
   t = std::min(t + 1, std::numeric_limits<uint32_t>::max() - 1);
 }
