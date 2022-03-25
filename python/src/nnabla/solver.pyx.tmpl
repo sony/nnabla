@@ -339,6 +339,15 @@ cdef class Solver:
         """
         self.solverp.set_learning_rate(learning_rate)
 
+    def weight_decay_is_fused(self):
+        '''
+	Returns a boolean which represents whether weight decay is fused into
+        :py:meth:`update`, hence lazily evaluated.
+
+        See :py:meth:`weight_decay` for more details.
+	'''
+        return self.solverp.weight_decay_is_fused()
+
     def zero_grad(self):
         """
         Initialize gradients of all registered parameter by zero.
@@ -377,11 +386,23 @@ cdef class Solver:
     def weight_decay(self, float decay_rate, object pre_hook=None, object post_hook=None):
         """
         Apply weight decay to gradients.
+
         When called, the gradient weight will be decayed by a rate of the
         current parameter value.
 
         Args:
             decay_rate (float): The coefficient of weight decay.
+
+        Note:
+            In solvers which :py:meth:`weight_decay_is_fused` returns true, the weight
+            decay is not immediately performed when called. Instead, the
+            specified ``decay_rate`` is stored in the solver instance, and
+            lazily evaluated when :py:meth:`update` method is called. The stored
+            decay rate will expire after ``update()`` and revert to 0 or a default value
+            specified at initialization of Solver class (if exists, ex. SgdW).
+            The definition of weight decay operation depends on each of solver classes. Please
+            refer to the documentation of each solver class.
+
         """
         cdef update_hook_type pre_hook_c
         cdef update_hook_type post_hook_c

@@ -1,4 +1,5 @@
 # Copyright 2020,2021 Sony Corporation.
+# Copyright 2022 Sony Group Corporation.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,11 +24,11 @@ ctxs = list_context('AdaBelief')
 
 class RefAdaBelief(RefSolver):
     def __init__(self, alpha, beta1, beta2, eps, wd, amsgrad, weight_decouple, fixed_decay, rectify):
+        super().__init__(wd)
         self.alpha = alpha
         self.beta1 = beta1
         self.beta2 = beta2
         self.eps = eps
-        self.wd = wd
         self.amsgrad = amsgrad
         self.weight_decouple = weight_decouple
         self.fixed_decay = fixed_decay
@@ -37,6 +38,9 @@ class RefAdaBelief(RefSolver):
         self.s = {}
         self.t = {}
         self.s_max = {}
+
+    def weight_decay_is_fused(self):
+        return self.weight_decouple
 
     def _set_state_impl(self, key, param):
         self.m[key] = np.zeros_like(param)
@@ -48,7 +52,7 @@ class RefAdaBelief(RefSolver):
     def _update_impl(self, key, p, grad):
         self.t[key] = min(self.t[key] + 1, np.iinfo(np.int32).max)
         _update_adabelief(p, grad, self.m[key], self.s[key], self.s_max[key], self.t[key],
-                          self.alpha, self.beta1, self.beta2, self.eps, self.wd,
+                          self.alpha, self.beta1, self.beta2, self.eps, self.weight_decay_rate,
                           self.amsgrad, self.weight_decouple, self.fixed_decay, self.rectify)
 
 

@@ -24,6 +24,7 @@ ctxs = list_context('Nesterov')
 class RefNesterov(RefSolver):
 
     def __init__(self, lr, momentum):
+        super().__init__()
         self.lr = lr
         self.momentum = momentum
         self.v = {}

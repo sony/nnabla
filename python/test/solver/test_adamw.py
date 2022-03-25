@@ -1,4 +1,5 @@
 # Copyright 2019,2020,2021 Sony Corporation.
+# Copyright 2022 Sony Group Corporation.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,20 +16,20 @@
 import pytest
 import nnabla.solvers as S
 import numpy as np
-from solver_test_utils import solver_tester, RefSolver
+from solver_test_utils import solver_tester, RefSolver, MixinWeightDecayFused
 from nbla_test_utils import list_context
 
 ctxs = list_context('AdamW')
 
 
-class RefAdamW(RefSolver):
+class RefAdamW(MixinWeightDecayFused, RefSolver):
 
     def __init__(self, alpha, beta1, beta2, eps, wd):
+        super().__init__(wd)
         self.alpha = alpha
         self.beta1 = beta1
         self.beta2 = beta2
         self.eps = eps
-        self.wd = wd
         self.init_alpha = alpha
         self.m = {}
         self.v = {}
@@ -42,7 +43,7 @@ class RefAdamW(RefSolver):
     def _update_impl(self, key, p, g):
         self.t[key] = min(self.t[key] + 1, np.iinfo(np.int32).max)
         _update_adamw(p, g, self.m[key], self.v[key], self.t[key],
-                      self.alpha, self.beta1, self.beta2, self.eps, self.wd, self.init_alpha)
+                      self.alpha, self.beta1, self.beta2, self.eps, self.weight_decay_rate, self.init_alpha)
 
 
 def _update_adamw(p, g, m, v, t, alpha, beta1, beta2, eps, wd, init_alpha):
@@ -63,5 +64,6 @@ def _update_adamw(p, g, m, v, t, alpha, beta1, beta2, eps, wd, init_alpha):
 def test_adamw(seed, alpha, beta1, beta2, eps, decay, ctx, solver_name):
     rng = np.random.RandomState(seed)
     solver_tester(
-        rng, S.AdamW, RefAdamW, [alpha, beta1, beta2, eps, decay], atol=1e-6,
+        rng, S.AdamW, RefAdamW, [alpha, beta1, beta2, eps, decay],
+        atol=1e-6, decay=decay,
         ctx=ctx, solver_name=solver_name)

@@ -24,6 +24,7 @@ ctxs = list_context('AMSGRAD')
 class RefAMSGRAD(RefSolver):
 
     def __init__(self, alpha, beta1, beta2, eps, bias_correction):
+        super().__init__()
         self.alpha = alpha
         self.beta1 = beta1
         self.beta2 = beta2

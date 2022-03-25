@@ -67,6 +67,8 @@ cdef extern from "nbla/solver.hpp" namespace "nbla":
         string name() except +
         float learning_rate() except +
         void set_learning_rate(float learning_rate) except +
+        cpp_bool weight_decay_is_fused() const
+
 <%
 from utils.type_conv import type_from_proto
 %>

@@ -24,6 +24,7 @@ ctxs = list_context('Adagrad')
 class RefAdagrad(RefSolver):
 
     def __init__(self, lr, eps):
+        super().__init__()
         self.lr = lr
         self.eps = eps
         self.G = {}

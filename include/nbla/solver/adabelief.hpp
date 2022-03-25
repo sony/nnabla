@@ -1,4 +1,5 @@
 // Copyright 2020,2021 Sony Corporation.
+// Copyright 2022 Sony Group Corporation.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -60,9 +61,7 @@ protected:
   float beta1_; ///< \f$\beta_1\f$
   float beta2_; ///< \f$\beta_2\f$
   float eps_;   ///< \f$\epsilon\f$
-  float wd_;
   bool amsgrad_;
-  bool weight_decouple_;
   bool fixed_decay_;
   bool rectify_;
 

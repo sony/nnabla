@@ -1,4 +1,5 @@
 # Copyright 2017,2018,2019,2020,2021 Sony Corporation.
+# Copyright 2022 Sony Group Corporation.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,6 +24,12 @@ import os
 
 
 class RefSolver(object):
+
+    def __init__(self, weight_decay_rate=0.0):
+        self.default_weight_decay_rate = np.asarray(
+            weight_decay_rate, dtype=np.float32)
+        self.weight_decay_rate = self.default_weight_decay_rate.copy()
+
     def set_parameters(self, params):
         if not hasattr(self, 'params'):
             self.params = OrderedDict()
@@ -36,25 +43,40 @@ class RefSolver(object):
     def _set_state_impl(self, key, param):
         pass
 
+    def weight_decay_is_fused(self):
+        return False
+
     def update(self, grads):
         for key, grad in iteritems(grads):
             param = self.params[key]
             self._update_impl(key, param, grad)
+        self.weight_decay_rate = self.default_weight_decay_rate.copy()
 
     def weight_decay(self, grads, decay_rate):
+        decay_rate = np.asarray(decay_rate, dtype=np.float32)
+        if self.weight_decay_is_fused():
+            self.weight_decay_rate = decay_rate
+            return
         for key, grad in iteritems(grads):
             param = self.params[key]
             grad[...] = grad + decay_rate * param
 
     def clip_grad_by_norm(self, grads, clip_norm):
+        clip_norm = np.asarray(clip_norm, dtype=np.float32)
         for key, grad in iteritems(grads):
             norm = np.sqrt(np.sum(grad ** 2))
             grad[...] = clip_norm * grad / max(clip_norm, norm)
 
 
+class MixinWeightDecayFused(object):
+    def weight_decay_is_fused(self):
+        return True
+
+
 def solver_tester(rng, solver, ref_solver, solver_args=[], solver_kwargs={},
-                  num_itr=5, decay=1e-4, clip_norm=0.5, atol=1e-6,
-                  ctx=None, solver_name=None):
+                  num_itr=5, decay=1e-4, clip_norm=0.5, atol=1e-6, rtol=1e-5,
+                  ctx=None, solver_name=None,
+                  weight_decay_interval=2):
     if ctx is None:
         ctx = nn.Context()
 
@@ -65,8 +87,8 @@ def solver_tester(rng, solver, ref_solver, solver_args=[], solver_kwargs={},
 
     params = OrderedDict([('zZzZ', p1), ('bbb', p2), ('asdfadfdasd', p3)])
     for p in params.values():
-        p.d = rng.randn(*p.shape)
-        p.g = rng.randn(*p.shape)
+        p.d = np.asarray(rng.randn(*p.shape), dtype=np.float32)
+        p.g = np.asarray(rng.randn(*p.shape), dtype=np.float32)
 
     with nn.context_scope(ctx):
         s = solver(*solver_args, **solver_kwargs)
@@ -81,18 +103,19 @@ def solver_tester(rng, solver, ref_solver, solver_args=[], solver_kwargs={},
     params_ = s.get_parameters()
     for k0, v0 in iteritems(ref_s.params):
         v1 = params_[k0]
-        assert_allclose(v0, v1.d, atol=atol)
+        assert_allclose(v0, v1.d, atol=atol, rtol=rtol)
     for k1, v1 in iteritems(params_):
         v0 = ref_s.params[k1]
-        assert_allclose(v0, v1.d, atol=atol)
+        assert_allclose(v0, v1.d, atol=atol, rtol=rtol)
 
     # Check weight decay.
-    grad_copy = OrderedDict([(k, p.g.copy())
-                             for k, p in iteritems(params)])
-    s.weight_decay(decay)
-    ref_s.weight_decay(grad_copy, decay)
-    for p, ref_p in zip(params.values(), grad_copy.values()):
-        assert_allclose(ref_p, p.g, atol=atol)
+    if not s.weight_decay_is_fused():
+        grad_copy = OrderedDict([(k, p.g.copy())
+                                 for k, p in iteritems(params)])
+        s.weight_decay(decay)
+        ref_s.weight_decay(grad_copy, decay)
+        for p, ref_p in zip(params.values(), grad_copy.values()):
+            assert_allclose(ref_p, p.g, atol=atol, rtol=rtol)
 
     # Check clip grad by norm.
     grad_copy = OrderedDict([(k, p.g.copy())
@@ -100,19 +123,25 @@ def solver_tester(rng, solver, ref_solver, solver_args=[], solver_kwargs={},
     s.clip_grad_by_norm(clip_norm)
     ref_s.clip_grad_by_norm(grad_copy, clip_norm)
     for p, ref_p in zip(params.values(), grad_copy.values()):
-        assert np.allclose(ref_p, p.g, atol=atol)
+        assert np.allclose(ref_p, p.g, atol=atol, rtol=rtol)
 
     # Check solver udpate.
     for i in range(num_itr):
-        grads = OrderedDict([(k, rng.randn(*p.shape))
+        grads = OrderedDict([(k, np.asarray(rng.randn(*p.shape), dtype=np.float32))
                              for k, p in iteritems(params)])
         for k, g in iteritems(grads):
             params[k].g = g
+        decay_value = decay * \
+            ((i % weight_decay_interval) / weight_decay_interval)  # Python3
+        if decay_value > 0:
+            s.weight_decay(decay_value)
+            ref_s.weight_decay(grads, decay_value)
         s.update()
         ref_s.update(grads)
         # update check
         for p, ref_p in zip(params.values(), ref_s.params.values()):
-            assert_allclose(ref_p, p.d, atol=atol)
+            assert_allclose(ref_p, p.d, atol=atol, rtol=rtol,
+                            err_msg=f'i={i}, decay_value={decay_value}')
         # iteration state incrementaion check
         for state in s.get_states().values():
             assert state.t == (i + 1)

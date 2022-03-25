@@ -24,6 +24,7 @@ ctxs = list_context('RMSpropGraves')
 class RefRMSpropGraves(RefSolver):
 
     def __init__(self, lr, decay, momentum, eps):
+        super().__init__()
         self.lr = lr
         self.decay = decay
         self.momentum = momentum

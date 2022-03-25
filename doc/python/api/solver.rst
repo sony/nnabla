@@ -32,3 +32,4 @@ List of solvers
 .. autofunction:: AMSBound
 .. autofunction:: AdamW
 .. autofunction:: SgdW
+.. autofunction:: Lamb

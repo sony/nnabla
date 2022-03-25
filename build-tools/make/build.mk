@@ -163,9 +163,9 @@ nnabla-install:
 	whl='$(shell find $(BUILD_DIRECTORY_WHEEL)/dist/ -type f -name nnabla$(shell echo $(WHEEL_SUFFIX) | sed -e 's/-/_/g')-*.whl)'; \
 	if [ ! -z $$whl ] && [ -f $$whl ];\
 	then \
-	    pip install ${PIP_INS_OPTS} $$whl; \
+	    pip install ${PIP_INS_OPTS} ${PIP_INS_OPTS_EXTRA} $$whl; \
 	fi;
-	-pip install ${PIP_INS_OPTS} -r $(NNABLA_DIRECTORY)/python/test_requirements.txt
+	-pip install ${PIP_INS_OPTS} ${PIP_INS_OPTS_EXTRA} -r $(NNABLA_DIRECTORY)/python/test_requirements.txt
 
 .PHONY: nnabla-converter-install
 nnabla-converter-install:
@@ -173,7 +173,7 @@ nnabla-converter-install:
 	whl='$(shell find $(BUILD_DIRECTORY_WHEEL)/dist/ -type f -name nnabla_converter-*.whl)'; \
 	if [ ! -z $$whl ] && [ -f $$whl ] && [ "$$(uname -m)" != "armv7l" ];\
 	then \
-	    pip install ${PIP_INS_OPTS} $$whl; \
+	    pip install ${PIP_INS_OPTS} ${PIP_INS_OPTS_EXTRA} $$whl; \
 	fi;
 
 ########################################################################################################################

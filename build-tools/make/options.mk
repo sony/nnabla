@@ -25,6 +25,7 @@ DOCKER_RUN_OPTS += -u $$(id -u):$$(id -g)
 DOCKER_RUN_OPTS += -e HOME=/tmp
 DOCKER_RUN_OPTS += -e CMAKE_OPTS=$(CMAKE_OPTS)
 DOCKER_RUN_OPTS += -e PIP_INS_OPTS="${PIP_INS_OPTS}"
+DOCKER_RUN_OPTS += -e PIP_INS_OPTS_EXTRA="${PIP_INS_OPTS_EXTRA}"
 DOCKER_RUN_OPTS += -e CURL_OPTS="${CURL_OPTS}"
 DOCKER_RUN_OPTS += -e WGET_OPTS="${WGET_OPTS}"
 DOCKER_RUN_OPTS += -e PYTEST_OPTS="${PYTEST_OPTS}"
@@ -126,7 +127,7 @@ define with-venv
 	rm -rf $(2)
 	python$(PYTHON_VERSION_MAJOR).$(PYTHON_VERSION_MINOR) -m venv --system-site-packages $(2)
 	. $(2)/bin/activate \
-	&& python -m pip install ${PIP_INS_OPTS} -I pip \
+	&& python -m pip install ${PIP_INS_OPTS} ${PIP_INS_OPTS_EXTRA} -I pip \
 	&& $(MAKE) -C $(1) $(3) $(4) \
 	&& deactivate
 	rm -rf $(2)

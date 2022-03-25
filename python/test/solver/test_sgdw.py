@@ -1,4 +1,5 @@
 # Copyright 2019,2020,2021 Sony Corporation.
+# Copyright 2022 Sony Group Corporation.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,19 +16,19 @@
 import pytest
 import nnabla.solvers as S
 import numpy as np
-from solver_test_utils import solver_tester, RefSolver
+from solver_test_utils import solver_tester, RefSolver, MixinWeightDecayFused
 from nbla_test_utils import list_context
 
 ctxs = list_context('SgdW')
 
 
-class RefSgdW(RefSolver):
+class RefSgdW(MixinWeightDecayFused, RefSolver):
 
     def __init__(self, lr, momentum, wd):
+        super().__init__(wd)
         self.lr = lr
         self.momentum = momentum
         self.v = {}
-        self.wd = wd
         self.init_lr = lr
 
     def _set_state_impl(self, key, param):
@@ -35,13 +36,13 @@ class RefSgdW(RefSolver):
 
     def _update_impl(self, key, p, g):
         _update_momentum(p, g, self.v[key], self.lr,
-                         self.momentum, self.wd, self.init_lr)
+                         self.momentum, self.weight_decay_rate, self.init_lr)
 
 
 def _update_momentum(p, g, v, lr, momentum, wd, init_lr):
     eta_t = lr / init_lr
-    v[...] = v * momentum + lr * g - eta_t * wd * v
-    p[...] = p - v
+    v[...] = v * momentum + lr * g
+    p[...] = p - v - eta_t * wd * p
 
 
 @pytest.mark.parametrize("ctx, solver_name", ctxs)
@@ -52,4 +53,5 @@ def _update_momentum(p, g, v, lr, momentum, wd, init_lr):
 def test_sgdw(seed, lr, momentum, decay, ctx, solver_name):
     rng = np.random.RandomState(seed)
     solver_tester(
-        rng, S.SgdW, RefSgdW, [lr, momentum, decay], atol=1e-6, ctx=ctx, solver_name=solver_name)
+        rng, S.SgdW, RefSgdW, [lr, momentum, decay], atol=1e-6, decay=decay,
+        ctx=ctx, solver_name=solver_name)

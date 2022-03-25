@@ -15,13 +15,17 @@ Sgd:
 SgdW:
   snake_name: sgdw
   doc: |
-    Stochastic gradient descent (SGD) optimizer with decoupled weight decay.
+    Momentum stochastic gradient descent (SGD) optimizer with decoupled weight decay.
 
     .. math::
-        v_t &\leftarrow \gamma v_{t-1} + \eta g_t - (\eta / \eta_0)\lambda v_{t-1}\\
-        w_{t+1} &\leftarrow w_t - v_t
+        m_{t} &\leftarrow \gamma m_{t-1} + \eta_t \alpha g_t\\
+        w_{t} &\leftarrow w_{t-1} - m_{t} - \eta_t \lambda w_{t-1}
 
-    where :math:`\lambda` is the decoupled weight decay rate.
+    where :math:`g_t` denotes a gradient,
+    :math:`m_t` is momentum of the gradient initialized with 0 at :math:`t=0`,
+    :math:`\eta _t` is the scheduled learning rate,
+    :math:`\lambda` is the decoupled weight decay rate set by :py:meth:`~nnabla.solver.Solver.weight_decay` method (lazy evaluation),
+    and the rest is described in the argument documentation.
 
   references:
     - |
@@ -32,15 +36,22 @@ SgdW:
     lr:
       type: float
       default: 1e-3
-      doc: Learning rate (:math:`\eta`).
+      doc:
+        Initial learning rate (:math:`\alpha`). Note that you have to manage the scheduled
+        learning rate :math:`\eta_t` yourelf. By denoting learning rate updated at the
+        :py:meth:`~nnabla.solver.Solver.set_learning_rate`  by :math:`\alpha_t`,
+        we define :math:`\eta_t = \frac{\alpha_t}{\alpha}`.
     momentum:
       type: float
       default: 0.9
-      doc: Decay rate of momentum.
+      doc: Decay rate of momentum (:math:`\gamma`).
     wd:
       type: float
       default: 1e-4
-      doc: Weight decay rate.
+      doc:
+        The default weight decay rate (:math:`\lambda`). The weight decay operation is fused into the
+        update operation in SgdW. It uses this default decay rate unless you overwrite a decay rate
+        via :py:meth:`~nnabla.solver.Solver.weight_decay` for the next call of :py:meth:`~nnabla.solver.Solver.update`.
 
 Momentum:
   snake_name: momentum
@@ -60,7 +71,7 @@ Momentum:
     lr:
       type: float
       default: 1e-3
-      doc: Learning rate (:math:`\eta`).
+      doc: Initial learning rate (:math:`\eta_0`).
     momentum:
       type: float
       default: 0.9
@@ -72,11 +83,13 @@ Lars:
     LARS with Momentum.
 
     .. math::
-        \lambda &\leftarrow \eta
-          \frac{\| w_t \|}{\| \Delta w_t + \beta w_t \|} \\
-        v_{t+1} &\leftarrow m v_t + \gamma \lambda
-          (\Delta w_t + \beta w_t) \\
+        \lambda &= \eta \frac{\| w_t \|}{\| g_t \| + \| \beta w_t \|} \\
+        v_{t+1} &\leftarrow m v_t + \gamma_t \lambda (g_t + \beta w_t) \\
         w_{t+1} &\leftarrow w_t - v_{t+1}
+
+    where :math:`g_t` denotes a gradient,
+    :math:`\beta` is the decoupled weight decay rate set by :py:meth:`~nnabla.solver.Solver.weight_decay` method (lazy evaluation),
+    :math:`v_0 \leftarrow 0`, and the rest is described in the argument documentation.
 
   references:
     - |
@@ -88,15 +101,15 @@ Lars:
     lr:
       type: float
       default: 1e-3
-      doc: Learning rate (:math:`\eta`).
+      doc: Learning rate (:math:`\gamma_t`).
     momentum:
       type: float
       default: 0.9
-      doc: Decay rate of momentum.
+      doc: Decay rate of momentum (:math:`m`).
     coefficient:
       type: float
       default: 0.001
-      doc: Trust coefficient
+      doc: Trust coefficient (:math:`\eta`).
     eps:
       type: float
       default: 1e-6
@@ -221,7 +234,11 @@ AdaBelief:
     wd:
       type: float
       default: 0.0
-      doc: Weight decay rate. This option only takes effect when weight_decouple option is enabled.
+      doc:
+        The default weight decay rate enabled only when weight_decouple is true.
+        If enabled, the weight decay operation is decoupled and fused into the update operation.
+        It uses this default decay rate unless you overwrite a decay rate
+        via :py:meth:`~nnabla.solver.Solver.weight_decay` for the next call of :py:meth:`~nnabla.solver.Solver.update`.
     amsgrad:
       type: bool
       default: False
@@ -229,7 +246,7 @@ AdaBelief:
     weight_decouple:
       type: bool
       default: False
-      doc: Perform decoupled weight decay as in AdamW.
+      doc: Whether to perform decoupled weight decay as in AdamW.
     fixed_decay:
       type: bool
       default: False
@@ -352,12 +369,18 @@ AdamW:
     .. math::
         m_t &\leftarrow \beta_1 m_{t-1} + (1 - \beta_1) g_t\\
         v_t &\leftarrow \beta_2 v_{t-1} + (1 - \beta_2) g_t^2\\
-        w_{t+1} &\leftarrow w_t - \alpha
-            \frac{\sqrt{1 - \beta_2^t}}{1 - \beta_1^t}
-            \frac{m_t}{\sqrt{v_t} + \epsilon} - \eta_t\lambda w_t
+        \hat{m} &= m_t / (1-\beta_1^t)\\
+        \hat{v} &= v_t / (1-\beta_2^t)\\
+        w_{t} &\leftarrow w_{t-1}
+            - \eta_t \left(
+                \alpha \frac{\hat{m}}{\left(\sqrt{\hat{v}} + \epsilon \right)}
+                + \lambda w_{t-1} \right)
 
-    where :math:`g_t` denotes a gradient, :math:`\lambda` is the decoupled weight decay rate,
-    and :math:`m_0 \leftarrow 0` and :math:`v_0 \leftarrow 0`.
+    where :math:`g_t` denotes a gradient,
+    :math:`m_t` and :math:`v_t` are 1st and 2nd order momentum of the gradient initialized with 0 at :math:`t=0`,
+    :math:`\eta _t` is the scheduled learning rate,
+    :math:`\lambda` is the decoupled weight decay rate set by :py:meth:`~nnabla.solver.Solver.weight_decay` method (lazy evaluation),
+    and the rest is described in the argument documentation.
 
   references:
     - |
@@ -368,7 +391,12 @@ AdamW:
     alpha:
       type: float
       default: 1e-3
-      doc: Step size (:math:`\alpha`).
+      doc:
+        Initial learning rate (:math:`\alpha`). Note that you have to manage the scheduled
+        learning rate :math:`\eta_t` yourelf. By denoting learning rate updated at the
+        :py:meth:`~nnabla.solver.Solver.set_learning_rate`  by :math:`\alpha_t`,
+        we define :math:`\eta_t = \frac{\alpha_t}{\alpha}`.
+
     beta1:
       type: float
       default: 0.9
@@ -384,7 +412,10 @@ AdamW:
     wd:
       type: float
       default: 1e-4
-      doc: Weight decay rate.
+      doc:
+        The default weight decay rate (:math:`\lambda`). The weight decay operation is fused into the
+        update operation in this solver. It uses this default decay rate unless you overwrite a decay rate
+        via :py:meth:`~nnabla.solver.Solver.weight_decay` for the next call of :py:meth:`~nnabla.solver.Solver.update`.
 
 AdaBound:
   snake_name: adabound
@@ -559,3 +590,58 @@ AMSBound:
       type: bool
       default: False
       doc: Apply bias correction to moving averages defined in ADAM. Note this does not appear in the paper.
+
+
+Lamb:
+  snake_name: lamb
+  doc: |
+    LAMB optimizer.
+
+    .. math::
+        m_t &\leftarrow \beta_1 m_{t-1} + (1 - \beta_1) g_t\\
+        v_t &\leftarrow \beta_2 v_{t-1} + (1 - \beta_2) g_t^2\\
+        \hat{m} &= m_t / (1-\beta_1^t)\\
+        \hat{v} &= v_t / (1-\beta_2^t)\\
+        r &= \frac{\hat{m}}{\sqrt{\hat{v}}+\epsilon}\\
+        w_t &\leftarrow w_{t-1} - \eta_t \frac{\phi (\|w_{t-1}\|)}{\|r + \lambda w_{t-1} \|} \left(r + \lambda w_{t-1} \right)
+
+    where :math:`g_t` denotes a gradient,
+    :math:`m_t` and :math:`v_t` are 1st and 2nd order momentum of the gradient initialized with 0 at :math:`t=0`,
+    :math:`\lambda` is the decoupled weight decay rate set by :py:meth:`~nnabla.solver.Solver.weight_decay` method (lazy evaluation),
+    :math:`\phi` is a scaling function defined as :math:`\phi(z)=\min\{\max\{z, \gamma_l\}, \gamma_u\}`,
+    and the rest is described in the arguments.
+
+  references:
+    - |
+      `Yang You, Jing Li, Sashank Reddi. Large Batch Optimization for Deep Learning: Training BERT in 76 minutes.
+      <https://arxiv.org/abs/1904.00962>`_
+
+  arguments:
+    eta:
+      type: float
+      doc: Learning rate (:math:`\eta_t`).
+      default: 1e-3
+    beta1:
+      type: float
+      doc: Decay rate of first-order momentum (:math:`\beta_1`).
+      default: 0.9
+    beta2:
+      type: float
+      doc: Decay rate of second-order momentum (:math:`\beta_2`).
+      default: 0.999
+    gamma_l:
+      type: float
+      doc: Lower bound of the clamp scaling function :math:`\phi` (:math:`\gamma_l`).
+      default: 0.0
+    gamma_u:
+      type: float
+      doc: Upper bound the clamp scaling function :math:`\phi` (:math:`\gamma_u`).
+      default: 10.0
+    eps:
+      type: float
+      doc: Small value for avoiding zero division (:math:`\epsilon`).
+      default: 1e-6
+    bias_correction:
+      type: bool
+      doc: Whether to apply bias correction in momentum computation :math:`\hat{m}` and :math:`\hat{v}`.
+      default: False

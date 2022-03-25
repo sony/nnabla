@@ -1,4 +1,5 @@
 # Copyright 2019,2020,2021 Sony Corporation.
+# Copyright 2022 Sony Group Corporation.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,21 +16,21 @@
 import pytest
 import nnabla.solvers as S
 import numpy as np
-from solver_test_utils import solver_tester, RefSolver
+from solver_test_utils import solver_tester, RefSolver, MixinWeightDecayFused
 from nbla_test_utils import list_context
 
 ctxs = list_context('Lars')
 
 
-class RefLars(RefSolver):
+class RefLars(MixinWeightDecayFused, RefSolver):
 
     def __init__(self, lr, momentum, coefficient, eps):
+        super().__init__()
         self.lr = lr
         self.momentum = momentum
         self.coefficient = coefficient
         self.eps = eps
         self.v = {}
-        self._weight_decay = {}
 
     def _set_state_impl(self, key, param):
         self.v[key] = np.zeros_like(param)
@@ -37,24 +38,13 @@ class RefLars(RefSolver):
     def _update_impl(self, key, p, g):
         d_norm = np.linalg.norm(p)
         g_norm = np.linalg.norm(g)
-        if key in self._weight_decay.keys() and self._weight_decay[key] is not None:
-            g = g + self._weight_decay[key] * p
-            if d_norm < self.eps:
-                lr = self.lr
-            else:
-                lr = self.lr * self.coefficient * d_norm / \
-                    (g_norm + self._weight_decay[key] * d_norm)
+        g = g + self.weight_decay_rate * p
+        if d_norm < self.eps:
+            lr = self.lr
         else:
-            if d_norm < self.eps:
-                lr = self.lr
-            else:
-                lr = self.lr * self.coefficient * d_norm / g_norm
+            lr = self.lr * self.coefficient * d_norm / \
+                (g_norm + self.weight_decay_rate * d_norm)
         _update_lars(p, g, self.v[key], lr, self.momentum)
-        self._weight_decay[key] = None
-
-    def weight_decay(self, grads, decay_rate):
-        for key in grads.keys():
-            self._weight_decay[key] = decay_rate
 
 
 def _update_lars(p, g, v, lr, momentum):
@@ -72,4 +62,5 @@ def _update_lars(p, g, v, lr, momentum):
 def test_lars(seed, lr, momentum, coefficient, decay, eps, ctx, solver_name):
     rng = np.random.RandomState(seed)
     solver_tester(
-        rng, S.Lars, RefLars, [lr, momentum, coefficient, eps], atol=1e-6, ctx=ctx, solver_name=solver_name)
+        rng, S.Lars, RefLars, [lr, momentum, coefficient, eps],
+        atol=1e-6, decay=decay, ctx=ctx, solver_name=solver_name)
