@@ -32,7 +32,7 @@ install_requires = setup_requires + [
     'boto3',
     'configparser',
     'contextlib2',
-    'h5py<=3.1.0',
+    'h5py',
     'protobuf>=3.6',
     'pyyaml',
     'scipy',

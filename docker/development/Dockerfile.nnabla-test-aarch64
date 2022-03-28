@@ -1,5 +1,4 @@
-# Copyright 2019,2020,2021 Sony Corporation.
-# Copyright 2021 Sony Group Corporation.
+# Copyright 2022 Sony Group Corporation.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM multiarch/debian-debootstrap:armhf-buster
+FROM multiarch/debian-debootstrap:arm64-bullseye
 
 ARG PIP_INS_OPTS
 ARG PYTHONWARNINGS
@@ -39,6 +38,8 @@ RUN eval ${APT_OPTS} \
     libhdf5-dev \
     libopenblas-dev \
     liblapack-dev \
+    libsndfile1 \
+    liblzma-dev \
     make \
     pkg-config \
     python3 \
@@ -46,12 +47,11 @@ RUN eval ${APT_OPTS} \
     python3-pip \
     python3-setuptools \
     python3-wheel \
+    python3-venv \
     unzip \
     wget \
-    zip \
-    liblzma-dev
+    zip
 
-############################################################ protobuf
 ENV PROTOVER=3.10.1
 RUN mkdir /tmp/deps \
     && cd /tmp/deps \
@@ -71,6 +71,27 @@ RUN mkdir /tmp/deps \
     && cd / \
     && rm -rf /tmp/*
 
+############################################################ libarchive
+ARG LIBARCHIVEVER=3.4.3
+RUN mkdir /tmp/deps \
+    && cd /tmp/deps \
+    && curl ${CURL_OPTS} -L https://github.com/libarchive/libarchive/archive/v${LIBARCHIVEVER}.tar.gz -o libarchive-${LIBARCHIVEVER}.tar.gz \
+    && tar xfa libarchive-${LIBARCHIVEVER}.tar.gz \
+    && mkdir libarchive-build \
+    && cd libarchive-build \
+    && cmake \
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DENABLE_NETTLE=FALSE -DENABLE_OPENSSL=FALSE \
+        -DENABLE_LZO=FALSE -DENABLE_LZMA=FALSE -DENABLE_BZip2=FALSE \
+        -DENABLE_LIBXML2=FALSE -DENABLE_EXPAT=FALSE -DENABLE_PCREPOSIX=FALSE -DENABLE_LibGCC=FALSE \
+        -DENABLE_CNG=FALSE -DENABLE_TAR=FALSE -DENABLE_TAR_SHARED=FALSE -DENABLE_CPIO=FALSE \
+        -DENABLE_CPIO_SHARED=FALSE -DENABLE_CAT=FALSE -DENABLE_CAT_SHARED=FALSE -DENABLE_XATTR=FALSE \
+        -DENABLE_ACL=FALSE -DENABLE_ICONV=FALSE -DENABLE_TEST=FALSE \
+        ../libarchive-${LIBARCHIVEVER} \
+    && make -j8 \
+    && make install \
+    && cd / \
+    && rm -rf /tmp/*
+
 ADD python/setup_requirements.txt /tmp/deps/
 ADD python/requirements.txt /tmp/deps/
 ADD python/test_requirements.txt /tmp/deps/
@@ -80,14 +101,13 @@ RUN python3 -m pip install ${PIP_INS_OPTS} --upgrade pip
 RUN echo "[global]" >/etc/pip.conf
 RUN echo "extra-index-url=https://www.piwheels.org/simple" >> /etc/pip.conf
 
-RUN pip3 install ${PIP_INS_OPTS} ipython
+RUN pip3 install ${PIP_INS_OPTS} numpy\<1.22
 
 RUN pip3 install ${PIP_INS_OPTS} -r /tmp/deps/setup_requirements.txt
 
-RUN cat /tmp/deps/requirements.txt |grep -v onnx >/tmp/deps/r.txt
-RUN mv /tmp/deps/r.txt /tmp/deps/requirements.txt
+RUN sed -i '/onnx/d' /tmp/deps/requirements.txt \
+    && pip3 install ${PIP_INS_OPTS} -r /tmp/deps/requirements.txt
 
-RUN pip3 install ${PIP_INS_OPTS} -r /tmp/deps/requirements.txt
-# RUN pip3 install ${PIP_INS_OPTS} -r /tmp/deps/test_requirements.txt
+RUN pip3 install ${PIP_INS_OPTS} -r /tmp/deps/test_requirements.txt
 
 ENV PATH /tmp/.local/bin:$PATH

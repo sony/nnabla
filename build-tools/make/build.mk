@@ -171,7 +171,7 @@ nnabla-install:
 nnabla-converter-install:
 	-pip uninstall -y nnabla-converter
 	whl='$(shell find $(BUILD_DIRECTORY_WHEEL)/dist/ -type f -name nnabla_converter-*.whl)'; \
-	if [ ! -z $$whl ] && [ -f $$whl ] && [ "$$(uname -m)" != "armv7l" ];\
+	if [ ! -z $$whl ] && [ -f $$whl ] && [ "$$(uname -m)" != "aarch64" ];\
 	then \
 	    pip install ${PIP_INS_OPTS} ${PIP_INS_OPTS_EXTRA} $$whl; \
 	fi;
