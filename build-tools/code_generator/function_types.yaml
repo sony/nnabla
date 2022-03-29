@@ -117,16 +117,16 @@ FusedBatchNormalization:
   half: [Half]
 BatchNormalization:
   float: [float]
-  half: [Half]      
+  half: [Half]
 GroupNormalization:
   float: [float]
-  half: [Half]      
+  half: [Half]
 InstanceNormalization:
   float: [float]
-  half: [Half]      
+  half: [Half]
 LayerNormalization:
   float: [float]
-  half: [Half]      
+  half: [Half]
 NormNormalization:
   float: [float]
   half: [Half]
@@ -159,7 +159,7 @@ Sum:
   half: [Half]
 CumSum:
   float: [float]
-  # half: [Half]  
+  # half: [Half]
 Mean:
   float: [float]
   half: [Half]
@@ -174,7 +174,7 @@ Prod:
   half: [Half]
 CumProd:
   float: [float]
-  # half: [Half]  
+  # half: [Half]
 ReduceSum:
   float: [float]
   half: [Half]
@@ -395,6 +395,9 @@ BatchDet:
   float: [float]
   half: [Half]
 BatchLogdet:
+  float: [float]
+  half: [Half]
+BatchCholesky:
   float: [float]
   half: [Half]
 Interpolate:
