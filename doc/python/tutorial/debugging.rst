@@ -24,7 +24,7 @@ reference model.
 .. code:: ipython3
 
     # If you run this notebook on Google Colab, uncomment and run the following to set up dependencies.
-    # !pip install nnabla-ext-cuda100
+    # !pip install nnabla-ext-cuda110
     # !git clone https://github.com/sony/nnabla.git
     # %cd nnabla/tutorial
 

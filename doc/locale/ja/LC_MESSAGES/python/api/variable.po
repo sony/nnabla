@@ -93,7 +93,7 @@ msgid ""
 "<http://nnabla.readthedocs.io/en/latest/python/tutorial/python_api.html>`_."
 msgstr ""
 "併せて `Python API Tutorial "
-"<http://nnabla.readthedocs.io/jp/latest/python/tutorial/python_api.html>`_"
+"<http://nnabla.readthedocs.io/ja/latest/python/tutorial/python_api.html>`_"
 " を参照してください。"
 
 #: ../../docstring nnabla.Variable nnabla.Variable.backward nnabla.Variable.d

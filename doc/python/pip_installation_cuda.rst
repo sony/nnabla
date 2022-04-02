@@ -97,7 +97,7 @@ You can install as the following.
 .. code-block:: bash
 
   pip install nnabla
-  pip install nnabla-ext-cuda100-nccl2-mpi2-1-1
+  pip install nnabla-ext-cuda110-nccl2-mpi2-1-1
 
 
 If you already installed NNabla, uninstall all of it, or start from a clean environment which you create using Anaconda, venv.
