@@ -626,6 +626,7 @@ class OnnxImporter:
             "9": self.table_op_set_9,
             "10": self.table_op_set_10,
             "11": self.table_op_set_11,
+            "12": self.table_op_set_13,
             "13": self.table_op_set_13,
         }
 
