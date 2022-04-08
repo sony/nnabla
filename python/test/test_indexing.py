@@ -264,3 +264,20 @@ def test_graph_connection_with_setitem(indices):
     assert_allclose(u.g, np.array([[18, 19],
                                    [25, 26],
                                    [32, 33]]))
+
+
+@pytest.mark.parametrize("indices", [
+    ((10, 10), (0, 0), (10, 5), (1, 1)),
+    ((10, 10), (-1, -1), (-11, -6), (-1, -1))
+])
+def test_slice_arguments(indices):
+    import nnabla.functions as F
+    init, start, stop, step = indices
+    x = nn.Variable(init)
+    y = F.slice(x, start, stop, step)
+    if step[0] > 0:
+        z = x[:, :5]
+    else:
+        z = x[::-1, :-6:-1]
+
+    assert y.parent.arguments == z.parent.arguments
