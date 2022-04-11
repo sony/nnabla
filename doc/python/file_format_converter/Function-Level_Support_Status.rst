@@ -57,7 +57,7 @@ Total: 95/159
      Cosh                                                                ✓                            Cosh                                                                                                                                                                                                                                                                                                       
      CumSum                                                                         X                                                                                                               Not yet implemented.                                                                                                                                                                                         
      DepthToSpace                ✓                             ✓                    ✓           ✓     Reshape, Transpose                                                                                                                                                                                                                                                                                         
-     DequantizeLinear                                                         ✓                 ✓     DequantizeLinear
+     DequantizeLinear                                                         X                 X     DequantizeLinear                                                                              Not yet implemented.                                                                                                                                                                                         
      Det                                                                            X                                                                                                               Not yet implemented.                                                                                                                                                                                         
      Div                         ✓                        ✓    ✓                                ✓     Div2, Reshape                                                                                                                                                                                                                                                                                              
      Dropout                     ✓                        ✓    ✓              X                 ✓     Identity                                                                                                                                                                                                                                                                                                   
@@ -121,7 +121,7 @@ Total: 95/159
      Pow                         ✓                             ✓                                ✓     Pow2, Reshape                                                                                                                                                                                                                                                                                              
      QLinearConv                                                              X                                                                                                                     Not yet implemented.                                                                                                                                                                                         
      QLinearMatMul                                                            X                                                                                                                     Not yet implemented.                                                                                                                                                                                         
-     QuantizeLinear                                                           ✓                 ✓     QuantizeLinear
+     QuantizeLinear                                                           X                 X     QuantizeLinear                                                                                Not yet implemented.                                                                                                                                                                                         
      RNN                         X                             X                                                                                                                                    Not yet implemented.                                                                                                                                                                                         
      RandomNormal                X                                                                                                                                                                  Not yet implemented.                                                                                                                                                                                         
      RandomNormalLike            X                                                                                                                                                                  Not yet implemented.                                                                                                                                                                                         
@@ -557,8 +557,8 @@ Count 6/14
       MinMaxQuantize                                                                    Not yet implemented.
       Pow2Quantize                                                                      Not yet implemented.
       Prune                                                                             Not yet implemented.
-      QuantizeLinear                       ✓           ✓
-      DequantizeLinear                     ✓           ✓
+      QuantizeLinear                                                                    Not yet implemented.
+      DequantizeLinear                                                                  Not yet implemented.
     ===========================  ===  ===  ====  ====  ====  =========================  ====================
 
 
@@ -1598,11 +1598,11 @@ Count 8/18
       Convolution                    ✓                      
       FusedConvolution                                      
       DepthwiseConvolution           ✓                      
-      Deconvolution                  △                      
+      Deconvolution                  ✓                      
       DepthwiseDeconvolution                                
       DeformableConvolution                                 
       AdaptiveSeparableConvolution                          
-      MaxPooling                     △                      
+      MaxPooling                     ✓                      
       AveragePooling                 ✓                      
       GlobalAveragePooling                                  
       SumPooling                     ✓                      
@@ -1631,7 +1631,7 @@ Count 11/22
       ELU              ✓                      
       SELU             ✓                      
       CReLU            ✓                      
-      CELU             △                      
+      CELU             ✓                      
       PReLU            ✓                      
       GELU                                    
       Mish                                    
@@ -1681,7 +1681,7 @@ Count 1/10
     =================  ========  =============
      NNabla Function    Status    Description 
     =================  ========  =============
-      Sum              △                      
+      Sum              ✓                      
       CumSum                                  
       Mean                                    
       Max                                     
@@ -1714,7 +1714,7 @@ Count 11/14
       AddScalar        ✓                      
       MulScalar        ✓                      
       PowScalar        ✓                      
-      RSubScalar       △                      
+      RSubScalar       ✓                      
       RDivScalar       ✓                      
       RPowScalar       ✓                      
     =================  ========  =============
@@ -1807,10 +1807,10 @@ Count 7/30
     =====================  ========  =============
       Concatenate          ✓                      
       Split                ✓                      
-      Stack                △                      
-      Slice                △                      
+      Stack                ✓                      
+      Slice                ✓                      
       Pad                                         
-      Transpose            △                      
+      Transpose            ✓                      
       Broadcast                                   
       BroadcastTo                                 
       Tile                                        
@@ -1932,7 +1932,7 @@ Count 6/14
       BinaryConnectAffine        ✓                      
       BinaryConnectConvolution   ✓                      
       BinaryWeightAffine         ✓                      
-      BinaryWeightConvolution    △                      
+      BinaryWeightConvolution    ✓                      
       INQAffine                                         
       INQConvolution                                    
       FixedPointQuantize                                
