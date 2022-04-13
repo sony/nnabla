@@ -1,6 +1,6 @@
 #! /bin/bash
 # Copyright 2017,2018,2019,2020,2021 Sony Corporation.
-# Copyright 2021 Sony Group Corporation.
+# Copyright 2021,2022 Sony Group Corporation.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,15 +24,19 @@ TMPDIR=$(mktemp -d)
 if [ -e $1 ]
 then
     INPUT=$(basename $1)
-    OUTPUT=$(echo $INPUT | sed "s/-linux_/-manylinux_2_17_/g")
+    TAG="-manylinux_2_17_"
+    if [[ $INPUT == *"aarch64"* ]]; then
+        TAG="-manylinux_2_31_"
+    fi
+    OUTPUT=$(echo $INPUT | sed "s/-linux_/$TAG/g")
     ABSDIR=$(cd $(dirname $1) && pwd)
     unzip -q -d $TMPDIR $ABSDIR/$INPUT
     cd $TMPDIR
     chmod -R u+r .
-    # Replace tag linux to manylinux_2_17 to fool the pip installer.
+    # Replace tag linux to manylinux_x_x to fool the pip installer.
     for WHEEL in *dist-info/WHEEL
     do
-        cat $WHEEL | sed "s/-linux_/-manylinux_2_17_/g" > $WHEEL.bak && mv $WHEEL.bak $WHEEL
+        cat $WHEEL | sed "s/-linux_/$TAG/g" > $WHEEL.bak && mv $WHEEL.bak $WHEEL
     done
 
     echo "Creating $OUTPUT"
