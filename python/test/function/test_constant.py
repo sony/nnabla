@@ -35,4 +35,8 @@ def test_constant_forward(value, shape, ctx, func_name):
                     ctx=ctx, func_name=func_name, backward=[])
 
 
+def test_constant_inf():
+    x = F.constant(val=float('-inf'), shape=(2, 3))
+    assert x.parent
+
 # No need to test backward_function
