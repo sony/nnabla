@@ -68,12 +68,12 @@ check_registry_contains_class_or_throw(const ArrayCreator::Registry_t &registry,
              array_class.c_str(), string_join(keys, ", ").c_str());
 }
 
-Array *ArrayCreator::create(const Size_t size, dtypes dtype,
-                            const Context &ctx) {
+Array *ArrayCreator::create(const Size_t size, dtypes dtype, const Context &ctx,
+                            const AllocatorMemoryPtr mem, const Size_t offset) {
   init_cpu();
   Registry_t &registry = get_registry();
   check_registry_contains_class_or_throw(registry, ctx.array_class);
-  return registry[ctx.array_class].first(size, dtype, ctx);
+  return registry[ctx.array_class].first(size, dtype, ctx, mem, offset);
 }
 
 Context ArrayCreator::filter_context(const Context &ctx) {

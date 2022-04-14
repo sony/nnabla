@@ -51,27 +51,36 @@ protected:
   Context ctx_;
 
   /// Holding nbla::Memory object.
-  AllocatorMemory mem_;
+  const AllocatorMemoryPtr mem_;
 
   /// Holding nbla::Event object to wait asynchronous memory copy.
   EventPtr event_;
+
+  /// Offset memory
+  const Size_t offset_;
+
+  /// Offset memory (bytes) for pointer cast.
+  const Size_t offset_bytes_;
 
   /** The constructor must be called only from derived class.
 
       AllocatorMemory should be created by an instance of a realization of
       nbla::Allocator and passed as a rvalue reference.
+
+      offset is used to divide memory area by narrow.
    */
   NBLA_API Array(const Size_t size, dtypes dtype, const Context &ctx,
-                 AllocatorMemory &&mem);
+                 const AllocatorMemoryPtr mem = nullptr,
+                 const Size_t offset = 0);
 
   static NBLA_API size_t size_as_bytes(Size_t size, dtypes dtype);
 
   // This method is used to override Array::pointer.
-  virtual NBLA_API void *mem_pointer() { return mem_.pointer(); }
+  virtual NBLA_API void *mem_pointer() { return mem_->pointer(); }
 
   // This method is used to override Array::const_pointer.
   virtual NBLA_API const void *mem_const_pointer() const {
-    return mem_.const_pointer();
+    return mem_->const_pointer();
   }
 
 public:
@@ -82,17 +91,30 @@ public:
   /** Get object pointer.
    */
   template <typename T = void> T *pointer() {
-    return reinterpret_cast<T *>(mem_pointer());
+    return reinterpret_cast<T *>(
+        reinterpret_cast<unsigned char *>(mem_pointer()) + offset_bytes_);
   }
 
   /** Get constant object pointer
    */
   template <typename T = void> const T *const_pointer() const {
-    return reinterpret_cast<const T *>(mem_const_pointer());
+    return reinterpret_cast<const T *>(
+        reinterpret_cast<const unsigned char *>(mem_const_pointer()) +
+        offset_bytes_);
   }
 
-  /** Return dtype. */
+  /** Get shared pointer of the AllocatorMemory.
+   */
+  AllocatorMemoryPtr memory() const { return mem_; }
+
+  /** Get offset.
+   */
+  Size_t offset() const { return offset_; }
+
+  /** Return dtype.
+   */
   inline dtypes dtype() const { return dtype_; }
+
   /** Return size of descendant dimensions of specified axis.
   */
   inline Size_t size() const { return size_; }
@@ -101,11 +123,11 @@ public:
   */
   inline Context context() const { return ctx_; }
 
-  /** Copy from Array. */
+  /** Copy from Array.
+   */
   virtual void copy_from(const Array *src_array) = 0;
 
-  /**
-    Fill all element with zero.
+  /** Fill all element with zero.
   */
   virtual NBLA_API void zero() = 0;
 

@@ -50,6 +50,9 @@ void NdArray::reshape(const Shape_t &shape, bool force) {
   NBLA_CHECK(force, error_code::value, "Total dimensions not match. Set "
                                        "force=true if you want to resize array "
                                        "(clearing data).");
+  NBLA_CHECK(!array_->is_narrowed(), error_code::value,
+             "Narrowed NdArray does not allow reshape to change size.");
+
   shape_ = shape;
   update_shape_info();
   array_ = make_shared<SyncedArray>(size_);
@@ -97,5 +100,33 @@ Array *NdArray::cast(dtypes dtype, const Context &ctx, bool write_only) {
 shared_ptr<Array> NdArray::cast_sp(dtypes dtype, const Context &ctx,
                                    bool write_only) {
   return array_->cast_sp(dtype, ctx, write_only);
+}
+
+NdArrayPtr NdArray::narrow(const Size_t dim, const Size_t start,
+                           const Size_t length) {
+
+  // TODO: Corresponds to any dimension.
+  NBLA_CHECK(dim == 0, error_code::value,
+             "dim is out of range (expected to be 0, but got %d)", dim);
+  Size_t narrow_dim_size = shape_[dim];
+
+  NBLA_CHECK(start >= 0, error_code::value,
+             "start is out of range (expected to be [0, %d], but got %d)",
+             narrow_dim_size - 1, start);
+  NBLA_CHECK(length >= 0, error_code::value,
+             "negative number for length (%d) is not permitted", length);
+  NBLA_CHECK(start + length <= narrow_dim_size, error_code::value,
+             "start (%d) + length (%d) exceeds dimension size (%d)", start,
+             length, narrow_dim_size);
+
+  auto narrowed_shape = this->shape();
+  narrowed_shape[0] = length;
+
+  const auto offset = start * compute_size_by_shape(narrowed_shape, 1);
+  const auto narrowed_size = compute_size_by_shape(narrowed_shape);
+
+  auto narrowed_array = this->array()->narrow(narrowed_size, offset);
+
+  return make_shared<NdArray>(narrowed_array, narrowed_shape);
 }
 }

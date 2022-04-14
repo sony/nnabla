@@ -108,6 +108,9 @@ public:
   void operator=(const AllocatorMemory &) = delete;
 };
 
+///< Shared pointer of AllocatorMemory.
+typedef shared_ptr<AllocatorMemory> AllocatorMemoryPtr;
+
 /** Allocator interface class.
 
     A derived class implements logics that manage cached device memory blocks.
@@ -152,7 +155,7 @@ public:
               AllocatorMemory must be moved to Array instance using std::move.
 
    */
-  AllocatorMemory alloc(size_t bytes, const string &device_id);
+  AllocatorMemoryPtr alloc(size_t bytes, const string &device_id);
 
   /** User should call this. This is called from destructor of AllocatorMemory.
 

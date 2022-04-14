@@ -26,9 +26,8 @@ namespace nbla {
 class NBLA_API CpuArray : public Array {
 protected:
 public:
-  CpuArray(const Size_t size, dtypes dtype, const Context &ctx);
   CpuArray(const Size_t size, dtypes dtype, const Context &ctx,
-           AllocatorMemory &&mem);
+           const AllocatorMemoryPtr mem = nullptr, const Size_t offset = 0);
   virtual ~CpuArray();
   virtual void copy_from(const Array *src_array);
   virtual void zero();
@@ -40,7 +39,9 @@ public:
  */
 class NBLA_API CpuCachedArray : public CpuArray {
 public:
-  explicit CpuCachedArray(const Size_t size, dtypes dtype, const Context &ctx);
+  explicit CpuCachedArray(const Size_t size, dtypes dtype, const Context &ctx,
+                          const AllocatorMemoryPtr mem = nullptr,
+                          const Size_t offset = 0);
   virtual ~CpuCachedArray();
   static Context filter_context(const Context &ctx);
 };

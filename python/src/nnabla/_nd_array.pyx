@@ -207,7 +207,7 @@ cdef class NdArray:
         return tuple(self.arrp.shape())
 
 
-    def data_ptr(self, dtype, ctx=None):
+    def data_ptr(self, dtype, ctx=None, cpp_bool write_only=False):
         """Get array's pointer.
 
         The behavior is similar to `cast` method but returns the data pointer based on the `ctx`.
@@ -216,6 +216,7 @@ cdef class NdArray:
         Args: 
             dtype (:obj:`numpy.dtype`):  Numpy Data type.
             ctx (:obj:`nnabla.Context`, optional): Context descriptor.
+            write_only (:obj:`bool`, optional): No synchronization happens.
 
         Returns:
             int: The data pointer.
@@ -230,7 +231,7 @@ cdef class NdArray:
         cdef CContext cctx = <CContext ?> ctx_
         cdef unsigned long ptr
         with nogil:
-            ptr = <unsigned long> self.arrp.data_ptr(< dtypes > type_num, cctx, False)
+            ptr = <unsigned long> self.arrp.data_ptr(< dtypes > type_num, cctx, write_only)
         return ptr
 
 
@@ -563,3 +564,20 @@ cdef class NdArray:
 
     def __setitem__(self, key, value):
         IDX.setitem(self, key, value)
+
+    def narrow(self, dim, start, length):
+        """
+        Returns a new array that is a narrowed part of this array.
+        The narrowed part is specified by the slice of this array from `start` to `start` + `length` along the dimension `dim`.
+        The returned array and this array share the same underlying allocated memory.
+
+        Args:
+            dim (int): Dimension along which to narrow. Currently, only 0 can be specified.
+            start (int): Starting index in specified dimension.
+            length (int): Distance to the ending index from `start`.
+
+        See :function:`nnabla.NdArray.narrow` for more details.
+
+        """
+        arr = self.arrp.narrow(dim, start, length)
+        return NdArray.create(arr)

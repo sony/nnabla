@@ -38,20 +38,33 @@ class NBLA_API SyncedArray : public enable_shared_from_this<SyncedArray> {
     string array_class;
     dtypes dtype;
   };
-  ArrayDesc head_;   ///< Head desc for transferring content.
-  bool zeroing_;     ///< Flag for lazy evaluation of zero() function.
-  bool filling_;     ///< Flag for lazy evaluation of fill() function.
+  ArrayDesc head_;         ///< Head desc for transferring content.
+  bool zeroing_lazy_eval_; ///< Flag for lazy evaluation of zero() function.
+  bool filling_lazy_eval_; ///< Flag for lazy evaluation of fill() function.
+  bool zeroing_;           ///< Flag for updated or not after zero().
   float fill_value_; ///< Filling value used in lazy eval of fill() function.
   Size_t size_;      ///< Size.
-  map<string, pair<shared_ptr<Array>, bool>>
-      array_; ///< key: array_class, value: <Array instance, is_head>
+  Size_t offset_;    ///< Offset of the allocated memory.
+  /// < key: array_class and memory range, value:<Array instance,is_head>
+  map<string, pair<shared_ptr<Array>, bool>> array_;
   size_t modification_count_; ///< Number of modification count.
   bool clear_called_; ///< clear called flag. If clear_all_array is called, it
                       /// turns to true. When cast_sp, get_sp, zero, or fill are
-  /// called, it turns to false.
+                      /// called, it turns to false.
+
+  /** Parameters of the linked list.
+   * NOTE : Narrow method exists in NdArray to divide the memory.
+   * If used narrow, SyncedArray has a tree-like connected relationship such
+   * that it has a single parent and multiple children.
+   */
+  shared_ptr<SyncedArray> parent_; ///< Pointer of the parent SyncedArray
+  std::vector<weak_ptr<SyncedArray>>
+      children_; ///< list of pointers of child SyncedArrays
 
 public:
   SyncedArray(const Size_t size);
+  SyncedArray(shared_ptr<SyncedArray> parent, const Size_t size,
+              const Size_t offset);
   ~SyncedArray();
 
   /** Cast and get array with dtype context
@@ -184,14 +197,95 @@ public:
    */
   bool zeroing() const;
 
+  /** Get a new narrowed SyncedArray.
+   */
+  shared_ptr<SyncedArray> narrow(const Size_t narrow_size, const Size_t offset);
+
+  /** Returns true if this SyncedArray is narrowed.
+   */
+  bool is_narrowed() const { return parent_ != nullptr; }
+
 private:
   ArrayDesc sync(dtypes dtype, const Context &ctx, bool write_only = false,
                  const int async_flags = AsyncFlag::NONE);
 
   void clear_all_array();
 
+  /** Call clear_all_array for descendants than itself.
+   * If keep_head is true, clear all array that are not parent-child
+   * relationship. For example, get array(NdArray, SyncedArray) with a different
+   * type will produce Array with no parent-child relationship.
+   */
+  void clear_all_array_descendants(bool keep_head);
+
   // Clearing zero and fill flags for lazy evaluation.
   void clear_flags();
+
+  /** Clear flags of all child arrays for the zero function.
+   */
+  void propagate_zeroing_flag_descendants(bool flag);
+
+  /** Clear flags for the zero function (including
+   * propagate_zeroing_flag_descendants()).
+   */
+  void propagate_zeroing_flag(bool flag);
+
+  /** Remove a child SyncedArray in the children_.
+   */
+  void remove_child(const SyncedArray *child);
+
+  /** Get offset of the Array.
+   */
+  Size_t offset() const { return offset_; }
+
+  /** Returns true if this SyncedArray has the Parent.
+   */
+  inline bool is_child() { return parent_ != nullptr; }
+
+  /** Returns true if this SyncedArray has not the Parent.
+   */
+  inline bool is_root() { return parent_ == nullptr; }
+
+  /** Returns true if this SyncedArray has a parent or child SyncedArrays.
+   */
+  bool has_family() {
+    return static_cast<bool>(parent_ || children_.size() > 0);
+  }
+
+  /** Returns true if this SyncedArray has the head array.
+   */
+  bool has_head_array() { return !head_.key.empty() && !array_.empty(); }
+
+  /** Get root of parent-child SyncedArrays.
+   */
+  shared_ptr<SyncedArray> get_root();
+
+  /** Traverses the tree of parent-child SyncedArrays and calls zero() and
+   * fill().
+   */
+  void traverse_zero_fill();
+
+  /** Traverses child SyncedArrays and returns true if any of zeroing or filling
+   * flags is true.
+   */
+  bool check_zeroing_filling_descendants();
+
+  /** Traverses the tree of parent-child SyncedArrays and returns true if any of
+   * zeroing or filling flags is true.
+   */
+  bool check_zeroing_filling();
+
+  /** Clears flags in child SyncedArrays.
+   */
+  void clear_flags_descendants();
+
+  /** Create arrays of descendants from itself.
+   */
+  void create_array_descendants();
+
+  /** Create child Array.
+   */
+  void create_array_from_parent();
 
   DISABLE_COPY_AND_ASSIGN(SyncedArray);
 };
