@@ -265,7 +265,11 @@ bool load_parameters_pb(ParameterVector &pv, char *buffer, int size) {
 #else
   coded_input.SetTotalBytesLimit(size_1024_mb);
 #endif
-  param.ParseFromCodedStream(&coded_input);
+  bool ret = param.ParseFromCodedStream(&coded_input);
+  if (!ret) {
+    NBLA_ERROR(error_code::value, "Cannot load parameters from buffer!");
+    return false;
+  }
 
   load_parameters_from_proto(param, pv);
   return true;
@@ -416,25 +420,27 @@ bool save_parameters(const ParameterVector &pv, string filename) {
 // ----------------------------------------------------------------------
 // Load parameters from file
 // ----------------------------------------------------------------------
-void load_parameters(ParameterDirectory &pd, string filename) {
+bool load_parameters(ParameterDirectory &pd, string filename) {
   ParameterVector pv;
   bool ret = load_parameters(pv, filename);
 
   if (!ret) {
     NBLA_LOG_INFO("Cannot load parameter file: %s\n", filename.c_str());
-    return;
+    return false;
   }
 
   for (auto it = pv.begin(); it != pv.end(); ++it) {
     pd.get_parameter_or_create(it->first, it->second);
   }
   NBLA_LOG_INFO("Load parameters from {}", filename);
+
+  return true;
 }
 
 // ----------------------------------------------------------------------
 // Save parameters to file
 // ----------------------------------------------------------------------
-void save_parameters(ParameterDirectory &pd, string filename) {
+bool save_parameters(ParameterDirectory &pd, string filename) {
   ParameterVector pv;
   bool ret = false;
   auto pd_param = pd.get_parameters();
@@ -447,8 +453,48 @@ void save_parameters(ParameterDirectory &pd, string filename) {
   if (!ret) {
     NBLA_ERROR(error_code::value, "Cannot save parameter file:%s",
                filename.c_str());
+    return false;
   }
   NBLA_LOG_INFO("Saved parameters to {}", filename);
+  return true;
+}
+
+// ----------------------------------------------------------------------
+// Load parameters from h5 file buffer
+// ----------------------------------------------------------------------
+bool load_parameters_h5(ParameterDirectory &pd, char *buf, int size) {
+  ParameterVector pv;
+  bool ret = load_parameters_h5(pv, buf, size);
+
+  if (!ret) {
+    NBLA_LOG_INFO("Cannot load parameter file buffer!\n");
+    return false;
+  }
+
+  for (auto it = pv.begin(); it != pv.end(); ++it) {
+    pd.get_parameter_or_create(it->first, it->second);
+  }
+
+  return true;
+}
+
+// ----------------------------------------------------------------------
+// Load parameters from h5 file buffer
+// ----------------------------------------------------------------------
+bool load_parameters_pb(ParameterDirectory &pd, char *buf, int size) {
+  ParameterVector pv;
+  bool ret = load_parameters_pb(pv, buf, size);
+
+  if (!ret) {
+    NBLA_LOG_INFO("Cannot load parameter file buffer!\n");
+    return false;
+  }
+
+  for (auto it = pv.begin(); it != pv.end(); ++it) {
+    pd.get_parameter_or_create(it->first, it->second);
+  }
+
+  return true;
 }
 }
 }

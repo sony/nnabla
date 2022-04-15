@@ -16,6 +16,8 @@
 
 #include "gtest/gtest.h"
 #include <algorithm>
+#include <fstream>
+#include <iostream>
 #include <numeric>
 #include <random>
 #include <string>
@@ -24,6 +26,7 @@
 #include <nbla/computation_graph/computation_graph.hpp>
 #include <nbla/parametric_functions.hpp>
 #include <nbla/solver/adam.hpp>
+#include <nbla/std.hpp>
 #include <nbla_utils/nnp.hpp>
 #include <nbla_utils/parameters.hpp>
 
@@ -136,6 +139,18 @@ void expect_params_equal(vector<pair<string, VariablePtr>> &a,
   }
 }
 
+nbla::vector<char> get_file_buffer(const string filename) {
+  std::ifstream ifs(filename, ios::binary);
+  const auto begin = ifs.tellg();
+  ifs.seekg(0, ios::end);
+  const auto end = ifs.tellg();
+  const auto file_size = end - begin;
+  nbla::vector<char> buf(file_size);
+  ifs.seekg(0, ios::beg);
+  ifs.read(buf.data(), file_size);
+  return buf;
+}
+
 CgVariablePtr simple_infer(ParameterDirectory &params) {
   int batch_size = 1;
   auto x = make_shared<CgVariable>(Shape_t({batch_size, 1, 28, 28}), false);
@@ -168,6 +183,30 @@ TEST(test_save_and_load_parameters, test_save_load_without_train) {
   check_result(x, y);
 }
 
+TEST(test_save_and_load_parameters, test_save_load_with_simple_train_pb_buf) {
+  ParameterDirectory train_params;
+  ParameterDirectory infer_params;
+
+  CgVariablePtr x = simple_train(train_params);
+  save_parameters(train_params, filename);
+  nbla::vector<char> buf = get_file_buffer(filename);
+  load_parameters_pb(infer_params, buf.data(), buf.size());
+  CgVariablePtr y = simple_infer(infer_params);
+  check_result(x, y);
+}
+
+TEST(test_save_and_load_parameters, test_save_load_without_train_pb_buf) {
+  ParameterDirectory train_params;
+  ParameterDirectory infer_params;
+
+  CgVariablePtr x = simple_infer(train_params);
+  save_parameters(train_params, filename);
+  nbla::vector<char> buf = get_file_buffer(filename);
+  load_parameters_pb(infer_params, buf.data(), buf.size());
+  CgVariablePtr y = simple_infer(infer_params);
+  check_result(x, y);
+}
+
 #ifdef NBLA_UTILS_WITH_HDF5
 TEST(test_save_and_load_parameters, test_save_load_h5) {
   ParameterDirectory train_params;
@@ -176,6 +215,18 @@ TEST(test_save_and_load_parameters, test_save_load_h5) {
   CgVariablePtr x = simple_train(train_params);
   save_parameters(train_params, filename_h5);
   load_parameters(infer_params, filename_h5);
+  CgVariablePtr y = simple_infer(infer_params);
+  check_result(x, y);
+}
+
+TEST(test_save_and_load_parameters, test_save_load_h5_buf) {
+  ParameterDirectory train_params;
+  ParameterDirectory infer_params;
+
+  CgVariablePtr x = simple_train(train_params);
+  save_parameters(train_params, filename_h5);
+  nbla::vector<char> buf = get_file_buffer(filename_h5);
+  load_parameters_h5(infer_params, buf.data(), buf.size());
   CgVariablePtr y = simple_infer(infer_params);
   check_result(x, y);
 }

@@ -32,11 +32,22 @@ namespace utils {
 /** Load parameters from a parameter file(*.h5, *.protobuf, *.prototxt, *.pb and
  * so on)
  */
-NBLA_API void load_parameters(ParameterDirectory &pd, string filename);
+NBLA_API bool load_parameters(ParameterDirectory &pd, string filename);
 
 /** Save parameters to specified parameter file.
  */
-NBLA_API void save_parameters(ParameterDirectory &pd, string filename);
+NBLA_API bool save_parameters(ParameterDirectory &pd, string filename);
+
+/** Load parameters from a file buffer, specified by buffer address and length.
+ *  This buffer should contain the parameter file data load from a .h5 file.
+ */
+NBLA_API bool load_parameters_h5(ParameterDirectory &pd, char *buf, int size);
+
+/** Load parameters from a file buffer, specified by buffer address and length.
+ *  This buffer should contain the parameter file data load from a .protobuf
+ * file.
+ */
+NBLA_API bool load_parameters_pb(ParameterDirectory &pd, char *buf, int size);
 };
 /*@}*/
 }
