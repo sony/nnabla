@@ -13,11 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from __future__ import absolute_import
-
 import nnabla as nn
-import numpy as np
 from nnabla.utils.nnp_graph import NnpNetworkPass
 
+import numpy as np
 from .base import ObjectDetection
 
 
@@ -88,7 +87,7 @@ class YoloV2(ObjectDetection):
         # Reshape operation for simulating darknet reorg bug
         @callback.on_generate_function_by_name('Reshape')
         def reshape_for_darknet_reorg_bug(f):
-            s = f.inputs[0].variable.shape
+            s = f.inputs[0].proto.shape.dim[:]
             stride = 2
             r = f.proto.reshape_param
             r.shape.dim[:] = [
@@ -98,7 +97,7 @@ class YoloV2(ObjectDetection):
         # Reshape operation for simulating darknet reorg bug
         @callback.on_generate_function_by_name('Reshape_2')
         def reshape_for_darknet_reorg_bug(f):
-            s = f.inputs[0].variable.shape
+            s = f.inputs[0].proto.shape.dim[:]
             r = f.proto.reshape_param
             r.shape.dim[:] = [s[0], s[1]*s[2]*s[3]
                               * s[1]*s[2], s[4]//s[1], s[5]//s[2]]
@@ -107,19 +106,18 @@ class YoloV2(ObjectDetection):
         # Reshape operation for output variable of yolov2 function in yolov2_activate.
         @callback.on_generate_function_by_name('Reshape_3')
         def reshape_yolov2_activate(f):
-            s = f.inputs[0].variable.shape
+            s = f.inputs[0].proto.shape.dim[:]
             anchors = 5
             r = f.proto.reshape_param
             num_class = r.shape.dim[2] - 5
-            s_add = (s[0], anchors, num_class+5)+(s[2:])
+            s_add = (s[0], anchors, num_class+5)+tuple(s[2:])
             r.shape.dim[:] = s_add
             return f
 
         # Slicing the variable y in yolov2_activate to get t_xy
         @callback.on_generate_function_by_name('Slice')
         def slicing_t_xy(f):
-            s = (f.inputs[0].variable.shape)
-            s = list(s)
+            s = f.inputs[0].proto.shape.dim[:]
             s[2] = 2
             r = f.proto.slice_param
             r.stop[:] = [s[0], s[1], s[2], s[3], s[4]]
@@ -144,7 +142,7 @@ class YoloV2(ObjectDetection):
         # Slicing the variable y in yolov2_activate to get t_wh
         @callback.on_generate_function_by_name('Slice_2')
         def slicing_t_wh(f):
-            s = list(f.inputs[0].variable.shape)
+            s = list(f.inputs[0].proto.shape.dim[:])
             s[2] = 4
             r = f.proto.slice_param
             r.stop[:] = [s[0], s[1], s[2], s[3], s[4]]
@@ -153,7 +151,7 @@ class YoloV2(ObjectDetection):
         # Slicing the variable y in yolov2_activate to get t_o
         @callback.on_generate_function_by_name('Slice_3')
         def slicing_t_o(f):
-            s = list(f.inputs[0].variable.shape)
+            s = list(f.inputs[0].proto.shape.dim[:])
             s[2] = 5
             r = f.proto.slice_param
             r.stop[:] = [s[0], s[1], s[2], s[3], s[4]]
@@ -162,7 +160,7 @@ class YoloV2(ObjectDetection):
         # Slicing the variable y in yolov2_activate to get t_p
         @callback.on_generate_function_by_name('Slice_4')
         def slicing_t_p(f):
-            s = list(f.inputs[0].variable.shape)
+            s = list(f.inputs[0].proto.shape.dim[:])
             r = f.proto.slice_param
             r.stop[:] = [s[0], s[1], s[2], s[3], s[4]]
             return f
@@ -170,7 +168,7 @@ class YoloV2(ObjectDetection):
         # Reshape the output of Arange to get xs
         @callback.on_generate_function_by_name('Reshape_4')
         def reshape_yolov2_image_coordinate_xs(f):
-            s = f.inputs[0].variable.shape
+            s = f.inputs[0].proto.shape.dim[:]
             r = f.proto.reshape_param
             r.shape.dim[3] = s[0]
             return f
@@ -178,7 +176,7 @@ class YoloV2(ObjectDetection):
         # Reshape operation to get t_x
         @callback.on_generate_function_by_name('Reshape_5')
         def reshape__yolov2_image_coordinate_t_x(f):
-            s = f.inputs[0].variable.shape
+            s = f.inputs[0].proto.shape.dim[:]
             r = f.proto.reshape_param
             r.shape.dim[:] = [s[0], s[1], s[0]//s[0], s[2], s[3]]
             return f
@@ -186,7 +184,7 @@ class YoloV2(ObjectDetection):
         # Reshape the output of Arange_2 to get ys
         @callback.on_generate_function_by_name('Reshape_6')
         def reshape_yolov2_image_coordinate_ys(f):
-            s = f.inputs[0].variable.shape
+            s = f.inputs[0].proto.shape.dim[:]
             r = f.proto.reshape_param
             r.shape.dim[2] = s[0]
             return f
@@ -194,7 +192,7 @@ class YoloV2(ObjectDetection):
         # Reshape the output of Arange to get t_y
         @callback.on_generate_function_by_name('Reshape_7')
         def reshape_yolov2_image_coordinate_t_y(f):
-            s = f.inputs[0].variable.shape
+            s = f.inputs[0].proto.shape.dim[:]
             r = f.proto.reshape_param
             r.shape.dim[:] = [s[0], s[1], s[0]//s[0], s[2], s[3]]
             return f
@@ -202,7 +200,7 @@ class YoloV2(ObjectDetection):
         # Reshape the final variable y
         @callback.on_generate_function_by_name('Reshape_8')
         def reshape_output_variable_y(f):
-            s = f.inputs[0].variable.shape
+            s = f.inputs[0].proto.shape.dim[:]
             r = f.proto.reshape_param
             r.shape.dim[:] = [s[0], s[1]*s[2]*s[3], s[4]]
             return f

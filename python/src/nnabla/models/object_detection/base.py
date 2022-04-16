@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from __future__ import absolute_import
-
 from nnabla.utils.nnp_graph import NnpLoader
 
 from ..utils import *
@@ -85,8 +84,11 @@ class ObjectDetection(object):
         return input_var
 
     def get_nnp_input_size(self):
-        inputs = self.nnp.get_network(self.nnp.get_network_names()[0]).inputs
-        return list(inputs.values())[0].shape[2:]
+        network = self.nnp.g.default_graph()
+        input_var = network.variables[network.inputs[0]]
+        nnp_input_size = input_var.shape[2:]
+
+        return nnp_input_size
 
     def __call__(self, input_var=None, use_from=None, use_up_to='detection', training=False, returns_net=False, verbose=0):
         '''
