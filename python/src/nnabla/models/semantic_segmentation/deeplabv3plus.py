@@ -92,7 +92,7 @@ class DeepLabV3plus(SemanticSegmentation):
         # changing kernel and stride dimension for AveragePoling
         @callback.on_generate_function_by_name('AveragePooling')
         def average_pooling_shape(f):
-            s = f.inputs[0].variable.shape
+            s = f.inputs[0].proto.shape.dim[:]
             kernel_dim = f.proto.average_pooling_param
             kernel_dim.kernel.dim[:] = [s[2], s[3]]
             pool_stride = f.proto.average_pooling_param
@@ -103,7 +103,7 @@ class DeepLabV3plus(SemanticSegmentation):
         @callback.on_generate_function_by_name('Interpolate')
         def interpolate_output_shape(f):
             s = input_var.shape
-            s1 = f.inputs[0].variable.shape
+            s1 = f.inputs[0].proto.shape.dim[:]
             w, h = s[2], s[3]
             for i in range(4):
                 w = (w - 1) // 2 + 1

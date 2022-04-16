@@ -40,7 +40,10 @@ class SemanticSegmentation(object):
         '''
         if hasattr(self, '_category_names'):
             return self._category_names
-        with open(os.path.join(os.path.dirname(__file__), 'voc.names'), 'r') as fd:
+        voc_dir = os.path.join(os.path.dirname(__file__))
+        voc_dir = os.path.join(voc_dir.replace('semantic_segmentation', 'object_detection'),
+                               'voc.names')
+        with open(voc_dir, 'r') as fd:
             self._category_names = fd.read().splitlines()
         return self._category_names
 
