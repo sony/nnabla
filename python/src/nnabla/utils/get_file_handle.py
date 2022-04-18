@@ -364,9 +364,14 @@ def load_files(ctx, file_loaders, filenames, extension=None):
             else:
                 ext = extension
 
+            handled = False
             for supported_extensions, file_loader in file_loaders.items():
                 if ext in supported_extensions:
                     file_loader(ctx, file_loaders, None, filename, ext)
+                    handled = True
+            else:
+                if not handled:
+                    logger.warn('{} is omitted.'.format(filename))
 
     if isinstance(filenames, list) or isinstance(filenames, tuple):
         pass
