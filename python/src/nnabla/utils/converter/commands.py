@@ -23,7 +23,9 @@ from .utils import func_set_import_nnp, \
     func_set_import_onnx_config, \
     func_set_import_config, \
     func_set_nnabla_support, \
-    func_set_onnx_support
+    func_set_onnx_support, \
+    func_set_nnabla_version_decorate
+from nnabla.logger import logger
 
 
 def _import_file(args, ifiles):
@@ -138,7 +140,9 @@ def _export_from_nnp(args, nnp, output):
             parameter_type = 'h5'
         if args.nnp_exclude_parameter:
             parameter_type = 'none'
+        nnp = func_set_nnabla_version_decorate(nnp, args.nnp_version)
         NnpExporter(nnp, args.batch_size, parameter_type).execute(output)
+        logger.info(f"Converting: {output} successfully!")
 
     elif args.export_format == 'NNB':
         if args.batch_size < 0:
@@ -266,7 +270,11 @@ def convert_files(args, ifiles, output):
             if args.config:
                 support_set = func_set_import_config(args.config)
             else:
-                support_set = func_set_nnabla_support()
+                if args.nnp_version is not None:
+                    version_spec = (nnp, args.nnp_version)
+                else:
+                    version_spec = None
+                support_set = func_set_nnabla_support(version_spec)
         if _need_split(nnp, args, support_set):
             for _net in nnp.protobuf.network[:]:
                 if _net.name != network_name:

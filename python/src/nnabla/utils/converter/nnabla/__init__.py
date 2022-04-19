@@ -14,3 +14,4 @@
 
 from .importer import NnpImporter
 from .exporter import NnpExporter
+from .expander import NnpExpander

@@ -226,6 +226,8 @@ def add_convert_command(subparsers):
                            help='[export][NNP] store parameter into nntxt')
     subparser.add_argument('--nnp-exclude-parameter', action='store_true',
                            help='[export][NNP] output without parameter')
+    subparser.add_argument('--nnp-version', type=str, default=None,
+                           help='[export][NNP] specify the version of nnp (e.g. 1.25.0)')
 
     # Both NNB and CSRC
     subparser.add_argument('-T', '--default-variable-type', type=str, nargs=1, default=['FLOAT32'],
