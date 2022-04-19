@@ -1,5 +1,5 @@
 # Copyright 2018,2019,2020,2021 Sony Corporation.
-# Copyright 2021 Sony Group Corporation.
+# Copyright 2021,2022 Sony Group Corporation.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -651,3 +651,86 @@ def small_id_resnet(image, test=False):
     h = F.average_pooling(h, (2, 2))
     pred = PF.affine(h, 10, name='id-fc')
     return pred
+
+
+def reset_the_weight_value(inputs, output_axis, threshold):
+    x, w = inputs[:2]
+    shape = w.shape
+    from functools import reduce
+    items = reduce(lambda x, y: x * y, shape)
+    upbound = (threshold / (items / shape[output_axis])) ** 0.5
+
+    # some channels less than the upbound, some greater than the upbound
+    slice0, slice1 = None, None
+    if output_axis == 0:
+        slice0 = '[:shape[0]//2,...]'
+        slice1 = '[shape[0]//2:,...]'
+    if output_axis == 1:
+        slice0 = '[:,:shape[1]//2,...]'
+        slice1 = '[:,shape[1]//2:,...]'
+    if output_axis == -1:
+        slice0 = '[...,:shape[-1]//2]'
+        slice1 = '[...,shape[-1]//2:]'
+    exec('w.d{} = upbound * 0.9'.format(slice0))
+    exec('w.d{} = upbound * 2'.format(slice1))
+
+
+def net_for_pruning(image, threshold, with_bias=False, channel_last=False, name_scope='net1'):
+    with nn.parameter_scope(name_scope):
+        h = image
+        h /= 255.0
+        h = PF.convolution(h, 16, kernel=(3, 3), pad=(1, 1),
+                           with_bias=with_bias, channel_last=channel_last, name='conv')
+        inputs = h.parent.inputs
+        axis = 0
+        # force reset the weight value
+        reset_the_weight_value(inputs, axis, threshold)
+
+        h = PF.deconvolution(h, 16, kernel=(
+            3, 3), with_bias=with_bias, channel_last=channel_last, name='deconv')
+        inputs = h.parent.inputs
+        axis = -1 if channel_last else 1
+        # force reset the weight value
+        reset_the_weight_value(inputs, axis, threshold)
+
+        pred = PF.affine(h, 10, name='fc')
+        inputs = pred.parent.inputs
+        axis = 1
+        # force reset the weight value
+        reset_the_weight_value(inputs, axis, threshold)
+
+        return pred
+
+
+def depthwise_net_for_pruning(image, threshold, with_bias=False, channel_last=False, name_scope='net1'):
+    with nn.parameter_scope(name_scope):
+        h = image
+        h /= 255.0
+        h = PF.convolution(h, 16, kernel=(3, 3), pad=(1, 1),
+                           with_bias=False, channel_last=channel_last, name='conv')
+        inputs = h.parent.inputs
+        axis = 0
+        # force reset the weight value
+        reset_the_weight_value(inputs, axis, threshold)
+
+        h = PF.depthwise_convolution(h, kernel=(
+            3, 3), with_bias=with_bias, name='depthwise_conv')
+        inputs = h.parent.inputs
+        axis = 0
+        # force reset the weight value
+        reset_the_weight_value(inputs, axis, threshold)
+
+        h = PF.depthwise_deconvolution(h, kernel=(
+            3, 3), with_bias=with_bias, name='depthwise_deconv')
+        inputs = h.parent.inputs
+        axis = 0
+        # force reset the weight value
+        reset_the_weight_value(inputs, axis, threshold)
+
+        pred = PF.affine(h, 10, name='fc')
+        inputs = pred.parent.inputs
+        axis = 1
+        # force reset the weight value
+        reset_the_weight_value(inputs, axis, threshold)
+
+        return pred
