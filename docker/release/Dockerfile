@@ -16,6 +16,8 @@
 # Flatbuffer compiler
 FROM ubuntu:18.04 as flatc
 
+ENV DEBIAN_FRONTEND noninteractive
+
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
        ca-certificates \
@@ -29,7 +31,7 @@ RUN apt-get update \
 RUN umask 0 \
     && mkdir -p /tmp/deps \
     && cd /tmp/deps \
-    && git clone https://github.com/google/flatbuffers.git \
+    && git clone -b v2.0.6 --depth 1 https://github.com/google/flatbuffers.git \
     && cd flatbuffers \
     && cmake -G "Unix Makefiles" \
     && make \
