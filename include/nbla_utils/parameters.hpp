@@ -48,6 +48,16 @@ NBLA_API bool load_parameters_h5(ParameterDirectory &pd, char *buf, int size);
  * file.
  */
 NBLA_API bool load_parameters_pb(ParameterDirectory &pd, char *buf, int size);
+
+/** Save parameters to a buffer, specified by buffer address and length.
+ */
+NBLA_API bool save_parameters_pb(ParameterDirectory &pd, char *buf,
+                                 unsigned int &size);
+
+/** Save parameters to a file buffer, specified by buffer address and length.
+ */
+NBLA_API bool save_parameters_h5(ParameterDirectory &pd, char *buf,
+                                 unsigned int &size);
 };
 /*@}*/
 }

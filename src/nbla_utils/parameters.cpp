@@ -27,6 +27,7 @@
 #include <nbla/initializer.hpp>
 #include <nbla/logger.hpp>
 #include <nbla/parametric_functions.hpp>
+#include <nbla/std.hpp>
 
 // Protobuf
 #include <google/protobuf/descriptor.h>
@@ -71,8 +72,6 @@ bool parse_hdf5_dataset(string name, hid_t did, ParameterVector &pv) {
   int rank = H5Sget_simple_extent_ndims(sp);
   hsize_t dims[rank];
   herr_t err = H5Sget_simple_extent_dims(sp, dims, nullptr);
-  hid_t tid = H5Dget_type(did);
-  H5T_class_t t_class = H5Tget_class(tid);
 
   hsize_t size = H5Dget_storage_size(did);
   string variable_name = name.substr(1, name.length());
@@ -99,7 +98,7 @@ bool parse_hdf5_dataset(string name, hid_t did, ParameterVector &pv) {
     CgVariablePtr cg_v = make_shared<CgVariable>(shape, need_grad);
     float *data =
         cg_v->variable()->template cast_data_and_get_pointer<float>(cpu_ctx);
-    for (int i = 0; i < size / sizeof(float); i++) {
+    for (unsigned int i = 0; i < size / sizeof(float); i++) {
       data[i] = buffer[i];
     }
     pv.push_back({variable_name, cg_v});
@@ -117,7 +116,7 @@ bool parse_hdf5_group(hid_t gid, ParameterVector &pv) {
     char group_name[MAX_NAME];
     len = H5Iget_name(gid, group_name, MAX_NAME);
     if (len >= 0) {
-      for (int i = 0; i < num; i++) {
+      for (unsigned int i = 0; i < num; i++) {
         char name[MAX_NAME];
         len = H5Gget_objname_by_idx(gid, (hsize_t)i, name, (size_t)MAX_NAME);
         if (len < 0) {
@@ -185,6 +184,50 @@ void create_h5_group(hid_t file_id, const string &filename) {
     }
   }
 }
+
+void create_h5_dataset(const ParameterVector &pv, hid_t file_id) {
+  hid_t dataset_id, dataspace_id;
+  hid_t attr_space_id, attr_id;
+  herr_t status;
+  int index = 0;
+
+  for (auto it = pv.begin(); it != pv.end(); it++, index++) {
+    string name = it->first;
+    CgVariablePtr cg_v = it->second;
+    VariablePtr variable = cg_v->variable();
+    Shape_t shape = variable->shape();
+    dataspace_id =
+        H5Screate_simple(shape.size(), (hsize_t *)shape.data(), NULL);
+    create_h5_group(file_id, name);
+    dataset_id =
+        H5Dcreate2(file_id, name.c_str(), H5T_NATIVE_FLOAT, dataspace_id,
+                   H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    float *data = variable->template cast_data_and_get_pointer<float>(cpu_ctx);
+    status = H5Dwrite(dataset_id, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL,
+                      H5P_DEFAULT, data);
+    if (status >= 0) {
+      attr_space_id = H5Screate(H5S_SCALAR);
+      int need_grad = cg_v->need_grad();
+      attr_id = H5Acreate2(dataset_id, "need_grad", H5T_NATIVE_INT,
+                           attr_space_id, H5P_DEFAULT, H5P_DEFAULT);
+      H5Awrite(attr_id, H5T_NATIVE_INT, &need_grad);
+      H5Aclose(attr_id);
+      H5Sclose(attr_space_id);
+      attr_space_id = H5Screate(H5S_SCALAR);
+      attr_id = H5Acreate2(dataset_id, "index", H5T_NATIVE_INT, attr_space_id,
+                           H5P_DEFAULT, H5P_DEFAULT);
+      H5Awrite(attr_id, H5T_NATIVE_INT, &index);
+      H5Aclose(attr_id);
+      H5Sclose(attr_space_id);
+    } else {
+      NBLA_ERROR(error_code::not_implemented,
+                 "Cannot write h5 file's dataset.");
+    }
+    H5Dclose(dataset_id);
+    H5Sclose(dataspace_id);
+  }
+}
+
 #endif
 
 void load_parameters_from_proto(NNablaProtoBuf &param, ParameterVector &pv) {
@@ -310,53 +353,99 @@ bool load_parameters(ParameterVector &pv, string filename) {
 }
 
 // ----------------------------------------------------------------------
+// Load parameters from file
+// ----------------------------------------------------------------------
+bool load_parameters(ParameterDirectory &pd, string filename) {
+  ParameterVector pv;
+  bool ret = load_parameters(pv, filename);
+
+  if (!ret) {
+    NBLA_LOG_INFO("Cannot load parameter file: %s\n", filename.c_str());
+    return false;
+  }
+
+  for (auto it = pv.begin(); it != pv.end(); ++it) {
+    pd.get_parameter_or_create(it->first, it->second);
+  }
+  NBLA_LOG_INFO("Load parameters from {}", filename);
+
+  return true;
+}
+
+// ----------------------------------------------------------------------
+// Load parameters from h5 file buffer
+// ----------------------------------------------------------------------
+bool load_parameters_h5(ParameterDirectory &pd, char *buf, int size) {
+  ParameterVector pv;
+  bool ret = load_parameters_h5(pv, buf, size);
+
+  if (!ret) {
+    NBLA_LOG_INFO("Cannot load parameter file buffer!\n");
+    return false;
+  }
+
+  for (auto it = pv.begin(); it != pv.end(); ++it) {
+    pd.get_parameter_or_create(it->first, it->second);
+  }
+
+  return true;
+}
+
+// ----------------------------------------------------------------------
+// Load parameters from pb file buffer
+// ----------------------------------------------------------------------
+bool load_parameters_pb(ParameterDirectory &pd, char *buf, int size) {
+  ParameterVector pv;
+  bool ret = load_parameters_pb(pv, buf, size);
+
+  if (!ret) {
+    NBLA_LOG_INFO("Cannot load parameter file buffer!\n");
+    return false;
+  }
+
+  for (auto it = pv.begin(); it != pv.end(); ++it) {
+    pd.get_parameter_or_create(it->first, it->second);
+  }
+
+  return true;
+}
+
+// ----------------------------------------------------------------------
+// save parameters as pb to a stream output
+// ----------------------------------------------------------------------
+void save_parameters_pb_to_stream(const ParameterVector &pv, ostream *ofs) {
+  NNablaProtoBuf params;
+  for (auto it = pv.begin(); it != pv.end(); it++) {
+
+    string name = it->first;
+    VariablePtr variable = it->second->variable();
+    Parameter *parameter = params.add_parameter();
+    parameter->set_variable_name(name);
+    CgVariablePtr cg_var = it->second;
+    parameter->set_need_grad(cg_var->need_grad());
+
+    float *data = variable->template cast_data_and_get_pointer<float>(cpu_ctx);
+    for (int i = 0; i < variable->size(); i++)
+      parameter->add_data(data[i]);
+
+    Shape *shape = parameter->mutable_shape();
+    for (Shape_t::size_type i = 0; i < variable->shape().size(); i++)
+      shape->add_dim(variable->shape()[i]);
+  }
+  params.SerializeToOstream(ofs);
+}
+
+// ----------------------------------------------------------------------
 // save parameters to a .h5 file specified by filename
 // ----------------------------------------------------------------------
 bool save_parameters_h5(const ParameterVector &pv, string filename) {
 #ifdef NBLA_UTILS_WITH_HDF5
-  hid_t file_id, dataset_id, dataspace_id;
-  hid_t attr_space_id, attr_id;
-  herr_t status;
-  int index = 0;
+  hid_t file_id;
 
   H5Eset_auto1(NULL, NULL);
   file_id =
       H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-  for (auto it = pv.begin(); it != pv.end(); it++, index++) {
-    string name = it->first;
-    CgVariablePtr cg_v = it->second;
-    VariablePtr variable = cg_v->variable();
-    Shape_t shape = variable->shape();
-    dataspace_id =
-        H5Screate_simple(shape.size(), (hsize_t *)shape.data(), NULL);
-    create_h5_group(file_id, name);
-    dataset_id =
-        H5Dcreate2(file_id, name.c_str(), H5T_NATIVE_FLOAT, dataspace_id,
-                   H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    float *data = variable->template cast_data_and_get_pointer<float>(cpu_ctx);
-    status = H5Dwrite(dataset_id, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL,
-                      H5P_DEFAULT, data);
-    if (status >= 0) {
-      attr_space_id = H5Screate(H5S_SCALAR);
-      int need_grad = cg_v->need_grad();
-      attr_id = H5Acreate2(dataset_id, "need_grad", H5T_NATIVE_INT,
-                           attr_space_id, H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(attr_id, H5T_NATIVE_INT, &need_grad);
-      H5Aclose(attr_id);
-      H5Sclose(attr_space_id);
-      attr_space_id = H5Screate(H5S_SCALAR);
-      attr_id = H5Acreate2(dataset_id, "index", H5T_NATIVE_INT, attr_space_id,
-                           H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(attr_id, H5T_NATIVE_INT, &index);
-      H5Aclose(attr_id);
-      H5Sclose(attr_space_id);
-    } else {
-      NBLA_ERROR(error_code::not_implemented,
-                 "Cannot write h5 file's dataset.");
-    }
-    H5Dclose(dataset_id);
-    H5Sclose(dataspace_id);
-  }
+  create_h5_dataset(pv, file_id);
   H5Fclose(file_id);
   return true;
 #else
@@ -377,26 +466,104 @@ bool save_parameters_pb(const ParameterVector &pv, string filename) {
     return false;
   }
 
-  NNablaProtoBuf params;
-  for (auto it = pv.begin(); it != pv.end(); it++) {
-
-    string name = it->first;
-    VariablePtr variable = it->second->variable();
-    Parameter *parameter = params.add_parameter();
-    parameter->set_variable_name(name);
-    CgVariablePtr cg_var = it->second;
-    parameter->set_need_grad(cg_var->need_grad());
-
-    float *data = variable->template cast_data_and_get_pointer<float>(cpu_ctx);
-    for (int i = 0; i < variable->size(); i++)
-      parameter->add_data(data[i]);
-
-    Shape *shape = parameter->mutable_shape();
-    for (Shape_t::size_type i = 0; i < variable->shape().size(); i++)
-      shape->add_dim(variable->shape()[i]);
-  }
-  params.SerializeToOstream(&ofs);
+  save_parameters_pb_to_stream(pv, &ofs);
   NBLA_LOG_INFO("Saved parameters to {}", filename);
+  return true;
+}
+
+// ----------------------------------------------------------------------
+// generate a random string for temporary file name.
+// Since tmpnam is not safe, and mkstemp is not what I want.
+// ----------------------------------------------------------------------
+nbla::string random_string(void) {
+  int random_string_len = 10;
+
+  static auto &stuff = "0123456789_"
+                       "abcdefghijklmnopqrstuvwxy"
+                       "ABCDEFGHIJKLMNOPQRSTUVWXY"; // No 'Z'
+  thread_local static std::uniform_int_distribution<std::string::size_type>
+      pick(0, sizeof(stuff) - 2);
+  thread_local static std::mt19937 rg{std::random_device{}()};
+  nbla::string random_str;
+  random_str.resize(random_string_len);
+  for (int i = 0; i < random_string_len; ++i)
+    random_str[i] = stuff[pick(rg)];
+  return random_str;
+}
+
+// ----------------------------------------------------------------------
+// save parameters to a .h5 file specified by filename
+// ----------------------------------------------------------------------
+bool save_parameters_h5(const ParameterVector &pv, char *buffer,
+                        unsigned int &size) {
+#ifdef NBLA_UTILS_WITH_HDF5
+  hid_t file_id;
+  nbla::string filename;
+  const char *tmp = getenv("TMPDIR");
+
+  H5Eset_auto1(NULL, NULL);
+  if (tmp == 0)
+    filename = "/tmp";
+  else
+    filename = tmp;
+  filename += "/";
+  filename += random_string();
+  file_id =
+      H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+  create_h5_dataset(pv, file_id);
+  H5Fclose(file_id);
+  std::ifstream ifs(filename, ios::binary);
+  const auto begin = ifs.tellg();
+  ifs.seekg(0, ios::end);
+  const auto end = ifs.tellg();
+  const auto file_size = end - begin;
+  if (buffer == NULL) {
+    size = file_size;
+    remove(filename.c_str());
+    return true;
+  } else {
+    if (size < file_size) {
+      NBLA_ERROR(error_code::memory,
+                 "Required memory size %d is not satisfied by %d!", file_size,
+                 size);
+    }
+    ifs.seekg(0, ios::beg);
+    ifs.read(buffer, file_size);
+    size = file_size;
+  }
+  remove(filename.c_str());
+  return true;
+#else
+  // Not implemented
+  NBLA_ERROR(error_code::not_implemented,
+             "Cannot write dataset to .h5. HDF5 might not enabled when build.");
+  return false;
+#endif
+}
+
+// ----------------------------------------------------------------------
+// save parameters to a .protobuf file specified by filename
+// ----------------------------------------------------------------------
+bool save_parameters_pb(const ParameterVector &pv, char *buffer,
+                        unsigned int &size) {
+  std::stringstream ss;
+
+  save_parameters_pb_to_stream(pv, &ss);
+  ss.seekp(0, std::ios::end);
+  if (buffer == NULL) {
+    size = ss.tellp();
+  } else {
+    if (size < ss.tellp()) {
+      NBLA_ERROR(error_code::memory,
+                 "Required buffer size %d is not satisfied by %d", ss.tellp(),
+                 size)
+    }
+    size = ss.tellp();
+    ss.seekp(0, std::ios::beg);
+    ss.read(buffer, size);
+  }
+
+  NBLA_LOG_INFO("Saved parameters to buffer!");
   return true;
 }
 
@@ -415,26 +582,6 @@ bool save_parameters(const ParameterVector &pv, string filename) {
                filename.c_str());
   }
   return ret;
-}
-
-// ----------------------------------------------------------------------
-// Load parameters from file
-// ----------------------------------------------------------------------
-bool load_parameters(ParameterDirectory &pd, string filename) {
-  ParameterVector pv;
-  bool ret = load_parameters(pv, filename);
-
-  if (!ret) {
-    NBLA_LOG_INFO("Cannot load parameter file: %s\n", filename.c_str());
-    return false;
-  }
-
-  for (auto it = pv.begin(); it != pv.end(); ++it) {
-    pd.get_parameter_or_create(it->first, it->second);
-  }
-  NBLA_LOG_INFO("Load parameters from {}", filename);
-
-  return true;
 }
 
 // ----------------------------------------------------------------------
@@ -460,41 +607,31 @@ bool save_parameters(ParameterDirectory &pd, string filename) {
 }
 
 // ----------------------------------------------------------------------
-// Load parameters from h5 file buffer
+// Save parameters from h5 file buffer
 // ----------------------------------------------------------------------
-bool load_parameters_h5(ParameterDirectory &pd, char *buf, int size) {
+bool save_parameters_h5(ParameterDirectory &pd, char *buf, unsigned int &size) {
   ParameterVector pv;
-  bool ret = load_parameters_h5(pv, buf, size);
+  auto pd_param = pd.get_parameters();
 
-  if (!ret) {
-    NBLA_LOG_INFO("Cannot load parameter file buffer!\n");
-    return false;
+  for (auto it = pd_param.begin(); it != pd_param.end(); ++it) {
+    pv.push_back({it->first, pd.get_parameter(it->first)});
   }
 
-  for (auto it = pv.begin(); it != pv.end(); ++it) {
-    pd.get_parameter_or_create(it->first, it->second);
-  }
-
-  return true;
+  return save_parameters_h5(pv, buf, size);
 }
 
 // ----------------------------------------------------------------------
-// Load parameters from h5 file buffer
+// Save parameters from pb file buffer
 // ----------------------------------------------------------------------
-bool load_parameters_pb(ParameterDirectory &pd, char *buf, int size) {
+bool save_parameters_pb(ParameterDirectory &pd, char *buf, unsigned int &size) {
   ParameterVector pv;
-  bool ret = load_parameters_pb(pv, buf, size);
+  auto pd_param = pd.get_parameters();
 
-  if (!ret) {
-    NBLA_LOG_INFO("Cannot load parameter file buffer!\n");
-    return false;
+  for (auto it = pd_param.begin(); it != pd_param.end(); ++it) {
+    pv.push_back({it->first, pd.get_parameter(it->first)});
   }
 
-  for (auto it = pv.begin(); it != pv.end(); ++it) {
-    pd.get_parameter_or_create(it->first, it->second);
-  }
-
-  return true;
+  return save_parameters_pb(pv, buf, size);
 }
 }
 }
