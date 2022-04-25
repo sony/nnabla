@@ -31,7 +31,9 @@ RUN apt-get update \
 RUN umask 0 \
     && mkdir -p /tmp/deps \
     && cd /tmp/deps \
-    && git clone -b v2.0.6 --depth 1 https://github.com/google/flatbuffers.git \
+    && git clone -b \
+       `curl --silent "https://api.github.com/repos/google/flatbuffers/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")'` \
+       https://github.com/google/flatbuffers.git \
     && cd flatbuffers \
     && cmake -G "Unix Makefiles" \
     && make \
