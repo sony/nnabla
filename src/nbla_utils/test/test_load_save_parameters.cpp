@@ -207,6 +207,20 @@ TEST(test_save_and_load_parameters, test_save_load_without_train_pb_buf) {
   check_result(x, y);
 }
 
+TEST(test_save_and_load_parameters, test_nnp_save_pb_buffer) {
+  ParameterDirectory train_params;
+  ParameterDirectory infer_params;
+  unsigned int size = 0;
+
+  CgVariablePtr x = simple_train(train_params);
+  save_parameters_pb(train_params, NULL, size);
+  nbla::vector<char> buffer(size);
+  save_parameters_pb(train_params, buffer.data(), size);
+  load_parameters_pb(infer_params, buffer.data(), buffer.size());
+  CgVariablePtr y = simple_infer(infer_params);
+  check_result(x, y);
+}
+
 #ifdef NBLA_UTILS_WITH_HDF5
 TEST(test_save_and_load_parameters, test_save_load_h5) {
   ParameterDirectory train_params;
@@ -272,6 +286,25 @@ TEST(test_save_and_load_parameters, test_nnp_save_pb) {
   CgVariablePtr y = simple_infer(infer_params);
   check_result(x, y);
 }
+
+TEST(test_save_and_load_parameters, test_nnp_save_h5_buffer) {
+  ParameterDirectory train_params;
+  ParameterDirectory infer_params;
+  unsigned int size = 0;
+
+  CgVariablePtr x = simple_train(train_params);
+  save_parameters_h5(train_params, NULL, size);
+  nbla::vector<char> buffer(size);
+  save_parameters_h5(train_params, buffer.data(), size);
+  load_parameters_h5(infer_params, buffer.data(), buffer.size());
+  auto p1 = train_params.get_parameters();
+  auto p2 = infer_params.get_parameters();
+  expect_params_equal(p1, p2);
+
+  CgVariablePtr y = simple_infer(infer_params);
+  check_result(x, y);
+}
+
 #endif
 }
 }
