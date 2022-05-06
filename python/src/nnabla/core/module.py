@@ -1,5 +1,5 @@
 # Copyright 2020,2021 Sony Corporation.
-# Copyright 2021 Sony Group Corporation.
+# Copyright 2021,2022 Sony Group Corporation.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -52,9 +52,6 @@ class ParamMemo(object):
         return ret
 
 
-__module_built_in_functions__ = {}
-
-
 class MetaClass(type):
     @staticmethod
     def method_wrapper(method):
@@ -66,16 +63,15 @@ class MetaClass(type):
         return wrapped
 
     def __new__(meta, classname, bases, class_dict):
-        global __module_built_in_functions__
+        if not bases:
+            # Skip applying method_wrapper if it is a base class.
+            return type.__new__(meta, classname, bases, class_dict)
+
         new_class_dict = {}
-        for attributeName, attribute in class_dict.items():
-            if classname == 'Module':
-                __module_built_in_functions__ = set(class_dict.keys())
-                __module_built_in_functions__ -= {'__call__', 'call'}
-            else:
-                if callable(attribute) and attributeName not in __module_built_in_functions__:
-                    attribute = MetaClass.method_wrapper(attribute)
-            new_class_dict[attributeName] = attribute
+        for name, attr in class_dict.items():
+            if callable(attr):
+                attr = MetaClass.method_wrapper(attr)
+            new_class_dict[name] = attr
         return type.__new__(meta, classname, bases, new_class_dict)
 
 
@@ -337,7 +333,7 @@ class Module(metaclass=MetaClass):
             params.update(filtered_params)
         return params
 
-    def load_parameters(self, path, extension=".h5"):
+    def load_parameters(self, path, extension=".h5", raise_if_missing=True):
         """Load parameters from a file into this module.
 
         Args:
@@ -347,8 +343,8 @@ class Module(metaclass=MetaClass):
         scope = OrderedDict()
         with nn.parameter_scope('', scope):
             nn.load_parameters(path, extension=extension)
-            params = nn.get_parameters()
-        self.set_parameters(params)
+            params = nn.get_parameters(grad_only=False)
+        self.set_parameters(params, raise_if_missing=raise_if_missing)
 
     def save_parameters(self, path, extension=".h5"):
         """Save parameters of this module to a file.
@@ -356,7 +352,7 @@ class Module(metaclass=MetaClass):
         Args:
             path: str or file-like object
         """
-        params = self.get_parameters()
+        params = self.get_parameters(grad_only=False)
         nn.save_parameters(path, params=params, extension=extension)
 
     def set_parameter(self, key, param, raise_if_missing=False):
@@ -370,12 +366,13 @@ class Module(metaclass=MetaClass):
                     ' as `@name` must be followed by `/`.'.format(key))
             module_name, subkey = key[1:pos], key[pos + 1:]
             if module_name in self.submodules.keys():
-                self.submodules[module_name].set_parameter(subkey, param)
+                self.submodules[module_name].set_parameter(
+                    subkey, param, raise_if_missing=raise_if_missing)
             elif raise_if_missing:
                 raise ValueError(
                     'A child module {} cannot be found in {}. '
                     'This error is raised because `raise_if_missing` is specified '
-                    'as True. Please turn off if you allow it.'.format(module_name[1:], self))
+                    'as True. Please turn off if you allow it.'.format(module_name, self))
             return
 
         # Set parameters
@@ -411,7 +408,7 @@ class Module(metaclass=MetaClass):
     def __getattr__(self, name):
         if name in self.submodules:
             return self.submodules[name]
-        attr = self.__dict__[name]
+        attr = super().__getattr__(name)
         return attr
 
     @property

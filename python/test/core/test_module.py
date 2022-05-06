@@ -806,3 +806,36 @@ def test_0_function_input(tmpdir):
     g = nn.graph_def.create_graph_from_variable("te_module", v)
     fn = str(tmpdir.join("tmp.nnp"))
     g.save(fn)
+
+
+def test_has_attribute():
+    e = Example()
+    assert not hasattr(e, "no_exist"), "allow query a method not exist."
+
+
+def test_load_parameters_with_no_grad_parameter(tmpdir):
+    x1 = nn.Variable((4, 3, 28, 28))
+    x2 = nn.Variable((4, 3, 28, 28))
+    t = TSTNetNormal()
+    o = t(x1, x2)
+
+    p = t.get_parameters(grad_only=False)
+    p['@conv_bn_1/bn/mean'].d = 0.1
+
+    fn = str(tmpdir.join("tmp.h5"))
+    t.save_parameters(fn)
+
+    r = TSTNetNormal()
+    r.load_parameters(fn)
+
+    rp = r.get_parameters(grad_only=False)
+    assert np.allclose(rp['@conv_bn_1/bn/mean'].d, 0.1)
+
+    v = rp['@conv_bn_1/bn/mean']
+    r.set_parameter('@conv_bn_1/bn/mean', v)
+
+    with pytest.raises(ValueError) as excinfo:
+        r.set_parameter('@conv_bn_x/bn/mean', v, raise_if_missing=True)
+
+    # default not raise exception
+    r.set_parameter('@conv_bn_1/bn/mean', v)
