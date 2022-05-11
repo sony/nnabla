@@ -40,6 +40,10 @@ from communicator cimport Communicator
 import numpy as np
 cimport numpy as np
 np.import_array()
+
+# Pickle
+import pickle
+
 # CPython
 from cpython cimport Py_INCREF, Py_DECREF
 from nnabla.core.graph_def import ProtoVariable, ProtoFunction
@@ -144,7 +148,7 @@ cdef class Function:
         f.fun = make_shared[CgFunction](fun)
         f.funp = f.fun.get()
         info2 = {'name': info.type_name, 'args': info.args, 'tags': info.tags}
-        f.funp.set_info(repr(info2).encode('ascii'))
+        f.funp.set_info(pickle.dumps(info2).hex())
         return f
 
     @staticmethod
@@ -152,7 +156,7 @@ cdef class Function:
         f = Function()
         f.fun = fun
         f.funp = fun.get()
-        info2 = eval(f.funp.info())
+        info2 = pickle.loads(b''.fromhex(f.funp.info()))
         info = Info()
         info.args = info2['args']
         info.type_name = info2['name']
@@ -271,11 +275,11 @@ cdef class Function:
 
     @property
     def arguments(self):
-        info = eval(self.funp.info().replace("inf", "float('inf')").replace("-inf", "float('-inf')"))
+        info = pickle.loads(b''.fromhex(self.funp.info()))
         return info['args']
 
     def _proto_call(self, inputs, int n_outputs, outputs):
-        info = eval(self.funp.info())
+        info = pickle.loads(b''.fromhex(self.funp.info()))
         return ProtoFunction(self, info['name'], info['args'])(inputs, n_outputs)
     
     def _imperative_call(self, inputs, int n_outputs, outputs):
@@ -336,7 +340,7 @@ cdef class Function:
 
         Get args of the function.
         """
-        info = eval(self.funp.info())
+        info = pickle.loads(b''.fromhex(self.funp.info()))
         return info['args']
 
     @property
@@ -345,7 +349,7 @@ cdef class Function:
 
         Get tags of the function.
         """
-        info = eval(self.funp.info())
+        info = pickle.loads(b''.fromhex(self.funp.info()))
         return info['tags']
 
     @tags.setter
@@ -354,9 +358,9 @@ cdef class Function:
 
         Set tags to the function.
         """
-        info = eval(self.funp.info())
+        info = pickle.loads(b''.fromhex(self.funp.info()))
         info['tags'] = tags
-        self.funp.set_info(repr(info).encode('ascii'))
+        self.funp.set_info(pickle.dumps(info).hex())
 			
     """
     @property
