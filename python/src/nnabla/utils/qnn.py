@@ -115,13 +115,19 @@ class MinMaxMinMaxRecorderCallback(object):
         m = nn.parameter.get_parameter_or_create('m-{}'.format(name), shape)
         M = nn.parameter.get_parameter_or_create('M-{}'.format(name), shape)
 
+        # If recorder is not added before Q/DQ, return neither scale nor zp
+        if np.count_nonzero(m) == 0 and np.count_nonzero(M) == 0:
+            return None, None
+
         n_bits = 8
         im = - 2 ** (n_bits - 1)
         iM = 2 ** (n_bits - 1) - 1
         de = (iM - im) if not narrow_range else (iM - (im + 1))
-        scale = (M.d - m.d) / de  # MinMaxMinMax
-        if np.count_nonzero(scale) == 0:
-            return None, None
+
+        # MinMaxMinMax, 1e-24 is a small experience value to avoid zero scale
+        scale = np.maximum((M.d - m.d), 1e-24) / de
+
+        # round
         _round = __round_methods__[round_method]
         scale = 2 ** (_round(np.log(scale) / np.log(2))
                       ) if _round else scale  # pow2 scale
@@ -221,13 +227,17 @@ class AbsMaxRecorderCallback(object):
         shape = [1] * x.ndim
         M = nn.parameter.get_parameter_or_create('M-{}'.format(name), shape)
 
+        # If recorder is not added before Q/DQ, return neither scale nor zp
+        if np.count_nonzero(M) == 0:
+            return None, None
+
         n_bits = 8
         im = - 2 ** (n_bits - 1)
         iM = 2 ** (n_bits - 1) - 1
         de = (iM - im) if not narrow_range else (iM - (im + 1))
         scale = (2 * M.d) / de  # AbsMax
-        if np.count_nonzero(scale) == 0:
-            return None, None
+
+        # round
         _round = __round_methods__[round_method]
         scale = 2 ** (_round(np.log(scale) / np.log(2))
                       ) if _round else scale  # pow2 scale
@@ -336,13 +346,19 @@ class MinMaxMvaRecorderCallback(object):
         m = nn.parameter.get_parameter_or_create('m-{}'.format(name), shape)
         M = nn.parameter.get_parameter_or_create('M-{}'.format(name), shape)
 
+        # If recorder is not added before Q/DQ, return neither scale nor zp
+        if np.count_nonzero(m) == 0 and np.count_nonzero(M) == 0:
+            return None, None
+
         n_bits = 8
         im = - 2 ** (n_bits - 1)
         iM = 2 ** (n_bits - 1) - 1
         de = (iM - im) if not narrow_range else (iM - (im + 1))
-        scale = (M.d - m.d) / de  # MinMaxMva
-        if np.count_nonzero(scale) == 0:
-            return None, None
+
+        # MinMaxMva, 1e-24 is a small experience value to avoid zero scale
+        scale = np.maximum((M.d - m.d), 1e-24) / de
+
+        # round
         _round = __round_methods__[round_method]
         scale = 2 ** (_round(np.log(scale) / np.log(2))
                       ) if _round else scale  # pow2 scale
@@ -442,13 +458,17 @@ class MaxMaxRecorderCallback(object):
         shape = [1] * x.ndim
         M = nn.parameter.get_parameter_or_create('M-{}'.format(name), shape)
 
+        # If recorder is not added before Q/DQ, return neither scale nor zp
+        if np.count_nonzero(M) == 0:
+            return None, None
+
         n_bits = 8
         im = - 2 ** (n_bits - 1)
         iM = 2 ** (n_bits - 1) - 1
         de = (iM - im) if not narrow_range else (iM - (im + 1))
         scale = (2 * M.d) / de  # MaxMax
-        if np.count_nonzero(scale) == 0:
-            return None, None
+
+        # round
         _round = __round_methods__[round_method]
         scale = 2 ** (_round(np.log(scale) / np.log(2))
                       ) if _round else scale  # pow2 scale
@@ -550,13 +570,17 @@ class MaxMvaRecorderCallback(object):
         shape = [1] * x.ndim
         M = nn.parameter.get_parameter_or_create('M-{}'.format(name), shape)
 
+        # If recorder is not added before Q/DQ, return neither scale nor zp
+        if np.count_nonzero(M) == 0:
+            return None, None
+
         n_bits = 8
         im = - 2 ** (n_bits - 1)
         iM = 2 ** (n_bits - 1) - 1
         de = (iM - im) if not narrow_range else (iM - (im + 1))
         scale = (2 * M.d) / de  # MaxMva
-        if np.count_nonzero(scale) == 0:
-            return None, None
+
+        # round
         _round = __round_methods__[round_method]
         scale = 2 ** (_round(np.log(scale) / np.log(2))
                       ) if _round else scale  # pow2 scale

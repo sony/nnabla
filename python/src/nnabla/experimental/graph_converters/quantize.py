@@ -226,6 +226,10 @@ class QuantizeRecordingToTrainingModifier(FunctionModifier):
             for next_func in f.outputs[0].function_references:
                 next_fn = next_func.info.type_name
                 next_func_rank = self.get_function_rank(next_func)
+
+                if next_fn == 'Sink':
+                    return h
+
                 name = 'x0'
                 if next_fn in self._modifier._fct_bin_set:
                     for i, elm in enumerate(next_func.inputs):
@@ -387,9 +391,10 @@ class QuantizeRecordingToTrainingModifier(FunctionModifier):
             inps = self.shared_quantization(f, inps, cfg)
             h = self._modifier._modify_as_same(f, inps)
 
-            if f.info.type_name == 'Sink':
+            if fn == 'Sink':
                 return h
 
+            # F -> output -> Q -> DQ
             h = self._quantize_outputs(f, h, axes, cfg)
             return h
 
