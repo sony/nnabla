@@ -228,12 +228,15 @@ def _create_executor(ctx, executor):
         executor.get('remp', {})
 
     generator_variables = executor.get('generator_variables', [])
+    no_image_normalization = executor.get('no_image_normalization')
 
     proto_network = ctx.proto_graphs[executor['network']].default_graph()
 
     e = nnabla_pb2.Executor()
     e.name = name
     e.network_name = network.name
+    if no_image_normalization is not None:
+        e.no_image_normalization = no_image_normalization
     for vname in executor.get('data', proto_network.inputs):
         if vname not in proto_network.variables:
             raise ValueError("{} is not found in networks!".format(vname))
