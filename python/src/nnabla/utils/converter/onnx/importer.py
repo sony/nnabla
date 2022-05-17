@@ -521,6 +521,7 @@ class OnnxImporter:
             "PRelu": self.PRelu,
             "Concat": self.Concatenate,
             "Conv": self.Convolution,
+            "GlobalMaxPool": self.GlobalMaxPool,
             "GlobalAveragePool": partial(self.BasePooling, 'GlobalAveragePooling'),
             "MaxPool": partial(self.BasePooling, 'MaxPooling'),
             "AveragePool": partial(self.BasePooling, 'AveragePooling'),
@@ -3782,6 +3783,26 @@ class OnnxImporter:
         logger.warning("nnabla Round is not compatible to ONNX Round, " +
                        "which performs rounding to nearest-even integer.")
         return self.GeneralOperator('Round', func_list, n)
+
+    def GlobalMaxPool(self, func_list, n):
+        assert len(n.input) == 1
+        assert len(n.output) == 1
+        x_shape = self.get_func_input_shape(n.input[0])
+        assert len(x_shape) >= 3 # (N, C, D0, D1, ...)
+
+        # (N, C, D0, D1, ...) -> (N, C, 1, 1, ...)
+        y_shape = [dim if i < 2 else 1 for i, dim in enumerate(x_shape)]
+        axes = list(range(2, len(x_shape)))
+
+        # Max
+        max_func = self.generate_default_function("Max", n)
+        max_p = max_func.max_param
+        max_p.axes.extend(axes)
+        max_p.keep_dims = True
+        max_p.with_index = False
+        max_p.only_index = False
+        self._shape_output[n.output[0]] = y_shape
+        func_list.append(max_func)
 
     def convert_to_functions(self, n):
         ft = self._onnx_optype_to_nnabla_function_type.get(n.op_type)
