@@ -298,3 +298,5 @@
   NonZero_Empty: 351
 45:
   ONNXNonMaxSuppression_iiff: 352
+46:
+  ONNXResize_fFfFiIiififi: 353

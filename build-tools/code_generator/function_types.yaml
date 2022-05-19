@@ -406,6 +406,9 @@ BatchCholesky:
 Interpolate:
   float: [float]
   half: [Half]
+ONNXResize:
+  float: [float]
+  half: [Half]
 Dropout:
   float: [float]
   half: [Half]

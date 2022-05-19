@@ -5291,6 +5291,80 @@ Signal Processing:
       iIiBB: 286
       iIiBBBB: 291
     c_runtime: not support
+  ONNXResize:
+    snake_name: onnx_resize
+    doc: |2
+
+      Resize an ND array with interpolation. This function provides a 
+      compatible interface to ONNX Resize.
+
+      References:
+          * `ONNX Operators documentation.
+          <https://github.com/onnx/onnx/blob/main/docs/Operators.md>`
+    inputs:
+      x:
+        doc: N-D array.
+    arguments:
+      roi:
+        doc: RoIs for tf_crop_and_resize.
+        type: repeated float
+        default: ()
+      scales:
+        doc: Scale factors along axes.
+        type: repeated float
+        default: ()
+      sizes:
+        doc: Output size.
+        type: repeated int64
+        default: ()
+      mode:
+        doc: Interpolation mode chosen from ('nearest'|'linear'|'cubic').
+        type: string
+        available_values:
+        - nearest
+        - linear
+        - cubic
+        default: '''nearest'''
+      coordinate_transformation_mode:
+        doc: How to transform the coordinate in the resized tensor to the coordinate
+          in the original tensor. This mode is chosen from ('half_pixel'|'pytorch_half_pixel'|'align_corners'|'asymmetric'|'tf_crop_and_resize').
+        type: string
+        available_values:
+        - half_pixel
+        - pytorch_half_pixel
+        - align_corners
+        - asymmetric
+        - tf_crop_and_resize
+        default: '''half_pixel'''
+      cubic_coeff_a:
+        doc: The coefficient used in cubic interpolation.
+        type: float
+        default: -0.75
+      exclude_outside:
+        doc: Whether to set coefficients to zero when sampling locations is outside
+          the input tensor.
+        type: int64
+        default: 0
+      extrapolation_value:
+        doc: An extrapolation value used when a sampling location is outside the input
+          tensor at tf_crop_and_resize mode.
+        type: float
+        default: 0.0
+      nearest_mode:
+        doc: Rounding mode for nearest-neighbor interpolation.
+        type: string
+        available_values:
+        - round_prefer_floor
+        - round_prefer_ceil
+        - floor
+        - ceil
+        default: '''round_prefer_floor'''
+    outputs:
+      y:
+        doc: N-D array.
+    c_runtime: not support
+    function_ids:
+      fFfFiIiififi: 353
   FFT:
     snake_name: fft
     doc: |2+

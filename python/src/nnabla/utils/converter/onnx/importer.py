@@ -30,6 +30,9 @@ except:
 
 from .utils import *
 
+# Convert ONNX Resize Operator to nnabla ONNXResize
+# instead of nnabla Interpolate.
+USE_ONNX_RESIZE = False
 
 # ONNX does not have the concept of executors.
 # We will add a single executor to NNP when converted from ONNX,
@@ -707,6 +710,8 @@ class OnnxImporter:
             "Round": self.Round,
             "Pad": partial(self.Pad, '11'),
         }
+        if USE_ONNX_RESIZE:
+            self.table_op_set_11["Resize"] = self.Resize_ONNXResize
         self.table_op_set_11 = dict(
             self.table_op_set_10, **self.table_op_set_11)
         # Currently, we only planed to support opset 6 and opset 11.
@@ -728,6 +733,8 @@ class OnnxImporter:
             "Resize": self.Resize_13,
             "ScatterElements": self.ScatterElements_13,
         }
+        if USE_ONNX_RESIZE:
+            del self.table_op_set_13["Resize"]
         self.table_op_set_13 = dict(
             self.table_op_set_11, **self.table_op_set_13)
 
@@ -795,7 +802,6 @@ class OnnxImporter:
             raise ValueError(
                 "The dtype of {} was not found".format(input_name))
         return dtype
-
 
     def get_input_raw_data_with_info(self, input_name):
         def find_with_name(sequence, name):
@@ -3687,6 +3693,88 @@ class OnnxImporter:
 
         func_list.append(interpolate_f)
         self._shape_output[n.output[0]] = output_size
+
+    def Resize_ONNXResize(self, func_list, n):
+        # Get inputs
+        assert 3 <= len(n.input) and len(n.input) <= 4  # X, roi, scales, sizes
+        assert len(n.output) == 1
+        roi = []
+        scales = []
+        sizes = []
+        x_shape = self.get_func_input_shape(n.input[0])
+        n_inputs = len(n.input)
+        if n_inputs >= 2 and n.input[1] != "":
+            roi_info = self.get_input_raw_data_with_info(n.input[1])
+            if roi_info is not None:
+                roi = roi_info.data
+                assert roi_info.data_type == TensorProto.FLOAT
+        if n_inputs >= 3 and n.input[2] != "":
+            scales_info = self.get_input_raw_data_with_info(n.input[2])
+            if scales_info is not None:
+                scales = scales_info.data
+                assert scales_info.data_type == TensorProto.FLOAT
+        if len(n.input) >= 4 and n.input[3] != "":
+            sizes_info = self.get_input_raw_data_with_info(n.input[3])
+            if sizes_info is not None:
+                sizes = sizes_info.data
+                assert sizes_info.data_type == TensorProto.INT64
+        assert scales is not None or sizes is not None
+        assert len(scales) == len(x_shape) or len(sizes) == len(x_shape)
+
+        # Get attributes
+        mode = "nearest"
+        coord_mode = "half_pixel"
+        cubic_coeff_a = -0.75
+        exclude_outside = 0
+        extrapolation_value = 0.0
+        nearest_mode = "round_prefer_floor"
+        for attr in n.attribute:
+            if attr.name == "mode":
+                mode = attr.s.decode("utf-8")
+            elif attr.name == "coordinate_transformation_mode":
+                coord_mode = attr.s.decode("utf-8")
+            elif attr.name == "cubic_coeff_a":
+                cubic_coeff_a = attr.f
+            elif attr.name == "exclude_outside":
+                exclude_outside = attr.i
+            elif attr.name == "extrapolation_value":
+                extrapolation_value = attr.f
+            elif attr.name == "nearest_mode":
+                nearest_mode = attr.s.decode("utf-8")
+            else:
+                unsupported_attribute(attr.name, n)
+
+        # Check attributes
+        supported_mode = ["nearest", "linear", "cubic"]
+        supported_coord_modes = [
+            "half_pixel", "pytorch_half_pixel", "align_corners", "asymmetric",
+            "tf_half_pixel_for_nn", "tf_crop_and_resize"
+        ]
+        if mode not in supported_mode:
+            unsupported_attribute("mode={}".format(mode), n)
+        if coord_mode not in supported_coord_modes:
+            unsupported_attribute("coordinate_transform_mode={}"
+                                  .format(coord_mode), n)
+
+        y_shape = sizes
+        if scales is not None:
+            y_shape = [int(np.floor(x * s)) for x, s in zip(x_shape, scales)]
+
+        # ONNXResize
+        resize_func = self.generate_default_function("ONNXResize", n)
+        del resize_func.input[1:]  # remove roi, scales, sizes
+        resize_p = resize_func.onnx_resize_param
+        resize_p.roi.extend(roi)
+        resize_p.scales.extend(scales)
+        resize_p.sizes.extend(sizes)
+        resize_p.mode = mode
+        resize_p.coordinate_transformation_mode = coord_mode
+        resize_p.cubic_coeff_a = cubic_coeff_a
+        resize_p.exclude_outside = exclude_outside
+        resize_p.extrapolation_value = extrapolation_value
+        resize_p.nearest_mode = nearest_mode
+        self._shape_output[n.output[0]] = y_shape
+        func_list.append(resize_func)
 
     def ScatterElements_13(self, func_list, n):
         inputs = n.input[:]
