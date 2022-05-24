@@ -20,7 +20,7 @@ import numpy as np
 import nnabla as nn
 import nnabla.experimental.graph_converters as GC
 
-from .ref_graphs.resnets import small_cf_resnet, small_bn_self_folding_resnet
+from .ref_graphs.resnets import small_bn_resnet, small_bn_self_folding_resnet
 
 
 batch_size = 1
@@ -29,7 +29,7 @@ resnet_ref = small_bn_self_folding_resnet
 
 @pytest.mark.parametrize('seed', [313])
 @pytest.mark.parametrize('test', [True])
-@pytest.mark.parametrize('graph_ref, graph_act', [(resnet_ref, small_cf_resnet)])
+@pytest.mark.parametrize('graph_ref, graph_act', [(resnet_ref, small_bn_resnet)])
 def test_batch_normalization_self_folding(seed, test, graph_ref, graph_act):
     from .graph_converter_test_utils import structure_tester, value_tester
 

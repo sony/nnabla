@@ -43,4 +43,6 @@ Function Modifiers
 
     .. automethod:: __init__
 
+.. autoclass:: nnabla.experimental.graph_converters.QuantizeNonQNNToRecordingModifier
 
+.. autoclass:: nnabla.experimental.graph_converters.QuantizeRecordingToTrainingModifier

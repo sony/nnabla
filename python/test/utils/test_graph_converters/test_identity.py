@@ -20,7 +20,7 @@ import numpy as np
 import nnabla as nn
 import nnabla.experimental.graph_converters as GC
 
-from .ref_graphs.resnets import small_cf_resnet, small_id_resnet
+from .ref_graphs.resnets import small_bn_resnet, small_id_resnet
 from .ref_graphs.lenets import lenet, id_lenet
 
 
@@ -33,7 +33,7 @@ resnet_ref = small_id_resnet
 @pytest.mark.parametrize('test', [False, True])
 @pytest.mark.parametrize('diff_batchsize', [True, False])
 @pytest.mark.parametrize('graph_ref, graph_act', [(lenet_ref, lenet),
-                                                  (resnet_ref, small_cf_resnet)])
+                                                  (resnet_ref, small_bn_resnet)])
 def test_identity(seed, test, diff_batchsize, graph_ref, graph_act):
     from .graph_converter_test_utils import structure_tester, value_tester
 

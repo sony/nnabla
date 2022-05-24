@@ -29,3 +29,5 @@ from .test_mode import TestModeModifier
 from .identity import IdentityModifier
 from .no_grad import NoGradModifier
 from .prune import PruningModifier
+from .quantize import (QuantizeNonQNNToRecordingModifier,
+                       QuantizeRecordingToTrainingModifier)

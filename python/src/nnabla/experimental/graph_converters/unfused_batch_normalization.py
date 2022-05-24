@@ -57,5 +57,5 @@ class UnfusedBatchNormalizationModifier(FunctionModifier):
         del args['nonlinearity']
 
         # Replace FBN to "BN -> Add2 -> Non-linear"
-        h = PF.batch_normalization(inputs[1], **args)
-        return self._fct_set[f_non_linear](inputs[0] + h)
+        h = PF.batch_normalization(inputs[0], **args)
+        return self._fct_set[f_non_linear](h) if len(inputs) == 5 else self._fct_set[f_non_linear](inputs[5] + h)

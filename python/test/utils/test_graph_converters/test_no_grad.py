@@ -20,12 +20,12 @@ import numpy as np
 import nnabla as nn
 import nnabla.experimental.graph_converters as GC
 
-from .ref_graphs.resnets import small_cf_resnet
+from .ref_graphs.resnets import small_bn_resnet
 from .ref_graphs.lenets import lenet
 
 
 @pytest.mark.parametrize('seed', [313])
-@pytest.mark.parametrize('graph', [lenet, small_cf_resnet])
+@pytest.mark.parametrize('graph', [lenet, small_bn_resnet])
 def test_no_grad(seed, graph):
     from .graph_converter_test_utils import structure_tester, value_tester
 
