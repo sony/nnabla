@@ -85,7 +85,7 @@ RUN update-alternatives --install /usr/bin/python python /usr/bin/python${PYVERN
 ################################################## protobuf
 RUN mkdir /tmp/deps \
     && cd /tmp/deps \
-    && PROTOVER=3.10.1 \
+    && PROTOVER=3.19.4 \
     && curl ${CURL_OPTS} -L https://github.com/google/protobuf/archive/v${PROTOVER}.tar.gz -o protobuf-v${PROTOVER}.tar.gz \
     && tar xvf protobuf-v${PROTOVER}.tar.gz \
     && cd protobuf-${PROTOVER} \
