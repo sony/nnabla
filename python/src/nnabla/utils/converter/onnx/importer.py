@@ -396,6 +396,10 @@ def set_reduction_attrs(p, node):
                              .format(attr.name, node.op_type))
 
 
+def unsupported_attribute(attr_name, n):
+    raise ValueError("Unsupported attribute {} was specified at {}"
+                     .format(attr_name, n.op_type))
+
 def check_attr_int_type(attr, node):
     if attr.type != AttributeProto.INT:
         raise ValueError(
@@ -678,6 +682,7 @@ class OnnxImporter:
             "Slice": partial(self.Slice, '10'),
             "QuantizeLinear": self.QuantizeLinear,
             "DequantizeLinear": self.DequantizeLinear,
+            "TopK": self.TopK,
         }
         self.table_op_set_10 = dict(
             self.table_op_set_9, **self.table_op_set_10)
@@ -3964,6 +3969,89 @@ class OnnxImporter:
                                      self._func_counter)
         self._shape_output[n.output[0]] = shape
         func_list.append(func)
+
+    def TopK(self, func_list, n):
+        # Get inputs
+        assert len(n.input) == 2 and len(n.output) == 2
+        x_shape = self.get_func_input_shape(n.input[0])
+        k_data = self.get_input_raw_data(n.input[1], TensorProto.INT64)
+        assert len(k_data) == 1
+        k = k_data[0]
+
+        # Get attributes
+        axis = -1
+        largest = 1
+        sort = 1
+        for attr in n.attribute:
+            if attr.name == "axis":
+                axis = attr.i
+            elif attr.name == "largest":
+                largest = attr.i
+            elif attr.name == "sorted":
+                sort = attr.i
+            else:
+                unsupported_attribute(attr.name, n)
+
+        out0 = n.output[0]
+        out1 = n.output[1]
+        last_out = n.input[0]
+        last_shape = x_shape
+
+        # Transpose: (D0, ..., D_{axis}, ..., Dn) -> (D0, ..., Dn, D_{axis})
+        need_transpose = (axis != -1 and axis != len(x_shape) - 1)
+        if need_transpose:
+            trans_out = fork_name(n.input[0]) + "_trans"
+            trans_axes = list(range(len(last_shape)))
+            trans_axes[axis], trans_axes[-1] = trans_axes[-1], trans_axes[axis]
+            last_func = generate_transpose(n.name, last_out, trans_out,
+                                           trans_axes, self._graph.name,
+                                           self._func_counter)
+            last_shape[axis], last_shape[-1] = last_shape[-1], last_shape[axis]
+            self._shape_output[trans_out] = last_shape
+            func_list.append(last_func)
+            last_out = trans_out
+
+        # TopKData: (D0, ..., Dn, D_{axis}) -> (D0, ..., Dn, k)
+        # NOTICE: the TopKData documentation does not mention if its outputs
+        # are sorted or not, but the CPU and CUDA implementation returns sorted
+        # results.
+        topk_func = self.generate_default_function("TopKData", n)
+        del topk_func.input[:]
+        topk_func.input.append(last_out)
+        topk_p = topk_func.top_k_data_param
+        topk_p.k = k
+        topk_p.abs = False
+        topk_p.reduce = True
+        topk_p.base_axis = len(x_shape) - 1
+        topk_p.largest = bool(largest)
+        topk_p.with_index = True
+        last_shape[-1] = k
+
+        topk_out0 = out0
+        topk_out1 = out1
+        if need_transpose:
+            topk_out0 = fork_name(out0) + "_top_k"
+            topk_out1 = fork_name(out1) + "_top_k"
+            del topk_func.output[:]
+            topk_func.output.extend([topk_out0, topk_out1])
+        self._shape_output[topk_out0] = last_shape
+        self._shape_output[topk_out1] = last_shape
+        func_list.append(topk_func)
+
+        # Transpose: (D0, ..., Dn, k) -> (D0, ..., k, ..., Dn)
+        if need_transpose:
+            trans_axes = list(range(len(last_shape)))
+            trans_axes[axis], trans_axes[-1] = trans_axes[-1], trans_axes[axis]
+            trans_func0 = generate_transpose(n.name, topk_out0, out0,
+                                            trans_axes, self._graph.name,
+                                            self._func_counter)
+            trans_func1 = generate_transpose(n.name, topk_out1, out1,
+                                            trans_axes, self._graph.name,
+                                            self._func_counter)
+            last_shape[axis], last_shape[-1] = last_shape[-1], last_shape[axis]
+            self._shape_output[out0] = last_shape
+            self._shape_output[out1] = last_shape
+            func_list.extend([trans_func0, trans_func1])
 
     def convert_to_functions(self, n):
         ft = self._onnx_optype_to_nnabla_function_type.get(n.op_type)

@@ -28,12 +28,15 @@ namespace nbla {
  * are the indices of subsequently smaller or equal elements in x.
  */
 
-template <typename T>
+template <typename T, bool largest>
 inline void top_k(const T *x, const size_t n, const size_t k, size_t *out) {
+  using greater =
+      typename std::conditional<largest, std::greater<T>, std::less<T>>::type;
+
   struct cmp {
     bool operator()(const std::pair<T, size_t> &a,
                     const std::pair<T, size_t> &b) {
-      return a.first > b.first;
+      return greater()(a.first, b.first);
     }
   };
 
@@ -46,7 +49,7 @@ inline void top_k(const T *x, const size_t n, const size_t k, size_t *out) {
 
   for (size_t i = k; i < n; ++i) {
     const auto x_at_i = x[i];
-    if (x_at_i > heap[0].first) {
+    if (greater()(x_at_i, heap[0].first)) {
       std::pop_heap(heap.begin(), heap.end(), cmp());
       heap[heap.size() - 1] = std::make_pair(x_at_i, i);
       std::push_heap(heap.begin(), heap.end(), cmp());
@@ -63,12 +66,15 @@ inline void top_k(const T *x, const size_t n, const size_t k, size_t *out) {
  * it considers the absolute values of elements in x.
  */
 
-template <typename T>
+template <typename T, bool largest>
 inline void top_k_abs(const T *x, const size_t n, const size_t k, size_t *out) {
+  using greater =
+      typename std::conditional<largest, std::greater<T>, std::less<T>>::type;
+
   struct cmp {
     bool operator()(const std::pair<T, size_t> &a,
                     const std::pair<T, size_t> &b) {
-      return a.first > b.first;
+      return greater()(a.first, b.first);
     }
   };
 
@@ -81,7 +87,7 @@ inline void top_k_abs(const T *x, const size_t n, const size_t k, size_t *out) {
 
   for (size_t i = k; i < n; ++i) {
     const auto x_at_i = x[i] < 0 ? -x[i] : x[i];
-    if (x_at_i > heap[0].first) {
+    if (greater()(x_at_i, heap[0].first)) {
       std::pop_heap(heap.begin(), heap.end(), cmp());
       heap[heap.size() - 1] = std::make_pair(x_at_i, i);
       std::push_heap(heap.begin(), heap.end(), cmp());

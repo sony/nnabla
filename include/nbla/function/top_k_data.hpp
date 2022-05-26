@@ -22,7 +22,7 @@
 
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_HEADER(TopKData, int, bool, bool, int);
+NBLA_REGISTER_FUNCTION_HEADER(TopKData, int, bool, bool, int, bool, bool);
 
 /** Select the `k` largest values from each sample in `x` to propagate
 unmodified and set all other values to 0. If `abs` is True, the `k`
@@ -38,9 +38,10 @@ Inputs:
 
 - N-D array
 
-Outputs:
+Outputs (1 or 2):
 
 - N-D array.
+- (Optional) N-D array of top-k indices.
 
 @tparam T Data type for computation.
 
@@ -52,15 +53,21 @@ Outputs:
 
 @param base_axis First dimension of the sample shape.
 
+@param largest Whether to select the `k` largest or smallest values.
+
+@param with_index Return top-k values and indices.
+
 \ingroup FunctionImplGrp
  */
 template <typename T>
-class TopKData : public BaseFunction<int, bool, bool, int> {
+class TopKData : public BaseFunction<int, bool, bool, int, bool, bool> {
 protected:
   int k_;
   bool abs_;
   bool reduce_;
   int base_axis_;
+  bool largest_;
+  bool with_index_;
 
   Size_t ns_;          // number of input samples
   Size_t ss_;          // input sample size
@@ -69,22 +76,33 @@ protected:
   bool forward_done_;  // prevent execution of backward before forward
 
 public:
-  TopKData(const Context &ctx, int k, bool abs, bool reduce, int base_axis)
-      : BaseFunction(ctx, k, abs, reduce, base_axis), k_(k), abs_(abs),
-        reduce_(reduce), base_axis_(base_axis) {}
+  TopKData(const Context &ctx, int k, bool abs, bool reduce, int base_axis,
+           bool largest, bool with_index)
+      : BaseFunction(ctx, k, abs, reduce, base_axis, largest, with_index),
+        k_(k), abs_(abs), reduce_(reduce), base_axis_(base_axis),
+        largest_(largest), with_index_(with_index) {}
   virtual ~TopKData() {}
   virtual shared_ptr<Function> copy() const {
-    return create_TopKData(ctx_, k_, abs_, reduce_, base_axis_);
+    return create_TopKData(ctx_, k_, abs_, reduce_, base_axis_, largest_,
+                           with_index_);
   }
   virtual int min_inputs() { return 1; }
-  virtual int min_outputs() { return 1; }
+  virtual int min_outputs() { return with_index_ ? 2 : 1; }
   virtual vector<dtypes> in_types() { return vector<dtypes>{get_dtype<T>()}; }
-  virtual vector<dtypes> out_types() { return vector<dtypes>{get_dtype<T>()}; }
+  virtual vector<dtypes> out_types() {
+    if (with_index_) {
+      return vector<dtypes>{get_dtype<T>(), get_dtype<size_t>()};
+    } else {
+      return vector<dtypes>{get_dtype<T>()};
+    }
+  }
   virtual vector<string> allowed_array_classes() {
     return SingletonManager::get<Cpu>()->array_classes();
   }
   virtual string name() { return "TopKData"; }
-  virtual bool grad_depends_output_data(int i, int o) const { return false; }
+  virtual bool grad_depends_output_data(int i, int o) const {
+    return with_index_;
+  }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,
