@@ -101,7 +101,7 @@ RUN python3 -m pip install ${PIP_INS_OPTS} --upgrade pip
 RUN echo "[global]" >/etc/pip.conf
 RUN echo "extra-index-url=https://www.piwheels.org/simple" >> /etc/pip.conf
 
-RUN pip3 install ${PIP_INS_OPTS} numpy\<1.22
+RUN pip3 install ${PIP_INS_OPTS} 'numpy>=1.20.0,<1.22'
 
 RUN pip3 install ${PIP_INS_OPTS} -r /tmp/deps/setup_requirements.txt
 

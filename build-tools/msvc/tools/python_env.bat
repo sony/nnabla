@@ -57,7 +57,7 @@ CALL pip install %PIP_INS_OPTS% ^
            ipython ^
            librosa ^
            mako ^
-           numpy ^
+           "numpy>=1.20.0" ^
            pip ^
            protobuf ^
            pytest ^

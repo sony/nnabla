@@ -24,7 +24,7 @@ from collections import namedtuple
 
 setup_requires = [
     'setuptools',
-    'numpy',
+    'numpy>=1.20.0',
     'Cython',  # Requires python-dev.
 ]
 
