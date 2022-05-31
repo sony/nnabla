@@ -653,3 +653,6 @@ Norm:
 RoiAlign:
   float: [float]
   half: [Half]
+NonZero:
+  float: [float]
+  half: [Half]

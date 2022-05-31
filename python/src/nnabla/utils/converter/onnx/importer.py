@@ -673,6 +673,7 @@ class OnnxImporter:
             "Expand": self.Expand,
             "Where": partial(self.GeneralOperator, 'Where'),
             "Compress": self.Compress,
+            "NonZero": self.NonZero,
         }
         self.table_op_set_9 = dict(self.table_op_set_7, **self.table_op_set_9)
 
@@ -4053,6 +4054,19 @@ class OnnxImporter:
             self._shape_output[out0] = last_shape
             self._shape_output[out1] = last_shape
             func_list.extend([trans_func0, trans_func1])
+
+    def NonZero(self, func_list, n):
+        assert len(n.input) == 1 and len(n.output) == 1
+        x_shape = self.get_func_input_shape(n.input[0])
+        x_dims = len(x_shape)
+
+        nnz = 1  # dummy value: this value is computed at run-time
+        y_shape = (x_dims, nnz)
+
+        # NonZero
+        nz_func = self.generate_default_function("NonZero", n)
+        self._shape_output[n.output[0]] = y_shape
+        func_list.append(nz_func)
 
     def convert_to_functions(self, n):
         ft = self._onnx_optype_to_nnabla_function_type.get(n.op_type)

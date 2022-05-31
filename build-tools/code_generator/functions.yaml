@@ -5202,6 +5202,43 @@ Array Manipulation:
     c_runtime: not support
     function_ids:
       Bfi: 306
+  NonZero:
+    snake_name: nonzero
+    doc: |2
+
+      Find indices of non-zero elements.
+
+      NonZero behaves similar to NonZero Operator in ONNX.
+
+      Examples:
+
+      >>> import numpy as np, nnabla as nn, nnabla.functions as F
+      >>> nn.set_auto_forward(True)
+      >>> x = F.arange(1, 10).reshape([3, 3])
+      >>> x.d[0, 1] = x.d[1, 2] = x.d[2, 2] = 0
+      >>> print(x.d)
+      [[1. 0. 3.],
+       [4. 5. 0.],
+       [7. 8. 0.]]
+      >>> y = F.nonzero(x)
+      >>> print(y.shape)
+      (2, 6)
+      >>> print(y.d)
+      [[0 0 1 1 2 2],
+       [0 2 0 1 0 1]]
+
+      Note that this function is normally used with the dynamic graph 
+      since this function outputs a variable-length output. If used with 
+      the static graph, a network has to be constructed all time in iteration.
+    inputs:
+      x:
+        doc: N-D arrays.
+    outputs:
+      y:
+        doc: N-D array indices.
+    c_runtime: not support
+    function_ids:
+      Empty: 351
 Signal Processing:
   Interpolate:
     snake_name: interpolate
