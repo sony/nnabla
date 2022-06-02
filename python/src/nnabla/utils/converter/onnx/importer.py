@@ -897,13 +897,16 @@ class OnnxImporter:
         cp.stride.dim.extend(strides[:])
         cp.dilation.dim.extend(dilations[:])
         if auto_pad != 'NOTSET':
-            o = input_shape[2:]
-            k = weight_shape[2:]
+            kernels = weight_shape[2:]
             pads_value = [0] * dims
             if auto_pad in ('SAME_UPPER', 'SAME_LOWER'):
                 for i in range(dims):
-                    pads_value[i] = (o[i] - 1) * strides[i] + \
-                                     k[i] - input_shape[2 + i]
+                    k = kernels[i]
+                    s = strides[i]
+                    d = dilations[i]
+                    i_size = input_shape[2 + i]
+                    o_size = int(np.ceil(i_size / s))
+                    pads_value[i] = (o_size - 1) * s + d * (k - 1) - i_size + 1
             elif auto_pad == 'VALID':
                 pass
             for i in range(dims):
@@ -912,7 +915,7 @@ class OnnxImporter:
                     pads[i] = pads_value[i] - pads[i + dims]
                 elif auto_pad == 'SAME_UPPER':
                     pads[i] = pads_value[i] // 2
-                    pads[i + dims] = pads_value[i] - pads[i + dims]
+                    pads[i + dims] = pads_value[i] - pads[i]
 
         padval = []
         asymmetry = check_padding(pads, dims, padval)
