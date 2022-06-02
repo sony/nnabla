@@ -72,7 +72,7 @@ RUN cd ${BUILD_DIR} \
   && mv ${NDK_NAME} android-ndk
 ENV NDK_PATH ${BUILD_DIR}/android-ndk
 
-ENV PROTOVER 3.1.0
+ENV PROTOVER 3.19.4
 ################################################## protobuf
 RUN mkdir /tmp/deps \
     && cd /tmp/deps \

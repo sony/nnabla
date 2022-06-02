@@ -4,7 +4,7 @@ h5py
 imageio
 numpy>=1.20.0
 pillow
-protobuf
+protobuf<=3.19.4
 pyyaml
 scipy
 six

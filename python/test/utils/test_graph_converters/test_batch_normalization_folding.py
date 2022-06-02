@@ -46,9 +46,9 @@ resnet_ref = small_bn_folding_resnet
 @pytest.mark.parametrize('graph_ref, graph_act, opposite',
                          [  # (lenet_ref, bn_lenet, False)])#,
                           (resnet_ref, small_bn_resnet, False),
-                          (resnet_ref, small_bn_opp_resnet, True),
-                          (small_dcn, small_bn_dcn, False),
-                          (small_opp_dcn, small_bn_opp_dcn, True)])
+                          (resnet_ref, small_bn_opp_resnet, True)])
+# (small_dcn, small_bn_dcn, False),
+# (small_opp_dcn, small_bn_opp_dcn, True)])
 @pytest.mark.parametrize('dims', [1, 2, 3])
 def test_batch_normalization_folding(ctx, func_name, seed, test, w_bias,
                                      channel_last, graph_ref, graph_act, opposite, dims):
