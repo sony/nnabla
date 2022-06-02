@@ -162,6 +162,21 @@ def generate_split(node_name, in_name, out_name, axis, base_name, func_counter):
     return sp
 
 
+def generate_slice(node_name, in_name, out_name, start, stop, step, base_name, func_counter):
+    """Generate a Slice operator to slice the specified buffer.
+    """
+    slice = nnabla_pb2.Function()
+    slice.type = "Slice"
+    set_function_name(slice, node_name, base_name, func_counter)
+    slice.input.extend([in_name])
+    slice.output.extend([out_name])
+    sp = slice.slice_param
+    sp.start.extend(start)
+    sp.stop.extend(stop)
+    sp.step.extend(step)
+    return slice
+
+
 def generate_stack(node_name, in_name, out_name, axis, base_name, func_counter):
     """Generate a Stack operator to stack specified buffer"""
     sp = nnabla_pb2.Function()
@@ -2816,48 +2831,49 @@ class OnnxImporter:
             for index in range(dim):
                 d = cp.dilation.dim[index]
                 s = cp.stride.dim[index]
-                w = weight_shape[2 + index]
+                k = weight_shape[2 + index]
                 i = input_shape[2 + index]
                 adj = output_padding[index]
-                o = (i - 1) * s + adj + (w - 1) * \
-                    d + 1 - pads[index] - pads[index+dim]
+                o = 0
+                if auto_pad in ('SAME_UPPER', 'SAME_LOWER'):
+                    o = i * s
+                    pads_value = (i - 1) * s + adj + (k - 1) * d + 1 - o
+                    if auto_pad == 'SAME_LOWER':
+                        pads[index + dim] = pads_value // 2
+                        pads[index] = pads_value - pads[index + dim]
+                    elif auto_pad == 'SAME_UPPER':
+                        pads[index] = pads_value // 2
+                        pads[index + dim] = pads_value - pads[index]
+                else:
+                    o = (i - 1) * s + adj + (k - 1) * d + 1\
+                        - pads[index] - pads[index+dim]
                 output_shape.append(o)
+                
+        cp.output_padding.dim.extend(output_padding)
 
         padval = []
         asymmetry = check_padding(pads, dim, padval)
-        if asymmetry:
-            # Add a separate padding function for
-            # asymmetry padding
-            input = n.input[0]
-            padded = fork_name(input) + "_pad"
-            pad_width = rearrange_pads(pads)
-            padf = generate_pad(n.name, input, padded,
-                                "constant", pad_width, 0,
-                                self._graph.name, self._func_counter)
-            shape = input_shape[:]
-            for i in range(dim):
-                shape[i + 2] += pad_width[2 * i]
-                shape[i + 2] += pad_width[2 * i + 1]
-            self._shape_output[padded] = shape
-            func_list.append(padf)
-            func.input[0] = padded
         cp.pad.dim.extend(padval)
 
-        if output_padding != [0] * dim:
+        if asymmetry:
             deconv_out = fork_name(func.output[0]) + "_deconv"
             del func.output[:]
             func.output.extend([deconv_out])
-            self._shape_output[deconv_out] = input_shape[:1] + \
-                [weight_shape[1]] + [output_shape[i] - output_padding[i]
-                                     for i in range(dim)]
+            deconv_out_shape = input_shape[:1] + [weight_shape[1]]\
+                + [output_shape[i] + pads[i] + pads[i + dim]
+                   for i in range(dim)]
+            self._shape_output[deconv_out] = deconv_out_shape
             func_list.append(func)
 
-            pad_width = [output_padding[i % 2] if i %
-                         2 else 0 for i in range(2*dim)]
-            padf = generate_pad(n.name, deconv_out, n.output[0],
-                                "constant", pad_width, 0,
-                                self._graph.name, self._func_counter)
-            func_list.append(padf)
+            # Add a separate Slice Function for asymmetry padding
+            start = [0, 0] + [pads[i] for i in range(dim)]
+            stop = input_shape[:1] + [weight_shape[1]] + \
+                   [output_shape[i] + pads[i] for i in range(dim)]
+            step = [1, ] * (dim + 2)
+            slicef = generate_slice(n.name, deconv_out, n.output[0],
+                                    start, stop, step,
+                                    self._graph.name, self._func_counter)
+            func_list.append(slicef)
         else:
             func_list.append(func)
         self._shape_output[n.output[0]] = input_shape[:1] + \
