@@ -533,7 +533,7 @@ class OnnxImporter:
             "Reciprocal": partial(self.ElementWiseScalar, 'RDivScalar'),
             "Neg": partial(self.ElementWiseScalar, 'MulScalar'),
             "LogSoftmax": self.LogSoftmax,
-            "Softplus": partial(self.GeneralOperator, 'SoftPlus'),
+            "Softplus": self.Softplus,
             "Softsign": partial(self.GeneralOperator, 'SoftSign'),
             "LRN": self.LRN,
             "Clip": partial(self.Clip, 6),
@@ -2060,6 +2060,14 @@ class OnnxImporter:
                             self._graph.name, self._func_counter)
         self._shape_output[n.output[0]] = input_shape
         func_list.append(ge)
+
+        
+    def Softplus(self, func_list, n):
+        func = self.generate_default_function("SoftPlus", n)
+        func.softplus_param.beta = 1.0
+        self._shape_output[func.output[0]] = self.get_func_input_shape(func.input[0])
+        func_list.append(func)
+        
 
     def Clip(self, opset, func_list, n):
         func = self.generate_default_function("Clip", n)
