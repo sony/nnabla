@@ -685,6 +685,7 @@ class OnnxImporter:
             "QuantizeLinear": self.QuantizeLinear,
             "DequantizeLinear": self.DequantizeLinear,
             "TopK": self.TopK,
+            "NonMaxSuppression": self.NonMaxSuppression,
         }
         self.table_op_set_10 = dict(
             self.table_op_set_9, **self.table_op_set_10)
@@ -4067,6 +4068,47 @@ class OnnxImporter:
         nz_func = self.generate_default_function("NonZero", n)
         self._shape_output[n.output[0]] = y_shape
         func_list.append(nz_func)
+
+    def NonMaxSuppression(self, func_list, n):
+        num_inputs = len(n.input)
+        assert num_inputs >= 2 and len(n.output) == 1
+
+        # Get constant inputs
+        max_output_boxes = 0
+        iou_threshold = 0.0
+        score_threshold = 0.0
+        if num_inputs > 2:
+            max_output_boxes = \
+                self.get_input_raw_data(n.input[2], TensorProto.INT64)[0]
+        if num_inputs > 3:
+            iou_threshold = \
+                self.get_input_raw_data(n.input[3], TensorProto.FLOAT)[0]
+        if num_inputs > 4:
+            score_threshold = \
+                self.get_input_raw_data(n.input[4], TensorProto.FLOAT)[0]
+
+        # Get attributes
+        center_point_box = 0
+        for attr in n.attribute:
+            if attr.name == "center_point_box":
+                center_point_box = attr.i
+            else:
+                unsupported_attribute(attr.name, n)
+
+        # Calculate output's shape
+        num_selected = 1  # dummy value: this value is computed at run-time
+        y_shape = (num_selected, 3)
+
+        # ONNXNonMaxSuppression
+        nms_func = self.generate_default_function("ONNXNonMaxSuppression", n)
+        del nms_func.input[2:]
+        nms_p = nms_func.onnx_non_max_suppression_param
+        nms_p.center_point_box = center_point_box
+        nms_p.max_output_boxes_per_class = max_output_boxes
+        nms_p.iou_threshold = iou_threshold
+        nms_p.score_threshold = score_threshold
+        self._shape_output[n.output[0]] = y_shape
+        func_list.append(nms_func)
 
     def convert_to_functions(self, n):
         ft = self._onnx_optype_to_nnabla_function_type.get(n.op_type)

@@ -4,3 +4,5 @@ pytest-xdist[psutil]
 scipy
 librosa
 backports.lzma
+onnx
+onnxruntime

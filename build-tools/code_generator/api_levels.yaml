@@ -296,3 +296,5 @@
   TopKData_iBBiBB: 350
 44:
   NonZero_Empty: 351
+45:
+  ONNXNonMaxSuppression_iiff: 352
