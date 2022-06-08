@@ -21,7 +21,7 @@ import numpy as np
 from nnabla.utils import nnabla_pb2
 
 try:
-    from onnx import (ModelProto, TensorProto, AttributeProto)
+    from onnx import (ModelProto, TensorProto, AttributeProto, TensorShapeProto)
 except:
     print('ONNX import support disabled because onnx python package is not found.')
     print(' You may install onnx package with "pip install onnx".')
@@ -37,6 +37,17 @@ DEFAULT_EXECUTOR_NAME = "exec_0"
 fork_name_number = 0
 
 
+# Normalize shape from () to (1,).
+def normalize_shape(shape):
+    if isinstance(shape, TensorShapeProto):
+        if len(shape.dim) == 0:
+            shape.dim.extend([TensorShapeProto.Dimension(dim_value=1)])
+    if isinstance(shape, list):
+        if len(shape) == 0:
+            shape = [1]
+    return shape
+
+
 def add_value_info_as_variable(network, info):
     if not info.type.HasField("tensor_type"):  # accepting only tensor
         raise ValueError("Only TensorProto is allowed as ValueInfoProto's type for info.name (Got {})"
@@ -44,8 +55,9 @@ def add_value_info_as_variable(network, info):
     t = info.type.tensor_type
     v = network.variable.add()
     v.name = info.name
+    shape = normalize_shape(t.shape)
     v.shape.dim.extend(
-        [x.dim_value if not x.dim_param else -1 for x in t.shape.dim])
+        [x.dim_value if not x.dim_param else -1 for x in shape.dim])
     return v
 
 
@@ -378,9 +390,7 @@ def add_tensor_as_parameter(pb, tensor):
     """Add given tensor as a parameter"""
     p = pb.parameter.add()
     p.variable_name = tensor.name
-    shape = tensor.dims
-    if not shape:
-        shape = [1]
+    shape = normalize_shape(tensor.dims)
     p.shape.dim.extend(shape)
     if tensor.data_type == TensorProto.FLOAT:
         # convert raw bytestream to floating points
@@ -678,18 +688,13 @@ class OnnxImporter:
             for i in self._graph.input:
                 if i.name == input_name:
                     t = i.type.tensor_type
-                    if len(t.shape.dim):
-                        input_shape = [
-                            x.dim_value if not x.dim_param else 1 for x in t.shape.dim]
-                    else:
-                        input_shape = [1]
+                    shape = normalize_shape(t.shape)
+                    input_shape = [
+                        x.dim_value if not x.dim_param else 1 for x in shape.dim]
                     return input_shape
             for i in self._graph.initializer:
                 if i.name == input_name:
-                    if len(i.dims):
-                        input_shape = list(i.dims)
-                    else:
-                        input_shape = [1]
+                    input_shape = normalize_shape(i.dims)
                     return input_shape
         if not input_shape:
             raise ValueError(
@@ -1852,12 +1857,10 @@ class OnnxImporter:
                     raise ValueError(
                         "value attribute must be set for {}".format(n.op_type))
                 t.name = name
-                if not t.dims:
-                    t.dims.extend([1])
                 # add tensor as parameter
                 add_tensor_as_parameter(self._pb, t)
                 self._param_vars[t.name] = None
-                self._shape_output[name] = t.dims
+                self._shape_output[name] = normalize_shape(t.dims)
             else:
                 raise ValueError("Unsupported attribute {} was specified at {}"
                                  .format(attr.name, n.op_type))
