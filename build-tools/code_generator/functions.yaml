@@ -4563,6 +4563,32 @@ Array Manipulation:
       iI: 83
       iIB: 126
     c_runtime: support
+  Shape:
+    snake_name: shape
+    doc: |2
+
+      Get the shape of a tensor. Optional attributes start and end can be used to compute
+      a slice of the input tensor's shape. If start axis is omitted, the slice starts from
+      axis 0.
+    inputs:
+      x:
+        doc: N-D array.
+    arguments:
+      start:
+        doc: If start axis is omitted, the slice starts from axis 0.
+        type: int64
+        default: 0
+      end:
+        doc: The end axis, if specified, is exclusive (and the returned value will
+          not include.
+        type: int64
+        default: 0
+    outputs:
+      shape:
+        doc: 1-D array
+    c_runtime: not support
+    function_ids:
+      ii: 348
   MatrixDiag:
     snake_name: matrix_diag
     doc: |2

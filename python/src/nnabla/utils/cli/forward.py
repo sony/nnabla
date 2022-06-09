@@ -67,7 +67,11 @@ def _update_result(args, index, result, values, output_index, type_end_names, ou
             # Output data
             if vtype == 'col' or not output_image:
                 # Vector type output
-                outputs[data_index].extend(np.ndarray.flatten(d))
+                if 'numpy.ndarray' != type(d):
+                    tmp = np.array([d])
+                    outputs[data_index].extend(np.ndarray.flatten(tmp))
+                else:
+                    outputs[data_index].extend(np.ndarray.flatten(d))
             else:
                 for dim_index in range(dim):
                     file_index = index + data_index

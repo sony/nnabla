@@ -616,6 +616,7 @@ class OnnxImporter:
             "Celu": self.Celu,
             "Softmax": self.Softmax_13,
             "LogSoftmax": self.LogSoftmax_13,
+            "Shape": self.Shape,
         }
         self.table_op_set_13 = dict(
             self.table_op_set_11, **self.table_op_set_13)
@@ -3395,6 +3396,40 @@ class OnnxImporter:
                                  self._graph.name, self._func_counter)
         self._shape_output[n.output[0]] = input_shape
         func_list.append(ga)
+
+    def Shape(self, func_list, n):
+        func = self.generate_default_function("Shape", n)
+        input_shape = self.get_func_input_shape(n.input[0])
+
+        start = 0
+        end = len(input_shape)
+        length = len(input_shape)
+        for attr in n.attribute:
+            if attr.name == "start":
+                if attr.i < -length:
+                    start = 0
+                elif attr.i >= -length and attr.i < 0:
+                    start = length + attr.i
+                elif attr.i >= 0 and attr.i <= length:
+                    start = attr.i
+                elif attr.i > length:
+                    start = length
+            if attr.name == "end":
+                if attr.i < -length:
+                    end = 0
+                elif attr.i >= -length and attr.i < 0:
+                    end = length + attr.i
+                elif attr.i >= 0 and attr.i <= length:
+                    end = attr.i
+                elif attr.i > length:
+                    end = length
+
+        output_shape = [1]
+        sp = func.shape_param
+        sp.start = start
+        sp.end = end
+        self._shape_output[n.output[0]] = output_shape
+        func_list.append(func)
 
     def convert_to_functions(self, n):
         ft = self._onnx_optype_to_nnabla_function_type.get(n.op_type)
