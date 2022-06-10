@@ -234,6 +234,18 @@ def generate_add_scalar(node_name, x, out_name,
     return func
 
 
+def generate_less_scalar(node_name, x, out_name,
+                         val, base_name, func_counter):
+    func = nnabla_pb2.Function()
+    func.type = "LessScalar"
+    set_function_name(func, node_name, base_name, func_counter)
+    func.input.extend([x])
+    func.output.extend([out_name])
+    lsp = func.less_scalar_param
+    lsp.val = val
+    return func
+
+
 def generate_pow_scalar(node_name, x, out_name,
                         val, base_name, func_counter):
     func = nnabla_pb2.Function()
@@ -325,6 +337,12 @@ def check_attr_int_type(attr, node):
             f"Only INT is supported for {attr.name} in {node.op_type} op_type")
 
 
+def check_attr_string_type(attr, node):
+    if attr.type != AttributeProto.STRING:
+        raise ValueError(
+            f"Only STRING is supported for {attr.name} in {node.op_type} op_type")
+
+
 def check_padding(pads, dim, padval):
     """Check each padding start/end value
     and set the sufficient pad value.
@@ -391,6 +409,8 @@ def add_tensor_as_parameter(pb, tensor):
     elif tensor.data_type == TensorProto.BOOL:
         if tensor.raw_data:
             p.data.extend(np.fromstring(tensor.raw_data, dtype=np.bool))
+        elif tensor.int32_data:
+            p.data.extend(tensor.int32_data)
         else:
             raise ValueError("bool data not found for {}".format(tensor.name))
     elif tensor.data_type == TensorProto.INT8:
@@ -579,6 +599,7 @@ class OnnxImporter:
             "Upsample": self.Upsample_9,
             "Expand": self.Expand,
             "Where": partial(self.GeneralOperator, 'Where'),
+            "Compress": self.Compress,
         }
         self.table_op_set_9 = dict(self.table_op_set_7, **self.table_op_set_9)
 
@@ -617,6 +638,8 @@ class OnnxImporter:
             "Softmax": self.Softmax_13,
             "LogSoftmax": self.LogSoftmax_13,
             "Shape": self.Shape,
+            "Resize": self.Resize_13,
+            "ScatterElements": self.ScatterElements_13,
         }
         self.table_op_set_13 = dict(
             self.table_op_set_11, **self.table_op_set_13)
@@ -672,6 +695,24 @@ class OnnxImporter:
             raise ValueError(
                 "The shape of {} was not found".format(input_name))
         return input_shape
+
+    def get_func_input_dtype(self, input_name):
+        dtype = None
+        if input_name in self._cast_node:
+            input_name = self._cast_node[input_name]
+        if input_name in self._shape_output:
+            dtype = TensorProto.FLOAT
+        else:
+            for i in self._graph.input:
+                if i.name == input_name:
+                    return i.type.tensor_type.elem_type
+            for i in self._graph.initializer:
+                if i.name == input_name:
+                    return i.data_type
+        if not dtype:
+            raise ValueError(
+                "The dtype of {} was not found".format(input_name))
+        return dtype
 
     def get_input_raw_data(self, input_name, data_type):
         data = []
@@ -3249,14 +3290,12 @@ class OnnxImporter:
         func_list.append(func)
 
     def QuantizeLinear(self, func_list, n):
+        if len(n.input) not in [2, 3]:
+            raise ValueError("Onnx QuantizeLinear op should has (2-3) inputs")
         TENSOR_TYPE_TO_INT = {
             TensorProto.INT8: 1,
             TensorProto.UINT8: 2,
         }
-        func = self.generate_default_function("QuantizeLinear", n)
-        qlp = func.quantize_linear_param
-        qlp.round_mode = "HALF_TO_EVEN"
-        qlp.narrow_range = False
         input_shape = self.get_func_input_shape(n.input[0])
         axis = 1
         for attr in n.attribute:
@@ -3266,28 +3305,59 @@ class OnnxImporter:
                 else:
                     axis = attr.i
 
-        if len(n.input) < 2:
+        func = self.generate_default_function("QuantizeLinear", n)
+
+        transA_shape = [1] * len(input_shape)
+        scale_shape = self.get_func_input_shape(n.input[1])
+        # per axis operation when scale size > 1
+        if np.prod(scale_shape) > 1:
+            transA_shape[axis] = input_shape[axis]
+
+        transA_rp_out = fork_name(n.input[1]) + "_reshape"
+        rp = generate_reshape(n.name, n.input[1], transA_rp_out,
+                              transA_shape, self._graph.name, self._func_counter)
+        self._shape_output[transA_rp_out] = transA_shape
+        func_list.append(rp)
+        func.input[1] = transA_rp_out
+
+        if len(n.input) == 3:
+            transB_rp_out = fork_name(n.input[2]) + "_reshape"
+            rp = generate_reshape(n.name, n.input[2], transB_rp_out,
+                                  transA_shape, self._graph.name, self._func_counter)
+            self._shape_output[transB_rp_out] = transA_shape
+            func_list.append(rp)
+            func.input[2] = transB_rp_out
+
+        qlp = func.quantize_linear_param
+        qlp.round_mode = "HALF_TO_EVEN"
+        qlp.narrow_range = False
+
+        if len(n.input) == 2:
             zero_point = fork_name(n.input[0]) + "_zero_point"
             zero_point_shape = [1] * len(input_shape)
-            zero_point_shape[axis] = input_shape[axis]
-            create_parameter_variable(self._pb, zero_point, zero_point_shape, [
-                                      0] * input_shape[axis])
+            zero_point_array = [0]
+            if np.prod(scale_shape) > 1:
+                zero_point_shape[axis] = input_shape[axis]
+                zero_point_array = [0] * input_shape[axis]
+            create_parameter_variable(
+                self._pb, zero_point, zero_point_shape, zero_point_array)
             self._param_vars[zero_point] = None
             func.input.append(zero_point)
             qlp.dtype = 2
         else:
             dtype = TensorProto.UINT8
-            for init in self._graph.initializer:
-                if init.name == n.input[2]:
-                    dtype = init.data_type
-                    break
-            qlp.dtype = TENSOR_TYPE_TO_INT[dtype]
+            try:
+                dtype = self.get_func_input_dtype(n.input[2])
+            finally:
+                qlp.dtype = TENSOR_TYPE_TO_INT[dtype]
 
         self._shape_output[n.output[0]] = input_shape
         func_list.append(func)
 
     def DequantizeLinear(self, func_list, n):
-        func = self.generate_default_function("DequantizeLinear", n)
+        if len(n.input) not in [2, 3]:
+            raise ValueError(
+                "Onnx DequantizeLinear op should has (2-3) inputs")
         input_shape = self.get_func_input_shape(n.input[0])
         axis = 1
         for attr in n.attribute:
@@ -3296,13 +3366,38 @@ class OnnxImporter:
                     axis = len(input_shape) + attr.i
                 else:
                     axis = attr.i
+        func = self.generate_default_function("DequantizeLinear", n)
 
-        if len(n.input) < 2:
+        transA_shape = [1] * len(input_shape)
+        scale_shape = self.get_func_input_shape(n.input[1])
+        # per axis operation when scale size > 1
+        if np.prod(scale_shape) > 1:
+            transA_shape[axis] = input_shape[axis]
+
+        transA_rp_out = fork_name(n.input[1]) + "_reshape"
+        rp = generate_reshape(n.name, n.input[1], transA_rp_out,
+                              transA_shape, self._graph.name, self._func_counter)
+        self._shape_output[transA_rp_out] = transA_shape
+        func_list.append(rp)
+        func.input[1] = transA_rp_out
+
+        if len(n.input) == 3:
+            transB_rp_out = fork_name(n.input[2]) + "_reshape"
+            rp = generate_reshape(n.name, n.input[2], transB_rp_out,
+                                  transA_shape, self._graph.name, self._func_counter)
+            self._shape_output[transB_rp_out] = transA_shape
+            func_list.append(rp)
+            func.input[2] = transB_rp_out
+
+        if len(n.input) == 2:
             zero_point = fork_name(n.input[0]) + "_zero_point"
             zero_point_shape = [1] * len(input_shape)
-            zero_point_shape[axis] = input_shape[axis]
-            create_parameter_variable(self._pb, zero_point, zero_point_shape, [
-                                      0] * input_shape[axis])
+            zero_point_array = [0]
+            if np.prod(scale_shape) > 1:
+                zero_point_shape[axis] = input_shape[axis]
+                zero_point_array = [0] * input_shape[axis]
+            create_parameter_variable(
+                self._pb, zero_point, zero_point_shape, zero_point_array)
             self._param_vars[zero_point] = None
             func.input.append(zero_point)
 
@@ -3430,6 +3525,219 @@ class OnnxImporter:
         sp.end = end
         self._shape_output[n.output[0]] = output_shape
         func_list.append(func)
+
+    def Resize_13(self, func_list, n):
+        input_shape = self.get_func_input_shape(n.input[0])
+        # ctm is abbr. for coordinate_transformation_mode
+        ctm = "half_pixel"
+        mode = "nearest"
+        # Attributes extrapolation_value,exclude_outside,cubic_coeff_a,nearest_mode
+        # are not supported
+        for attr in n.attribute:
+            if attr.name == "coordinate_transformation_mode":
+                check_attr_string_type(attr, n)
+                ctm = attr.s.decode("utf-8")
+            elif attr.name == "mode":
+                check_attr_string_type(attr, n)
+                mode = attr.s.decode("utf-8")
+        input_len = len(n.input)
+        sizes = n.input[3] if input_len == 4 else None
+        scales = n.input[2] if input_len >= 3 else None
+        # roi input is not suppoted
+
+        # precheck
+        if sizes and scales:
+            raise ValueError(
+                    "Only one of 'scales' and 'sizes' can be specified in Resize.")
+        if not sizes and not scales:
+            raise ValueError(
+                    "One of 'scales' and 'sizes' MUST be specified in Resize.")
+        if ctm in ["pytorch_half_pixel", "tf_crop_and_resize"]:
+            raise ValueError(
+                    f"coordinate_transformation_mode {ctm} is not supported in importing Resize.")
+        if mode in ["cubic"]:
+            raise ValueError(
+                    "mode cubic is not supported in importing Resize.")
+
+        if sizes:
+            try:
+                output_size = self.get_input_raw_data(sizes, TensorProto.INT64)
+            except ValueError:
+                raise ValueError(
+                    "sizes or scales should be prepared with initializer in importing Resize.")
+        elif scales:
+            try:
+                scale_l = self.get_input_raw_data(scales, TensorProto.FLOAT)
+            except ValueError:
+                raise ValueError(
+                    "sizes or scales should be prepared with initializer in importing Resize.")
+            import math
+            output_size = [int(math.floor(s * d))
+                           for d, s in zip(input_shape, scale_l)]
+
+        interpolate_f = self.generate_default_function("Interpolate", n)
+        i_param = interpolate_f.interpolate_param
+        del interpolate_f.input[:]
+        interpolate_f.input.extend([n.input[0]])
+        if ctm == "half_pixel":
+            i_param.align_corners = False
+            i_param.half_pixel = True
+        elif ctm == "align_corners":
+            i_param.align_corners = True
+            i_param.half_pixel = False
+        elif ctm == "asymmetric":
+            i_param.align_corners = False
+            i_param.half_pixel = False
+        i_param.mode = mode
+        i_param.output_size.extend(output_size)
+
+        func_list.append(interpolate_f)
+        self._shape_output[n.output[0]] = output_size
+
+    def ScatterElements_13(self, func_list, n):
+        inputs = n.input[:]
+        data_shape = self.get_func_input_shape(inputs[0])
+        updates_shape = self.get_func_input_shape(inputs[2])
+        axis = 0
+        for attr in n.attribute:
+            if attr.name == "axis":
+                if attr.type != AttributeProto.INT:
+                    raise ValueError("Axis type must be a single integer")
+                if attr.i < 0:
+                    axis = len(data_shape) + attr.i
+                else:
+                    axis = attr.i
+            else:
+                raise ValueError("Unsupported attribute {} was specified at {}"
+                                 .format(attr.name, n.op_type))
+
+        # handle negative indices
+        indices_shape = self.get_func_input_shape(inputs[1])
+        # AddScalar
+        adds_out = fork_name(inputs[1])+"_adds"
+        adds = generate_add_scalar(n.name, inputs[1], adds_out,
+                                   data_shape[axis], self._graph.name, self._func_counter)
+        self._shape_output[adds_out] = indices_shape
+        func_list.append(adds)
+
+        # LessScalar
+        lout = fork_name(inputs[1])+"_less_scalar"
+        lesss = generate_less_scalar(n.name, inputs[1], lout,
+                                     0, self._graph.name, self._func_counter)
+        self._shape_output[lout] = indices_shape
+        func_list.append(lesss)
+
+        # Where
+        where_func = self.generate_default_function("Where", n)
+        del where_func.input[:]
+        where_func.input.extend([lout, adds_out, inputs[1]])
+        indices_out = fork_name(n.input[1])+"_where"
+        del where_func.output[:]
+        where_func.output.extend([indices_out])
+        self._shape_output[indices_out] = indices_shape
+        func_list.append(where_func)
+
+        # handle target elements
+        # scatterAdd make variance
+
+        ones = fork_name(inputs[2]) + "_ones"
+        ones_shape = updates_shape
+        create_parameter_variable(self._pb, ones, ones_shape,
+                                  [1] * np.prod(updates_shape))
+        self._param_vars[ones] = None
+
+        zeros = fork_name(inputs[0]) + "_zeros"
+        zeros_shape = data_shape
+        create_parameter_variable(self._pb, zeros, zeros_shape,
+                                  [0] * np.prod(data_shape))
+        self._param_vars[zeros] = None
+
+        sa_out = fork_name(inputs[1])+"_scatter_add"
+        sa_func = self.generate_default_function("ScatterAdd", n)
+        sap = sa_func.scatter_add_param
+        sap.axis = axis
+        sa_func.input[1] = indices_out
+        sa_func.input[2] = ones
+        sa_func.output[0] = sa_out
+        self._shape_output[sa_out] = data_shape
+        func_list.append(sa_func)
+
+        # equal
+        e_out = fork_name(inputs[0])+"_equal"
+        e_func = self.generate_default_function("Equal", n)
+        del e_func.input[:]
+        e_func.input.extend([inputs[0], sa_out])
+        e_func.output[0] = e_out
+        func_list.append(e_func)
+
+        # Where
+        where_func = self.generate_default_function("Where", n)
+        del where_func.input[:]
+        where_func.input.extend([e_out, inputs[0], zeros])
+        data_out = fork_name(n.input[0])+"_where"
+        del where_func.output[:]
+        where_func.output.extend([data_out])
+        self._shape_output[data_out] = data_shape
+        func_list.append(where_func)
+
+        sa_func = self.generate_default_function("ScatterAdd", n)
+        sap = sa_func.scatter_add_param
+        sap.axis = axis
+        sa_func.input[0] = data_out
+        sa_func.input[1] = indices_out
+        self._shape_output[sa_func.output[0]] = data_shape
+        func_list.append(sa_func)
+
+    def Compress(self, func_list, n):
+        input_shape = self.get_func_input_shape(n.input[0])
+        con_shape = self.get_func_input_shape(n.input[1])
+        if len(con_shape) != 1:
+            raise ValueError(
+                "onnx Compress op condition input should be rank 1.")
+        axis = None
+        for attr in n.attribute:
+            if attr.name == "axis":
+                if attr.i < 0:
+                    axis = len(input_shape) + attr.i
+                else:
+                    axis = attr.i
+
+        rout = n.input[0]
+        indices = [*range(np.prod(con_shape))]
+        if axis == None:
+            # onnx flatten data when axis is none
+            # reshape
+            input_size = np.prod(input_shape)
+            rout = fork_name(n.input[0])+"_reshape"
+            rp = generate_reshape(n.name, n.input[0], rout, [input_size],
+                                  self._graph.name, self._func_counter)
+            self._shape_output[rout] = [input_size]
+            func_list.append(rp)
+
+        condition_out = fork_name(n.input[0])+"_indices"
+        create_parameter_variable(self._pb, condition_out,
+                                  con_shape, indices)
+        self._param_vars[condition_out] = None
+
+        # boolgather
+        bg_out = fork_name(condition_out)+"_boolgather"
+        bg = self.generate_default_function("BoolGather", n)
+        del bg.input[:]
+        bg.input.extend([condition_out, n.input[1]])
+        bg.output[0] = bg_out
+        func_list.append(bg)
+        # dynamic output shape
+        self._shape_output[bg_out] = con_shape
+
+        # gather
+        gf = self.generate_default_function("Gather", n)
+        gparam = gf.gather_param
+        gparam.axis = axis if axis else 0
+        del gf.input[:]
+        gf.input.extend([rout, bg_out])
+        func_list.append(gf)
+        # dynamic output shape
+        self._shape_output[n.output[0]] = input_shape
 
     def convert_to_functions(self, n):
         ft = self._onnx_optype_to_nnabla_function_type.get(n.op_type)
