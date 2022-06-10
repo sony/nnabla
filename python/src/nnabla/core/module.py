@@ -28,6 +28,7 @@ from nnabla.core.graph_def import module_scope, current_graph_builder
 #                 self.conv = [ConvBn(c, 1, 1,act=lambda x: F.relu(x, inplace=True)) for c in [4, 16, 32]]
 #                 ...
 #     same as dict type.
+__inherited__ = "training"
 
 
 def insert_parent_name(name, params):
@@ -218,7 +219,7 @@ class Module(metaclass=MetaClass):
         """
         if 'training' in self.__dict__:
             return self.__dict__['training']
-        self.__dict__['training'] = None
+        self.__dict__['training'] = True
         return self.training
 
     @training.setter
@@ -242,15 +243,10 @@ class Module(metaclass=MetaClass):
 
             conv_bn.training = False
             eval_y = conv_bn(x)
-
-        Returns:
-            bool:
-               which indicates whether current Module is in training state.
-
         """
-        self.__dict__['training'] = b
-        for name, module in self.submodules.items():
-            module.training = b
+        # This is not called since __setattr__ takes off its control.
+        # Keep it only for API document
+        pass
 
     @property
     def parameter_scope(self):
@@ -404,6 +400,9 @@ class Module(metaclass=MetaClass):
             value.__dict__['_parent'] = self
             return
         self.__dict__[name] = value
+        if name in __inherited__:
+            for _, module in self.submodules.items():
+                exec(f"module.{name} = {value}")
 
     def __getattr__(self, name):
         if name in self.submodules:

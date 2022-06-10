@@ -839,3 +839,32 @@ def test_load_parameters_with_no_grad_parameter(tmpdir):
 
     # default not raise exception
     r.set_parameter('@conv_bn_1/bn/mean', v)
+
+
+class SubModel(nn.Module):
+    def __init__(self, dim):
+        self.dim = dim
+
+    def call(self, x):
+        return PF.affine(x, self.dim)
+
+
+class MainModel(nn.Module):
+    def __init__(self, hid, dim):
+        self.sub = SubModel(hid)
+        self.dim = dim
+
+    def call(self, x):
+        x = self.sub(x)
+        return PF.affine(x, self.dim)
+
+
+def test_module_training_attribute_set():
+    model = MainModel(10, 3)
+    y = model(nn.Variable((3, 3)))
+
+    assert model.sub.training, "Default value should be True"
+    assert model.training, "Default value should be True"
+
+    model.training = False
+    assert not model.sub.training, "Training attribute should be set to False."
