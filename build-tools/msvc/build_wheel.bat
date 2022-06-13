@@ -37,6 +37,9 @@ CD %nnabla_build_wheel_folder%
 SET third_party_folder=%nnabla_root%\third_party
 CALL %~dp0tools\build_protobuf.bat   || GOTO :error
 
+REM Download bulit flatbuffers binary
+CALL %~dp0tools\get_flatbuffers.bat || GOTO :error
+
 CD %nnabla_build_wheel_folder%
 
 cmake -G "%generate_target%" ^

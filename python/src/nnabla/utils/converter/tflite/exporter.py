@@ -22,9 +22,12 @@ from enum import Enum
 from nnabla.utils import nnabla_pb2
 import nnabla as nn
 from nnabla.core.graph_optimizer import IdentityRemover
+import sys
 
 
 random_seed = 0
+fn = 'flatc.exe' if sys.platform == 'win32' else 'flatc'
+flatc_path = os.path.join(os.path.dirname(__file__), fn)
 
 
 def fork_name(name):
@@ -69,7 +72,7 @@ class TFLiteExporter:
     def __init__(self, nnp, batch_size, channel_last=False, data_type="float32", quantization=None, dataset=None):
         # check flatc installation
         try:
-            subprocess.check_output(['flatc', '--version'])
+            subprocess.check_output([flatc_path, '--version'])
         except subprocess.CalledProcessError:
             raise ValueError(
                 "Can't find the flatbuffers package. Please refer to the Tensorflow Lite section of this website to install flatbuffers.\n"
@@ -2092,7 +2095,7 @@ class TFLiteExporter:
         output_path = os.path.dirname(output)
         try:
             subprocess.check_output(
-                ['flatc', '-b', '-o', output_path, schema_path, json_file], stderr=subprocess.STDOUT)
+                [flatc_path, '-b', '-o', output_path, schema_path, json_file], stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
             print(e.returncode, e.output)
             raise ValueError("Convert nnp to tflite failed.")
