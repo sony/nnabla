@@ -116,7 +116,7 @@ class MinMaxMinMaxRecorderCallback(object):
         M = nn.parameter.get_parameter_or_create('M-{}'.format(name), shape)
 
         # If recorder is not added before Q/DQ, return neither scale nor zp
-        if np.count_nonzero(m) == 0 and np.count_nonzero(M) == 0:
+        if np.count_nonzero(m.d) == 0 and np.count_nonzero(M.d) == 0:
             return None, None
 
         n_bits = 8
@@ -228,7 +228,7 @@ class AbsMaxRecorderCallback(object):
         M = nn.parameter.get_parameter_or_create('M-{}'.format(name), shape)
 
         # If recorder is not added before Q/DQ, return neither scale nor zp
-        if np.count_nonzero(M) == 0:
+        if np.count_nonzero(M.d) == 0:
             return None, None
 
         n_bits = 8
@@ -347,7 +347,7 @@ class MinMaxMvaRecorderCallback(object):
         M = nn.parameter.get_parameter_or_create('M-{}'.format(name), shape)
 
         # If recorder is not added before Q/DQ, return neither scale nor zp
-        if np.count_nonzero(m) == 0 and np.count_nonzero(M) == 0:
+        if np.count_nonzero(m.d) == 0 and np.count_nonzero(M.d) == 0:
             return None, None
 
         n_bits = 8
@@ -459,7 +459,7 @@ class MaxMaxRecorderCallback(object):
         M = nn.parameter.get_parameter_or_create('M-{}'.format(name), shape)
 
         # If recorder is not added before Q/DQ, return neither scale nor zp
-        if np.count_nonzero(M) == 0:
+        if np.count_nonzero(M.d) == 0:
             return None, None
 
         n_bits = 8
@@ -571,7 +571,7 @@ class MaxMvaRecorderCallback(object):
         M = nn.parameter.get_parameter_or_create('M-{}'.format(name), shape)
 
         # If recorder is not added before Q/DQ, return neither scale nor zp
-        if np.count_nonzero(M) == 0:
+        if np.count_nonzero(M.d) == 0:
             return None, None
 
         n_bits = 8
