@@ -16,6 +16,8 @@
 from __future__ import print_function
 
 import os
+import shutil
+import sys
 
 from setuptools import setup
 
@@ -51,10 +53,17 @@ if __name__ == '__main__':
     tensorflow_src_dir = os.path.join(root_dir, 'tensorflow')
     onnx_src_dir = os.path.join(root_dir, 'onnx')
     tflite_src_dir = os.path.join(root_dir, "tflite")
-
     package_data = {"nnabla.utils.converter.tflite": [
         'schema.fbs',
     ]}
+    try:
+        fn = 'flatc.exe' if sys.platform == 'win32' else 'flatc'
+        shutil.copyfile(os.path.join(root_dir, '../../../../../', 'third_party', fn),
+                        os.path.join(tflite_src_dir, fn))
+        os.chmod(os.path.join(tflite_src_dir, fn), 0o755)
+        package_data["nnabla.utils.converter.tflite"].append(fn)
+    except:
+        raise OSError(f"Not found: {fn} in third_party")
 
     # Setup
     setup(

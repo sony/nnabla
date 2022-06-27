@@ -43,6 +43,12 @@ endif()
 
 download_and_extract_library(eigen-3.3.5 .zip https://gitlab.com/libeigen/eigen/-/archive/3.3.5/eigen-3.3.5.zip)
 
+if(APPLE)
+  download_and_extract_library(flatbuffers .zip https://github.com/google/flatbuffers/releases/download/v2.0.0/Mac.flatc.binary.zip)
+elseif(UNIX)
+  download_and_extract_library(flatbuffers .zip https://github.com/google/flatbuffers/releases/download/v2.0.0/Linux.flatc.binary.clang++-9.zip)
+endif()
+
 if(BUILD_TEST)
   download_and_extract_library(googletest-release-1.10.0 .zip https://github.com/google/googletest/archive/release-1.10.0.zip)
   add_subdirectory(googletest-release-1.10.0)
