@@ -55,13 +55,29 @@ void OneHot<T, T1>::forward_impl(const Variables &inputs,
   outputs[0]->data()->zero();
   T1 *y = outputs[0]->cast_data_and_get_pointer<T1>(this->ctx_, false);
   for (int i = 0; i < num_; ++i) {
+    bool valid_class = true;
     int addr = 0;
     Size_t size = 1;
     for (int i2 = dim_ - 1; i2 >= 0; --i2) {
-      addr += x[i * dim_ + i2] * size;
+      const int num_classes = shape_[i2];
+      auto class_index = x[i * dim_ + i2];
+
+      // Convert class_index from [-num_classes, -1] to [0, num_classes-1]
+      if (class_index < 0)
+        class_index += num_classes;
+
+      // If class_index is invalid, its one-hot vector becomes zero vector
+      if (class_index < 0 || num_classes <= class_index) {
+        valid_class = false;
+        break;
+      }
+
+      addr += class_index * size;
       size *= shape_[i2];
     }
-    y[i * size_ + addr] = (T1)1;
+    if (valid_class) {
+      y[i * size_ + addr] = (T1)1;
+    }
   }
 }
 

@@ -444,60 +444,70 @@ def rearrange_pads(pads):
     return [j for i in zip(starts, ends) for j in i]
 
 
+def tensor_to_sequence(tensor):
+    """Convert given TensorProto to a Python sequence"""
+    if tensor.data_type == TensorProto.FLOAT:
+        # convert raw bytestream to floating points
+        if tensor.raw_data:
+            return np.fromstring(tensor.raw_data, dtype=np.float32)
+        elif len(tensor.float_data) > 0:
+            return tensor.float_data
+        else:
+            return np.array([], dtype=np.int32)
+    elif tensor.data_type == TensorProto.INT32:
+        # convert raw bytestream to integer
+        if tensor.raw_data:
+            return np.fromstring(tensor.raw_data, dtype=np.int32)
+        elif len(tensor.int32_data) > 0:
+            return tensor.int32_data
+        else:
+            return np.array([], dtype=np.int32)
+    elif tensor.data_type == TensorProto.INT64:
+        # convert raw bytestream to integer
+        if tensor.raw_data:
+            return np.fromstring(tensor.raw_data, dtype=np.int64)
+        elif len(tensor.int64_data) > 0:
+            return tensor.int64_data
+        else:
+            return np.array([], dtype=np.int64)
+    elif tensor.data_type == TensorProto.BOOL:
+        if tensor.raw_data:
+            return np.fromstring(tensor.raw_data, dtype=np.bool)
+        elif tensor.int32_data:
+            return tensor.int32_data
+        else:
+            return np.array([], dtype=np.bool)
+    elif tensor.data_type == TensorProto.INT8:
+        if tensor.raw_data:
+            return np.fromstring(tensor.raw_data, dtype=np.int8)
+        elif len(tensor.int32_data) > 0:
+            return tensor.int32_data
+        else:
+            return np.array([], dtype=np.int8)
+    elif tensor.data_type == TensorProto.UINT8:
+        if tensor.raw_data:
+            return np.fromstring(tensor.raw_data, dtype=np.uint8)
+        elif len(tensor.int32_data) > 0:
+            return tensor.int32_data
+        else:
+            return np.array([], dtype=np.uint8)
+    else:
+        raise ValueError("Unsupported tensor data type for {}: {}"
+                         .format(tensor.name, tensor.data_type))
+
+
 def add_tensor_as_parameter(pb, tensor):
     """Add given tensor as a parameter"""
     p = pb.parameter.add()
     p.variable_name = tensor.name
     shape = normalize_shape(tensor.dims)
     p.shape.dim.extend(shape)
-    if tensor.data_type == TensorProto.FLOAT:
-        # convert raw bytestream to floating points
-        if tensor.raw_data:
-            p.data.extend(np.fromstring(tensor.raw_data, dtype=np.float32))
-        elif len(tensor.float_data) > 0:
-            p.data.extend(tensor.float_data)
-        else:
-            raise ValueError("float data not found for {}".format(tensor.name))
-    elif tensor.data_type == TensorProto.INT32:
-        # convert raw bytestream to integer
-        if tensor.raw_data:
-            p.data.extend(np.fromstring(tensor.raw_data, dtype=np.int32))
-        elif len(tensor.int32_data) > 0:
-            p.data.extend(tensor.int32_data)
-        else:
-            raise ValueError("int32 data not found for {}".format(tensor.name))
-    elif tensor.data_type == TensorProto.INT64:
-        # convert raw bytestream to integer
-        if tensor.raw_data:
-            p.data.extend(np.fromstring(tensor.raw_data, dtype=np.int64))
-        elif len(tensor.int64_data) > 0:
-            p.data.extend(tensor.int64_data)
-        else:
-            raise ValueError("int64 data not found for {}".format(tensor.name))
-    elif tensor.data_type == TensorProto.BOOL:
-        if tensor.raw_data:
-            p.data.extend(np.fromstring(tensor.raw_data, dtype=bool))
-        elif tensor.int32_data:
-            p.data.extend(tensor.int32_data)
-        else:
-            raise ValueError("bool data not found for {}".format(tensor.name))
-    elif tensor.data_type == TensorProto.INT8:
-        if tensor.raw_data:
-            p.data.extend(np.fromstring(tensor.raw_data, dtype=np.int8))
-        elif len(tensor.int32_data) > 0:
-            p.data.extend(tensor.int32_data)
-        else:
-            raise ValueError("int8 data not found for {}".format(tensor.name))
-    elif tensor.data_type == TensorProto.UINT8:
-        if tensor.raw_data:
-            p.data.extend(np.fromstring(tensor.raw_data, dtype=np.uint8))
-        elif len(tensor.int32_data) > 0:
-            p.data.extend(tensor.int32_data)
-        else:
-            raise ValueError("uint8 data not found for {}".format(tensor.name))
-    else:
-        raise ValueError("Unsupported tensor data type for {}: {}"
-                         .format(tensor.name, tensor.data_type))
+    p.data.extend(tensor_to_sequence(tensor))
+    tensor_size = np.prod(tensor.dims)
+    if tensor_size != 0 and len(p.data) == 0:
+        data_type = TensorProto.DataType.keys()[tensor.data_type]
+        raise ValueError("{} data not found for {}"
+                         .format(data_type, tensor.name))
     p.need_grad = False
 
     # Add tensor as variable
@@ -674,6 +684,7 @@ class OnnxImporter:
             "Where": partial(self.GeneralOperator, 'Where'),
             "Compress": self.Compress,
             "NonZero": self.NonZero,
+            "OneHot": self.OneHot,
         }
         self.table_op_set_9 = dict(self.table_op_set_7, **self.table_op_set_9)
 
@@ -785,61 +796,55 @@ class OnnxImporter:
                 "The dtype of {} was not found".format(input_name))
         return dtype
 
-    def get_input_raw_data(self, input_name, data_type):
-        data = []
+
+    def get_input_raw_data_with_info(self, input_name):
+        def find_with_name(sequence, name):
+            return next((x for x in sequence if x.name == name), None)
+
+        data = None
+        data_type = None
+        shape = None
 
         # Try to find data in constant node
         for op in self._graph.node:
-            if op.output[0] == input_name and op.op_type == "Constant":
-                for attr in op.attribute:
-                    if attr.name == "value":
-                        if attr.t.data_type == TensorProto.INT64:
-                            if attr.t.raw_data:
-                                data.extend(np.fromstring(
-                                    attr.t.raw_data, dtype=np.int64))
-                            elif attr.t.int64_data:
-                                data.extend(attr.t.int64_data)
-                            break
-                        elif attr.t.data_type == TensorProto.FLOAT:
-                            if attr.t.raw_data:
-                                data.extend(np.fromstring(
-                                    attr.t.raw_data, dtype=np.float32))
-                            elif attr.t.float_data:
-                                data.extend(attr.t.float_data)
-                            break
-                        elif attr.t.data_type == TensorProto.BOOL:
-                            if attr.t.raw_data:
-                                data.extend(np.fromstring(
-                                    attr.t.raw_data, dtype=bool))
-                            break
+            if op.output[0] != input_name or op.op_type != "Constant":
+                continue
+            attr = find_with_name(op.attribute, "value")
+            assert attr is not None
+            data = tensor_to_sequence(attr.t)
+            data_type = attr.t.data_type
+            shape = attr.t.dims
 
         # Try to find data in the initializer.
-        for init in self._graph.initializer:
-            if init.name == input_name:
-                if data_type == TensorProto.INT64:
-                    if init.raw_data:
-                        data.extend(np.fromstring(
-                            init.raw_data, dtype=np.int64))
-                    elif init.int64_data:
-                        data.extend(init.int64_data)
-                    break
-                elif data_type == TensorProto.FLOAT:
-                    if init.raw_data:
-                        data.extend(np.fromstring(
-                            init.raw_data, dtype=np.float32))
-                    elif init.float_data:
-                        data.extend(init.float_data)
-                    break
-                elif data_type == TensorProto.BOOL:
-                    if init.raw_data:
-                        data.extend(np.fromstring(
-                            init.raw_data, dtype=bool))
-                    break
+        if data is None:
+            init = find_with_name(self._graph.initializer, input_name)
+            if init is not None:
+                data = tensor_to_sequence(init)
+                data_type = init.data_type
+                shape = init.dims
 
-        if not data:
-            raise ValueError("Not found {}".format(input_name))
+        if data is None:
+            return None
 
         self._merged_inputs.append(input_name)
+
+        class TensorInfo:
+            pass
+        info = TensorInfo()
+        info.data = data
+        info.data_type = data_type
+        info.shape = tuple(shape)
+        return info
+
+    def get_input_raw_data(self, input_name, data_type):
+        data = []
+
+        info = self.get_input_raw_data_with_info(input_name)
+        if info is None or len(info.data) == 0:
+            raise ValueError("Not found {}".format(input_name))
+
+        assert data_type == info.data_type
+        data.extend(info.data)
         return data
 
     def generate_default_function(self, func_name, n):
@@ -4109,6 +4114,87 @@ class OnnxImporter:
         nms_p.score_threshold = score_threshold
         self._shape_output[n.output[0]] = y_shape
         func_list.append(nms_func)
+
+    def OneHot(self, func_list, n):
+        # Get inputs
+        assert len(n.input) == 3 and len(n.output) == 1
+        indices_shape = self.get_func_input_shape(n.input[0])
+        depth_info = self.get_input_raw_data_with_info(n.input[1])
+        values_info = self.get_input_raw_data_with_info(n.input[2])
+        assert len(depth_info.data) == 1 and len(values_info.data) == 2
+
+        # Get attributes
+        axis = -1
+        for attr in n.attribute:
+            if attr.name == "axis":
+                axis = attr.i
+            else:
+                unsupported_attribute(attr.name, n)
+
+        depth = int(depth_info.data[0])
+        off_value = float(values_info.data[0])
+        on_value = float(values_info.data[1])
+        out = n.output[0]
+
+        # Reshape: [D1, ..., Dn] -> [D1, ..., Dn, 1]
+        x_shape = indices_shape + [1]
+        reshape_out = fork_name(out) + "_reshape"
+        reshape_func = generate_reshape(n.name, n.input[0], reshape_out,
+                                        x_shape, self._graph.name,
+                                        self._func_counter)
+        self._shape_output[reshape_out] = x_shape
+        func_list.append(reshape_func)
+
+        # OneHot: [D1, ..., Dn, 1] -> [D1, ..., Dn, depth]
+        last_func = self.generate_default_function("OneHot", n)
+        del last_func.input[:]
+        last_func.input.append(reshape_out)
+        oh_p = last_func.one_hot_param
+        oh_p.shape.dim.extend([depth])
+        last_out = out
+        last_shape = indices_shape + [depth]
+
+        # Transpose if axis is not default
+        if axis != -1 and axis != len(x_shape) - 1:
+            if last_out == out:
+                last_out = fork_name(out) + "_interm0"
+                last_func.output[0] = last_out
+            self._shape_output[last_out] = last_shape
+            func_list.append(last_func)
+
+            # Transpose: [D1, ..., Dn, depth] -> [D1, ..., depth, ..., Dn]
+            trans_axes = list(range(len(last_shape)))
+            trans_axes[axis], trans_axes[-1] = trans_axes[-1], trans_axes[axis]
+            last_func = generate_transpose(n.name, last_out, out,
+                                           trans_axes, self._graph.name,
+                                           self._func_counter)
+            last_out = out
+            last_shape = x_shape[:axis] + [depth] + x_shape[axis:]
+
+        # y = y * (on_value - off_value) + off_value
+        if float(off_value) != 0.0 or float(on_value) != 1.0:
+            if last_out == out:
+                last_out = fork_name(out) + "_interm1"
+                last_func.output[0] = last_out
+            self._shape_output[last_out] = last_shape
+            func_list.append(last_func)
+
+            # MulScalar
+            muls_out = fork_name(out) + "_muls"
+            muls = generate_mul_scalar(n.name, last_out, muls_out,
+                                       float(on_value) - float(off_value),
+                                       self._graph.name, self._func_counter)
+            self._shape_output[muls_out] = last_shape
+            func_list.append(muls)
+
+            # AddScalar
+            adds = generate_add_scalar(n.name, muls_out, out,
+                                       float(off_value), self._graph.name,
+                                       self._func_counter)
+            last_func = adds
+
+        self._shape_output[out] = last_shape
+        func_list.append(last_func)
 
     def convert_to_functions(self, n):
         ft = self._onnx_optype_to_nnabla_function_type.get(n.op_type)

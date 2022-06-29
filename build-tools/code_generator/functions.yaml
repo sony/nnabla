@@ -4395,6 +4395,9 @@ Array Manipulation:
     doc: |2
 
       This function creates one-hot vector based on input indices.
+      The range [-shape[i], -1] of input indices are regarded as [0, shape[i]-1],
+      and an input index outside [-shape[i], shape[i]-1] generates a vector 
+      filled with zero.
 
               Example:
 
@@ -4404,7 +4407,7 @@ Array Manipulation:
                 import nnabla.functions as F
                 import numpy as np
 
-                labels = nn.Variable.from_numpy_array(np.array([[9], [4], [5], [1], [0]]))
+                labels = nn.Variable.from_numpy_array(np.array([[9], [4], [5], [-9], [10]]))
                 print(labels.shape)  # (5, 1)
 
                 num_class = 10
@@ -4419,7 +4422,7 @@ Array Manipulation:
                 #  [0. 0. 0. 0. 1. 0. 0. 0. 0. 0.]
                 #  [0. 0. 0. 0. 0. 1. 0. 0. 0. 0.]
                 #  [0. 1. 0. 0. 0. 0. 0. 0. 0. 0.]
-                #  [1. 0. 0. 0. 0. 0. 0. 0. 0. 0.]]
+                #  [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]]
 
                 # Can also be used for ndarray.
 
@@ -4450,11 +4453,8 @@ Array Manipulation:
         template: TI
     arguments:
       shape:
-        doc: Number of classes. Note that it must be exactly the same as the number
-          of classes included in label data. Passing incorrect numbers might cause
-          an unexpected error and currently this function doesn't check if the input
-          is valid or not. Also, when nd-labels are given, dimensions must match.
-          See the example above.
+        doc: Number of classes. When nd-labels are given, dimensions must match. See
+          the example above.
         type: Shape
     outputs:
       output:
