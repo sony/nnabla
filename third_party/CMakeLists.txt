@@ -43,11 +43,21 @@ endif()
 
 download_and_extract_library(eigen-3.3.5 .zip https://gitlab.com/libeigen/eigen/-/archive/3.3.5/eigen-3.3.5.zip)
 
-if(APPLE)
-  download_and_extract_library(flatbuffers .zip https://github.com/google/flatbuffers/releases/download/v2.0.0/Mac.flatc.binary.zip)
-elseif(UNIX)
-  download_and_extract_library(flatbuffers .zip https://github.com/google/flatbuffers/releases/download/v2.0.0/Linux.flatc.binary.clang++-9.zip)
-endif()
+set(flatbuffers_info
+  "https://github.com/google/flatbuffers/releases/download/v2.0.0/Mac.flatc.binary.zip\;flatc\;flatc_mac"
+  "https://github.com/google/flatbuffers/releases/download/v2.0.0/Linux.flatc.binary.clang++-9.zip\;flatc\;flatc_linux"
+  "https://github.com/google/flatbuffers/releases/download/v2.0.0/Windows.flatc.binary.zip\;flatc.exe\;flatc_windows.exe"
+  )
+
+foreach(component ${flatbuffers_info})
+  list(GET component 0 url)
+  list(GET component 1 filename_old)
+  list(GET component 2 filename_new)
+  download_and_extract_library(flatbuffers .zip ${url})
+  execute_process(
+    COMMAND ${CMAKE_COMMAND} -E
+    rename ${CMAKE_SOURCE_DIR}/third_party/${filename_old} ${CMAKE_SOURCE_DIR}/third_party/${filename_new})
+endforeach()
 
 if(BUILD_TEST)
   download_and_extract_library(googletest-release-1.10.0 .zip https://github.com/google/googletest/archive/release-1.10.0.zip)

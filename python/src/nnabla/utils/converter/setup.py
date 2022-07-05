@@ -56,12 +56,13 @@ if __name__ == '__main__':
     package_data = {"nnabla.utils.converter.tflite": [
         'schema.fbs',
     ]}
+    flatc_files = ['flatc_linux', 'flatc_mac', 'flatc_windows.exe']
     try:
-        fn = 'flatc.exe' if sys.platform == 'win32' else 'flatc'
-        shutil.copyfile(os.path.join(root_dir, '../../../../../', 'third_party', fn),
-                        os.path.join(tflite_src_dir, fn))
-        os.chmod(os.path.join(tflite_src_dir, fn), 0o755)
-        package_data["nnabla.utils.converter.tflite"].append(fn)
+        for fn in flatc_files:
+            shutil.copyfile(os.path.join(root_dir, '../../../../../', 'third_party', fn),
+                            os.path.join(tflite_src_dir, fn))
+            os.chmod(os.path.join(tflite_src_dir, fn), 0o755)
+            package_data["nnabla.utils.converter.tflite"].append(fn)
     except:
         raise OSError(f"Not found: {fn} in third_party")
 
