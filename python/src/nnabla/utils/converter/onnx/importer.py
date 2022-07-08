@@ -1113,21 +1113,18 @@ class OnnxImporter:
             if not pad_needed:
                 pad_needed = [0] * len(insize)
             out_shape = [0] * len(insize)
-            if ceil_mode:
-                for index in range(len(insize)):
-                    i = insize[index]
-                    s = stride[index]
-                    k = kernel[index]
-                    p = pad_needed[index]
-                    out_shape[index] = int(np.ceil((i + p - k) / s + 1))
-            else:
-                for index in range(len(insize)):
-                    i = insize[index]
-                    s = stride[index]
-                    k = kernel[index]
-                    p = pad_needed[index]
-                    out_shape[index] = int(np.floor((i + p - k) / s + 1))
-
+            out_shape_ceil = [0] * len(insize)
+            for index in range(len(insize)):
+                i = insize[index]
+                s = stride[index]
+                k = kernel[index]
+                p = pad_needed[index]
+                out_shape[index] = int(np.floor((i + p - k) / s + 1))
+                out_shape_ceil[index] = int(np.ceil((i + p - k) / s + 1))
+            if ceil_mode != 0 and out_shape != out_shape_ceil:
+                raise ValueError(
+                    "Unsupported attribute ceil_mode=1 was specified at {}"
+                    .format(n.op_type))
             return out_shape
 
         def _compute_pad_needed(insize, stride, kernel):
@@ -1155,6 +1152,7 @@ class OnnxImporter:
         input_shape = self.get_func_input_shape(n.input[0])
         strides = []
         kernel = []
+        dilations = []
         pads = []
         auto_pad = "NOTSET"
         pad_mode = "constant"
@@ -1166,6 +1164,8 @@ class OnnxImporter:
             kp = func.average_pooling_param
             pad_mode = "repeat"
         elif func_name == 'MaxPooling':
+            if len(n.output) != 1:
+                raise ValueError("Indices output at MaxPool is not supported")
             func = self.generate_default_function("MaxPooling", n)
             kp = func.max_pooling_param
             value = -np.inf
@@ -1202,6 +1202,11 @@ class OnnxImporter:
                     raise ValueError("Only INT is supported for count_include_pad in {} op_type"
                                      .format(n.op_type))
                 kp.including_pad = bool(attr.i)
+            elif attr.name == "dilations":
+                if attr.type != AttributeProto.INTS:
+                    raise ValueError("Only INTS are supported for dilations in {}"
+                                     .format(n.op_type))
+                dilations.extend(attr.ints)
             elif attr.name == "auto_pad":
                 if attr.type != AttributeProto.STRING:
                     raise ValueError("Only STRING is supported for auto_pad in {} op_type"
@@ -1224,6 +1229,10 @@ class OnnxImporter:
             kp.stride.dim.extend(strides[:])
         else:
             kp.stride.dim.extend([1] * len(kp.kernel.dim))
+        if dilations and any(d != 1 for d in dilations):
+            raise ValueError(
+                "Unsupported attribute dilations was specified at {}"
+                .format(n.op_type))
 
         if auto_pad != "NOTSET":
             if auto_pad == 'VALID':
