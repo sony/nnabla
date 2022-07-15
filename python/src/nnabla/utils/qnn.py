@@ -25,6 +25,10 @@ __round_methods__ = {
 }
 
 
+def _param_exits(param):
+    return True if nn.parameter.get_parameter(param) else False
+
+
 class MinMaxMinMaxRecorder(PythonFunction):
     """
     MinMaxMinMaxRecorder records the min and max of the batch over the training iterations.
@@ -111,13 +115,13 @@ class MinMaxMinMaxRecorderCallback(object):
         return y
 
     def get_scale_zeropoint(x, axes=[1], narrow_range=False, round_method='NOTROUND', name=''):
+        # If recorder is not added before Q/DQ, return neither scale nor zp
+        if not _param_exits('m-{}'.format(name)) and not _param_exits('M-{}'.format(name)):
+            return None, None
+
         shape = [1] * x.ndim
         m = nn.parameter.get_parameter_or_create('m-{}'.format(name), shape)
         M = nn.parameter.get_parameter_or_create('M-{}'.format(name), shape)
-
-        # If recorder is not added before Q/DQ, return neither scale nor zp
-        if np.count_nonzero(m.d) == 0 and np.count_nonzero(M.d) == 0:
-            return None, None
 
         n_bits = 8
         im = - 2 ** (n_bits - 1)
@@ -224,12 +228,12 @@ class AbsMaxRecorderCallback(object):
         return y
 
     def get_scale_zeropoint(x, axes=[1], narrow_range=False, round_method='NOTROUND', name=''):
+        # If recorder is not added before Q/DQ, return neither scale nor zp
+        if not _param_exits('M-{}'.format(name)):
+            return None, None
+
         shape = [1] * x.ndim
         M = nn.parameter.get_parameter_or_create('M-{}'.format(name), shape)
-
-        # If recorder is not added before Q/DQ, return neither scale nor zp
-        if np.count_nonzero(M.d) == 0:
-            return None, None
 
         n_bits = 8
         im = - 2 ** (n_bits - 1)
@@ -342,13 +346,13 @@ class MinMaxMvaRecorderCallback(object):
         return y
 
     def get_scale_zeropoint(x, axes=[1], narrow_range=False, round_method='NOTROUND', name=''):
+        # If recorder is not added before Q/DQ, return neither scale nor zp
+        if not _param_exits('m-{}'.format(name)) and not _param_exits('M-{}'.format(name)):
+            return None, None
+
         shape = [1] * x.ndim
         m = nn.parameter.get_parameter_or_create('m-{}'.format(name), shape)
         M = nn.parameter.get_parameter_or_create('M-{}'.format(name), shape)
-
-        # If recorder is not added before Q/DQ, return neither scale nor zp
-        if np.count_nonzero(m.d) == 0 and np.count_nonzero(M.d) == 0:
-            return None, None
 
         n_bits = 8
         im = - 2 ** (n_bits - 1)
@@ -455,12 +459,12 @@ class MaxMaxRecorderCallback(object):
         return y
 
     def get_scale_zeropoint(x, axes=[1], narrow_range=False, round_method='NOTROUND', name=''):
+        # If recorder is not added before Q/DQ, return neither scale nor zp
+        if not _param_exits('M-{}'.format(name)):
+            return None, None
+
         shape = [1] * x.ndim
         M = nn.parameter.get_parameter_or_create('M-{}'.format(name), shape)
-
-        # If recorder is not added before Q/DQ, return neither scale nor zp
-        if np.count_nonzero(M.d) == 0:
-            return None, None
 
         n_bits = 8
         im = - 2 ** (n_bits - 1)
@@ -567,12 +571,12 @@ class MaxMvaRecorderCallback(object):
         return y
 
     def get_scale_zeropoint(x, axes=[1], narrow_range=False, round_method='NOTROUND', name=''):
+        # If recorder is not added before Q/DQ, return neither scale nor zp
+        if not _param_exits('M-{}'.format(name)):
+            return None, None
+
         shape = [1] * x.ndim
         M = nn.parameter.get_parameter_or_create('M-{}'.format(name), shape)
-
-        # If recorder is not added before Q/DQ, return neither scale nor zp
-        if np.count_nonzero(M.d) == 0:
-            return None, None
 
         n_bits = 8
         im = - 2 ** (n_bits - 1)
