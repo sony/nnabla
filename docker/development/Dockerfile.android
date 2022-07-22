@@ -15,7 +15,7 @@
 
 # for nnabla>=1.5.0
 
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 
 ARG PIP_INS_OPTS
 ARG PYTHONWARNINGS
@@ -28,7 +28,7 @@ RUN eval ${APT_OPTS} \
         bzip2 \
         ca-certificates \
         ccache \
-        clang-format-3.8 \
+        clang-format \
         curl \
         g++ \
         git \

@@ -148,6 +148,7 @@ else()
       Protobuf
       LibArchive
       ${ZLIB_LIBRARIES}
+      log
       )
   else()
     target_link_libraries(${LIB_NAME}
