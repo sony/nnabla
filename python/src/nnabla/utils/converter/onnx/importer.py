@@ -642,7 +642,7 @@ class OnnxImporter:
         # opset_11 table
         self.table_op_set_11 = {
             "Clip": partial(self.Clip, 11),
-            "Round": partial(self.GeneralOperator, 'Round'),
+            "Round": self.Round,
             "Pad": partial(self.Pad, '11'),
         }
         self.table_op_set_11 = dict(
@@ -3777,6 +3777,11 @@ class OnnxImporter:
         func_list.append(gf)
         # dynamic output shape
         self._shape_output[n.output[0]] = input_shape
+
+    def Round(self, func_list, n):
+        logger.warning("nnabla Round is not compatible to ONNX Round, " +
+                       "which performs rounding to nearest-even integer.")
+        return self.GeneralOperator('Round', func_list, n)
 
     def convert_to_functions(self, n):
         ft = self._onnx_optype_to_nnabla_function_type.get(n.op_type)
