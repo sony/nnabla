@@ -131,8 +131,9 @@ RUN cd /tmp \
               -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
               -Dprotobuf_BUILD_TESTS=OFF \
               -DCMAKE_INSTALL_PREFIX=$TOOLCHAIN_INSTALL_DIR \
-              -DANDROID_STL=c++_static \
+              -DANDROID_STL=c++_shared \
               -DANDROID_ABI=$EABI \
+              -DBUILD_SHARED_LIBS=ON \
               ../cmake \
     && $TOOLCHAIN_INSTALL_DIR/bin/make \
     && $TOOLCHAIN_INSTALL_DIR/bin/make install
@@ -152,7 +153,7 @@ RUN cd /tmp \
        -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
        -DCMAKE_INSTALL_PREFIX=$TOOLCHAIN_INSTALL_DIR \
        -DENABLE_TEST=OFF \
-       -DANDROID_STL=c++_static \
+       -DANDROID_STL=c++_shared \
        -DANDROID_ABI=$EABI . \
     && sed -i "/#define HAVE_STATFS 1/a#define HAVE_STATVFS 1" config.h \
     && sed -i "/#include \"passphrase.h\"/a#ifdef ANDROID\nint wctomb(char *s, wchar_t wc) { return wcrtomb(s,wc,NULL); }\nint mbtowc(wchar_t *pwc, const char *s, size_t n) { return mbrtowc(pwc, s, n, NULL); }\n#endif" tar/util.c \

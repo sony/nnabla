@@ -105,7 +105,7 @@ else()
     add_library(Protobuf STATIC IMPORTED)
     set_target_properties(Protobuf 
                           PROPERTIES IMPORTED_LOCATION 
-                          /usr/local/android/arm64/lib/libprotobuf.a)
+                          /usr/local/android/arm64/lib/libprotobuf.so)
     
     add_library(LibArchive STATIC IMPORTED)
     set_target_properties(LibArchive 
