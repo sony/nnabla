@@ -17,19 +17,23 @@ REM limitations under the License.
 REM Download bulit flatbuffers binary
 
 SET FLATC_PACKAGE=flatc-v2.0.0
-powershell "[Net.ServicePointManager]::SecurityProtocol +='tls12'; iwr %nnabla_iwr_options% -Uri https://github.com/google/flatbuffers/releases/download/v2.0.0/Windows.flatc.binary.zip -OutFile %FLATC_PACKAGE%.zip" || GOTO :error
 
-MD %FLATC_PACKAGE%
-CD %FLATC_PACKAGE%
-cmake -E tar xvzf ..\%FLATC_PACKAGE%.zip || GOTO :error
-
-MOVE flatc.exe %third_party_folder%
-CD ..
-
-DEL %FLATC_PACKAGE%.zip
-RMDIR /s /q %FLATC_PACKAGE%
-
+call :download_flatc_and_rename https://github.com/google/flatbuffers/releases/download/v2.0.0/Windows.flatc.binary.zip flatc.exe flatc_windows.exe
+call :download_flatc_and_rename https://github.com/google/flatbuffers/releases/download/v2.0.0/Mac.flatc.binary.zip flatc flatc_mac
+call :download_flatc_and_rename https://github.com/google/flatbuffers/releases/download/v2.0.0/Linux.flatc.binary.clang++-9.zip flatc flatc_linux
 exit /b
+
+:download_flatc_and_rename
+    powershell "[Net.ServicePointManager]::SecurityProtocol +='tls12'; iwr %nnabla_iwr_options% -Uri %1 -OutFile %FLATC_PACKAGE%.zip" || GOTO :error
+    ECHO downloading %3
+    MD %FLATC_PACKAGE%
+    CD %FLATC_PACKAGE%
+    cmake -E tar xvzf ..\%FLATC_PACKAGE%.zip || GOTO :error
+    MOVE %2 %third_party_folder%\%3
+    CD ..
+    DEL %FLATC_PACKAGE%.zip
+    RMDIR /s /q %FLATC_PACKAGE%
+    exit /b
 
 :error
 ECHO failed with error code %errorlevel%.

@@ -26,7 +26,12 @@ import sys
 
 
 random_seed = 0
-fn = 'flatc.exe' if sys.platform == 'win32' else 'flatc'
+if sys.platform == 'linux':
+    fn = 'flatc_linux'
+elif sys.platform == 'darwin':
+    fn = 'flatc_mac'
+else:
+    fn = 'flatc_windows.exe'
 flatc_path = os.path.join(os.path.dirname(__file__), fn)
 
 
