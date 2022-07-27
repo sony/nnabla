@@ -25,7 +25,7 @@ class DeepLabV3plus(SemanticSegmentation):
     DeepLabV3+.
 
     Args:
-        dataset(str): Specify a training dataset name from 'voc' or 'coco'. 
+        dataset(str): Specify a training dataset name from 'voc' or 'voc-coco'.
         output_stride(int): DeepLabV3 uses atrous (a.k.a. dilated) convolutions. The atrous rate depends on the output stride. the output stride has 
                      to be selected from 8 or 16. Default is 8. If the output_stride is 8 the atrous rate will be [12,24,36] 
                      and if the output_stride is 16 the atrous rate will be [6,12,18].
