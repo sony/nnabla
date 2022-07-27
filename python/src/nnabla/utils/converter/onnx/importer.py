@@ -409,6 +409,10 @@ def check_attr_int_type(attr, node):
         raise ValueError(
             f"Only INT is supported for {attr.name} in {node.op_type} op_type")
 
+def check_attr_ints_type(attr, node):
+    if attr.type != AttributeProto.INTS:
+        raise ValueError(
+            f"Only INTS is supported for {attr.name} in {node.op_type} op_type")
 
 def check_attr_string_type(attr, node):
     if attr.type != AttributeProto.STRING:
@@ -642,6 +646,8 @@ class OnnxImporter:
             "RandomNormalLike": self.RandomNormalLike,
             "RandomUniform": self.RandomUniform,
             "RandomUniformLike": self.RandomUniformLike,
+            "ReduceL1": partial(self.ReduceLp, "ReduceL1"),
+            "ReduceL2": partial(self.ReduceLp, "ReduceL2"),
         }
 
         # opset_7 table
@@ -3502,6 +3508,37 @@ class OnnxImporter:
             func.input.append(zero_point)
 
         self._shape_output[n.output[0]] = input_shape
+
+    def ReduceLp(self, func_name, func_list, n):
+        assert len(n.input) == 1
+        assert len(n.output) == 1
+
+        func = self.generate_default_function("Norm", n)
+        func_param = func.norm_param
+        if func_name == "ReduceL1":
+            func_param.p = 1.0
+        elif  func_name == "ReduceL2":
+            func_param.p = 2.0
+        for attr in n.attribute:
+            if attr.name == "axes":
+                check_attr_ints_type(attr, n)
+                func_param.axes.extend(attr.ints)
+            elif attr.name == "keepdims":
+                check_attr_int_type(attr, n)
+                func_param.keep_dims = bool(attr.i)
+
+        input_shape = self.get_func_input_shape(n.input[0])
+
+        if len(func_param.axes) == 0:
+            func_param.axes.extend(list(range(len(input_shape))))
+
+        if func_param.keep_dims:
+            output_shape = [1 if i in func_param.axes else input_shape[i]
+                            for i in range(len(input_shape))]
+        else:
+            output_shape = [input_shape[i] for i in range(
+                len(input_shape)) if i not in func_param.axes]
+        self._shape_output[n.output[0]] = output_shape
         func_list.append(func)
 
     def Celu(self, func_list, n):
