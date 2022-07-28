@@ -648,6 +648,7 @@ class OnnxImporter:
             "RandomUniformLike": self.RandomUniformLike,
             "ReduceL1": partial(self.ReduceLp, "ReduceL1"),
             "ReduceL2": partial(self.ReduceLp, "ReduceL2"),
+            "ReduceLogSumExp": self.ReduceLogSumExp,
         }
 
         # opset_7 table
@@ -4320,6 +4321,50 @@ class OnnxImporter:
 
         self._shape_output[out] = last_shape
         func_list.append(last_func)
+
+    def ReduceLogSumExp(self, func_list, n):
+        assert len(n.input) == 1
+        assert len(n.output) == 1
+
+        axes = []
+        keep_dims = False
+        for attr in n.attribute:
+            if attr.name == "axes":
+                check_attr_ints_type(attr, n)
+                axes.extend(attr.ints)
+            elif attr.name == "keepdims":
+                check_attr_int_type(attr, n)
+                keep_dims = bool(attr.i)
+
+        input_shape = self.get_func_input_shape(n.input[0])
+        if len(axes) == 0:
+            axes.extend(list(range(len(input_shape))))
+        if keep_dims:
+            reduced_shape = [1 if i in axes else input_shape[i]
+                            for i in range(len(input_shape))]
+        else:
+            reduced_shape = [input_shape[i] for i in range(
+                len(input_shape)) if i not in axes]
+
+         # Exp
+        expout_x = fork_name(n.input[0]) + "_exp"
+        exp_func = generate_unary("Exp", n.name, n.input[0], expout_x,
+                            self._graph.name, self._func_counter)
+        self._shape_output[expout_x] = input_shape
+        func_list.append(exp_func)
+
+        # Sum
+        sumout_x = fork_name(expout_x) + "_sum"
+        sum_func = generate_reduction("Sum", n.name, expout_x, sumout_x,
+                                axes, keep_dims, self._graph.name, self._func_counter)
+        self._shape_output[sumout_x] = reduced_shape
+        func_list.append(sum_func)
+
+        # Log
+        log_func = generate_unary("Log", n.name, sumout_x, n.output[0],
+                            self._graph.name, self._func_counter)
+        self._shape_output[n.output[0]] = reduced_shape
+        func_list.append(log_func)
 
     def convert_to_functions(self, n):
         ft = self._onnx_optype_to_nnabla_function_type.get(n.op_type)
