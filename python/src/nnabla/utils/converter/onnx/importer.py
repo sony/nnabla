@@ -718,6 +718,7 @@ class OnnxImporter:
             "Pad": partial(self.Pad, '11'),
             "CumSum": self.CumSum,
             "Range": self.Range,
+            "Det": self.Det,
         }
         if USE_ONNX_RESIZE:
             self.table_op_set_11["Resize"] = self.Resize_ONNXResize
@@ -4429,6 +4430,43 @@ class OnnxImporter:
             np.ceil((func_param.stop - func_param.start) / func_param.step), 0))
         self._shape_output[n.output[0]] = [number_of_elements]
         func_list.append(func)
+
+    def Det(self, func_list, n):
+        assert len(n.input) == 1
+        assert len(n.output) == 1
+
+        input_shape = self.get_func_input_shape(n.input[0])
+
+        # Reshape
+        reshape_out = fork_name(n.input[0]) + "_reshape"
+        if len(input_shape) == 2:
+            det_x_shape = [1] + input_shape
+        else:
+            batch_dims = input_shape[:-2]
+            matrix_dims = input_shape[-2:]
+            det_x_shape = [int(np.prod(batch_dims))] + matrix_dims
+        reshape_func0 = generate_reshape(n.name, n.input[0], reshape_out,
+            det_x_shape, self._graph.name, self._func_counter)
+        self._shape_output[reshape_out] = det_x_shape
+        func_list.append(reshape_func0)
+
+        # Det
+        det_func = self.generate_default_function("BatchDet", n)
+        det_out = fork_name(reshape_out) + "_det"
+        det_func.input[0] = reshape_out
+        det_func.output[0] = det_out
+        self._shape_output[det_out] = det_x_shape[:-2]
+        func_list.append(det_func)
+
+        # Reshape
+        if len(input_shape) == 2:
+            det_y_shape = []
+        else:
+            det_y_shape = batch_dims
+        reshape_func1 = generate_reshape(n.name, det_out, n.output[0],
+            det_y_shape, self._graph.name, self._func_counter)
+        self._shape_output[n.output[0]] = det_y_shape
+        func_list.append(reshape_func1)
 
     def convert_to_functions(self, n):
         ft = self._onnx_optype_to_nnabla_function_type.get(n.op_type)
