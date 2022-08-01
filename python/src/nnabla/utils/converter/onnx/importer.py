@@ -716,6 +716,7 @@ class OnnxImporter:
             "Clip": partial(self.Clip, 11),
             "Round": self.Round,
             "Pad": partial(self.Pad, '11'),
+            "CumSum": self.CumSum,
         }
         if USE_ONNX_RESIZE:
             self.table_op_set_11["Resize"] = self.Resize_ONNXResize
@@ -4365,6 +4366,32 @@ class OnnxImporter:
                             self._graph.name, self._func_counter)
         self._shape_output[n.output[0]] = reduced_shape
         func_list.append(log_func)
+
+    def CumSum(self, func_list, n):
+        assert len(n.input) == 2
+        assert len(n.output) == 1
+
+        func = self.generate_default_function("CumSum", n)
+        del func.input[1:]
+        func_param = func.cumsum_param
+        for attr in n.attribute:
+            if attr.name == "exclusive":
+                check_attr_int_type(attr, n)
+                func_param.exclusive = bool(attr.i)
+            elif attr.name == "reverse":
+                check_attr_int_type(attr, n)
+                func_param.reverse = bool(attr.i)
+
+        axis_types = [TensorProto.INT32, TensorProto.INT64]
+        axis_info = self.get_input_raw_data_with_info(n.input[1])
+        if axis_info is None:
+            raise ValueError("Not found axis")
+        assert axis_info.data_type in axis_types
+        assert len(axis_info.data) == 1
+        func_param.axis = int(axis_info.data[0])
+
+        self._shape_output[n.output[0]] = self.get_func_input_shape(n.input[0])
+        func_list.append(func)
 
     def convert_to_functions(self, n):
         ft = self._onnx_optype_to_nnabla_function_type.get(n.op_type)
