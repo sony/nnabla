@@ -717,6 +717,7 @@ class OnnxImporter:
             "Round": self.Round,
             "Pad": partial(self.Pad, '11'),
             "CumSum": self.CumSum,
+            "Range": self.Range,
         }
         if USE_ONNX_RESIZE:
             self.table_op_set_11["Resize"] = self.Resize_ONNXResize
@@ -4391,6 +4392,42 @@ class OnnxImporter:
         func_param.axis = int(axis_info.data[0])
 
         self._shape_output[n.output[0]] = self.get_func_input_shape(n.input[0])
+        func_list.append(func)
+
+    def Range(self, func_list, n):
+        assert len(n.input) == 3
+        assert len(n.output) == 1
+
+        func = self.generate_default_function("Arange", n)
+        func_param = func.arange_param
+
+        warning_types = [TensorProto.INT16, TensorProto.INT32, TensorProto.INT64]
+
+        start_info = self.get_input_raw_data_with_info(n.input[0])
+        if start_info is None:
+            raise ValueError("Not found start")
+        if start_info.data_type in warning_types:
+            logger.warning(
+                "ONNX Range with integer types is converted to " +
+                "nnabla Arange which only supports float types.")
+        assert len(start_info.data) == 1
+        func_param.start = start_info.data[0]
+
+        limit_info = self.get_input_raw_data_with_info(n.input[1])
+        if limit_info is None:
+            raise ValueError("Not found limit")
+        assert len(limit_info.data) == 1
+        func_param.stop = limit_info.data[0]
+
+        delta_info = self.get_input_raw_data_with_info(n.input[2])
+        if delta_info is None:
+            raise ValueError("Not found delta")
+        assert len(delta_info.data) == 1
+        func_param.step = delta_info.data[0]
+
+        number_of_elements = int(np.max(
+            np.ceil((func_param.stop - func_param.start) / func_param.step), 0))
+        self._shape_output[n.output[0]] = [number_of_elements]
         func_list.append(func)
 
     def convert_to_functions(self, n):
