@@ -76,6 +76,7 @@ def ref_stft(x, window_size, stride, fft_size, window_type, center, pad_mode, as
         # Use librosa.stft as the forward reference.
 
         # librosa.stft does not support batched input.
+        window_type = 'hann' if window_type == 'hanning' else window_type
         b = x.shape[0]
         ys = []
         for i in range(b):

@@ -39,6 +39,7 @@ def ref_istft(y_r, y_i, window_size, stride, fft_size, window_type, center, pad_
         length = x_shape[1]
 
         # librosa.istft does not support batched input.
+        window_type = 'hann' if window_type == 'hanning' else window_type
         b = y.shape[0]
         xs = []
         for i in range(b):
