@@ -22,7 +22,7 @@ REM :for VC2019
 REM cinst visualstudio2019-workload-vctools
 REM
 
-CALL %~dp0python_env.bat %1
+CALL %~dp0python_env.bat %1 || EXIT /b 255
 
 @ECHO ON
 SET VCVER=%2

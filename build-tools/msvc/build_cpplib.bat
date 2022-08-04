@@ -16,14 +16,19 @@ REM
 
 REM 
 REM Usage:
-REM   build_cpplib.bat [VISUAL_STUDIO_ EDITION]
-REM     (optional) VISUAL_STUDIO_ EDITION: 2015 or 2019(experimental)
+REM   build_cpplib.bat [PYTHON_VERSION] [VISUAL_STUDIO_EDITION]
+REM     (optional) PYTHON_VERSION: 3.7 or 3.8 or 3.9
+REM     (optional) VISUAL_STUDIO_EDITION: 2015 or 2019(experimental)
 REM
 @ECHO ON
 SETLOCAL
 
 REM Environment
-CALL %~dp0tools\env.bat 3.8 %1 || GOTO :error
+IF [%1] == [] (
+    CALL %~dp0tools\env.bat 3.8 %1 || GOTO :error
+) ELSE (
+    CALL %~dp0tools\env.bat %1 %2 || GOTO :error
+)
 SET third_party_folder=%nnabla_root%\third_party
 
 REM Build third party libraries.
