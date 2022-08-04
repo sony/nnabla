@@ -651,7 +651,7 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
         if default_context is None:
             logger.warn('Invalid context [{}]'.format(context))
         elif info.proto.HasField('global_config'):
-            info.global_config = _global_config(proto)
+            info.global_config = _global_config(info.proto)
             info.global_config.default_context = default_context
 
     if default_context is None:
