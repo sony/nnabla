@@ -723,6 +723,7 @@ class OnnxImporter:
             "CumSum": self.CumSum,
             "Range": self.Range,
             "Det": self.Det,
+            "ScatterND": self.ScatterND,
         }
         if USE_ONNX_RESIZE:
             self.table_op_set_11["Resize"] = self.Resize_ONNXResize
@@ -4473,6 +4474,79 @@ class OnnxImporter:
                                          det_y_shape, self._graph.name, self._func_counter)
         self._shape_output[n.output[0]] = det_y_shape
         func_list.append(reshape_func1)
+
+    def ScatterND(self, func_list, n):
+        assert len(n.input) == 3
+        assert len(n.output) == 1
+
+        data_shape = self.get_func_input_shape(n.input[0])
+        indices_shape = self.get_func_input_shape(n.input[1])
+        assert 0 not in indices_shape
+        updates_shape = self.get_func_input_shape(n.input[2])
+
+        reduction_values = ["none", "add", "mul"]
+        reduction = "none"
+        for attr in n.attribute:
+            if attr.name == "reduction":
+                check_attr_string_type(attr, n)
+                reduction = attr.s.decode("utf-8")
+                if reduction not in reduction_values:
+                    raise ValueError("Invalid reduction value: {}".format(reduction))
+                if reduction == "mul":
+                    raise ValueError("Unsupported reduction type: mul")
+
+        # Reshape
+        if len(indices_shape) == 1:
+            # Convert 1D indices to 2D
+            # because nnabla ScatterNd does not support 1D indices.
+
+            # reshape indices: [*] -> [1, *]
+            indices_shape = [1] + indices_shape
+            indices = fork_name(n.input[1]) + "_reshape"
+            reshape_indices_func = generate_reshape(
+                n.name, n.input[1], indices, indices_shape, self._graph.name, self._func_counter)
+            self._shape_output[indices] = indices_shape
+            func_list.append(reshape_indices_func)
+
+            # reshape updates: [*] -> [1, *]
+            updates_shape = [1] + updates_shape
+            updates = fork_name(n.input[2]) + "_reshape"
+            reshape_updates_func = generate_reshape(
+                n.name, n.input[2], updates, updates_shape, self._graph.name, self._func_counter)
+            self._shape_output[updates] = updates_shape
+            func_list.append(reshape_updates_func)
+        else:
+            indices = n.input[1]
+            updates = n.input[2]
+
+        # Transpose indices: [D1, D2, ..., Dn, M] -> [M, D1, D2, ..., Dn]
+        transposed_indices = fork_name(indices) + "_transpose"
+        axes = np.roll(np.arange(len(indices_shape)), 1)
+        trans_func = generate_transpose(n.name, indices, transposed_indices,
+                                        axes, self._graph.name, self._func_counter)
+        self._shape_output[transposed_indices] = np.roll(indices_shape, 1)
+        func_list.append(trans_func)
+
+        # Identity
+        # nnabla ScatterNd updates a variable passed as parameter `out`,
+        # so this code passes a copy of the variable to preserve ONNX semantics.
+        identity_out = fork_name(n.input[0]) + "_identity"
+        identity_func = self.generate_default_function("Identity", n)
+        identity_func.input[0] = n.input[0]
+        identity_func.output[0] = identity_out
+        self._shape_output[identity_out] = data_shape
+        func_list.append(identity_func)
+
+        # ScatterND
+        scatter_func = self.generate_default_function("ScatterNd", n)
+        scatter_param = scatter_func.scatter_nd_param
+        del scatter_func.input[:]
+        scatter_func.input.extend([updates, transposed_indices, identity_out])
+        scatter_func.output[0] = n.output[0]
+        scatter_param.shape.extend(data_shape)
+        scatter_param.add = (reduction == "add")
+        self._shape_output[n.output[0]] = data_shape
+        func_list.append(scatter_func)
 
     def convert_to_functions(self, n):
         ft = self._onnx_optype_to_nnabla_function_type.get(n.op_type)
