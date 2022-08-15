@@ -665,3 +665,12 @@ NonZero:
 Unique:
   float: [float]
   half: [Half]
+EyeLike:
+  float: [float]
+  half: [Half]
+Mod2:
+  float: [float]
+  half: [Half]
+BitShift:
+  float: [float]
+  half: [Half]

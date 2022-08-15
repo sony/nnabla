@@ -8144,3 +8144,81 @@ Unsupported, Special Use:
     c_runtime: not support
     function_ids:
       BiBBBB: 358
+  EyeLike:
+    snake_name: eye_like
+    doc: |2
+
+      Generate a 2-D array with ones on the diagonal, specified by `k`, and zeros elsewhere.
+      The shape of the output array is the same as the input array.
+    inputs:
+      x:
+        doc: A 2-D array.
+    arguments:
+      k:
+        doc: Index of the diagonal. The default value 0 means the main diagonal, a
+          positive value means an upper diagonal, and a negative value means a lower
+          diagonal.
+        type: int64
+        default: '0'
+    outputs:
+      y:
+        doc: A 2-D array.
+    c_runtime: not support
+    function_ids:
+      i: 354
+  Mod2:
+    snake_name: mod2
+    doc: |2
+
+      Element-wise remainder function.
+      The behavior of this opeator is determined by x0's dtype and the `fmod` argument:
+
+      .. math::
+          y_i = \left\{
+          \begin{array}{ll}
+            \text{numpy.fmod}(x_{0,i}, x_{1,i})
+              & (x_{0} \text{has a floating-point type or fmod is True})\\
+            \text{numpy.mod}(x_{0,i}, x_{1,i})
+              & (\text{otherwise})
+          \end{array} \right..
+    inputs:
+      x0:
+        doc: A N-D array.
+      x1:
+        doc: A N-D array.
+    arguments:
+      fmod:
+        doc: If True, this operator behaves like numpy.fmod, otherwise it behaves
+          like numpy.mod.
+        type: bool
+        default: 'False'
+    outputs:
+      y:
+        doc: A N-D array.
+    c_runtime: not support
+    function_ids:
+      B: 355
+  BitShift:
+    snake_name: bit_shift
+    doc: |2
+
+      Element-wise bit shift function.
+    inputs:
+      x:
+        doc: A N-D array. Its dtype must be one of the unsigned integer types.
+      shift:
+        doc: A N-D array. Its dtype is casted to x's dtype at run-time.
+    arguments:
+      direction:
+        doc: Direction of bit shift.
+        type: string
+        available_values:
+        - LEFT
+        - RIGHT
+        default: '''LEFT'''
+    outputs:
+      y:
+        doc: A N-D array.
+    c_runtime: not support
+    function_ids:
+      i: 356

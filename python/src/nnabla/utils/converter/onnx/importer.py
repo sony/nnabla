@@ -699,6 +699,7 @@ class OnnxImporter:
             "OneHot": self.OneHot,
             "Scatter": self.ScatterElements_13,
             "Erf": partial(self.GeneralOperator, 'Erf'),
+            "EyeLike": self.EyeLike,
         }
         self.table_op_set_9 = dict(self.table_op_set_7, **self.table_op_set_9)
 
@@ -711,6 +712,7 @@ class OnnxImporter:
             "DequantizeLinear": self.DequantizeLinear,
             "TopK": self.TopK,
             "NonMaxSuppression": self.NonMaxSuppression,
+            "Mod": self.Mod2,
         }
         self.table_op_set_10 = dict(
             self.table_op_set_9, **self.table_op_set_10)
@@ -725,6 +727,7 @@ class OnnxImporter:
             "Det": self.Det,
             "ScatterND": self.ScatterND,
             "Unique": self.Unique,
+            "BitShift": self.BitShift,
         }
         if USE_ONNX_RESIZE:
             self.table_op_set_11["Resize"] = self.Resize_ONNXResize
@@ -1438,8 +1441,10 @@ class OnnxImporter:
         self._shape_output[func.output[0]] = self._shape_output[bout]
         func_list.append(func)
 
-    def BroadcastOperator_9(self, func_name, func_list, n):
+    def BroadcastOperator_9(self, func_name, func_list, n, attr_callback = None):
         func = self.generate_default_function(func_name, n)
+        if attr_callback is not None:
+            attr_callback(func, n)
         # NNabla can only process two inputs for max/min.
         # Check if this is fulfilled.
         if len(n.input) != 2:
@@ -4617,6 +4622,52 @@ class OnnxImporter:
         for o, s in zip(func.output, outputs_shape):
             self._shape_output[o] = s
         func_list.append(func)
+
+
+    def EyeLike(self, func_list, n):
+        # Get inputs
+        assert len(n.input) == 1 and len(n.output) == 1
+        input_shape = self.get_func_input_shape(n.input[0])
+        assert len(input_shape) == 2
+
+        # Get attributes
+        k = 0
+        for attr in n.attribute:
+            if attr.name == "k":
+                k = attr.i
+            elif attr.name == "dtype":
+                # ignore dtype attribute
+                pass
+            else:
+                unsupported_attribute(attr.name, n)
+
+        # EyeLike
+        func = self.generate_default_function("EyeLike", n)
+        func_param = func.eye_like_param
+        func_param.k = k
+        self._shape_output[n.output[0]] = input_shape
+        func_list.append(func)
+
+    def Mod2(self, func_list, n):
+        def mod2_attr_callback(func, n):
+            func_param = func.mod2_param
+            for attr in n.attribute:
+                if attr.name == "fmod":
+                    func_param.fmod = bool(attr.i)
+                else:
+                    unsupported_attribute(attr.name, n)
+        self.BroadcastOperator_9("Mod2", func_list, n, mod2_attr_callback)
+
+    def BitShift(self, func_list, n):
+        def bitshift_attr_callback(func, n):
+            func_param = func.bit_shift_param
+            for attr in n.attribute:
+                if attr.name == "direction":
+                    func_param.direction = attr.s.decode("utf-8")
+                else:
+                    unsupported_attribute(attr.name, n)
+            assert func_param.direction in ["RIGHT", "LEFT"]
+        self.BroadcastOperator_9("BitShift", func_list, n, bitshift_attr_callback)
 
     def convert_to_functions(self, n):
         ft = self._onnx_optype_to_nnabla_function_type.get(n.op_type)

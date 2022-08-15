@@ -299,3 +299,6 @@
   ONNXNonMaxSuppression_iiff: 353
   ONNXResize_fFfFiIiififi: 352
   Unique_BiBBBB: 358
+  EyeLike_i: 354
+  Mod2_B: 355
+  BitShift_i: 356
