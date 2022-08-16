@@ -696,6 +696,7 @@ class OnnxImporter:
             "NonZero": self.NonZero,
             "OneHot": self.OneHot,
             "Scatter": self.ScatterElements_13,
+            "Erf": partial(self.GeneralOperator, 'Erf'),
         }
         self.table_op_set_9 = dict(self.table_op_set_7, **self.table_op_set_9)
 
