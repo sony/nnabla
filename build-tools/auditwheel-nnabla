@@ -39,6 +39,23 @@ then
         cat $WHEEL | sed "s/-linux_/$TAG/g" > $WHEEL.bak && mv $WHEEL.bak $WHEEL
     done
 
+    INCLUDE_CUDA_CUDNN_LIB_IN_WHL=$2
+    if [[ "$INCLUDE_CUDA_CUDNN_LIB_IN_WHL" == "True" ]]; then
+        NNABLA_EXT_SO=$(find . -name *libnnabla_cuda*.so)
+        LIBDIR=$(cd $(dirname $NNABLA_EXT_SO) && pwd)
+        NNABLA_EXT_SO=$(basename $NNABLA_EXT_SO)
+        cd $LIBDIR
+        find *.so* | while read SOFILE
+        do
+            if [[ "$SOFILE" = *"libcudnn_"* ]]; then
+                patchelf --add-needed $SOFILE $NNABLA_EXT_SO
+                patchelf --set-rpath '$ORIGIN' $NNABLA_EXT_SO
+                echo "Add dependency $SOFILE to $NNABLA_EXT_SO"
+            fi
+        done
+        cd $TMPDIR
+    fi
+
     echo "Creating $OUTPUT"
     zip -q -r $ABSDIR/$OUTPUT *
 fi
