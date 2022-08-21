@@ -17,8 +17,8 @@ CUDA vs cuDNN Compatibility
 ================== ============ =====================
 Package name       CUDA version cuDNN version
 ================== ============ =====================
-nnabla-ext-cuda102 10.2         8.0(Linux & Win)
-nnabla-ext-cuda110 11.0         8.0(Linux & Win)
+nnabla-ext-cuda110 11.0.3       8.0(Linux & Win)
+nnabla-ext-cuda114 11.4.3       8.0(Linux & Win)
 ================== ============ =====================
 
 The latest CUDA version is always preferred if your GPU accepts.
@@ -50,11 +50,11 @@ For example, if you think GeForce RTX 3070 and GeForce RTX 3090 are usable, you 
 Installation
 ------------
 
-The following is an example of installing the extension for CUDA 10.2
+The following is an example of installing the extension for CUDA 11.0.3
 
 .. code-block:: bash
 
-	pip install nnabla-ext-cuda102
+	pip install nnabla-ext-cuda110
 
 and check if all works.
 
@@ -68,7 +68,7 @@ and check if all works.
   2018-06-26 15:20:36,257 [nnabla][INFO]: Initializing CUDA extension...
   2018-06-26 15:20:36,257 [nnabla][INFO]: Initializing cuDNN extension...
 
-**Note**: If you want to make sure the latest version will be installed, try to uninstall previously installed one with ``pip uninstall -y nnabla nnabla-ext-cuda102`` beforehand.
+**Note**: If you want to make sure the latest version will be installed, try to uninstall previously installed one with ``pip uninstall -y nnabla nnabla-ext-cuda110`` beforehand.
 
 
 .. _pip-installation-distributed:
@@ -86,10 +86,8 @@ CUDA vs cuDNN Compatibility
 =================================== ============ =============
 Package name                        CUDA version cuDNN version
 =================================== ============ =============
-nnabla-ext-cuda102-nccl2-mpi2-1-1   10.2         8.0
-nnabla-ext-cuda102-nccl2-mpi3-1-6   10.2         8.0
-nnabla-ext-cuda110-nccl2-mpi2-1-1   11.0         8.0
-nnabla-ext-cuda110-nccl2-mpi3-1-6   11.0         8.0
+nnabla-ext-cuda110                  11.0.3       8.0
+nnabla-ext-cuda114                  11.4.3       8.0
 =================================== ============ =============
 
 You can install as the following.
@@ -97,7 +95,7 @@ You can install as the following.
 .. code-block:: bash
 
   pip install nnabla
-  pip install nnabla-ext-cuda100-nccl2-mpi2-1-1
+  pip install nnabla-ext-cuda110
 
 
 If you already installed NNabla, uninstall all of it, or start from a clean environment which you create using Anaconda, venv.
@@ -111,7 +109,7 @@ If you are using Ubuntu18.04 and choose mpi2.1.1, you can install mpi with follo
 
   sudo apt install -y --no-install-recommends openmpi-bin libopenmpi-dev
 
-Otherwise, you must install openmpi with following command.(MPIVER=3.1.6 or 2.1.1)
+Otherwise, you must install openmpi with following command.(MPIVER=3.1.6 or 4.1.3)
 
 .. code-block:: bash
 
@@ -154,6 +152,6 @@ Following is a sample error message.
 .. code-block:: bash
 
   [nnabla][INFO]: Initializing CPU extension...
-  Please install CUDA version 10.2.
+  Please install CUDA version 11.0.3.
     and cuDNN version 8.0
     Or install correct nnabla-ext-cuda for installed version of CUDA/cuDNN.
