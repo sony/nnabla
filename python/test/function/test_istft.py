@@ -230,4 +230,4 @@ def test_stft_istft_identity(ctx, window_size, stride, fft_size, window_type, ce
                     window_type, center, pad_mode="constant")
     z.forward()
 
-    assert(np.allclose(x.d, z.d, atol=1e-5, rtol=1e-5))
+    assert (np.allclose(x.d, z.d, atol=1e-5, rtol=1e-5))

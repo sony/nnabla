@@ -1108,7 +1108,7 @@ class TestRecomputation():
                      [False, False],  # After F.sin(x0) backward
                     ]
 
-        assert(ref_flags == act_flags)
+        assert (ref_flags == act_flags)
 
     # Test unnecessary recomputation with single recomputation recursion.
     def test_unnecessary_traverse_0(self):
@@ -1124,15 +1124,15 @@ class TestRecomputation():
         # Check whether unnecessary recomputation for `a1.data` is performed.
 
         c.forward(clear_no_need_grad=True)
-        assert(a1.data.clear_called == True)
-        assert(b1.data.clear_called == True)
+        assert (a1.data.clear_called == True)
+        assert (b1.data.clear_called == True)
 
         # Exec backward without clearing buffer to check whether recomputation is performed by seeing `clear_called` flag.
         c.backward(clear_buffer=False)
         # a1.data is still cleared. (Recalculation is not performed)
-        assert(a1.data.clear_called == True)
+        assert (a1.data.clear_called == True)
         # b1.data is set. (Recalculation is performed)
-        assert(b1.data.clear_called == False)
+        assert (b1.data.clear_called == False)
 
     # Test recomputation recursion depth.
     def test_unnecessary_traverse_1(self):
@@ -1151,13 +1151,13 @@ class TestRecomputation():
 
         c.forward(clear_buffer=False)
         # `a1.data` is cleared because `recompute` flag is `true`.
-        assert(a1.data.clear_called == True)
+        assert (a1.data.clear_called == True)
         # `a2.data` is not cleared because `recompute` flag is `false`.
-        assert(a2.data.clear_called == False)
+        assert (a2.data.clear_called == False)
         c.backward(clear_buffer=False)
         # If the recursive call reached to `a1`, `a1.data` should be set by recomputation.
         # However, the recursive call stops at `a2` whose data is not cleared.
-        assert(a1.data.clear_called == True)
+        assert (a1.data.clear_called == True)
 
     # Test unnecessary recomputation for whole graph.
     def test_unnecessary_traverse_2(self):

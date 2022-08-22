@@ -80,8 +80,8 @@ def resolve_file_format(args, import_files, export_file=None):
         elif output_ext == '':
             logger.warning(
                 "The export file format is 'CSRC' or 'SAVED_MODEL' that argument '--export-format' will have to be set!!!")
-            assert(args.export_format ==
-                   'CSRC' or args.export_format == 'SAVED_MODEL')
+            assert (args.export_format ==
+                    'CSRC' or args.export_format == 'SAVED_MODEL')
     else:
         args.export_format = ''
 
