@@ -347,7 +347,7 @@ def tile_images(data, padsize=1, padval=0):
         tile_image (~numpy.ndarray): A tile image.
 
     """
-    assert(data.ndim == 4)
+    assert (data.ndim == 4)
     data = data.transpose(0, 2, 3, 1)
 
     # force the number of filters to be square

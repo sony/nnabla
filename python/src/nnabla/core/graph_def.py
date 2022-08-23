@@ -605,7 +605,7 @@ class ProtoNetwork:
                 inputs = pf.inputs
                 outputs = pf.outputs
                 if pf.type == "RepeatStart":
-                    assert(len(pf.inputs) == 2)
+                    assert (len(pf.inputs) == 2)
                     if variable_index[-1] == 0:
                         input_names = [
                             inputs[0] if inputs[0] in variable_names else inputs[0] + variable_low_level_name]
@@ -613,7 +613,7 @@ class ProtoNetwork:
                         input_names = [inputs[1] + variable_low_level_name + '_{}[{}]'.format(
                             pf.repeat_param.repeat_id, variable_index[-1] - 1)]
                 elif pf.type == "RepeatEnd":
-                    assert(len(pf.inputs) == 1)
+                    assert (len(pf.inputs) == 1)
                     times = self.repeat_info[pf.repeat_param.repeat_id]
                     input_names = [inputs[0] + variable_index_name +
                                    '_{}[{}]'.format(pf.repeat_param.repeat_id, times - 1)]

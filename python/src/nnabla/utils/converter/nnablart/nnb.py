@@ -53,7 +53,7 @@ class NnbExporter:
         index = len(self._memory_index)
         pointer = sum(self._memory_index)
         self._memory_index.append(len(self._memory_data))
-        assert(len(data) <= size)
+        assert (len(data) <= size)
         self._memory_data += data
         self._memory_data += b'\0' * (self._align(len(data)) - len(data))
         return (index, pointer)
