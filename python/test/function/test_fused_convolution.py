@@ -58,7 +58,7 @@ class RefFusedConvolutionGraph(object):
             inputs['z'] = zvar
 
         spatial_dims = xvar.ndim - (base_axis + 1)
-        assert(len(pad) == spatial_dims or len(pad) == 2 * spatial_dims)
+        assert (len(pad) == spatial_dims or len(pad) == 2 * spatial_dims)
         if len(pad) == spatial_dims:
             pad_width = tuple(p for _ in range(2) for p in pad)
         else:  # if len(pad) == 2 * spatial_dims:

@@ -43,9 +43,8 @@ def test_random_crop_forward_backward(seed, inshape, shape, ctx, func_name):
         possible_crop_range = [
             input - output for output, input in zip(shape, inshape)]
         for crop_pos in itertools.product(*map(tuple, map(lambda x: range(*x), [(0, r + 1) for r in possible_crop_range]))):
-            r = inputs[0][crop_pos[0]:crop_pos[0] + shape[0], crop_pos[1]
-                :crop_pos[1] + shape[1], crop_pos[2]:crop_pos[2] + shape[2]]
-            assert(o.d.shape == r.shape)
+            r = inputs[0][crop_pos[0]:crop_pos[0] + shape[0], crop_pos[1]                          :crop_pos[1] + shape[1], crop_pos[2]:crop_pos[2] + shape[2]]
+            assert (o.d.shape == r.shape)
             correl_and_p = pearsonr(o.d.flatten(), r.flatten())
             if correl_and_p[0] > max_correl:
                 max_correl = correl_and_p[0]

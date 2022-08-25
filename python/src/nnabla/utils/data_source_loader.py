@@ -304,7 +304,7 @@ def load_image_imread(file, shape=None, max_range=1.0):
             out_height, out_width, out_n_color = height, width, 1
         else:
             out_n_color, out_height, out_width = shape
-        assert(out_n_color == 1)
+        assert (out_n_color == 1)
         if out_height != height or out_width != width:
             # imresize returns 0 to 255 image.
             orig_img = imresize(orig_img, (out_height, out_width))
@@ -315,7 +315,7 @@ def load_image_imread(file, shape=None, max_range=1.0):
             out_height, out_width, out_n_color = height, width, n_color
         else:
             out_n_color, out_height, out_width = shape
-        assert(out_n_color == n_color)
+        assert (out_n_color == n_color)
         if out_height != height or out_width != width or out_n_color != n_color:
             # imresize returns 0 to 255 image.
             orig_img = imresize(orig_img, (out_height, out_width, out_n_color))

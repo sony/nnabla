@@ -55,7 +55,7 @@ def ref_inq_affine(x, w, i, b, base_axis, num_bits,
         i = np.ones_like(i)
     elif 0 in inq_iterations:
         # only `largest_abs` is deterministic and currently tested
-        assert(selection_algorithm == 'largest_abs')
+        assert (selection_algorithm == 'largest_abs')
         idx_var = np.flatnonzero(i == 0)
         idx_newfix = idx_var[np.argsort(
             np.abs(w.ravel()[idx_var]))[-(len(idx_var) // 2):]]
@@ -86,7 +86,7 @@ def ref_grad_inq_affine(x, w, i, b, dy, base_axis, num_bits,
         i = np.ones_like(i)
     elif 0 in inq_iterations:
         # only `largest_abs` is deterministic
-        assert(selection_algorithm == 'largest_abs')
+        assert (selection_algorithm == 'largest_abs')
         idx_var = np.flatnonzero(i == 0)
         idx_newfix = idx_var[np.argsort(
             np.abs(w.ravel()[idx_var]))[-(len(idx_var) // 2):]]

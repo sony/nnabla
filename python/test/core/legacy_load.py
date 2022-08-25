@@ -118,7 +118,7 @@ def _create_function(ctx, network, f, variable_index):
 
     if f.type == "RepeatStart":
         # RepeatStart takes input variable and t-1 variable
-        assert(len(f.input) == 2)
+        assert (len(f.input) == 2)
         if variable_index[-1] == 0:
             # Input variable if t == 0
             input_variable_names = [f.input[0] if f.input[
@@ -129,7 +129,7 @@ def _create_function(ctx, network, f, variable_index):
                                     '_' + f.repeat_param.repeat_id + '[' + str(variable_index[-1] - 1) + ']']
 
     elif f.type == "RepeatEnd":
-        assert(len(f.input) == 1)
+        assert (len(f.input) == 1)
         input_variable_names = [f.input[0] + variable_index_name + '_' +
                                 f.repeat_param.repeat_id + '[' + str(f.repeat_param.times - 1) + ']']
 
@@ -143,12 +143,13 @@ def _create_function(ctx, network, f, variable_index):
                                 variable_index_low_level_name for v_name in f.input]
 
     elif f.type == "RecurrentOutput":
-        assert(len(f.input) == 1)
+        assert (len(f.input) == 1)
         input_variable_names = [f.input[0] + variable_index_name + '_' + f.recurrent_param.repeat_id +
                                 '[' + str(v_index) + ']' for v_index in range(f.recurrent_param.length)]
 
     elif f.type == "Delay":
-        assert(len(f.input) == 2)  # Delay takes t-1 variable and initial value
+        # Delay takes t-1 variable and initial value
+        assert (len(f.input) == 2)
         if variable_index[-1] == 0:
             # Initial value if t == 0
             input_variable_names = [f.input[1] if f.input[
@@ -170,8 +171,8 @@ def _create_function(ctx, network, f, variable_index):
     inputs = [network.variables[v_name] for v_name in input_variable_names]
 
     if f.type == "RecurrentInput":
-        assert(len(inputs) == 1)
-        assert(len(f.output) == 1)
+        assert (len(inputs) == 1)
+        assert (len(f.output) == 1)
         output_variable_names = [f.output[0] + variable_index_low_level_name + '_' + f.recurrent_param.repeat_id + '[' + str(v_index) + ']'
                                  for v_index in range(inputs[0].shape[f.recurrent_param.axis])]
     else:

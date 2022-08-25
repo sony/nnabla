@@ -200,8 +200,8 @@ class Network:
             for func in list(self.functions.values()):
                 # remove identity layer
                 if func.function_instance.name[0:8] == "Identity" and not func.persistent:
-                    assert(len(func.inputs) == 1)
-                    assert(len(func.outputs) == 1)
+                    assert (len(func.inputs) == 1)
+                    assert (len(func.outputs) == 1)
                     # if the identity function is not terminal (keep terminal
                     # identity function)
                     if func.outputs[0] in self.variable_outputs:
