@@ -4100,6 +4100,23 @@ Math:
     function_ids:
       Empty: 183
     c_runtime: not support
+  Erf:
+    snake_name: erf
+    doc: |2
+
+      Element-wise Error function.
+
+      .. math::
+          y_i = \text{erf} (x_i)
+    inputs:
+      x:
+        doc: N-D array
+    outputs:
+      y:
+        doc: N-D array with the same shape as x
+    c_runtime: not support
+    function_ids:
+      Empty: 349
 Array Manipulation:
   Concatenate:
     snake_name: concatenate
