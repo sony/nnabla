@@ -176,6 +176,7 @@ int main(int argc, char *argv[]) {
   std::cout << std::endl;
   std::cout << "Prediction: " << prediction << std::endl;
 
+  // This can only be called at the final point of nnabla session.
   nbla::SingletonManager::clear();
   return 0;
 }
