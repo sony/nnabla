@@ -38,6 +38,8 @@ public:
       DlpackArray::borrow must be done to complete the construction.
    */
   DlpackArray(const Size_t size, dtypes dtype, const Context &ctx);
+  DlpackArray(const Size_t size, dtypes dtype, const Context &ctx,
+              const AllocatorMemoryPtr mem, const Size_t offset);
   virtual ~DlpackArray();
   void borrow(DLManagedTensor *dlp);
 

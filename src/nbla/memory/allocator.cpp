@@ -20,7 +20,7 @@ namespace nbla {
 Allocator::Allocator() {}
 Allocator::~Allocator() {}
 
-AllocatorMemory Allocator::alloc(size_t bytes, const string &device_id) {
+AllocatorMemoryPtr Allocator::alloc(size_t bytes, const string &device_id) {
   // Ensuring at least 1 byte. Workaround while knowing that it's in efficient.
   std::lock_guard<std::mutex> lock(mutex_);
   bytes = std::max(bytes, (size_t)1);
@@ -31,7 +31,7 @@ AllocatorMemory Allocator::alloc(size_t bytes, const string &device_id) {
     callback_->on_alloc(mem->bytes(), mem->device_id());
   }
   // NOTE: Allocator is always instantiated as a shared_ptr.
-  return AllocatorMemory(mem, this->shared_from_this());
+  return make_shared<AllocatorMemory>(mem, this->shared_from_this());
 }
 void Allocator::free(shared_ptr<Memory> memory) {
   std::lock_guard<std::mutex> lock(mutex_);

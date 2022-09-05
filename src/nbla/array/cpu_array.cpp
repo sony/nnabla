@@ -23,14 +23,13 @@
 
 namespace nbla {
 
-CpuArray::CpuArray(const Size_t size, dtypes dtype, const Context &ctx)
-    : Array::Array(size, dtype, ctx,
-                   SingletonManager::get<Cpu>()->naive_allocator()->alloc(
-                       Array::size_as_bytes(size, dtype), "")) {}
-
 CpuArray::CpuArray(const Size_t size, dtypes dtype, const Context &ctx,
-                   AllocatorMemory &&mem)
-    : Array::Array(size, dtype, ctx, std::move(mem)) {}
+                   const AllocatorMemoryPtr mem, const Size_t offset)
+    : Array::Array(size, dtype, ctx,
+                   mem ? mem
+                       : SingletonManager::get<Cpu>()->naive_allocator()->alloc(
+                             Array::size_as_bytes(size, dtype), ""),
+                   offset) {}
 
 CpuArray::~CpuArray() {}
 
@@ -50,10 +49,13 @@ NBLA_DEFINE_FUNC_FILL(CpuArray, cpu_fill, cpu);
 // CpuCachedArray implementation
 /////////////////////////////////
 CpuCachedArray::CpuCachedArray(const Size_t size, dtypes dtype,
-                               const Context &ctx)
+                               const Context &ctx, const AllocatorMemoryPtr mem,
+                               const Size_t offset)
     : CpuArray(size, dtype, ctx,
-               SingletonManager::get<Cpu>()->caching_allocator()->alloc(
-                   Array::size_as_bytes(size, dtype), "")) {}
+               mem ? mem
+                   : SingletonManager::get<Cpu>()->caching_allocator()->alloc(
+                         Array::size_as_bytes(size, dtype), ""),
+               offset) {}
 
 CpuCachedArray::~CpuCachedArray() {}
 

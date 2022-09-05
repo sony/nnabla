@@ -18,6 +18,8 @@
 #include <nbla/singleton_manager-internal.hpp>
 #include <nbla/synced_array.hpp>
 
+#include <algorithm>
+
 #ifdef ENABLE_SYNC_DEBUG
 #include <cstdlib>
 static bool sync_debug_enabled() {
@@ -50,14 +52,91 @@ static bool sync_debug_enabled() {
 #endif
 
 namespace nbla {
-// Constructor
-SyncedArray::SyncedArray(const Size_t size)
-    : head_{"", "", dtypes::FLOAT}, zeroing_(false), filling_(false),
-      modification_count_(0), clear_called_(false) {
-  size_ = size;
+// Array classes in the same array group are identified in SyncedArray.
+inline string create_key(const dtypes &dtype, const Context &ctx) {
+  return ctx.device_id + ":" + ArrayGroup::get_group(ctx.array_class) + ":" +
+         dtype_to_string(dtype);
 }
 
-SyncedArray::~SyncedArray() {}
+inline string create_key(const string &parent_key, const Size_t offset,
+                         const Size_t size) {
+  return parent_key + ":" + to_string(offset) + ":" + to_string(size);
+}
+
+// Constructor
+SyncedArray::SyncedArray(const Size_t size)
+    : head_{"", "", dtypes::FLOAT}, zeroing_lazy_eval_(true),
+      filling_lazy_eval_(false), zeroing_(false), size_(size), offset_(0),
+      modification_count_(0), clear_called_(false), parent_(nullptr) {}
+
+SyncedArray::SyncedArray(SyncedArrayPtr parent, const Size_t size,
+                         const Size_t offset)
+    : head_{"", "", dtypes::FLOAT}, zeroing_lazy_eval_(false),
+      filling_lazy_eval_(false), zeroing_(false), size_(size), offset_(offset),
+      modification_count_(0), clear_called_(false), parent_(parent) {
+
+  auto begin = offset_;
+  auto end = begin + size_ - 1;
+
+  for (auto child : parent_->children_) {
+    if (auto c = child.lock()) {
+      auto c_begin = c->offset_;
+      auto c_end = c_begin + c->size_ - 1;
+
+      NBLA_CHECK(c_end < begin || end < c_begin, error_code::not_implemented,
+                 "Currently, it is not possible to create Child-Array(narrowed "
+                 "Array) that has overlapped areas.");
+    }
+  }
+
+  // NOTE: If parent-SyncedArray has called sync() at least once,
+  // ArrayCreator::create() is not lazily evaluated. The reason for not creating
+  // it on lazy evaluation is that SyncedArray::dtype() depends on head_, so it
+  // must be updated to keep up with changes in the parent. If only head_ is
+  // updated first, there will be no Array in array_ even though head_ exists.
+  if (parent->has_head_array()) {
+    create_array_from_parent();
+  }
+}
+
+SyncedArray::~SyncedArray() {
+  if (is_child()) {
+    parent_->remove_child(this);
+    parent_ = nullptr;
+  }
+}
+
+void SyncedArray::create_array_from_parent() {
+  ArrayDesc desc(parent_->head_);
+  desc.key = create_key(desc.key, offset_, size_);
+  head_ = desc;
+
+  array_[desc.key] = std::make_pair(
+      shared_ptr<Array>(ArrayCreator::create(
+          size_, desc.dtype, parent_->head_array()->context(),
+          parent_->head_array_sp()->memory(), (parent_->offset() + offset_))),
+      false);
+}
+
+void SyncedArray::create_array_descendants() {
+  for (auto child : children_) {
+    if (auto c = child.lock()) {
+      if (!c->has_head_array()) {
+        c->create_array_from_parent();
+        c->create_array_descendants();
+      }
+    }
+  }
+}
+
+SyncedArrayPtr SyncedArray::narrow(const Size_t narrow_size,
+                                   const Size_t offset) {
+  auto child =
+      make_shared<SyncedArray>(shared_from_this(), narrow_size, offset);
+
+  children_.emplace_back(weak_ptr<SyncedArray>(child));
+  return child;
+}
 
 Array *SyncedArray::cast(dtypes dtype, const Context &ctx, bool write_only,
                          const int async_flags) {
@@ -66,20 +145,54 @@ Array *SyncedArray::cast(dtypes dtype, const Context &ctx, bool write_only,
 
 shared_ptr<Array> SyncedArray::cast_sp(dtypes dtype, const Context &ctx,
                                        bool write_only, const int async_flags) {
+  if (is_child()) {
+    auto root_key = get_root()->head_.key;
+    auto filtered_ctx = ArrayCreator::filter_context(ctx);
+    auto created_key = create_key(dtype, filtered_ctx);
+
+    // If root has never been called sync(), it is created with the current
+    // context by sync().
+    // So it is not cast of different type and is not an error.
+    NBLA_CHECK(
+        root_key == created_key || !get_root()->has_head_array(),
+        error_code::runtime,
+        "cast of child-arrays is not permitted ( '%s' cannot convert to %s)",
+        root_key.c_str(), created_key.c_str());
+  }
+
   // This array is created at first time.
   const bool first_creation = (get_num_arrays() == 0);
 
   // 1. Create an array and/or synchronize with the head.
+  auto prev_key = head_.key;
   head_ = sync(dtype, ctx, write_only, async_flags); // cast() changes head.
+
   // 2. Clear all previous arrays.
+  if (has_family()) {
+    // Re-create all child-array since different type cast has been called for
+    // root-array.
+    if ((head_.key != prev_key) && is_root()) {
+      clear_all_array_descendants(false);
+      create_array_descendants();
+    } else {
+      auto root = get_root();
+      auto head_array = root->array_[root->head_.key];
+      root->array_.clear();
+      root->array_[root->head_.key] = head_array;
+      root->clear_all_array_descendants(true);
+    }
+  }
+
   auto created_array = array_[head_.key];
   clear_all_array();
   created_array.second = true;
   array_[head_.key] = created_array;
+
   // 3. Increment modification count to let solver to know whether it's modified
   // or not
   modification_count_++;
   clear_called_ = false;
+  propagate_zeroing_flag(false);
 
   // 4. Call a callback function
   const bool off_recording = (bool)(async_flags & AsyncFlag::OFFREC);
@@ -131,15 +244,56 @@ const void *SyncedArray::data_ptr(dtypes dtype, const Context &ctx,
 }
 
 void SyncedArray::zero() {
-  clear();
+  if (is_root()) {
+    clear();
+    clear_all_array_descendants(false);
+  } else {
+    clear_all_array_descendants(true);
+
+    // Clear except head_ array of its own direct lineage array.
+    if (has_head_array()) {
+      for (auto p = shared_from_this(); p; p = p->parent_) {
+        auto p_head_array = p->array_[p->head_.key];
+        p->array_.clear();
+        p->array_[p->head_.key] = p_head_array;
+      }
+    }
+  }
+  clear_flags();
+  clear_flags_descendants();
+
+  // Set zeroing_lazy_eval_ to true since it is this SyncedArray that executes
+  // Array::zero(). When SyncedArray::zeroing() of the child SyncedArray is
+  // called, child return true without executing Array::zero(), so propagate
+  // only zeroing_ is true.
+  zeroing_lazy_eval_ = true;
   zeroing_ = true;
+  propagate_zeroing_flag_descendants(true);
   modification_count_++;
   clear_called_ = false;
 }
 
 void SyncedArray::fill(float value) {
-  clear();
-  filling_ = true;
+  if (is_root()) {
+    clear();
+    clear_all_array_descendants(false);
+  } else {
+    clear_all_array_descendants(true);
+
+    // Clear except head_ array of its own direct lineage array.
+    if (has_head_array()) {
+      for (auto p = shared_from_this(); p; p = p->parent_) {
+        auto p_head_array = p->array_[p->head_.key];
+        p->array_.clear();
+        p->array_[p->head_.key] = p_head_array;
+      }
+    }
+  }
+
+  clear_flags();
+  clear_flags_descendants();
+  propagate_zeroing_flag(false);
+  filling_lazy_eval_ = true;
   fill_value_ = value;
   modification_count_++;
   clear_called_ = false;
@@ -149,17 +303,24 @@ size_t SyncedArray::modification_count() const { return modification_count_; }
 
 bool SyncedArray::clear_called() const { return clear_called_; }
 
-inline string create_key(const dtypes &dtype, const Context &ctx) {
-  // Array classes in the same array group are identified in SyncedArray.
-  return ctx.device_id + ":" + ArrayGroup::get_group(ctx.array_class) + ":" +
-         dtype_to_string(dtype);
-}
-
 SyncedArray::ArrayDesc SyncedArray::sync(dtypes dtype, const Context &ctx_orig,
                                          bool write_only,
                                          const int async_flags) {
   Context ctx = ArrayCreator::filter_context(ctx_orig);
+
+  // If child-SyncedArray is created while the parent has head array, Array is
+  // created in constructor.
+  // If sync() is called for child SyncedArray while the parent has never been
+  // called sync(), root SyncedArrays is created first.
+  if (is_child() && !has_head_array()) {
+    get_root()->sync(dtype, ctx_orig, write_only, async_flags);
+  }
+
   ArrayDesc desc{create_key(dtype, ctx), ctx.array_class, dtype};
+  // In the case of child array and same dtype, updated key.
+  if (is_child() && (get_root()->head_.key == desc.key)) {
+    desc.key = create_key(parent_->head_.key, offset_, size_);
+  }
 
   // Specified array is not allocated
   if (array_.find(desc.key) == array_.end()) {
@@ -167,6 +328,10 @@ SyncedArray::ArrayDesc SyncedArray::sync(dtypes dtype, const Context &ctx_orig,
       head_ = desc;
     array_[desc.key] = std::make_pair(
         shared_ptr<Array>(ArrayCreator::create(size_, dtype, ctx)), false);
+    if (is_root() && has_family()) {
+      // Child array is always followed by parent's head_, so create here.
+      create_array_descendants();
+    }
   } else {
     // Wait for the end of previous async_flags asynchronous memcpy
     array_[desc.key].first->wait_event(ctx, async_flags);
@@ -179,16 +344,31 @@ SyncedArray::ArrayDesc SyncedArray::sync(dtypes dtype, const Context &ctx_orig,
   auto ah = array_[desc.key];
   Array *array = ah.first.get();
   bool at_head = ah.second;
+  if (has_family() && check_zeroing_filling()) {
+    // Do lazy evaluation of zero() or fill().
+
+    SyncedArrayPtr zero_fill_root = shared_from_this();
+    for (auto p = parent_; p; p = p->parent_) {
+      if (p->filling_lazy_eval_ || p->zeroing_lazy_eval_) {
+        zero_fill_root = p;
+      }
+    }
+
+    zero_fill_root->traverse_zero_fill();
+  }
+
   // Not initialized or the array is not at head.
   if (at_head) {
     return desc;
   }
-  if (zeroing_) {
-    // Do lazy evaluation of zero().
+
+  if (!has_family() && zeroing_lazy_eval_) {
     array->zero();
-  } else if (filling_) {
+    zeroing_lazy_eval_ = false;
+  } else if (!has_family() && filling_lazy_eval_) {
     // Do lazy evaluation of fill().
     array->fill(fill_value_);
+    filling_lazy_eval_ = false;
   } else if (array_.size() > 1) {
     // TODO: Better heuristic choice from current heads
     Array *head_array = array_[head_.key].first.get();
@@ -209,6 +389,72 @@ SyncedArray::ArrayDesc SyncedArray::sync(dtypes dtype, const Context &ctx_orig,
   return desc;
 }
 
+SyncedArrayPtr SyncedArray::get_root() {
+  if (is_root()) {
+    return shared_from_this();
+  }
+  return parent_->get_root();
+}
+
+void SyncedArray::traverse_zero_fill() {
+  // Ordering is guaranteed for zero() and fill().
+  // Even if Array::zero( or fill) is called here, it is necessary to trace back
+  // to the end children because it may be partially overwritten by descendants.
+  if (has_head_array()) {
+    if (zeroing_lazy_eval_)
+      head_array()->zero();
+    else if (filling_lazy_eval_)
+      head_array()->fill(fill_value_);
+    clear_flags();
+  }
+  for (auto child : children_) {
+    if (auto c = child.lock()) {
+      c->traverse_zero_fill();
+    }
+  }
+}
+
+bool SyncedArray::check_zeroing_filling_descendants() {
+  for (auto child : children_) {
+    if (auto c = child.lock()) {
+      if (c->zeroing_lazy_eval_ || c->filling_lazy_eval_) {
+        return true;
+      }
+      if (c->check_zeroing_filling_descendants()) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool SyncedArray::check_zeroing_filling() {
+  if (zeroing_lazy_eval_ || filling_lazy_eval_) {
+    return true;
+  }
+
+  if (check_zeroing_filling_descendants()) {
+    return true;
+  }
+
+  // Check the flag of its own direct lineage array.
+  for (auto p = parent_; p; p = p->parent_) {
+    if (p->zeroing_lazy_eval_ || p->filling_lazy_eval_) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void SyncedArray::clear_flags_descendants() {
+  for (auto child : children_) {
+    if (auto c = child.lock()) {
+      c->clear_flags();
+      c->clear_flags_descendants();
+    }
+  }
+}
+
 void SyncedArray::copy_from(const SyncedArray *src) {
   NBLA_CHECK(!src->head_.key.empty(), error_code::value,
              "Source doesn't have any array.");
@@ -221,7 +467,11 @@ void SyncedArray::copy_from(const SyncedArray *src) {
 
 // Public clear calls a callback function.
 void SyncedArray::clear() {
-  this->clear_all_array();
+  if (is_child()) {
+    NBLA_ERROR(error_code::runtime, "clear of child-arrays is not permitted");
+  } else {
+    this->clear_all_array();
+  }
 
   // Call a callback function
   SingletonManager::get<SyncedArrayCallback>()->call_callback(
@@ -238,12 +488,65 @@ void SyncedArray::clear_all_array() {
   clear_called_ = true;
 }
 
+void SyncedArray::clear_all_array_descendants(bool keep_head) {
+  for (auto child : children_) {
+    if (auto c = child.lock()) {
+      if (!c->has_head_array()) {
+        return;
+      }
+
+      if (keep_head) {
+        auto head_array = c->array_[c->head_.key];
+        c->array_.clear();
+        c->array_[c->head_.key] = head_array;
+      } else {
+        c->clear_all_array();
+      }
+
+      c->clear_all_array_descendants(keep_head);
+    }
+  }
+}
+
 void SyncedArray::clear_flags() {
-  zeroing_ = false;
-  filling_ = false;
+  zeroing_lazy_eval_ = false;
+  filling_lazy_eval_ = false;
 }
 
 bool SyncedArray::zeroing() const { return zeroing_; }
+
+void SyncedArray::propagate_zeroing_flag_descendants(bool flag) {
+  for (auto child : children_) {
+    if (auto c = child.lock()) {
+      c->zeroing_ = flag;
+      c->propagate_zeroing_flag_descendants(flag);
+    }
+  }
+}
+
+void SyncedArray::propagate_zeroing_flag(bool flag) {
+  // for child array
+  propagate_zeroing_flag_descendants(flag);
+
+  zeroing_ = flag;
+
+  // Update only the flag of its own direct lineage array.
+  for (auto p = parent_; p; p = p->parent_)
+    p->zeroing_ = flag;
+}
+
+void SyncedArray::remove_child(const SyncedArray *child) {
+  children_.erase(std::remove_if(children_.begin(), children_.end(),
+                                 [child](weak_ptr<SyncedArray> &ptr) {
+                                   if (auto c = ptr.lock()) {
+                                     return c.get() == child;
+                                   }
+
+                                   // expired
+                                   return true;
+                                 }),
+                  children_.end());
+}
 
 // Callback function
 SyncedArrayCallback::SyncedArrayCallback() : callback_func_(nullptr) {}

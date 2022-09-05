@@ -17,8 +17,15 @@
 
 namespace nbla {
 
-DlpackArray::DlpackArray(const Size_t size, dtypes dtype, const Context &ctx)
-    : Array(size, dtype, ctx, AllocatorMemory()) {}
+DlpackArray::DlpackArray(const Size_t size, dtypes dtype, const Context &ctx,
+                         const AllocatorMemoryPtr mem, const Size_t offset)
+    : Array(size, dtype, ctx, mem ? mem : std::make_shared<AllocatorMemory>(),
+            offset) {
+  if (mem) {
+    NBLA_ERROR(error_code::runtime,
+               "Memory sharing is not allowed in this class.");
+  }
+}
 
 DlpackArray::~DlpackArray() {
   call_deleter(dlp_); // Call the given deleter to return the borrowed array.

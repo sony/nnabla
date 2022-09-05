@@ -53,12 +53,16 @@ private:
 /** ArrayCreator class this is never be instantiated. */
 class NBLA_API ArrayCreator {
 public:
-  typedef function<Array *(const Size_t, dtypes, const Context &)> Creator;
+  typedef function<Array *(const Size_t, dtypes, const Context &,
+                           AllocatorMemoryPtr, const Size_t)>
+      Creator;
   typedef function<Context(const Context &ctx)> FilterContext;
   typedef map<string, pair<Creator, FilterContext>> Registry_t;
 
   /** Interface to create array */
-  static Array *create(const Size_t size, dtypes dtype, const Context &ctx);
+  static Array *create(const Size_t size, dtypes dtype, const Context &ctx,
+                       const AllocatorMemoryPtr mem = nullptr,
+                       const Size_t offset = 0);
 
   /** Filter an context into minimal info that describes the context.
   */
@@ -120,9 +124,11 @@ NBLA_API void synchronizer_default(Array *src, Array *dst,
 
 #define NBLA_REGISTER_ARRAY_CREATOR(CLS)                                       \
   {                                                                            \
-    function<Array *(const Size_t, dtypes, const Context &)> func =            \
-        [](const Size_t size, dtypes dtype, const Context &ctx) {              \
-          return new_object<CLS>(size, dtype, ctx);                            \
+    function<Array *(const Size_t, dtypes, const Context &,                    \
+                     const AllocatorMemoryPtr, const Size_t)>                  \
+        func = [](const Size_t size, dtypes dtype, const Context &ctx,         \
+                  const AllocatorMemoryPtr mem, const Size_t offset) {         \
+          return new_object<CLS>(size, dtype, ctx, mem, offset);               \
         };                                                                     \
     ArrayCreator::add_creator(#CLS, func, CLS::filter_context);                \
   }

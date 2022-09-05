@@ -18,6 +18,7 @@
 #include <nbla/synced_array.hpp>
 
 #include <memory>
+#include <string>
 
 namespace nbla {
 
@@ -153,6 +154,19 @@ public:
    */
   NBLA_API shared_ptr<Array> cast_sp(dtypes dtype, const Context &ctx,
                                      bool write_only = false);
+
+  /** Returns a new array that is a narrowed part of this array. The narrowed
+     part is specified by the slice of this array from `start` to `start` +
+     `length` along the dimension `dim`.  The returned array and this array
+     share the same underlying allocated memory.
+
+      @param[in] dim Dimension along which to narrow. Currently, only 0 can be
+     specified.
+      @param[in] start Starting index in specified dimension.
+      @param[in] length Distance to the ending index from `start`.
+   */
+  NBLA_API Ptr narrow(const Size_t dim, const Size_t start,
+                      const Size_t length);
 
   DISABLE_COPY_AND_ASSIGN(NdArray);
 };
