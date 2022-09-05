@@ -3829,7 +3829,7 @@ class OnnxImporter:
         assert len(n.input) == 1
         assert len(n.output) == 1
         x_shape = self.get_func_input_shape(n.input[0])
-        assert len(x_shape) >= 3 # (N, C, D0, D1, ...)
+        assert len(x_shape) >= 3  # (N, C, D0, D1, ...)
 
         # (N, C, D0, D1, ...) -> (N, C, 1, 1, ...)
         y_shape = [dim if i < 2 else 1 for i, dim in enumerate(x_shape)]
@@ -3929,7 +3929,7 @@ class OnnxImporter:
         if dtype not in (int(TensorProto.FLOAT), int(TensorProto.FLOAT16)):
             raise ValueError("Unsupported dtype {} was specified at {}"
                              .format(dtype, n.op_type))
-        
+
         func = generate_rand_uniform(n.name, n.output[0], dtype, high, low,
                                      seed, shape, self._graph.name,
                                      self._func_counter)
@@ -3958,7 +3958,7 @@ class OnnxImporter:
         if dtype not in (int(TensorProto.FLOAT), int(TensorProto.FLOAT16)):
             raise ValueError("Unsupported dtype {} was specified at {}"
                              .format(dtype, n.op_type))
-        
+
         func = generate_rand_uniform(n.name, n.output[0], dtype, high, low,
                                      seed, shape, self._graph.name,
                                      self._func_counter)
