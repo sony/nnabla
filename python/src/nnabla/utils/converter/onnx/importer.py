@@ -21,7 +21,8 @@ import numpy as np
 from nnabla.utils import nnabla_pb2
 
 try:
-    from onnx import (ModelProto, TensorProto, AttributeProto, TensorShapeProto)
+    from onnx import (ModelProto, TensorProto,
+                      AttributeProto, TensorShapeProto)
 except:
     print('ONNX import support disabled because onnx python package is not found.')
     print(' You may install onnx package with "pip install onnx".')
@@ -2088,13 +2089,12 @@ class OnnxImporter:
         self._shape_output[n.output[0]] = input_shape
         func_list.append(ge)
 
-        
     def Softplus(self, func_list, n):
         func = self.generate_default_function("SoftPlus", n)
         func.softplus_param.beta = 1.0
-        self._shape_output[func.output[0]] = self.get_func_input_shape(func.input[0])
+        self._shape_output[func.output[0]
+                           ] = self.get_func_input_shape(func.input[0])
         func_list.append(func)
-        
 
     def Clip(self, opset, func_list, n):
         func = self.generate_default_function("Clip", n)
@@ -2857,7 +2857,7 @@ class OnnxImporter:
                     o = (i - 1) * s + adj + (k - 1) * d + 1\
                         - pads[index] - pads[index+dim]
                 output_shape.append(o)
-                
+
         cp.output_padding.dim.extend(output_padding)
 
         padval = []
@@ -2877,7 +2877,7 @@ class OnnxImporter:
             # Add a separate Slice Function for asymmetry padding
             start = [0, 0] + [pads[i] for i in range(dim)]
             stop = input_shape[:1] + [weight_shape[1]] + \
-                   [output_shape[i] + pads[i] for i in range(dim)]
+                [output_shape[i] + pads[i] for i in range(dim)]
             step = [1, ] * (dim + 2)
             slicef = generate_slice(n.name, deconv_out, n.output[0],
                                     start, stop, step,
