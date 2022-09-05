@@ -400,6 +400,7 @@ def unsupported_attribute(attr_name, n):
     raise ValueError("Unsupported attribute {} was specified at {}"
                      .format(attr_name, n.op_type))
 
+
 def check_attr_int_type(attr, node):
     if attr.type != AttributeProto.INT:
         raise ValueError(
@@ -4043,11 +4044,11 @@ class OnnxImporter:
             trans_axes = list(range(len(last_shape)))
             trans_axes[axis], trans_axes[-1] = trans_axes[-1], trans_axes[axis]
             trans_func0 = generate_transpose(n.name, topk_out0, out0,
-                                            trans_axes, self._graph.name,
-                                            self._func_counter)
+                                             trans_axes, self._graph.name,
+                                             self._func_counter)
             trans_func1 = generate_transpose(n.name, topk_out1, out1,
-                                            trans_axes, self._graph.name,
-                                            self._func_counter)
+                                             trans_axes, self._graph.name,
+                                             self._func_counter)
             last_shape[axis], last_shape[-1] = last_shape[-1], last_shape[axis]
             self._shape_output[out0] = last_shape
             self._shape_output[out1] = last_shape

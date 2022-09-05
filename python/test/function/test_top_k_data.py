@@ -60,11 +60,14 @@ def ref_top_k_data_bw(x, g, k, abs, reduce, base_axis, largest, with_index,
         x, k, abs, reduce, base_axis, largest, with_index, g)[1].flatten()
 
 # reference function takes two grads of outputs when with_index = True
+
+
 def ref_top_k_data_bw_with_index(x, gx, gi, k, abs, reduce, base_axis,
                                  largest, with_index, **kw):
     assert with_index
     return ref_top_k_data(
         x, k, abs, reduce, base_axis, largest, with_index, gx)[1].flatten()
+
 
 @pytest.mark.parametrize("ctx, fname", ctxs)
 @pytest.mark.parametrize("seed", [313])
@@ -81,7 +84,7 @@ def ref_top_k_data_bw_with_index(x, gx, gi, k, abs, reduce, base_axis,
 ])
 def test_forward_backward(seed, ishape, k, abs, reduce, base_axis, largest,
                           with_index, ctx, fname):
-    # Use unique random numbers because sorting algorithm for top-k 
+    # Use unique random numbers because sorting algorithm for top-k
     # is not stable.
     rng = np.random.RandomState(seed)
     n = np.prod(ishape)
