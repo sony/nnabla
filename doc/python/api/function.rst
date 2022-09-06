@@ -208,6 +208,7 @@ Math
 .. autofunction:: batch_det
 .. autofunction:: batch_logdet
 .. autofunction:: batch_cholesky
+.. autofunction:: erf
 
 
 Array Manipulation

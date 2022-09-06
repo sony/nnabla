@@ -233,6 +233,7 @@ MATHF(ceil);
 MATHF(round);
 MATHF(isnan);
 MATHF(isinf);
+MATHF(erf);
 NBLA_API Half pow(const Half &a, const Half &b);
 NBLA_API Half pow(const Half &a, const int &b);
 NBLA_API Half max(const Half &a, const int &b);

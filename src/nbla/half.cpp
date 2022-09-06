@@ -223,6 +223,7 @@ MATHF(abs);
 MATHF(round);
 MATHF(isnan);
 MATHF(isinf);
+MATHF(erf);
 Half pow(const Half &a, const Half &b) { return std::pow((float)a, (float)b); }
 Half pow(const Half &a, const int &b) { return std::pow((float)a, (float)b); }
 Half max(const Half &a, const int &b) { return std::max((float)a, (float)b); }

@@ -572,6 +572,9 @@ ACosh:
 ATanh:
   float: [float]
   half: [Half]
+Erf:
+  float: [float]
+  half: [Half]
 NmsDetection2d:
   float: [float]
 #  half: [Half]
