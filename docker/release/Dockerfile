@@ -13,34 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Flatbuffer compiler
-FROM ubuntu:18.04 as flatc
-
-ENV DEBIAN_FRONTEND noninteractive
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-       ca-certificates \
-       curl \
-       cmake \
-       make \
-       g++ \
-       git \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN umask 0 \
-    && mkdir -p /tmp/deps \
-    && cd /tmp/deps \
-    && git clone -b \
-       `curl --silent "https://api.github.com/repos/google/flatbuffers/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")'` \
-       https://github.com/google/flatbuffers.git \
-    && cd flatbuffers \
-    && cmake -G "Unix Makefiles" \
-    && make \
-    && make install \
-    && cd / \
-    && rm -rf /tmp/*
-
 FROM ubuntu:18.04
 
 ARG PIP_INS_OPTS
@@ -78,8 +50,6 @@ RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python${PYTH
 RUN pip3 install ${PIP_INS_OPTS} --upgrade pip
 RUN pip install ${PIP_INS_OPTS} wheel setuptools
 RUN pip install ${PIP_INS_OPTS} opencv-python || true
-
-COPY --from=flatc /usr/local/bin/flatc /usr/local/bin/flatc
 
 ARG NNABLA_VER
 RUN pip install ${PIP_INS_OPTS} nnabla==${NNABLA_VER} nnabla_converter==${NNABLA_VER}
