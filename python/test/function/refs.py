@@ -113,8 +113,9 @@ def convolution_nd(x, w, b, pad, stride, dilation, group, dtype=np.float32):
     outshape = get_conv_out_size_recursive(0, ndim)
     inshape_pad = [C] + [inshape[d] + 2 * pad[d] for d in range(ndim)]
     x_pad = np.zeros(inshape_pad, dtype=dtype)
-    x_pad[[slice(None,)] + [slice(pad[d], pad[d] + inshape[d])
-                            for d in range(ndim)]] = x
+    s = [slice(None,)] + [slice(pad[d], pad[d] + inshape[d])
+                          for d in range(ndim)]
+    x_pad[tuple(s)] = x
     y = np.zeros([K] + outshape, dtype=dtype)
     for k in range(K):
         g = int(k // (K // group))
@@ -125,7 +126,7 @@ def convolution_nd(x, w, b, pad, stride, dilation, group, dtype=np.float32):
             y[(k,) + tuple(outindex)] = (w[k] *
                                          x_pad[np.ix_(ci, *inindex)]).sum()
     if b is not None:
-        y += b[[Ellipsis] + [np.newaxis for d in range(ndim)]]
+        y += b[tuple([Ellipsis] + [np.newaxis for d in range(ndim)])]
     return y
 
 
