@@ -1,5 +1,6 @@
-function(download_and_extract_library NAME EXT URL)
-  if(NOT IS_DIRECTORY ${CMAKE_SOURCE_DIR}/third_party/${NAME})
+function(download_and_extract_library NAME EXT URL TYPE)
+  if((NOT IS_DIRECTORY ${CMAKE_SOURCE_DIR}/third_party/${NAME} AND ${TYPE} STREQUAL "DIRECTORY") OR
+    (NOT EXISTS ${CMAKE_SOURCE_DIR}/third_party/${NAME} AND ${TYPE} STREQUAL "BINARY"))
     message("Downloading ${NAME}")
     file(DOWNLOAD
       ${URL}
@@ -32,7 +33,7 @@ function(download_and_extract_library NAME EXT URL)
 endfunction()
 
 if(NNABLA_UTILS_WITH_HDF5)
-  download_and_extract_library(hdf5-master .zip https://github.com/mokus0/hdf5/archive/master.zip)
+  download_and_extract_library(hdf5-master .zip https://github.com/mokus0/hdf5/archive/master.zip DIRECTORY)
   set(HDF5_EXTERNALLY_CONFIGURED, 1)
   set(HDF5_EXPORTED_TARGETS "nbla_utils-hdf5-targets")
   set(BUILD_SHARED_LIBS ON CACHE BOOL "Build Shared Libraries" FORCE)
@@ -41,7 +42,7 @@ if(NNABLA_UTILS_WITH_HDF5)
   install(EXPORT nbla_utils-hdf5-targets DESTINATION "trash")
 endif()
 
-download_and_extract_library(eigen-3.3.5 .zip https://gitlab.com/libeigen/eigen/-/archive/3.3.5/eigen-3.3.5.zip)
+download_and_extract_library(eigen-3.3.5 .zip https://gitlab.com/libeigen/eigen/-/archive/3.3.5/eigen-3.3.5.zip DIRECTORY)
 
 set(flatbuffers_info
   "https://github.com/google/flatbuffers/releases/download/v2.0.0/Mac.flatc.binary.zip\;flatc\;flatc_mac"
@@ -53,17 +54,17 @@ foreach(component ${flatbuffers_info})
   list(GET component 0 url)
   list(GET component 1 filename_old)
   list(GET component 2 filename_new)
-  download_and_extract_library(flatbuffers .zip ${url})
+  download_and_extract_library(${filename_new} .zip ${url} BINARY)
   execute_process(
     COMMAND ${CMAKE_COMMAND} -E
     rename ${CMAKE_SOURCE_DIR}/third_party/${filename_old} ${CMAKE_SOURCE_DIR}/third_party/${filename_new})
 endforeach()
 
 if(BUILD_TEST)
-  download_and_extract_library(googletest-release-1.10.0 .zip https://github.com/google/googletest/archive/release-1.10.0.zip)
+  download_and_extract_library(googletest-release-1.10.0 .zip https://github.com/google/googletest/archive/release-1.10.0.zip DIRECTORY)
   add_subdirectory(googletest-release-1.10.0)
 endif()
 
 if(BUILD_CPP_UTILS)
-  download_and_extract_library(cmdline-master .zip https://github.com/tanakh/cmdline/archive/master.zip)
+  download_and_extract_library(cmdline-master .zip https://github.com/tanakh/cmdline/archive/master.zip DIRECTORY)
 endif()
