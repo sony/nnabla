@@ -28,7 +28,6 @@ from nnabla.core.graph_def import module_scope, current_graph_builder
 #                 self.conv = [ConvBn(c, 1, 1,act=lambda x: F.relu(x, inplace=True)) for c in [4, 16, 32]]
 #                 ...
 #     same as dict type.
-__inherited__ = "training"
 
 
 def insert_parent_name(name, params):
@@ -183,6 +182,8 @@ class Module(metaclass=MetaClass):
             to keep this module instance from being unexpectedly released, to ensure forward() or backward() can refer
             to these variables.
     """
+
+    _recursive_attrs = ["training"]
 
     def __repr__(self):
         return self.__class__.__name__
@@ -400,9 +401,9 @@ class Module(metaclass=MetaClass):
             value.__dict__['_parent'] = self
             return
         self.__dict__[name] = value
-        if name in __inherited__:
-            for _, module in self.submodules.items():
-                exec(f"module.{name} = {value}")
+        if name in self._recursive_attrs:
+            for module in self.submodules.values():
+                setattr(module, name, value)
 
     def __getattr__(self, name):
         if name in self.submodules:
