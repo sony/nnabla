@@ -232,6 +232,7 @@ def _create_initializer(v, rng):
     from nnabla.initializer import (
         NormalInitializer, UniformInitializer, ConstantInitializer, RangeInitializer,
         calc_normal_std_he_forward, calc_normal_std_he_backward, calc_normal_std_glorot, calc_uniform_lim_glorot)
+
     if v.initializer.type == 'Normal':
         initializer = NormalInitializer(v.initializer.multiplier, rng=rng)
     elif v.initializer.type == 'NormalAffineHe' or v.initializer.type == 'NormalAffineHeForward':
@@ -252,6 +253,15 @@ def _create_initializer(v, rng):
     elif v.initializer.type == 'NormalConvolutionGlorot':
         initializer = (lambda shape: NormalInitializer(calc_normal_std_glorot(
             shape[-3], shape[0], kernel=shape[-2:]), rng=rng)(shape) * v.initializer.multiplier)
+    elif v.initializer.type == 'NormalCLConvHe' or v.initializer.type == 'NormalCLConvHeForward':
+        initializer = (lambda shape: NormalInitializer(calc_normal_std_he_forward(
+            shape[-1], shape[0], kernel=shape[1:3]), rng=rng)(shape) * v.initializer.multiplier)
+    elif v.initializer.type == 'NormalCLConvHeBackward':
+        initializer = (lambda shape: NormalInitializer(calc_normal_std_he_backward(
+            shape[-1], shape[0], kernel=shape[1:3]), rng=rng)(shape) * v.initializer.multiplier)
+    elif v.initializer.type == 'NormalCLConvGlorot':
+        initializer = (lambda shape: NormalInitializer(calc_normal_std_glorot(
+            shape[-1], shape[0], kernel=shape[1:3]), rng=rng)(shape) * v.initializer.multiplier)
     elif v.initializer.type == 'Uniform':
         initializer = UniformInitializer(
             lim=[-v.initializer.multiplier, v.initializer.multiplier], rng=rng)
@@ -261,6 +271,9 @@ def _create_initializer(v, rng):
     elif v.initializer.type == 'UniformConvolutionGlorot':
         initializer = (lambda shape: UniformInitializer(calc_uniform_lim_glorot(
             shape[-3], shape[0], kernel=shape[-2:]), rng=rng)(shape) * v.initializer.multiplier)
+    elif v.initializer.type == 'UniformCLConvGlorot':
+        initializer = (lambda shape: UniformInitializer(calc_uniform_lim_glorot(
+            shape[-1], shape[0], kernel=shape[1:3]), rng=rng)(shape) * v.initializer.multiplier)
     elif v.initializer.type == 'Range':
         initializer = (lambda shape: RangeInitializer(0, 1)
                        (shape) * v.initializer.multiplier)
@@ -268,7 +281,6 @@ def _create_initializer(v, rng):
         initializer = ConstantInitializer(value=v.initializer.multiplier)
     else:
         initializer = None
-
     return initializer
 
 

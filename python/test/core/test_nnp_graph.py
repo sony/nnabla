@@ -518,3 +518,36 @@ def test_save_module_grad_only_false():
     ref_g = nn.graph_def.create_graph_from_variable("te_module", ref_y)
     y = ref_g(x)
     forward_variable_and_check_equal(ref_y, y)
+
+
+def test_restore_create_initializer():
+    all_type = ['NormalCLConvHe', 'NormalCLConvHeForward', 'NormalCLConvHeBackward', 'NormalCLConvGlorot', 'UniformCLConvGlorot', 'Normal', 'NormalAffineHe', 'NormalAffineHeForward', 'NormalAffineHeBackward',
+                'NormalAffineGlorot', 'NormalConvolutionHe', 'NormalConvolutionHeForward', 'NormalConvolutionHeBackward', 'NormalConvolutionGlorot', 'Uniform', 'UniformAffineGlorot', 'UniformConvolutionGlorot', 'Range', 'Constant']
+
+    class VARIABLE:
+        def __init__(self) -> None:
+            class Init:
+                pass
+            self.initializer = Init()
+
+    v = VARIABLE()
+    v.initializer.multiplier = 1.0
+    v.type = "Parameter"
+    shape = [1, 2, 2]
+
+    for i in range(len(all_type)):
+        v.initializer.type = all_type[i]
+        name = v.name = "testname_" + "{}".format(i)
+
+        rng = np.random.RandomState(313)
+        init = nn.graph_def._create_initializer(v, rng)
+        variable_inst = nn.parameter._create_parameter_by_initializer(
+            init, shape, False)
+
+        rng = np.random.RandomState(313)
+        var = legacy_nnp_graph._create_variable(v, name, shape, rng)
+
+        a = variable_inst.d
+        b = var.variable_instance.d
+
+        assert np.allclose(a, b)
