@@ -119,6 +119,7 @@ int main() {
     printf("%f\n", data_h[i]);
   }
 
+  // This can only be called at the final point of nnabla session.
   SingletonManager::clear();
   return 0;
 }
