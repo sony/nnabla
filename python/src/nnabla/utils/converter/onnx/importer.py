@@ -15,14 +15,15 @@
 
 from collections import OrderedDict
 from functools import partial
+from struct import pack, unpack
 
 import nnabla.logger as logger
 import numpy as np
 from nnabla.utils import nnabla_pb2
 
 try:
-    from onnx import (ModelProto, TensorProto,
-                      AttributeProto, TensorShapeProto)
+    from onnx import (ModelProto, TensorProto, AttributeProto, TensorShapeProto,
+                      mapping)
 except:
     print('ONNX import support disabled because onnx python package is not found.')
     print(' You may install onnx package with "pip install onnx".')
@@ -47,6 +48,10 @@ def normalize_shape(shape):
         if len(shape) == 0:
             shape = [1]
     return shape
+
+
+def bit_cast_f32_to_i32(value: float):
+    return unpack('i', pack('f', value))[0]
 
 
 def add_value_info_as_variable(network, info):
@@ -341,6 +346,38 @@ def generate_reshape(node_name, x, out_name,
     return func
 
 
+def generate_rand_normal(node_name, out_name, mean, scale, seed, shape,
+                         base_name, func_counter):
+    func = nnabla_pb2.Function()
+    func.type = "Randn"
+    set_function_name(func, node_name, base_name, func_counter)
+    func.output.extend([out_name])
+    rp = func.randn_param
+    rp.mu = mean
+    rp.sigma = scale
+    rp.seed = seed
+    rp.shape.dim.extend(shape)
+    return func
+
+
+def generate_rand_uniform(node_name, out_name, dtype, high, low, seed, shape,
+                          base_name, func_counter):
+    assert low < high
+    type_info = np.finfo(mapping.TENSOR_TYPE_TO_NP_TYPE[dtype])
+    assert low >= type_info.min
+    assert high <= type_info.max
+    func = nnabla_pb2.Function()
+    func.type = "Rand"
+    set_function_name(func, node_name, base_name, func_counter)
+    func.output.extend([out_name])
+    rp = func.rand_param
+    rp.high = high
+    rp.low = low
+    rp.seed = seed
+    rp.shape.dim.extend(shape)
+    return func
+
+
 def set_reduction_attrs(p, node):
     p.keep_dims = True  # keep_dims is default True for ONNX
     for attr in node.attribute:
@@ -521,6 +558,7 @@ class OnnxImporter:
             "PRelu": self.PRelu,
             "Concat": self.Concatenate,
             "Conv": self.Convolution,
+            "GlobalMaxPool": self.GlobalMaxPool,
             "GlobalAveragePool": partial(self.BasePooling, 'GlobalAveragePooling'),
             "MaxPool": partial(self.BasePooling, 'MaxPooling'),
             "AveragePool": partial(self.BasePooling, 'AveragePooling'),
@@ -582,6 +620,10 @@ class OnnxImporter:
             # but we list it here so we can accept it
             "Cast": self.Cast,
             "Gather": self.Gather,
+            "RandomNormal": self.RandomNormal,
+            "RandomNormalLike": self.RandomNormalLike,
+            "RandomUniform": self.RandomUniform,
+            "RandomUniformLike": self.RandomUniformLike,
         }
 
         # opset_7 table
@@ -3782,6 +3824,146 @@ class OnnxImporter:
         logger.warning("nnabla Round is not compatible to ONNX Round, " +
                        "which performs rounding to nearest-even integer.")
         return self.GeneralOperator('Round', func_list, n)
+
+    def GlobalMaxPool(self, func_list, n):
+        assert len(n.input) == 1
+        assert len(n.output) == 1
+        x_shape = self.get_func_input_shape(n.input[0])
+        assert len(x_shape) >= 3  # (N, C, D0, D1, ...)
+
+        # (N, C, D0, D1, ...) -> (N, C, 1, 1, ...)
+        y_shape = [dim if i < 2 else 1 for i, dim in enumerate(x_shape)]
+        axes = list(range(2, len(x_shape)))
+
+        # Max
+        max_func = self.generate_default_function("Max", n)
+        max_p = max_func.max_param
+        max_p.axes.extend(axes)
+        max_p.keep_dims = True
+        max_p.with_index = False
+        max_p.only_index = False
+        self._shape_output[n.output[0]] = y_shape
+        func_list.append(max_func)
+
+    def RandomNormal(self, func_list, n):
+        assert len(n.input) == 0
+        assert len(n.output) == 1
+
+        dtype = int(TensorProto.FLOAT)
+        mean = 0.0
+        scale = 1.0
+        seed = -1
+        shape = None
+        for attr in n.attribute:
+            if attr.name == "dtype":
+                dtype = attr.i
+            if attr.name == "mean":
+                mean = attr.f
+            if attr.name == "scale":
+                scale = attr.f
+            if attr.name == "seed":
+                attr_seed = bit_cast_f32_to_i32(attr.f)
+                seed = np.iinfo(np.int32).min if attr_seed == -1 else attr_seed
+            if attr.name == "shape":
+                shape = normalize_shape(attr.ints)
+        assert shape is not None
+        if dtype not in (int(TensorProto.FLOAT), int(TensorProto.FLOAT16)):
+            raise ValueError("Unsupported dtype {} was specified at {}"
+                             .format(dtype, n.op_type))
+
+        func = generate_rand_normal(n.name, n.output[0], mean, scale, seed,
+                                    shape, self._graph.name, self._func_counter)
+        self._shape_output[n.output[0]] = shape
+        func_list.append(func)
+
+    def RandomNormalLike(self, func_list, n):
+        assert len(n.input) == 1
+        assert len(n.output) == 1
+        shape = self.get_func_input_shape(n.input[0])
+
+        dtype = int(TensorProto.FLOAT)
+        mean = 0.0
+        scale = 1.0
+        seed = -1
+        for attr in n.attribute:
+            if attr.name == "dtype":
+                dtype = attr.i
+            if attr.name == "mean":
+                mean = attr.f
+            if attr.name == "scale":
+                scale = attr.f
+            if attr.name == "seed":
+                attr_seed = bit_cast_f32_to_i32(attr.f)
+                seed = np.iinfo(np.int32).min if attr_seed == -1 else attr_seed
+        if dtype not in (int(TensorProto.FLOAT), int(TensorProto.FLOAT16)):
+            raise ValueError("Unsupported dtype {} was specified at {}"
+                             .format(dtype, n.op_type))
+
+        func = generate_rand_normal(n.name, n.output[0], mean, scale, seed,
+                                    shape, self._graph.name, self._func_counter)
+        self._shape_output[n.output[0]] = shape
+        func_list.append(func)
+
+    def RandomUniform(self, func_list, n):
+        assert len(n.input) == 0
+        assert len(n.output) == 1
+
+        dtype = int(TensorProto.FLOAT)
+        high = 1.0
+        low = 0.0
+        seed = -1
+        shape = None
+        for attr in n.attribute:
+            if attr.name == "dtype":
+                dtype = attr.i
+            if attr.name == "high":
+                high = attr.f
+            if attr.name == "low":
+                low = attr.f
+            if attr.name == "seed":
+                attr_seed = bit_cast_f32_to_i32(attr.f)
+                seed = np.iinfo(np.int32).min if attr_seed == -1 else attr_seed
+            if attr.name == "shape":
+                shape = normalize_shape(attr.ints)
+        assert shape is not None, "The shape attribute is required."
+        if dtype not in (int(TensorProto.FLOAT), int(TensorProto.FLOAT16)):
+            raise ValueError("Unsupported dtype {} was specified at {}"
+                             .format(dtype, n.op_type))
+
+        func = generate_rand_uniform(n.name, n.output[0], dtype, high, low,
+                                     seed, shape, self._graph.name,
+                                     self._func_counter)
+        self._shape_output[n.output[0]] = shape
+        func_list.append(func)
+
+    def RandomUniformLike(self, func_list, n):
+        assert len(n.input) == 1
+        assert len(n.output) == 1
+        shape = self.get_func_input_shape(n.input[0])
+
+        dtype = int(TensorProto.FLOAT)
+        high = 1.0
+        low = 0.0
+        seed = -1
+        for attr in n.attribute:
+            if attr.name == "dtype":
+                dtype = attr.i
+            if attr.name == "high":
+                high = attr.f
+            if attr.name == "low":
+                low = attr.f
+            if attr.name == "seed":
+                attr_seed = bit_cast_f32_to_i32(attr.f)
+                seed = np.iinfo(np.int32).min if attr_seed == -1 else attr_seed
+        if dtype not in (int(TensorProto.FLOAT), int(TensorProto.FLOAT16)):
+            raise ValueError("Unsupported dtype {} was specified at {}"
+                             .format(dtype, n.op_type))
+
+        func = generate_rand_uniform(n.name, n.output[0], dtype, high, low,
+                                     seed, shape, self._graph.name,
+                                     self._func_counter)
+        self._shape_output[n.output[0]] = shape
+        func_list.append(func)
 
     def convert_to_functions(self, n):
         ft = self._onnx_optype_to_nnabla_function_type.get(n.op_type)
