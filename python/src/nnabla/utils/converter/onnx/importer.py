@@ -21,7 +21,8 @@ import numpy as np
 from nnabla.utils import nnabla_pb2
 
 try:
-    from onnx import (ModelProto, TensorProto, AttributeProto)
+    from onnx import (ModelProto, TensorProto,
+                      AttributeProto, TensorShapeProto)
 except:
     print('ONNX import support disabled because onnx python package is not found.')
     print(' You may install onnx package with "pip install onnx".')
@@ -37,6 +38,17 @@ DEFAULT_EXECUTOR_NAME = "exec_0"
 fork_name_number = 0
 
 
+# Normalize shape from () to (1,).
+def normalize_shape(shape):
+    if isinstance(shape, TensorShapeProto):
+        if len(shape.dim) == 0:
+            shape.dim.extend([TensorShapeProto.Dimension(dim_value=1)])
+    if isinstance(shape, list):
+        if len(shape) == 0:
+            shape = [1]
+    return shape
+
+
 def add_value_info_as_variable(network, info):
     if not info.type.HasField("tensor_type"):  # accepting only tensor
         raise ValueError("Only TensorProto is allowed as ValueInfoProto's type for info.name (Got {})"
@@ -44,8 +56,9 @@ def add_value_info_as_variable(network, info):
     t = info.type.tensor_type
     v = network.variable.add()
     v.name = info.name
+    shape = normalize_shape(t.shape)
     v.shape.dim.extend(
-        [x.dim_value if not x.dim_param else -1 for x in t.shape.dim])
+        [x.dim_value if not x.dim_param else -1 for x in shape.dim])
     return v
 
 
@@ -148,6 +161,21 @@ def generate_split(node_name, in_name, out_name, axis, base_name, func_counter):
     spp = sp.split_param
     spp.axis = axis
     return sp
+
+
+def generate_slice(node_name, in_name, out_name, start, stop, step, base_name, func_counter):
+    """Generate a Slice operator to slice the specified buffer.
+    """
+    slice = nnabla_pb2.Function()
+    slice.type = "Slice"
+    set_function_name(slice, node_name, base_name, func_counter)
+    slice.input.extend([in_name])
+    slice.output.extend([out_name])
+    sp = slice.slice_param
+    sp.start.extend(start)
+    sp.stop.extend(stop)
+    sp.step.extend(step)
+    return slice
 
 
 def generate_stack(node_name, in_name, out_name, axis, base_name, func_counter):
@@ -378,9 +406,7 @@ def add_tensor_as_parameter(pb, tensor):
     """Add given tensor as a parameter"""
     p = pb.parameter.add()
     p.variable_name = tensor.name
-    shape = tensor.dims
-    if not shape:
-        shape = [1]
+    shape = normalize_shape(tensor.dims)
     p.shape.dim.extend(shape)
     if tensor.data_type == TensorProto.FLOAT:
         # convert raw bytestream to floating points
@@ -523,7 +549,7 @@ class OnnxImporter:
             "Reciprocal": partial(self.ElementWiseScalar, 'RDivScalar'),
             "Neg": partial(self.ElementWiseScalar, 'MulScalar'),
             "LogSoftmax": self.LogSoftmax,
-            "Softplus": partial(self.GeneralOperator, 'SoftPlus'),
+            "Softplus": self.Softplus,
             "Softsign": partial(self.GeneralOperator, 'SoftSign'),
             "LRN": self.LRN,
             "Clip": partial(self.Clip, 6),
@@ -617,7 +643,7 @@ class OnnxImporter:
         # opset_11 table
         self.table_op_set_11 = {
             "Clip": partial(self.Clip, 11),
-            "Round": partial(self.GeneralOperator, 'Round'),
+            "Round": self.Round,
             "Pad": partial(self.Pad, '11'),
         }
         self.table_op_set_11 = dict(
@@ -678,18 +704,13 @@ class OnnxImporter:
             for i in self._graph.input:
                 if i.name == input_name:
                     t = i.type.tensor_type
-                    if len(t.shape.dim):
-                        input_shape = [
-                            x.dim_value if not x.dim_param else 1 for x in t.shape.dim]
-                    else:
-                        input_shape = [1]
+                    shape = normalize_shape(t.shape)
+                    input_shape = [
+                        x.dim_value if not x.dim_param else 1 for x in shape.dim]
                     return input_shape
             for i in self._graph.initializer:
                 if i.name == input_name:
-                    if len(i.dims):
-                        input_shape = list(i.dims)
-                    else:
-                        input_shape = [1]
+                    input_shape = normalize_shape(i.dims)
                     return input_shape
         if not input_shape:
             raise ValueError(
@@ -892,13 +913,16 @@ class OnnxImporter:
         cp.stride.dim.extend(strides[:])
         cp.dilation.dim.extend(dilations[:])
         if auto_pad != 'NOTSET':
-            o = input_shape[2:]
-            k = weight_shape[2:]
+            kernels = weight_shape[2:]
             pads_value = [0] * dims
             if auto_pad in ('SAME_UPPER', 'SAME_LOWER'):
                 for i in range(dims):
-                    pads_value[i] = (o[i] - 1) * strides[i] + \
-                                     k[i] - input_shape[2 + i]
+                    k = kernels[i]
+                    s = strides[i]
+                    d = dilations[i]
+                    i_size = input_shape[2 + i]
+                    o_size = int(np.ceil(i_size / s))
+                    pads_value[i] = (o_size - 1) * s + d * (k - 1) - i_size + 1
             elif auto_pad == 'VALID':
                 pass
             for i in range(dims):
@@ -907,7 +931,7 @@ class OnnxImporter:
                     pads[i] = pads_value[i] - pads[i + dims]
                 elif auto_pad == 'SAME_UPPER':
                     pads[i] = pads_value[i] // 2
-                    pads[i + dims] = pads_value[i] - pads[i + dims]
+                    pads[i + dims] = pads_value[i] - pads[i]
 
         padval = []
         asymmetry = check_padding(pads, dims, padval)
@@ -1090,21 +1114,18 @@ class OnnxImporter:
             if not pad_needed:
                 pad_needed = [0] * len(insize)
             out_shape = [0] * len(insize)
-            if ceil_mode:
-                for index in range(len(insize)):
-                    i = insize[index]
-                    s = stride[index]
-                    k = kernel[index]
-                    p = pad_needed[index]
-                    out_shape[index] = int(np.ceil((i + p - k) / s + 1))
-            else:
-                for index in range(len(insize)):
-                    i = insize[index]
-                    s = stride[index]
-                    k = kernel[index]
-                    p = pad_needed[index]
-                    out_shape[index] = int(np.floor((i + p - k) / s + 1))
-
+            out_shape_ceil = [0] * len(insize)
+            for index in range(len(insize)):
+                i = insize[index]
+                s = stride[index]
+                k = kernel[index]
+                p = pad_needed[index]
+                out_shape[index] = int(np.floor((i + p - k) / s + 1))
+                out_shape_ceil[index] = int(np.ceil((i + p - k) / s + 1))
+            if ceil_mode != 0 and out_shape != out_shape_ceil:
+                raise ValueError(
+                    "Unsupported attribute ceil_mode=1 was specified at {}"
+                    .format(n.op_type))
             return out_shape
 
         def _compute_pad_needed(insize, stride, kernel):
@@ -1132,6 +1153,7 @@ class OnnxImporter:
         input_shape = self.get_func_input_shape(n.input[0])
         strides = []
         kernel = []
+        dilations = []
         pads = []
         auto_pad = "NOTSET"
         pad_mode = "constant"
@@ -1143,6 +1165,8 @@ class OnnxImporter:
             kp = func.average_pooling_param
             pad_mode = "repeat"
         elif func_name == 'MaxPooling':
+            if len(n.output) != 1:
+                raise ValueError("Indices output at MaxPool is not supported")
             func = self.generate_default_function("MaxPooling", n)
             kp = func.max_pooling_param
             value = -np.inf
@@ -1179,6 +1203,11 @@ class OnnxImporter:
                     raise ValueError("Only INT is supported for count_include_pad in {} op_type"
                                      .format(n.op_type))
                 kp.including_pad = bool(attr.i)
+            elif attr.name == "dilations":
+                if attr.type != AttributeProto.INTS:
+                    raise ValueError("Only INTS are supported for dilations in {}"
+                                     .format(n.op_type))
+                dilations.extend(attr.ints)
             elif attr.name == "auto_pad":
                 if attr.type != AttributeProto.STRING:
                     raise ValueError("Only STRING is supported for auto_pad in {} op_type"
@@ -1201,6 +1230,10 @@ class OnnxImporter:
             kp.stride.dim.extend(strides[:])
         else:
             kp.stride.dim.extend([1] * len(kp.kernel.dim))
+        if dilations and any(d != 1 for d in dilations):
+            raise ValueError(
+                "Unsupported attribute dilations was specified at {}"
+                .format(n.op_type))
 
         if auto_pad != "NOTSET":
             if auto_pad == 'VALID':
@@ -1852,12 +1885,10 @@ class OnnxImporter:
                     raise ValueError(
                         "value attribute must be set for {}".format(n.op_type))
                 t.name = name
-                if not t.dims:
-                    t.dims.extend([1])
                 # add tensor as parameter
                 add_tensor_as_parameter(self._pb, t)
                 self._param_vars[t.name] = None
-                self._shape_output[name] = t.dims
+                self._shape_output[name] = normalize_shape(t.dims)
             else:
                 raise ValueError("Unsupported attribute {} was specified at {}"
                                  .format(attr.name, n.op_type))
@@ -2057,6 +2088,13 @@ class OnnxImporter:
                             self._graph.name, self._func_counter)
         self._shape_output[n.output[0]] = input_shape
         func_list.append(ge)
+
+    def Softplus(self, func_list, n):
+        func = self.generate_default_function("SoftPlus", n)
+        func.softplus_param.beta = 1.0
+        self._shape_output[func.output[0]
+                           ] = self.get_func_input_shape(func.input[0])
+        func_list.append(func)
 
     def Clip(self, opset, func_list, n):
         func = self.generate_default_function("Clip", n)
@@ -2802,48 +2840,49 @@ class OnnxImporter:
             for index in range(dim):
                 d = cp.dilation.dim[index]
                 s = cp.stride.dim[index]
-                w = weight_shape[2 + index]
+                k = weight_shape[2 + index]
                 i = input_shape[2 + index]
                 adj = output_padding[index]
-                o = (i - 1) * s + adj + (w - 1) * \
-                    d + 1 - pads[index] - pads[index+dim]
+                o = 0
+                if auto_pad in ('SAME_UPPER', 'SAME_LOWER'):
+                    o = i * s
+                    pads_value = (i - 1) * s + adj + (k - 1) * d + 1 - o
+                    if auto_pad == 'SAME_LOWER':
+                        pads[index + dim] = pads_value // 2
+                        pads[index] = pads_value - pads[index + dim]
+                    elif auto_pad == 'SAME_UPPER':
+                        pads[index] = pads_value // 2
+                        pads[index + dim] = pads_value - pads[index]
+                else:
+                    o = (i - 1) * s + adj + (k - 1) * d + 1\
+                        - pads[index] - pads[index+dim]
                 output_shape.append(o)
+
+        cp.output_padding.dim.extend(output_padding)
 
         padval = []
         asymmetry = check_padding(pads, dim, padval)
-        if asymmetry:
-            # Add a separate padding function for
-            # asymmetry padding
-            input = n.input[0]
-            padded = fork_name(input) + "_pad"
-            pad_width = rearrange_pads(pads)
-            padf = generate_pad(n.name, input, padded,
-                                "constant", pad_width, 0,
-                                self._graph.name, self._func_counter)
-            shape = input_shape[:]
-            for i in range(dim):
-                shape[i + 2] += pad_width[2 * i]
-                shape[i + 2] += pad_width[2 * i + 1]
-            self._shape_output[padded] = shape
-            func_list.append(padf)
-            func.input[0] = padded
         cp.pad.dim.extend(padval)
 
-        if output_padding != [0] * dim:
+        if asymmetry:
             deconv_out = fork_name(func.output[0]) + "_deconv"
             del func.output[:]
             func.output.extend([deconv_out])
-            self._shape_output[deconv_out] = input_shape[:1] + \
-                [weight_shape[1]] + [output_shape[i] - output_padding[i]
-                                     for i in range(dim)]
+            deconv_out_shape = input_shape[:1] + [weight_shape[1]]\
+                + [output_shape[i] + pads[i] + pads[i + dim]
+                   for i in range(dim)]
+            self._shape_output[deconv_out] = deconv_out_shape
             func_list.append(func)
 
-            pad_width = [output_padding[i % 2] if i %
-                         2 else 0 for i in range(2*dim)]
-            padf = generate_pad(n.name, deconv_out, n.output[0],
-                                "constant", pad_width, 0,
-                                self._graph.name, self._func_counter)
-            func_list.append(padf)
+            # Add a separate Slice Function for asymmetry padding
+            start = [0, 0] + [pads[i] for i in range(dim)]
+            stop = input_shape[:1] + [weight_shape[1]] + \
+                [output_shape[i] + pads[i] for i in range(dim)]
+            step = [1, ] * (dim + 2)
+            slicef = generate_slice(n.name, deconv_out, n.output[0],
+                                    start, stop, step,
+                                    self._graph.name, self._func_counter)
+            func_list.append(slicef)
         else:
             func_list.append(func)
         self._shape_output[n.output[0]] = input_shape[:1] + \
@@ -3738,6 +3777,11 @@ class OnnxImporter:
         func_list.append(gf)
         # dynamic output shape
         self._shape_output[n.output[0]] = input_shape
+
+    def Round(self, func_list, n):
+        logger.warning("nnabla Round is not compatible to ONNX Round, " +
+                       "which performs rounding to nearest-even integer.")
+        return self.GeneralOperator('Round', func_list, n)
 
     def convert_to_functions(self, n):
         ft = self._onnx_optype_to_nnabla_function_type.get(n.op_type)
