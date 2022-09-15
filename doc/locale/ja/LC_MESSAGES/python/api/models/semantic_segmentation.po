@@ -273,8 +273,8 @@ msgid "DeepLabV3+."
 msgstr ""
 
 #: nnabla.models.semantic_segmentation.DeepLabV3plus:3 of
-msgid "Specify a training dataset name from 'voc' or 'coco'."
-msgstr "‘voc’ または ‘coco’ から学習データセット名を指定します。"
+msgid "Specify a training dataset name from 'voc' or 'voc-coco'."
+msgstr "‘voc’ または ‘voc-coco’ から学習データセット名を指定します。"
 
 #: nnabla.models.semantic_segmentation.DeepLabV3plus:5 of
 msgid ""
