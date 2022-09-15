@@ -46,7 +46,8 @@ class NnpNetwork(object):
         self.proto_network(batch_size=batch_size)
         for k, v in itertools.chain(
                 self.proto_network.variables.items(), self.proto_network.parameters.items()):
-            v.variable_instance.name = k
+            if v.variable_instance is not None:
+                v.variable_instance.name = k
         self._inputs = {
             i: self.proto_network.variables[i].variable_instance
             for i in self.proto_network.inputs
