@@ -33,6 +33,13 @@ nnabla-clean:
 nnabla-clean-all:
 	@git clean -fdx
 
+.PHONY: clean-nnabla-build-cache
+clean-nnabla-build-cache:
+	cd $(NNABLA_DIRECTORY) && \
+	git reset --hard && \
+	git clean -xf python src && \
+	cd -
+
 ########################################################################################################################
 # Auto Format
 .PHONY: nnabla-auto-format
@@ -124,7 +131,7 @@ nnabla-cpplib-android-test:
 # Execute the binary on emulator
 
 .PHONY: nnabla-wheel
-nnabla-wheel:
+nnabla-wheel:clean-nnabla-build-cache
 	@mkdir -p $(BUILD_DIRECTORY_WHEEL)
 	@cd $(BUILD_DIRECTORY_WHEEL) \
 	&& cmake \

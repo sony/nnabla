@@ -38,13 +38,15 @@ if __name__ == '__main__':
     install_requires = [
         'ply',
         'tensorboard>=2.6.0, <=2.9.0',
-        'tensorflow>=2.7.0, <=2.7.2',
+        'tensorflow~=2.8',
         'onnx_tf',
         'tf2onnx==1.7.2',
         'tensorflow-addons',
         'onnx==1.9.0',
         'tflite2onnx',
-        'flatbuffers'
+        'flatbuffers',
+        'pyopenssl',
+        'certifi'
     ]
 
     ############################################################################

@@ -15,4 +15,5 @@
 import distutils.util
 import sys
 
-print('lib.{}-{}'.format(distutils.util.get_platform(), sys.version[0:3]))
+python_version='{}.{}'.format(sys.version_info.major, sys.version_info.minor)
+print('lib.{}-{}'.format(distutils.util.get_platform(), python_version))
