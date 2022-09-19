@@ -27,10 +27,11 @@ from .conftest import generate_cache_dir
 
 
 @pytest.mark.parametrize("num_of_slices", [7])
-@pytest.mark.parametrize("size", [55])
-@pytest.mark.parametrize("batch_size", [1])
+@pytest.mark.parametrize("size", [55, 31])
+@pytest.mark.parametrize("batch_size", [1, 3])
 @pytest.mark.parametrize("shuffle", [False])
-def test_sliced_data_iterator_equivalence(test_data_csv_png_10, num_of_slices, size, batch_size, shuffle):
+@pytest.mark.parametrize("drop_last", [True, False])
+def test_sliced_data_iterator_equivalence(test_data_csv_png_10, num_of_slices, size, batch_size, shuffle, drop_last):
 
     def lcm(a, b):
         return abs(a * b) / math.gcd(a, b) if a and b else 0
@@ -60,17 +61,21 @@ def test_sliced_data_iterator_equivalence(test_data_csv_png_10, num_of_slices, s
 
     for slice_pos in range(num_of_slices):
         sliced_di = di.slice(
-            rng=None, num_of_slices=num_of_slices, slice_pos=slice_pos)
+            rng=None, num_of_slices=num_of_slices, slice_pos=slice_pos, drop_last=drop_last)
         sliced_di_list.append(sliced_di)
 
     ref_di_list = []
     all_data = [np.full((1), position, dtype=np.int)
                 for position in range(size)]
+    slice_block_size = size // num_of_slices
+    if not drop_last:
+        slice_block_size += 1 if size % num_of_slices != 0 else 0
     for slice_pos in range(num_of_slices):
-        slice_sample_size = size / num_of_slices
-        start_index = int(slice_sample_size * slice_pos + 0.5)
-        end_index = int(slice_sample_size * (slice_pos + 1) + 0.5)
-        slice_block_size = end_index - start_index
+        start_index = slice_pos * slice_block_size
+        end_index = start_index + slice_block_size
+        if end_index > size:
+            end_index = size
+            start_index = end_index - slice_block_size
         sliced_data = all_data[start_index: end_index]
         di = data_iterator_simple(
             partial(simple_load_func, sliced_data), slice_block_size, batch_size, shuffle=shuffle)
@@ -102,7 +107,8 @@ def test_sliced_data_iterator_equivalence(test_data_csv_png_10, num_of_slices, s
 @pytest.mark.parametrize("size", [50])
 @pytest.mark.parametrize("batch_size", [1, 5, 11])
 @pytest.mark.parametrize("shuffle", [False, True])
-def test_sliced_data_iterator(test_data_csv_png_10, num_of_slices, size, batch_size, shuffle):
+@pytest.mark.parametrize("drop_last", [True])
+def test_sliced_data_iterator_duplicated_unexpectedly(test_data_csv_png_10, num_of_slices, size, batch_size, shuffle, drop_last):
 
     def test_load_func(position):
         return np.full((1), position, dtype=np.float32)
@@ -118,7 +124,7 @@ def test_sliced_data_iterator(test_data_csv_png_10, num_of_slices, size, batch_s
     all_data = []
     for slice_pos in range(num_of_slices):
         sliced_di = di.slice(
-            rng=None, num_of_slices=num_of_slices, slice_pos=slice_pos)
+            rng=None, num_of_slices=num_of_slices, slice_pos=slice_pos, drop_last=drop_last)
         sliced_data = {}
         while True:
             current_epoch = sliced_di.epoch
