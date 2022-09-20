@@ -80,7 +80,8 @@ void TopKData<T>::forward_impl(const Variables &inputs,
   auto x_data = x->get_data_pointer<T>(this->ctx_);
   auto y_data = y->cast_data_and_get_pointer<T>(this->ctx_);
   auto top_k_idx = with_index_ ? outputs[1] : &top_k_idx_;
-  auto tk_idx = top_k_idx->cast_data_and_get_pointer<size_t>(this->ctx_);
+  auto tk_idx =
+      top_k_idx->template cast_data_and_get_pointer<size_t>(this->ctx_);
 
   function<void(const T *, const size_t, const size_t, size_t *)> top_k_func;
 
@@ -124,7 +125,7 @@ void TopKData<T>::backward_impl(const Variables &inputs,
   auto y_grad = y->get_grad_pointer<T>(ctx_);
   auto x_grad = x->cast_grad_and_get_pointer<T>(this->ctx_);
   auto top_k_idx = with_index_ ? outputs[1] : &top_k_idx_;
-  auto tk_idx = top_k_idx->get_data_pointer<size_t>(this->ctx_);
+  auto tk_idx = top_k_idx->template get_data_pointer<size_t>(this->ctx_);
 
   if (!reduce_) {
     for (Size_t i = 0; i < x->size(); i++) {
