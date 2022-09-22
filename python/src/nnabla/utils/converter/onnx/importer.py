@@ -753,7 +753,7 @@ class OnnxImporter:
             for i in self._graph.initializer:
                 if i.name == input_name:
                     input_shape = normalize_shape(i.dims)
-                    return input_shape
+                    return list(input_shape)
         if not input_shape:
             raise ValueError(
                 "The shape of {} was not found".format(input_name))
