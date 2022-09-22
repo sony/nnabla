@@ -23,7 +23,7 @@ ctxs = list_context('ScatterNd')
 def scatter_nd(data, indices, shape):
     indices = indices.tolist() if isinstance(indices, np.ndarray) else indices
     result = np.zeros(shape, dtype=data.dtype)
-    result[indices] = data
+    result[tuple(indices)] = data
     return result
 
 

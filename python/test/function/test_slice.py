@@ -26,7 +26,7 @@ ctxs = list_context('Slice')
 def ref_slice(x, start, stop, step):
     s = [slice(start[axis], stop[axis], step[axis])
          for axis in range(len(start))]
-    return x[s]
+    return x[tuple(s)]
 
 
 @pytest.mark.parametrize("ctx, fname", ctxs)
