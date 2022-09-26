@@ -37,7 +37,7 @@ if __name__ == '__main__':
 
     install_requires = [
         'ply',
-        'tensorboard>=2.6.0, <=2.9.0'
+        'tensorboard>=2.6.0, <=2.9.0',
         'tensorflow>=2.7.0, <=2.7.2',
         'onnx_tf',
         'tf2onnx==1.7.2',
