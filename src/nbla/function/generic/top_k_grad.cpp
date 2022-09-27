@@ -78,7 +78,7 @@ void TopKGrad<T>::backward_impl(const Variables &inputs,
   auto tk_idx = top_k_idx_.cast_data_and_get_pointer<size_t>(this->ctx_);
 
   function<void(const T *, const size_t, const size_t, size_t *)> top_k_func =
-      this->abs_ ? top_k_abs<T> : top_k<T>;
+      this->abs_ ? top_k_abs<T, true> : top_k<T, true>;
 
   auto inner_size = y->size(this->base_axis_);
   auto outer_size = y->size() / inner_size;

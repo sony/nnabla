@@ -21,7 +21,7 @@
 
 namespace nbla {
 
-NBLA_REGISTER_FUNCTION_SOURCE(TopKData, int, bool, bool, int);
+NBLA_REGISTER_FUNCTION_SOURCE(TopKData, int, bool, bool, int, bool, bool);
 
 template <typename T>
 void TopKData<T>::setup_impl(const Variables &inputs,
@@ -42,20 +42,29 @@ void TopKData<T>::setup_impl(const Variables &inputs,
              "k must not exceed the sample size, but k %d > sample size %d", k,
              x->size(base_axis));
 
-  if (!reduce_) {
-    y->reshape(x_shape, true);
-  } else {
-    Shape_t y_shape;
+  Shape_t y_shape = x_shape;
+  if (reduce_) {
+    y_shape = {};
     y_shape.reserve(base_axis + 1);
     std::copy_n(x_shape.begin(), base_axis, std::back_inserter(y_shape));
     y_shape.push_back(k);
-    y->reshape(y_shape, true);
   }
+  y->reshape(y_shape, true);
 
   ss_ = x->size(base_axis); // input sample size
   ns_ = x->size() / ss_;    // number of samples
   fs_ = y->size(base_axis); // output feature size
-  top_k_idx_.reshape(Shape_t{ns_, k}, true);
+
+  if (with_index_) {
+    NBLA_CHECK(outputs.size() >= 2, error_code::value,
+               "The number of outputs must be 2 when with_index = true");
+    NBLA_CHECK(reduce_, error_code::value,
+               "reduce must be true when with_index = true");
+    outputs[1]->reshape(y_shape, true);
+  } else {
+    top_k_idx_.reshape(Shape_t{ns_, k}, true);
+  }
+
   forward_done_ = false;
 }
 
@@ -70,10 +79,17 @@ void TopKData<T>::forward_impl(const Variables &inputs,
 
   auto x_data = x->get_data_pointer<T>(this->ctx_);
   auto y_data = y->cast_data_and_get_pointer<T>(this->ctx_);
-  auto tk_idx = top_k_idx_.cast_data_and_get_pointer<size_t>(this->ctx_);
+  auto top_k_idx = with_index_ ? outputs[1] : &top_k_idx_;
+  auto tk_idx =
+      top_k_idx->template cast_data_and_get_pointer<size_t>(this->ctx_);
 
-  function<void(const T *, const size_t, const size_t, size_t *)> top_k_func =
-      this->abs_ ? top_k_abs<T> : top_k<T>;
+  function<void(const T *, const size_t, const size_t, size_t *)> top_k_func;
+
+  if (this->abs_) {
+    top_k_func = this->largest_ ? top_k_abs<T, true> : top_k_abs<T, false>;
+  } else {
+    top_k_func = this->largest_ ? top_k<T, true> : top_k<T, false>;
+  }
 
   for (int s = 0; s < this->ns_; s++) {
     top_k_func(x_data, this->ss_, this->k_, tk_idx);
@@ -108,7 +124,8 @@ void TopKData<T>::backward_impl(const Variables &inputs,
 
   auto y_grad = y->get_grad_pointer<T>(ctx_);
   auto x_grad = x->cast_grad_and_get_pointer<T>(this->ctx_);
-  auto tk_idx = top_k_idx_.get_data_pointer<size_t>(ctx_);
+  auto top_k_idx = with_index_ ? outputs[1] : &top_k_idx_;
+  auto tk_idx = top_k_idx->template get_data_pointer<size_t>(this->ctx_);
 
   if (!reduce_) {
     for (Size_t i = 0; i < x->size(); i++) {

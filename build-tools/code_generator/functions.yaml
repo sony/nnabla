@@ -5551,11 +5551,22 @@ Stochasticity:
         doc: First dimension of the sample shape.
         type: int64
         default: '1'
+      largest:
+        doc: Whether to select the `k` largest or smallest values.
+        type: bool
+        default: 'True'
+      with_index:
+        doc: Return top-k values and indices.
+        type: bool
+        default: 'False'
     outputs:
       y:
         doc: N-D array.
+      indices:
+        doc: N-D array of top-k indices.
     function_ids:
       iBBi: 87
+      iBBiBB: 350
     c_runtime: not support
   TopKGrad:
     snake_name: top_k_grad
