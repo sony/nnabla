@@ -250,7 +250,7 @@ class DataIterator(object):
 
     def slice(self, rng, num_of_slices=None, slice_pos=None,
               slice_start=None, slice_end=None,
-              cache_dir=None, use_cache=False):
+              cache_dir=None, use_cache=False, drop_last=False):
         '''
         Slices the data iterator so that newly generated data iterator has access to limited portion of the original data.
 
@@ -262,6 +262,8 @@ class DataIterator(object):
             slice_end(int) : End position of the range to be sliced into new data iterator. Must be used together with `slice_start`.
             cache_dir(str) : Directory to save cache files. if cache_dir is None and use_cache is True, will used memory cache.
             use_cache(bool): Whether use cache for data_source.
+            drop_last(bool): If it is True, the samples if the number of samples cannot be evenly divisible are dropped,
+                             If it is False, the samples are duplicated so that it is evenly divisible.
 
         Example:
 
@@ -289,17 +291,18 @@ class DataIterator(object):
             This algorithm tends to evenly assign the remained to
             each slice block with some integer tricky.
             """
-            size_rank = size // n_slices
-            remain = size % n_slices
-            slice_start = size_rank * rank
-            if rank < remain:
-                slice_start += rank
-                size_rank += 1
+            if drop_last:
+                size_rank = size // n_slices
+                slice_start = size_rank * rank
+                slice_end = slice_start + size_rank
             else:
-                slice_start += remain
-
-            slice_end = slice_start + size_rank
-            assert slice_end <= size
+                size_rank = (size + n_slices - 1) // n_slices
+                slice_start = (size_rank * rank) % size
+                slice_end = slice_start + size_rank
+                if slice_end > size:
+                    offset = slice_end - size
+                    slice_end -= offset
+                    slice_start -= offset
 
             return slice_start, slice_end
 

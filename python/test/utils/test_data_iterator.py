@@ -17,6 +17,7 @@ from __future__ import absolute_import
 import os
 import pytest
 import threading
+import numpy as np
 
 # from NNabla
 from nnabla.logger import logger
@@ -267,3 +268,38 @@ def test_data_iterator_concat_datasets(test_data_csv_png_10,
         check_data_iterator_concat_result(
             di, batch_size, normalize, ds1.size, ds2.size, stop_exhausted)
         di.close()
+
+
+def check_iterator_list(di_list):
+    di_size = [di.size for di in di_list]
+    assert len(set(di_size)) == 1
+
+
+@pytest.mark.parametrize("batch_size", [5, 7])
+@pytest.mark.parametrize("shuffle", [False, True])
+@pytest.mark.parametrize('stop_exhausted', [False, True])
+@pytest.mark.parametrize('comm_size', [3, 4, 5])
+@pytest.mark.parametrize('drop_last', [True, False])
+def test_data_iterator_slice(test_data_csv_png_10, batch_size, shuffle, stop_exhausted, comm_size, drop_last):
+    src_data = []
+    with open(test_data_csv_png_10) as f:
+        for l in f.readlines():
+            values = [x.strip() for x in l.split(',')]
+            img_file_name = os.path.join(
+                os.path.dirname(test_data_csv_png_10), values[0])
+            if os.path.exists(img_file_name):
+                with open(img_file_name, 'rb') as img_file:
+                    d = load_image(img_file)
+                    src_data.append((d, [int(values[1])]))
+
+    def test_load_func(position):
+        return src_data[position]
+
+    size = len(src_data)
+    di_list = []
+    with data_iterator_simple(test_load_func, size, batch_size, shuffle=shuffle, stop_exhausted=stop_exhausted) as di:
+        for comm_rank in range(comm_size):
+            rng = np.random.RandomState(comm_rank * 19)
+            di_list.append(
+                di.slice(rng, comm_size, comm_rank, drop_last=drop_last))
+        check_iterator_list(di_list)
