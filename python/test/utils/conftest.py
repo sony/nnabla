@@ -108,11 +108,11 @@ def generate_cache_dir(num_of_data):
                                   "cache_{}_{}.npy".format(
                                       str(i).zfill(8), str(i + cache_block_size - 1).zfill(8)))
             with open(npy_fn, 'wb') as f:
-                numpy.save(f, data_x[i: i + cache_block_size - 1])
-                numpy.save(f, data_y[i: i + cache_block_size - 1])
+                numpy.save(f, data_x[i: i + cache_block_size])
+                numpy.save(f, data_y[i: i + cache_block_size])
 
             cache_info.append(
-                (npy_fn, len(data_y[i: i + cache_block_size - 1])))
+                (npy_fn, len(data_y[i: i + cache_block_size])))
 
         # generate cache_index.csv
         with open(os.path.join(imgdir, 'cache_index.csv'), 'w') as f:
