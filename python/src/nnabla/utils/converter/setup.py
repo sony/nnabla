@@ -42,7 +42,7 @@ if __name__ == '__main__':
         'onnx_tf',
         'tf2onnx==1.7.2',
         'tensorflow-addons',
-        'onnx==1.9.0',
+        'onnx==1.10.0',
         'tflite2onnx',
         'flatbuffers'
     ]
