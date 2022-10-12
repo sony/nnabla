@@ -28,10 +28,19 @@ namespace nbla {
 
 NBLA_REGISTER_FUNCTION_SOURCE(LayerNormalization, const vector<int> &, float,
                               bool, bool);
-
 template <typename T>
 void LayerNormalization<T>::setup_impl(const Variables &inputs,
                                        const Variables &outputs) {
+  // Since TensorNorm setup is relatively heavy routine, we separated it into
+  // sub-routine (setup_functions). This enables LayerNormalizationCuda, which
+  // does not use TensorNorm, skips setup_functions.
+  this->setup_shapes(inputs, outputs);
+  this->setup_functions(inputs, outputs);
+}
+
+template <typename T>
+void LayerNormalization<T>::setup_shapes(const Variables &inputs,
+                                         const Variables &outputs) {
   const int n_inputs = inputs.size();
   const int n_outputs = outputs.size();
 
@@ -89,10 +98,14 @@ void LayerNormalization<T>::setup_impl(const Variables &inputs,
     outputs[1]->reshape(tn_shape_, true); // batch mean
     outputs[2]->reshape(tn_shape_, true); // batch var
   }
+}
 
+template <typename T>
+void LayerNormalization<T>::setup_functions(const Variables &inputs,
+                                            const Variables &outputs) {
   // functions
   f_tensor_norm_ = create_TensorNormalization(
-      ctx_, tn_axes, eps_, true /* no_scale */, true /* no_bias */);
+      ctx_, batch_axis_, eps_, true /* no_scale */, true /* no_bias */);
   f_tensor_norm_->setup({inputs[0]}, outputs);
   if (!no_scale_)
     f_mul2_ = create_Mul2(ctx_, false);
