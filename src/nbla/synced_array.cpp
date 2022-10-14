@@ -337,13 +337,6 @@ SyncedArray::ArrayDesc SyncedArray::sync(dtypes dtype, const Context &ctx_orig,
     array_[desc.key].first->wait_event(ctx, async_flags);
   }
 
-  if (write_only) {
-    return desc;
-  }
-
-  auto ah = array_[desc.key];
-  Array *array = ah.first.get();
-  bool at_head = ah.second;
   if (has_family() && check_zeroing_filling()) {
     // Do lazy evaluation of zero() or fill().
 
@@ -357,6 +350,13 @@ SyncedArray::ArrayDesc SyncedArray::sync(dtypes dtype, const Context &ctx_orig,
     zero_fill_root->traverse_zero_fill();
   }
 
+  if (write_only) {
+    return desc;
+  }
+
+  auto ah = array_[desc.key];
+  Array *array = ah.first.get();
+  bool at_head = ah.second;
   // Not initialized or the array is not at head.
   if (at_head) {
     return desc;
