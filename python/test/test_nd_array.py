@@ -454,6 +454,49 @@ class TestNdArrayNarrow():
 
     @pytest.mark.parametrize("ctx_name", [
         "cpu", "cuda", "cudnn"])
+    def test_nd_array_narrow_write_only_cast(self, ctx_name):
+        self.try_to_set_ctx(ctx_name)
+
+        # Using F.identity() case
+        # F.identity() uses `write_only==true` cast for the destination array
+        a = nn.NdArray((2,))
+        a.fill(3)
+        b = nn.NdArray((4,))
+        b.fill(5)
+
+        c = b.narrow(0, 0, 2)
+        F.identity(a, outputs=[c])
+
+        np.testing.assert_equal(c.get_data(mode="r"), np.array([3, 3]))
+        np.testing.assert_equal(b.get_data(), np.array([3, 3, 5, 5]))
+
+        # Using F.identity() case with default zeroing of parent array (`b`)
+        a = nn.NdArray((2,))
+        a.fill(3)
+        b = nn.NdArray((4,))
+
+        c = b.narrow(0, 0, 2)
+        F.identity(a, outputs=[c])
+
+        np.testing.assert_equal(c.get_data(mode="r"), np.array([3, 3]))
+        np.testing.assert_equal(b.get_data(), np.array([3, 3, 0, 0]))
+
+        # Using copy_from() and partial narrowing case
+        # NdArray::copy_from() uses F.identity() internally
+        # (Buf reported case)
+        a = nn.NdArray((2,))
+        a.fill(3)
+        b = nn.NdArray((4,))
+        b.fill(5)
+
+        c = b.narrow(0, 0, 2)
+        c.copy_from(a)
+
+        np.testing.assert_equal(c.get_data(mode="r"), np.array([3, 3]))
+        np.testing.assert_equal(b.get_data(), np.array([3, 3, 5, 5]))
+
+    @pytest.mark.parametrize("ctx_name", [
+        "cpu", "cuda", "cudnn"])
     def test_nd_array_narrow_errors(self, ctx_name):
         self.try_to_set_ctx(ctx_name)
 
