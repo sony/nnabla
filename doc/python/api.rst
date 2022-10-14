@@ -15,6 +15,7 @@ Python API Reference
     api/parametric_function
     api/grad
     api/solver
+    api/callback
     api/communicator
     api/monitor
     api/data_iterator
