@@ -30,6 +30,17 @@ NBLA_REGISTER_FUNCTION_SOURCE(InstanceNormalization, int, const vector<int> &,
 template <typename T>
 void InstanceNormalization<T>::setup_impl(const Variables &inputs,
                                           const Variables &outputs) {
+  // Since TensorNorm setup is relatively heavy routine, we separated it into
+  // sub-routine (setup_functions). This enables InstanceNormalizationCuda,
+  // which
+  // does not use TensorNorm, skips setup_functions.
+  this->setup_shapes(inputs, outputs);
+  this->setup_functions(inputs, outputs);
+}
+
+template <typename T>
+void InstanceNormalization<T>::setup_shapes(const Variables &inputs,
+                                            const Variables &outputs) {
   const int n_inputs = inputs.size();
   const auto x_shape = inputs[0]->shape();
   const int ndim = x_shape.size();
@@ -102,6 +113,19 @@ void InstanceNormalization<T>::setup_impl(const Variables &inputs,
     outputs[1]->reshape(out_param_shape, true); // batch mean
     outputs[2]->reshape(out_param_shape, true); // batch var
   }
+}
+
+template <typename T>
+void InstanceNormalization<T>::setup_functions(const Variables &inputs,
+                                               const Variables &outputs) {
+  const auto x_shape = inputs[0]->shape();
+  const int ndim = x_shape.size();
+
+  vector<int> adapt_shape(ndim, 1);
+  for (auto ba : batch_axis_) {
+    adapt_shape[ba] = x_shape[ba];
+  }
+  adapt_shape[channel_axis_] = x_shape[channel_axis_];
 
   // functions
   if (need_beta_broadcast_) {
@@ -120,6 +144,8 @@ void InstanceNormalization<T>::setup_impl(const Variables &inputs,
 
   // tensor_norm variables
   Variable beta_bc, gamma_bc;
+  const auto beta = no_bias_ ? nullptr : inputs[beta_idx_];
+  const auto gamma = no_scale_ ? nullptr : inputs[gamma_idx_];
   Variable *tn_beta = beta;
   Variable *tn_gamma = gamma;
 

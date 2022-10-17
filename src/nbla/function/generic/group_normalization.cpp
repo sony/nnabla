@@ -29,10 +29,19 @@ namespace nbla {
 
 NBLA_REGISTER_FUNCTION_SOURCE(GroupNormalization, int, int, const vector<int> &,
                               float, bool, bool);
-
 template <typename T>
 void GroupNormalization<T>::setup_impl(const Variables &inputs,
                                        const Variables &outputs) {
+  // Since InstanceNorm setup is relatively heavy routine, we separated it into
+  // sub-routine (setup_functions). This enables GroupNormalizationCuda, which
+  // does not use InstanceNorm, skips setup_functions.
+  this->setup_shapes(inputs, outputs);
+  this->setup_functions(inputs, outputs);
+}
+
+template <typename T>
+void GroupNormalization<T>::setup_shapes(const Variables &inputs,
+                                         const Variables &outputs) {
   const auto n_inputs = inputs.size();
   const auto n_outputs = outputs.size();
   beta_idx_ = no_bias_ ? -1 : 1;
@@ -113,7 +122,11 @@ void GroupNormalization<T>::setup_impl(const Variables &inputs,
     outputs[1]->reshape(adapt_shape, true); // batch mean
     outputs[2]->reshape(adapt_shape, true); // batch var
   }
+}
 
+template <typename T>
+void GroupNormalization<T>::setup_functions(const Variables &inputs,
+                                            const Variables &outputs) {
   // functions
   f_instance_norm_ =
       create_InstanceNormalization(ctx_, channel_axis_, batch_axis_, eps_,
