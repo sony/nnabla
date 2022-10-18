@@ -47,7 +47,6 @@ RUN apt-get install -y --no-install-recommends \
        curl \
        g++ \
        git \
-       libarchive-dev \
        libgoogle-glog-dev \
        libgtest-dev \
        libhdf5-dev \
@@ -102,6 +101,27 @@ RUN mkdir /tmp/deps \
     && cd / \
     && rm -rf /tmp/*
 
+############################################################ libarchive
+ARG LIBARCHIVEVER=3.4.3
+RUN mkdir /tmp/deps \
+    && cd /tmp/deps \
+    && curl ${CURL_OPTS} -L https://github.com/libarchive/libarchive/archive/v${LIBARCHIVEVER}.tar.gz -o libarchive-${LIBARCHIVEVER}.tar.gz \
+    && tar xfa libarchive-${LIBARCHIVEVER}.tar.gz \
+    && mkdir libarchive-build \
+    && cd libarchive-build \
+    && cmake \
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DENABLE_NETTLE=FALSE -DENABLE_OPENSSL=FALSE \
+        -DENABLE_LZO=FALSE -DENABLE_LZMA=FALSE -DENABLE_BZip2=FALSE \
+        -DENABLE_LIBXML2=FALSE -DENABLE_EXPAT=FALSE -DENABLE_PCREPOSIX=FALSE -DENABLE_LibGCC=FALSE \
+        -DENABLE_CNG=FALSE -DENABLE_TAR=FALSE -DENABLE_TAR_SHARED=FALSE -DENABLE_CPIO=FALSE \
+        -DENABLE_CPIO_SHARED=FALSE -DENABLE_CAT=FALSE -DENABLE_CAT_SHARED=FALSE -DENABLE_XATTR=FALSE \
+        -DENABLE_ACL=FALSE -DENABLE_ICONV=FALSE -DENABLE_TEST=FALSE \
+        ../libarchive-${LIBARCHIVEVER} \
+    && make -j8 \
+    && make install \
+    && cd / \
+    && rm -rf /tmp/*
+
 ################################################## requirements
 
 ADD python/setup_requirements.txt /tmp/deps/
@@ -115,4 +135,4 @@ RUN pip install ${PIP_INS_OPTS} numpy \
     && rm -rf /tmp/*
 
 ENV PATH /tmp/.local/bin:$PATH
-ENV LD_LIBRARY_PATH /usr/local/lib64:$LD_LIBRARY_PATH
+ENV LD_LIBRARY_PATH /usr/local/lib64:/usr/local/lib:$LD_LIBRARY_PATH
