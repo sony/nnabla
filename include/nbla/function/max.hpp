@@ -53,6 +53,11 @@ public:
   }
   virtual string name() { return "Max"; }
   virtual bool grad_depends_output_data(int i, int o) const { return false; }
+  virtual bool auto_grad_depends_output_data(int i, int o) const {
+    // max_backward requires outputs[0] because index_buff_ cannot be accessed
+    // there.
+    return true;
+  }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,
@@ -65,6 +70,11 @@ protected:
                                              int reduction_size, bool accum);
   virtual bool grad_depends_input_data_impl(int i, int j) const {
     return false;
+  }
+  virtual bool auto_grad_depends_input_data_impl(int i, int j) const {
+    // max_backward requires inputs[0] because index_buff_ cannot be accessed
+    // there.
+    return true;
   }
 };
 }

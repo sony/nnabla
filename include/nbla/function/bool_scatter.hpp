@@ -71,6 +71,13 @@ protected:
       return true;
     return false;
   }
+  virtual bool auto_grad_depends_input_data_impl(int i, int j) const {
+    // bool_scatter_backward requires inputs[1].
+    if (j == 1) {
+      return true;
+    }
+    return false;
+  }
 
   virtual bool grad_depends_output_data(int i, int o) const { return false; }
 };

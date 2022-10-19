@@ -103,6 +103,12 @@ protected:
   virtual bool grad_depends_input_data_impl(int i, int j) const {
     return false;
   }
+  virtual bool auto_grad_depends_input_data_impl(int i, int j) const {
+    // dropout_backward requires the dropout_mask and inputs[0] can be cleared.
+    // However, in the current implementation using workaround, it is passed
+    // via inputs[0]. Therefore inputs[0] must be kept unexpectedly.
+    return true;
+  }
 };
 }
 #endif

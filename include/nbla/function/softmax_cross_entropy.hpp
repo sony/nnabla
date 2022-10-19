@@ -94,6 +94,10 @@ protected:
       return true;
     return false;
   }
+  virtual bool auto_grad_depends_input_data_impl(int i, int j) const {
+    // softmax_cross_entropy_backward always uses inputs[0] and inputs[1].
+    return true;
+  }
 };
 }
 #endif

@@ -175,6 +175,13 @@ protected:
     }
     return false;
   }
+
+  virtual bool auto_grad_depends_input_data_impl(int i, int j) const {
+    // batch_normalization_backward recomputes the forward. Therefore the all
+    // inputs must be kept.
+    return true;
+  }
+
   virtual bool overwrite_input_data_in_forward_impl(int i) const {
     if (i == m_idx_ || i == v_idx_) {
       return true;
