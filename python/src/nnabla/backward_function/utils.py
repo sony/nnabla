@@ -64,16 +64,17 @@ def force_tuple(x):
     return x
 
 
-def get_output(x, func_name, nth_output=0):
-    for func in x.function_references:
-        if func.info.type_name == func_name:
-            return func.outputs[nth_output]
-    raise ValueError("{} is not found.".format(func_name))
-
-
 def sum_for_arithmetics(dx, x):
     # F.{add2, sub2, mul2, div2} includes Broadcast internally (C++-level),
     # so we have to do F.sum explicitly
     axes = [a for a in range(len(x.shape)) if x.shape[a] == 1]
+    dx = F.sum(dx, axes, keepdims=True)
+    return dx
+
+
+def sum_for_arithmetics_with_shape(dx, x_shape):
+    # F.{add2, sub2, mul2, div2} includes Broadcast internally (C++-level),
+    # so we have to do F.sum explicitly
+    axes = [a for a in range(len(x_shape)) if x_shape[a] == 1]
     dx = F.sum(dx, axes, keepdims=True)
     return dx

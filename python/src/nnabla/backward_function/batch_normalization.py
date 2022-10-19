@@ -284,46 +284,66 @@ class BatchNormalizationBackward(PythonFunction):
                 g_g0.copy_from(g_g0_.data)
 
 
-def batch_normalization_backward(inputs, axes=(1,), decay_rate=0.9, eps=1e-05,
+def batch_normalization_backward(grad_inputs, inputs, input_shapes, outputs, output_shapes, axes=(1,), decay_rate=0.9, eps=1e-05,
                                  batch_stat=True, no_scale=False, no_bias=False):
     """
     Args:
-      inputs (list of nn.Variable): Incomming grads/inputs to/of the forward function.
+      grad_inputs (list of :obj:`nnabla.Variable`): Propagated grads to this backward function.
+      inputs (list of :obj:`nnabla.Variable` and None): Input Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      input_shapes (list of tuple of :obj:`int`): Input shapes of the forward function.
+          The shapes of the inputs in which None is set can be passed.
+      outputs (list of :obj:`nnabla.Variable` and None): Output Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      output_shapes (list of tuple of :obj:`int`): Output shapes of the forward function.
+          The shapes of the outputs in which None is set can be passed.
       kwargs (dict of arguments): Dictionary of the corresponding function arguments.
 
     Return:
       list of Variable: Return the gradients wrt inputs of the corresponding function.
     """
+    # In auto-forward mode, the dynamic clear of the all inputs are
+    # blocked by BatchNormalization::auto_grad_depends_input/output_data.
     ctx = nn.get_current_context()
-    axes = [a+inputs[1].ndim*(a < 0) for a in axes]
+    x_ndim = len(input_shapes[0])
+    axes = [a + x_ndim * (a < 0) for a in axes]
     df = BatchNormalizationBackward(
         ctx, axes, decay_rate, eps, batch_stat, no_scale, no_bias)
-    d_inputs = df(*inputs)
+    d_inputs = df(*grad_inputs, *inputs)
     return force_tuple(d_inputs) + (None, None)
 
 
-def batch_normalization_backward_backward(inputs, axes=(1,), decay_rate=0.9, eps=1e-05,
+def batch_normalization_backward_backward(grad_inputs, inputs, input_shapes, outputs, output_shapes, axes=(1,), decay_rate=0.9, eps=1e-05,
                                           batch_stat=True, no_scale=False, no_bias=False):
     """
     Args:
-      inputs (list of nn.Variable): Incomming grads/inputs to/of the forward function.
+      grad_inputs (list of :obj:`nnabla.Variable`): Propagated grads to this backward function.
+      inputs (list of :obj:`nnabla.Variable` and None): Input Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      input_shapes (list of tuple of :obj:`int`): Input shapes of the forward function.
+          The shapes of the inputs in which None is set can be passed.
+      outputs (list of :obj:`nnabla.Variable` and None): Output Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      output_shapes (list of tuple of :obj:`int`): Output shapes of the forward function.
+          The shapes of the outputs in which None is set can be passed.
       kwargs (dict of arguments): Dictionary of the corresponding function arguments.
 
     Return:
       list of Variable: Return the gradients wrt inputs of the corresponding function.
     """
 
-    axes = [a+inputs[1].ndim*(a < 0) for a in axes]
+    axes = [a + inputs[0].ndim*(a < 0) for a in axes]
 
     # Align variable indices
     v_idx = 1
-    x_idx = 0
     if not no_bias:
         g_db0_idx = v_idx
         v_idx += 1
     if not no_scale:
         g_dg0_idx = v_idx
         v_idx += 1
+
+    v_idx = 0
     dy_idx = v_idx
     v_idx += 1
     x0_idx = v_idx
@@ -336,10 +356,11 @@ def batch_normalization_backward_backward(inputs, axes=(1,), decay_rate=0.9, eps
         v_idx += 1
     rm_idx = v_idx
     rv_idx = rm_idx + 1
+
     # Indexing
-    g_dx0 = inputs[0]
-    g_db0 = inputs[g_db0_idx] if not no_bias else 0
-    g_dg0 = inputs[g_dg0_idx] if not no_scale else 0
+    g_dx0 = grad_inputs[0]
+    g_db0 = grad_inputs[g_db0_idx] if not no_bias else 0
+    g_dg0 = grad_inputs[g_dg0_idx] if not no_scale else 0
     dy = inputs[dy_idx]
     x0 = inputs[x0_idx]
     b0 = inputs[b0_idx] if not no_bias else 0

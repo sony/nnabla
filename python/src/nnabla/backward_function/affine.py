@@ -35,18 +35,26 @@ class AffineFilterGrad(LinearFilterGrad):
         self._linear = _F.Affine(ctx, base_axis)
 
 
-def affine_backward(inputs, base_axis=1):
+def affine_backward(grad_inputs, inputs, input_shapes, outputs, output_shapes, base_axis=1):
     """
     Args:
-      inputs (list of nn.Variable): Incomming grads/inputs to/of the forward function.
+      grad_inputs (list of :obj:`nnabla.Variable`): Propagated grads to this backward function.
+      inputs (list of :obj:`nnabla.Variable` and None): Input Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      input_shapes (list of tuple of :obj:`int`): Input shapes of the forward function.
+          The shapes of the inputs in which None is set can be passed.
+      outputs (list of :obj:`nnabla.Variable` and None): Output Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      output_shapes (list of tuple of :obj:`int`): Output shapes of the forward function.
+          The shapes of the outputs in which None is set can be passed.
       kwargs (dict of arguments): Dictionary of the corresponding function arguments.
 
     Return:
       list of Variable: Return the gradients wrt inputs of the corresponding function.
     """
-    dy = inputs[0]
-    x0 = inputs[1]
-    w0 = inputs[2]
+    dy = grad_inputs[0]
+    x0 = inputs[0]
+    w0 = inputs[1]
 
     base_axis += inputs[0].ndim*(base_axis < 0)
 
@@ -59,7 +67,7 @@ def affine_backward(inputs, base_axis=1):
     dx0 = dfx(dy, w0)
     dw0 = dfw(dy, x0)
 
-    if len(inputs) == 4:
+    if len(inputs) == 3:
         axes = [i for i in range(0, base_axis)]
         db0 = F.sum(dy, axes, keepdims=False)
         return dx0, dw0, db0
@@ -67,18 +75,26 @@ def affine_backward(inputs, base_axis=1):
         return dx0, dw0
 
 
-def affine_data_grad_backward(inputs, base_axis=1):
+def affine_data_grad_backward(grad_inputs, inputs, input_shapes, outputs, output_shapes, base_axis=1):
     """
     Args:
-      inputs (list of nn.Variable): Incomming grads/inputs to/of the forward function.
+      grad_inputs (list of :obj:`nnabla.Variable`): Propagated grads to this backward function.
+      inputs (list of :obj:`nnabla.Variable` and None): Input Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      input_shapes (list of tuple of :obj:`int`): Input shapes of the forward function.
+          The shapes of the inputs in which None is set can be passed.
+      outputs (list of :obj:`nnabla.Variable` and None): Output Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      output_shapes (list of tuple of :obj:`int`): Output shapes of the forward function.
+          The shapes of the outputs in which None is set can be passed.
       kwargs (dict of arguments): Dictionary of the corresponding function arguments.
 
     Return:
       list of Variable: Return the gradients wrt inputs of the corresponding function.
     """
-    gdx = inputs[0]
-    dy = inputs[1]
-    w0 = inputs[2]
+    gdx = grad_inputs[0]
+    dy = inputs[0]
+    w0 = inputs[1]
 
     ctx = nn.get_current_context()
     dfw = AffineFilterGrad(ctx, base_axis)
@@ -89,18 +105,26 @@ def affine_data_grad_backward(inputs, base_axis=1):
     return gdy, gw0
 
 
-def affine_filter_grad_backward(inputs, base_axis=1):
+def affine_filter_grad_backward(grad_inputs, inputs, input_shapes, outputs, output_shapes, base_axis=1):
     """
     Args:
-      inputs (list of nn.Variable): Incomming grads/inputs to/of the forward function.
+      grad_inputs (list of :obj:`nnabla.Variable`): Propagated grads to this backward function.
+      inputs (list of :obj:`nnabla.Variable` and None): Input Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      input_shapes (list of tuple of :obj:`int`): Input shapes of the forward function.
+          The shapes of the inputs in which None is set can be passed.
+      outputs (list of :obj:`nnabla.Variable` and None): Output Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      output_shapes (list of tuple of :obj:`int`): Output shapes of the forward function.
+          The shapes of the outputs in which None is set can be passed.
       kwargs (dict of arguments): Dictionary of the corresponding function arguments.
 
     Return:
       list of Variable: Return the gradients wrt inputs of the corresponding function.
     """
-    gdw = inputs[0]
-    dy = inputs[1]
-    x0 = inputs[2]
+    gdw = grad_inputs[0]
+    dy = inputs[0]
+    x0 = inputs[1]
 
     ctx = nn.get_current_context()
     dfx = AffineDataGrad(ctx, base_axis)

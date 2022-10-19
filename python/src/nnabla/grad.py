@@ -87,10 +87,29 @@ class Grad(object):
         backward_func = registry[f_fwd_name]
 
         # 3. connect
-        grad_inputs = grad_inputs + f.inputs
+        # Only grad-depending inputs are passed to the backward function because
+        # the other inputs are probably cleared before.
+        grad_depending_inputs = [None for inp in f.inputs]
+        input_shapes = [inp.shape for inp in f.inputs]
+        for i in range(len(f.inputs)):
+            for j, inp in enumerate(f.inputs):
+                if f.grad_depends_input_data(i, j) or \
+                   f.auto_grad_depends_input_data(i, j):
+                    grad_depending_inputs[j] = inp
+
+        grad_depending_outputs = [None for outp in f.outputs]
+        output_shapes = [outp.shape for outp in f.outputs]
+        for i in range(len(f.inputs)):
+            for o, outp in enumerate(f.outputs):
+                if f.grad_depends_output_data(i, o) or \
+                   f.auto_grad_depends_output_data(i, o):
+                    grad_depending_outputs[o] = outp
+
         ctx = nn.get_current_context()
         with nn.context_scope(ctx):
-            grad_outputs = backward_func(grad_inputs, **f.info.args)
+            grad_outputs = backward_func(grad_inputs, grad_depending_inputs,
+                                         input_shapes, grad_depending_outputs,
+                                         output_shapes, **f.info.args)
         grad_outputs = self._force_list(grad_outputs)
 
         # 4. put grad_output as grad_input to a corresponding function

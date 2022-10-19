@@ -17,16 +17,25 @@ import nnabla.functions as F
 from .tensor_normalization import tensor_normalization_backward
 
 
-def instance_normalization_backward(inputs, channel_axis=None, batch_axis=(0,), eps=1e-05, no_scale=False, no_bias=False):
+def instance_normalization_backward(grad_inputs, inputs, input_shapes, outputs, output_shapes,
+                                    channel_axis=None, batch_axis=(0,), eps=1e-05, no_scale=False, no_bias=False):
     """
     Args:
-      inputs (list of nn.Variable): Incomming grads/inputs to/of the forward function.
+      grad_inputs (list of :obj:`nnabla.Variable`): Propagated grads to this backward function.
+      inputs (list of :obj:`nnabla.Variable` and None): Input Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      input_shapes (list of tuple of :obj:`int`): Input shapes of the forward function.
+          The shapes of the inputs in which None is set can be passed.
+      outputs (list of :obj:`nnabla.Variable` and None): Output Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      output_shapes (list of tuple of :obj:`int`): Output shapes of the forward function.
+          The shapes of the outputs in which None is set can be passed.
       kwargs (dict of arguments): Dictionary of the corresponding function arguments.
 
     Return:
       list of Variable: Return the gradients wrt inputs of the corresponding function.
     """
-    x = inputs[1]
+    x = inputs[0]
 
     channel_axis += x.ndim*(channel_axis < 0)
     batch_axis = [b + x.ndim*(b < 0) for b in batch_axis]
@@ -34,12 +43,12 @@ def instance_normalization_backward(inputs, channel_axis=None, batch_axis=(0,), 
     # Reduce [H, W]
     axes = list(set(range(x.ndim)) - set(batch_axis + [channel_axis]))
     grads, _ = tensor_normalization_backward(
-        inputs, axes, eps, no_scale, no_bias)
+        grad_inputs, inputs, input_shapes, [None], [None], axes, eps, no_scale, no_bias)
     grads = list(grads)
 
     # Backward for scale/bias (gamma/beta) broadcasting
     for i in range(1, len(grads)):
-        affine_param = inputs[1 + i]  # gamma/beta
+        affine_param = inputs[i]  # gamma/beta
         affine_param_grad = grads[i]
         need_broadcast = False
         for ba in batch_axis:

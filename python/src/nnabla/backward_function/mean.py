@@ -20,14 +20,15 @@ import numpy as np
 from .utils import force_list
 
 
-def mean_backward(inputs, axes=None, keep_dims=False):
-    dy = inputs[0]
-    x0 = inputs[1]
-    axes = [i for i in range(x0.ndim)] if axes is None else force_list(axes)
-    n = np.prod([s if i in axes else 1 for i, s in enumerate(x0.shape)])
+def mean_backward(grad_inputs, inputs, input_shapes, outputs, output_shapes, axes=None, keep_dims=False):
+    dy = grad_inputs[0]
+    x0_shape = input_shapes[0]
+    x0_ndim = len(x0_shape)
+    axes = [i for i in range(x0_ndim)] if axes is None else force_list(axes)
+    n = np.prod([s if i in axes else 1 for i, s in enumerate(x0_shape)])
     if keep_dims:
-        dx0 = F.broadcast(dy, x0.shape)
+        dx0 = F.broadcast(dy, x0_shape)
     else:
-        shape = [1 if i in axes else s for i, s in enumerate(x0.shape)]
-        dx0 = F.broadcast(F.reshape(dy, shape, inplace=False), x0.shape)
+        shape = [1 if i in axes else s for i, s in enumerate(x0_shape)]
+        dx0 = F.broadcast(F.reshape(dy, shape, inplace=False), x0_shape)
     return dx0 / n

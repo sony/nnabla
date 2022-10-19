@@ -16,22 +16,30 @@
 
 import nnabla.functions as F
 
-from .utils import get_output, positive_axis
+from .utils import positive_axis
 
 
-def softmax_backward(inputs, axis=None):
+def softmax_backward(grad_inputs, inputs, input_shapes, outputs, output_shapes, axis=None):
     """
     Args:
-      inputs (list of nn.Variable): Incomming grads/inputs to/of the forward function.
+      grad_inputs (list of :obj:`nnabla.Variable`): Propagated grads to this backward function.
+      inputs (list of :obj:`nnabla.Variable` and None): Input Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      input_shapes (list of tuple of :obj:`int`): Input shapes of the forward function.
+          The shapes of the inputs in which None is set can be passed.
+      outputs (list of :obj:`nnabla.Variable` and None): Output Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      output_shapes (list of tuple of :obj:`int`): Output shapes of the forward function.
+          The shapes of the outputs in which None is set can be passed.
       kwargs (dict of arguments): Dictionary of the corresponding function arguments.
 
     Return:
       list of Variable: Return the gradients wrt inputs of the corresponding function.
     """
-    dy = inputs[0]
-    x0 = inputs[1]
-    y0 = get_output(x0, "Softmax")
-    D = len(x0.shape)
+    dy = grad_inputs[0]
+    x0 = inputs[0]
+    y0 = outputs[0]
+    D = len(y0.shape)
     axis = positive_axis(axis, D)
     dx0 = dy * y0 - y0 * F.sum(dy * y0, axis=axis, keepdims=True)
     return dx0

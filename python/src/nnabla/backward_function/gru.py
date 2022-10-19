@@ -18,10 +18,18 @@ import nnabla as nn
 from nnabla.utils.rnn import _create_fixed_length_gru
 
 
-def gru_backward(inputs, num_layers=1, dropout=None, bidirectional=False, training=True):
+def gru_backward(grad_inputs, inputs, input_shapes, outputs, output_shapes, num_layers=1, dropout=None, bidirectional=False, training=True):
     """
     Args:
-      inputs (list of nn.Variable): Incomming grads/inputs to/of the forward function.
+      grad_inputs (list of :obj:`nnabla.Variable`): Propagated grads to this backward function.
+      inputs (list of :obj:`nnabla.Variable` and None): Input Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      input_shapes (list of tuple of :obj:`int`): Input shapes of the forward function.
+          The shapes of the inputs in which None is set can be passed.
+      outputs (list of :obj:`nnabla.Variable` and None): Output Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      output_shapes (list of tuple of :obj:`int`): Output shapes of the forward function.
+          The shapes of the outputs in which None is set can be passed.
       kwargs (dict of arguments): Dictionary of the corresponding function arguments.
 
     Return:
@@ -30,18 +38,18 @@ def gru_backward(inputs, num_layers=1, dropout=None, bidirectional=False, traini
     if dropout != 0.0:
         raise ValueError("Dropout must be 0.0")
 
-    dys = inputs[0]
-    dhn = inputs[1]
-    xs0 = inputs[2]
-    h0 = inputs[3]
-    w0 = inputs[4]
+    dys = grad_inputs[0]
+    dhn = grad_inputs[1]
+    xs0 = inputs[0]
+    h0 = inputs[1]
+    w0 = inputs[2]
 
     if num_layers == 1:
         w = None
-        b = inputs[5] if len(inputs) == 6 else None
+        b = inputs[3] if len(inputs) == 4 else None
     else:
-        w = inputs[5]
-        b = inputs[6] if len(inputs) == 7 else None
+        w = inputs[3]
+        b = inputs[4] if len(inputs) == 5 else None
     num_directions = 2 if bidirectional else 1
     with_bias = True if b else False
 

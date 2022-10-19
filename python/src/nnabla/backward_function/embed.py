@@ -60,38 +60,54 @@ class EmbedFilterGrad(LinearFilterGrad):
             self._linear.forward(inputs_fwd, outputs_fwd)
 
 
-def embed_backward(inputs):
+def embed_backward(grad_inputs, inputs, input_shapes, outputs, output_shapes):
     """
     Args:
-      inputs (list of nn.Variable): Incomming grads/inputs to/of the forward function.
+      grad_inputs (list of :obj:`nnabla.Variable`): Propagated grads to this backward function.
+      inputs (list of :obj:`nnabla.Variable` and None): Input Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      input_shapes (list of tuple of :obj:`int`): Input shapes of the forward function.
+          The shapes of the inputs in which None is set can be passed.
+      outputs (list of :obj:`nnabla.Variable` and None): Output Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      output_shapes (list of tuple of :obj:`int`): Output shapes of the forward function.
+          The shapes of the outputs in which None is set can be passed.
       kwargs (dict of arguments): Dictionary of the corresponding function arguments.
 
     Return:
       list of Variable: Return the gradients wrt inputs of the corresponding function.
     """
-    dy = inputs[0]
-    x0 = inputs[1]
-    w0 = inputs[2]
+    dy = grad_inputs[0]
+    x0 = inputs[0]
+    w0_shape = input_shapes[1]
 
     ctx = nn.get_current_context()
     dfw = EmbedFilterGrad(ctx)
-    dfw.wshape = w0.shape
+    dfw.wshape = w0_shape
 
     dw0 = dfw(dy, x0)
     return None, dw0
 
 
-def embed_filter_grad_backward(inputs):
+def embed_filter_grad_backward(grad_inputs, inputs, input_shapes, outputs, output_shapes):
     """
     Args:
-      inputs (list of nn.Variable): Incomming grads/inputs to/of the forward function.
+      grad_inputs (list of :obj:`nnabla.Variable`): Propagated grads to this backward function.
+      inputs (list of :obj:`nnabla.Variable` and None): Input Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      input_shapes (list of tuple of :obj:`int`): Input shapes of the forward function.
+          The shapes of the inputs in which None is set can be passed.
+      outputs (list of :obj:`nnabla.Variable` and None): Output Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      output_shapes (list of tuple of :obj:`int`): Output shapes of the forward function.
+          The shapes of the outputs in which None is set can be passed.
       kwargs (dict of arguments): Dictionary of the corresponding function arguments.
 
     Return:
       list of Variable: Return the gradients wrt inputs of the corresponding function.
     """
-    gdw = inputs[0]
-    dy = inputs[1]
-    x0 = inputs[2]
+    gdw = grad_inputs[0]
+    dy = inputs[0]
+    x0 = inputs[1]
     gdy = F.embed(x0, gdw)
     return gdy, None

@@ -17,29 +17,39 @@ import nnabla.functions as F
 from .utils import no_grad
 
 
-def bool_scatter_backward(inputs):
+def bool_scatter_backward(grad_inputs, inputs, input_shapes, outputs, output_shapes):
     """
     Args:
-      inputs (list of nn.Variable): Incomming grads/inputs to/of the forward function.
+      grad_inputs (list of :obj:`nnabla.Variable`): Propagated grads to this backward function.
+      inputs (list of :obj:`nnabla.Variable` and None): Input Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      input_shapes (list of tuple of :obj:`int`): Input shapes of the forward function.
+          The shapes of the inputs in which None is set can be passed.
+      outputs (list of :obj:`nnabla.Variable` and None): Output Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      output_shapes (list of tuple of :obj:`int`): Output shapes of the forward function.
+          The shapes of the outputs in which None is set can be passed.
       kwargs (dict of arguments): Dictionary of the corresponding function arguments.
 
     Return:
       list of Variable: Return the gradients wrt inputs of the corresponding function.
     """
-    dy = inputs[0]
-    x0 = inputs[1]
-    m0 = inputs[2]
-    o0 = inputs[3] if len(inputs) == 4 else None
+    # In auto-forward mode, the dynamic clear of inputs[1] is blocked by
+    # BoolScatter::auto_grad_depends_input_data.
+    dy = grad_inputs[0]
+    x0 = inputs[0]
+    m0 = inputs[1]
+    o0 = inputs[2] if len(inputs) == 3 else None
 
     dx = F.bool_gather(dy, m0)
     dm = None
 
-    if o0 is None:
-        return dx, dm
-    else:
+    if len(inputs) == 3:
         m1 = F.equal_scalar(m0, 0)
         m1 = F.reshape(m1, m1.shape + (1, ) * (dy.ndim - m1.ndim))
         m1 = F.broadcast(m1, dy.shape)
         m1 = no_grad(m1)
         do = dy * m1
         return dx, dm, do
+    else:
+        return dx, dm

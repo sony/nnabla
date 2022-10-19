@@ -23,18 +23,26 @@ def _sum(dx, x):
     return dx
 
 
-def batch_matmul_backward(inputs, transpose_a=False, transpose_b=False):
+def batch_matmul_backward(grad_inputs, inputs, input_shapes, outputs, output_shapes, transpose_a=False, transpose_b=False):
     """
     Args:
-      inputs (list of nn.Variable): Incomming grads/inputs to/of the forward function.
+      grad_inputs (list of :obj:`nnabla.Variable`): Propagated grads to this backward function.
+      inputs (list of :obj:`nnabla.Variable` and None): Input Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      input_shapes (list of tuple of :obj:`int`): Input shapes of the forward function.
+          The shapes of the inputs in which None is set can be passed.
+      outputs (list of :obj:`nnabla.Variable` and None): Output Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      output_shapes (list of tuple of :obj:`int`): Output shapes of the forward function.
+          The shapes of the outputs in which None is set can be passed.
       kwargs (dict of arguments): Dictionary of the corresponding function arguments.
 
     Return:
       list of Variable: Return the gradients wrt inputs of the corresponding function.
     """
-    dc = inputs[0]
-    a = inputs[1]
-    b = inputs[2]
+    dc = grad_inputs[0]
+    a = inputs[0]
+    b = inputs[1]
     if (transpose_a, transpose_b) == (True, True):
         da = F.batch_matmul(b, dc, True, True)
         db = F.batch_matmul(dc, a, True, True)

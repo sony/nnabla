@@ -17,19 +17,28 @@
 from .tensor_normalization import tensor_normalization_backward
 
 
-def weight_standardization_backward(inputs, channel_axis=None, eps=1e-05):
+def weight_standardization_backward(grad_inputs, inputs, input_shapes, outputs, output_shapes, channel_axis=None, eps=1e-05):
     """
     Args:
-      inputs (list of nn.Variable): Incomming grads/inputs to/of the forward function.
+      grad_inputs (list of :obj:`nnabla.Variable`): Propagated grads to this backward function.
+      inputs (list of :obj:`nnabla.Variable` and None): Input Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      input_shapes (list of tuple of :obj:`int`): Input shapes of the forward function.
+          The shapes of the inputs in which None is set can be passed.
+      outputs (list of :obj:`nnabla.Variable` and None): Output Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      output_shapes (list of tuple of :obj:`int`): Output shapes of the forward function.
+          The shapes of the outputs in which None is set can be passed.
       kwargs (dict of arguments): Dictionary of the corresponding function arguments.
 
     Return:
       list of Variable: Return the gradients wrt inputs of the corresponding function.
     """
-    x = inputs[1]
-    channel_axis += inputs[0].ndim*(channel_axis < 0)
+    x = inputs[0]
+    channel_axis += grad_inputs[0].ndim*(channel_axis < 0)
     axes = list(set(range(x.ndim)) - set([channel_axis]))
     no_scale = True
     no_bias = True
-    dx, _ = tensor_normalization_backward(inputs, axes, eps, no_scale, no_bias)
+    dx, _ = tensor_normalization_backward(
+        grad_inputs, inputs, input_shapes, outputs, output_shapes, axes, eps, no_scale, no_bias)
     return dx

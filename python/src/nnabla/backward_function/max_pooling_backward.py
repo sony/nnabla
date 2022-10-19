@@ -124,19 +124,27 @@ class MaxPoolingBackwardDataGrad(PythonFunction):
             self._func.forward(inputs_fwd, outputs_fwd)
 
 
-def max_pooling_backward_backward(inputs, kernel, stride=None,
+def max_pooling_backward_backward(grad_inputs, inputs, input_shapes, outputs, output_shapes, kernel, stride=None,
                                   ignore_border=True, pad=None, channel_last=False):
     """
     Args:
-      inputs (list of nn.Variable): Incomming grads/inputs to/of the forward function.
+      grad_inputs (list of :obj:`nnabla.Variable`): Propagated grads to this backward function.
+      inputs (list of :obj:`nnabla.Variable` and None): Input Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      input_shapes (list of tuple of :obj:`int`): Input shapes of the forward function.
+          The shapes of the inputs in which None is set can be passed.
+      outputs (list of :obj:`nnabla.Variable` and None): Output Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      output_shapes (list of tuple of :obj:`int`): Output shapes of the forward function.
+          The shapes of the outputs in which None is set can be passed.
       kwargs (dict of arguments): Dictionary of the corresponding function arguments.
 
     Return:
       list of Variable: Return the gradients wrt inputs of the corresponding function.
     """
-    gdx = inputs[0]
-    dy = inputs[1]
-    x0 = inputs[2]
+    gdx = grad_inputs[0]
+    dy = inputs[0]
+    x0 = inputs[1]
     ctx = nn.get_current_context()
     df = MaxPoolingBackwardDataGrad(
         ctx, kernel, stride, ignore_border, pad, channel_last)
