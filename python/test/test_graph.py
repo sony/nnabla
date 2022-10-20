@@ -303,6 +303,76 @@ def test_clear_buffers_in_auto_forward(persistent, unlinked_variable, need_grad)
         (not persistent) and (not unlinked_variable))
 
 
+def test_clear_buffers_in_auto_forward_with_narrow():
+
+    def model(x, fix_parameters=True):
+        h = PF.affine(x, 2, fix_parameters=fix_parameters, name='fc1')
+        h2 = PF.affine(h, 2, fix_parameters=fix_parameters, name='fc2')
+        return h2
+
+    shape_input = [2, 3]
+    x = nn.Variable(shape_input, need_grad=False)
+
+    # Create parameters
+    model(x)
+
+    # Pack all parameters and gradients.
+    # Making a local function to make sure that intermediate Python variables
+    # are deleted
+    def pack_parameters(params):
+        # Get size list
+        size_list = []
+        for k, v in params.items():
+            size_list.append(v.size)
+        size = sum(size_list)
+
+        # Create a packed NdArray for parameters.
+        weights = nn.NdArray([size])
+
+        # Set narrowed arrays to parameters.
+        start = 0
+        for param, sz in zip(params.values(), size_list):
+            w = weights.narrow(0, start, sz)
+            param.data = w.view(param.shape)
+            start += sz
+
+        return weights
+
+    params = nn.get_parameters()
+    weights = pack_parameters(params)
+
+    x.d = 0.1
+    with nn.auto_forward():
+        y = model(x, fix_parameters=True)
+        # Remove all Python references of narrowed arrays
+        # Even if all references are deletec, we expect the values are not
+        # cleared
+        nn.clear_parameters()
+        del weights
+
+    def check_params_not_cleared(f):
+        if not f.name.startswith('Affine'):
+            return
+        for inp in f.inputs[1:]:
+            assert not inp.data.clear_called
+
+    y.visit(check_params_not_cleared)
+
+    # Check exceptions raised during __dealloc__.
+    nn.Variable._check_exception_at_dealloc()
+
+    # People never do this, but testing if exception is properly raised.
+    with nn.auto_forward():
+        h = x + 1
+        base = nn.NdArray([2 * h.size])
+        narrowed = base.narrow(0, 0, h.size)
+        h.data = narrowed.view(h.shape)
+        h = h + 1
+    with pytest.raises(RuntimeError):
+        # Check exceptions raised during __dealloc__.
+        nn.Variable._check_exception_at_dealloc()
+
+
 def test_python_user_reference_counts():
     shape = [2, 3, 4]
 

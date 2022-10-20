@@ -549,11 +549,17 @@ void SyncedArray::remove_child(const SyncedArray *child) {
 }
 
 int SyncedArray::get_python_user_reference_counts() const {
-  return python_user_reference_counts;
+  if (is_root()) {
+    return python_user_reference_counts;
+  }
+  return parent_->get_python_user_reference_counts();
 }
 
 void SyncedArray::update_python_user_reference_counts(const int diff) {
   python_user_reference_counts += diff;
+  if (is_child()) {
+    parent_->update_python_user_reference_counts(diff);
+  }
 }
 
 // Callback function

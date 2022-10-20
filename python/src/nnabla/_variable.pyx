@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import print_function
+
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 from libc.stdint cimport int64_t, intptr_t
@@ -153,6 +155,15 @@ cdef class Variable:
         need_grad (bool): Flag for backprop or not.
 
     """
+    EXCEPTIONS_AT_DEALLOC = []
+
+    @staticmethod
+    def _check_exception_at_dealloc():
+        exceptions = Variable.EXCEPTIONS_AT_DEALLOC
+        if not exceptions:
+            return
+        err = exceptions.pop(0)
+        raise err
 
     cdef void set_var(self, CgVariablePtr var):
         # New CgVariable traces this Variable.
@@ -237,11 +248,17 @@ cdef class Variable:
         #           Python objects are partially destroyed. In particular,
         #           at the end of Python process, the invocations of
         #           __dealloc__() of all Variables during Python object
-        #           destruction could return many errors. 
-        self.get_varp().clear_during_auto_forward()
-
-        # Delete references
-        self.get_varp().update_python_user_reference_counts(-1)
+        #           destruction could return many errors.
+        try:
+            self.get_varp().clear_during_auto_forward()
+        except RuntimeError as err:
+            import sys
+            print("Ignoring an exception in __dealloc__.", err)
+            print("Please run nnabla.Variable._check_exception_at_dealloc() to handle the exception.")
+            Variable.EXCEPTIONS_AT_DEALLOC.append(err)
+        finally:
+            # Delete references
+            self.get_varp().update_python_user_reference_counts(-1)
 
     @property
     def get_number_of_references(self):

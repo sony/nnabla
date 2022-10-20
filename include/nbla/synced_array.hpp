@@ -208,6 +208,20 @@ public:
    */
   bool is_narrowed() const { return parent_ != nullptr; }
 
+  /** Returns true if this SyncedArray has the Parent.
+   */
+  inline bool is_child() const { return parent_ != nullptr; }
+
+  /** Returns true if this SyncedArray has not the Parent.
+   */
+  inline bool is_root() const { return parent_ == nullptr; }
+
+  /** Returns true if this SyncedArray has a parent or child SyncedArrays.
+   */
+  bool has_family() const {
+    return static_cast<bool>(parent_ || children_.size() > 0);
+  }
+
   /** Get the refernce counts from a Python user.
    */
   int get_python_user_reference_counts() const;
@@ -248,20 +262,6 @@ private:
   /** Get offset of the Array.
    */
   Size_t offset() const { return offset_; }
-
-  /** Returns true if this SyncedArray has the Parent.
-   */
-  inline bool is_child() { return parent_ != nullptr; }
-
-  /** Returns true if this SyncedArray has not the Parent.
-   */
-  inline bool is_root() { return parent_ == nullptr; }
-
-  /** Returns true if this SyncedArray has a parent or child SyncedArrays.
-   */
-  bool has_family() {
-    return static_cast<bool>(parent_ || children_.size() > 0);
-  }
 
   /** Returns true if this SyncedArray has the head array.
    */

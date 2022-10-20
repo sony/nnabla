@@ -1143,17 +1143,35 @@ bool CgVariable::has_grad_dependency() {
 }
 
 void CgVariable::clear_during_auto_forward() {
-  if ( // 1. This feature is only for auto-forward mode.
-      SingletonManager::get<AutoForward>()->get_auto_forward() &&
-      // 2. Persistent flag prohibits the memory release.
-      !persistent() &&
-      // 3. The input terminal of a graph prohibits the memory release.
-      parent() &&
-      // 4. The last reference of the same SyncedArray can release memory.
-      variable()->data()->array()->get_python_user_reference_counts() < 2 &&
-      // 5. This data must not be released if it is used when backprop.
+  // No cleared if any of the following conditions is met.
+  if ( // This feature is only for auto-forward mode.
+      !SingletonManager::get<AutoForward>()->get_auto_forward() ||
+      // Persistent flag prohibits the memory release.
+      persistent() ||
+      // The input terminal of a graph prohibits the memory release.
+      !parent()) {
+    return;
+  }
+
+  auto synced_array = variable()->data()->array();
+
+  // NOTE: We prohibit clearing narrowed SyncedArray.
+  // Once we implement a Function relying SyncedArray::narrow(),
+  // we consider allowing releasing memory.
+  NBLA_CHECK(!synced_array->has_family(), error_code::value,
+             "Clearing any SyncedArray with a parent or a child created by "
+             "narrow is prohibited in the current implementation. This "
+             "restriction could be relaxed by considering new use cases of the "
+             "narrow function.");
+
+  // Memory is released if the reference is the last one and is required for
+  // gradient computation have any gradient computation in Function::backward or
+  // Python backward functions.
+  if ( // The last reference of the same SyncedArray can release memory.
+      synced_array->get_python_user_reference_counts() < 2 &&
+      // This data must not be released if it is used when backprop.
       !has_grad_dependency()) {
-    variable()->data()->array()->clear();
+    synced_array->clear();
   }
 }
 
