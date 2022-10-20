@@ -64,6 +64,32 @@ def randn(rng, *shape):
     return np.asarray(rng.randn(*shape), dtype=np.float32)
 
 
+def quit_with_gc(func_or_gen):
+    '''A decorator function attaching garbage collection
+    at the end of the function.
+
+    Args:
+        func_or_gen (function or int): If an int is given, it returns a decorator with garbage collection with generation=2 for gc.collect(generation) with the specified value as generation.
+
+    '''
+    generation = 2
+
+    def _quit_with_gc(f):
+        def decorated(*args, **kw):
+            import gc
+            ret = f(*args, **kw)
+            gc.collect(generation)
+            return ret
+
+        return decorated
+
+    if isinstance(func_or_gen, int):
+        generation = func_or_gen
+        return _quit_with_gc
+    func = func_or_gen
+    return _quit_with_gc(func)
+
+
 def compute_analytical_and_numerical_grad_graph(terminal, inputs,
                                                 epsilon=1e-3,
                                                 recompute_graph=True):

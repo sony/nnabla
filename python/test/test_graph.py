@@ -21,7 +21,7 @@ import nnabla as nn
 import nnabla.functions as F
 import nnabla.parametric_functions as PF
 from nnabla.testing import assert_allclose, clear_called_flag_recorder
-from nbla_test_utils import list_context
+from nbla_test_utils import list_context, quit_with_gc
 from nnabla.function import PythonFunction
 
 
@@ -236,6 +236,7 @@ def func_for_test_clear_buffer_in_auto_forward(x0, x1, ctx=None):
 @pytest.mark.parametrize("unlinked_variable", [True, False])
 @pytest.mark.parametrize("need_grad", [True, False])
 def test_clear_buffers_in_auto_forward(persistent, unlinked_variable, need_grad):
+    @quit_with_gc
     def local_scope(x0, x1):
         # Input layer
         h0 = F.identity(x0)
@@ -263,7 +264,15 @@ def test_clear_buffers_in_auto_forward(persistent, unlinked_variable, need_grad)
 
         # Output layer
         # Returning the NdArrays to check their memory clearance.
-        return h2 + h3, h0.data, h1.data, h2.data, h3.data
+        ret = (h2 + h3, h0.data, h1.data, h2.data, h3.data)
+
+        if unlinked_variable:
+            # Ensure that unlinked variables deallocated after h0-3.
+            del h0
+            del h1
+            del h2
+            del h3
+        return ret
 
     # Test
     shape_input = [2, 3, 4]
@@ -365,6 +374,7 @@ def test_python_user_reference_counts():
     #       are identical.
 
     # Local scope changes the reference counts locally.
+    @quit_with_gc
     def local_scope(x6):
         assert x6.get_number_of_references == 1
         x7 = x6.get_unlinked_variable()
