@@ -127,6 +127,7 @@ def test_sync_batch_normalization_forward_backward(seed, axis, decay_rate, eps, 
                                  dy,
                                  comm, axes, decay_rate,
                                  eps, batch_stat, output_stat, **kw):
+        x_backup = x
         orig = x - device_id
         inputs = []
         for i in range(n_devices):
@@ -147,20 +148,35 @@ def test_sync_batch_normalization_forward_backward(seed, axis, decay_rate, eps, 
         vrvar = nn.Variable(rvar.shape, True)
         vrvar.d = rvar
         with nn.context_scope(ctx):
-            out = F.batch_normalization(vx, vbeta, vgamma, vrmean, vrvar,
-                                        batch_stat=batch_stat, output_stat=output_stat, axes=axes, decay_rate=decay_rate, eps=eps)
+            out, out_mean, out_var = F.batch_normalization(vx, vbeta, vgamma, vrmean, vrvar,
+                                                           batch_stat=batch_stat, output_stat=True, axes=axes, decay_rate=decay_rate, eps=eps)
         f = out.parent
-        f.forward([vx, vbeta, vgamma, vrmean, vrvar], [out])
+        f.forward([vx, vbeta, vgamma, vrmean, vrvar], [out, out_mean, out_var])
         for i in range(n_devices):
             out.g[2*i:2*(i+1)] = dy
-        f.backward([vx, vbeta, vgamma, vrmean, vrvar], [out])
+        out_mean.grad.zero()
+        out_var.grad.zero()
+        f.backward([vx, vbeta, vgamma, vrmean, vrvar],
+                   [out, out_mean, out_var])
+        worker_slice = np.s_[device_id*2:(device_id+1)*2]
+        dx = vx.g[worker_slice].flatten()
 
-        return np.concatenate([vx.g[device_id*2:(device_id+1)*2].flatten(), vbeta.g.flatten(), vgamma.g.flatten()])
+        # Compute gradients of beta and gamma
+        x = x_backup
+        vx = nn.Variable.from_numpy_array(x, need_grad=False)
+        with nn.context_scope(ctx), nn.auto_forward():
+            out = F.batch_normalization(vx, vbeta, vgamma, out_mean, out_var,
+                                        batch_stat=False, output_stat=False, axes=axes, decay_rate=decay_rate, eps=eps)
+        vbeta.grad.zero()
+        vgamma.grad.zero()
+        out.backward(dy, clear_buffer=True)
+        return np.concatenate([dx, vbeta.g.flatten(), vgamma.g.flatten()])
 
     def ref_batch_normalize_grad_with_output_stat(x, beta, gamma, rmean, rvar,
                                                   dy, dmean, dvar,
                                                   comm, axes, decay_rate,
                                                   eps, batch_stat, output_stat, **kw):
+        x_backup = x
         orig = x - device_id
         inputs = []
         for i in range(n_devices):
@@ -182,7 +198,8 @@ def test_sync_batch_normalization_forward_backward(seed, axis, decay_rate, eps, 
         vrvar.d = rvar
         with nn.context_scope(ctx):
             out = F.batch_normalization(vx, vbeta, vgamma, vrmean, vrvar,
-                                        batch_stat=batch_stat, output_stat=output_stat, axes=axes, decay_rate=decay_rate, eps=eps)
+                                        batch_stat=batch_stat, output_stat=True, axes=axes, decay_rate=decay_rate, eps=eps)
+        out_mean, out_var = out[1:]
         f = out[0].parent
         f.forward([vx, vbeta, vgamma, vrmean, vrvar], out)
         for i in range(n_devices):
@@ -190,7 +207,19 @@ def test_sync_batch_normalization_forward_backward(seed, axis, decay_rate, eps, 
         out[1].g[...] = dmean
         out[2].g[...] = dvar
         f.backward([vx, vbeta, vgamma, vrmean, vrvar], out)
-        return np.concatenate([vx.g[device_id*2:(device_id+1)*2].flatten(), vbeta.g.flatten(), vgamma.g.flatten()])
+        worker_slice = np.s_[device_id*2:(device_id+1)*2]
+        dx = vx.g[worker_slice].flatten()
+
+        # Compute gradients of beta and gamma
+        x = x_backup
+        vx = nn.Variable.from_numpy_array(x, need_grad=False)
+        with nn.context_scope(ctx), nn.auto_forward():
+            out = F.batch_normalization(vx, vbeta, vgamma, out_mean, out_var,
+                                        batch_stat=False, output_stat=False, axes=axes, decay_rate=decay_rate, eps=eps)
+        vbeta.grad.zero()
+        vgamma.grad.zero()
+        out.backward(dy, clear_buffer=True)
+        return np.concatenate([dx, vbeta.g.flatten(), vgamma.g.flatten()])
     from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
     inputs = list(create_inputs(rng, axis, device_id))
