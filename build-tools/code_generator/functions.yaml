@@ -1986,6 +1986,11 @@ Normalization:
       References:
 
           * Implementing Synchronized Multi-GPU Batch Normalization https://hangzhang.org/PyTorch-Encoding/notes/syncbn.html
+
+      Note:
+          Since v1.32.0, the gradients of beta and gamma are not synchronized after backward computation (they had been synchronized previously).
+          Users are responsible for synchronizing the gradients of beta and gamma by performing all-reduce,
+          which is naturally done by performing all-reduce for gradients of all the parameters as we do usually in data parallel distributed training.
     inputs:
       x:
         doc: N-D array of input.
