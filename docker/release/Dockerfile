@@ -23,17 +23,14 @@ ARG PYTHON_VER
 
 ENV DEBIAN_FRONTEND noninteractive
 
-RUN eval ${APT_OPTS} \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends \
-    software-properties-common \
+RUN eval ${APT_OPTS} && apt-get update \
+    && apt-get install -y software-properties-common \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && add-apt-repository -y ppa:deadsnakes/ppa \
+    && apt-get update
 
-RUN add-apt-repository ppa:deadsnakes/ppa
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
+RUN apt-get install -y --no-install-recommends \
        bzip2 \
        ca-certificates \
        curl \
@@ -42,6 +39,7 @@ RUN apt-get update \
        python${PYTHON_VER} \
        python3-pip \
        python${PYTHON_VER}-distutils \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python${PYTHON_VER} 0
