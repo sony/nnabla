@@ -417,12 +417,14 @@ if(BUILD_PYTHON_PACKAGE)
   #############################################################################
   # Document
   #############################################################################
+  separate_arguments(PIP_INSTALL_OPTS UNIX_COMMAND $ENV{PIP_INS_OPTS})
   if(UNIX OR APPLE)
     if(IS_DIRECTORY ${NNABLA_EXT_CUDA_DIRECTORY})
       if(NOT IS_ABSOLUTE ${NNABLA_EXT_CUDA_DIRECTORY})
         get_filename_component(NNABLA_EXT_CUDA_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${NNABLA_EXT_CUDA_DIRECTORY} ABSOLUTE)
       endif()
       add_custom_target(doc
+        COMMAND pip3 install ${PIP_INSTALL_OPTS} ${CMAKE_BINARY_DIR}/dist/nnabla-*.whl
         COMMAND rm -rf ${CMAKE_BINARY_DIR}/doc
         COMMAND mkdir -p ${CMAKE_BINARY_DIR}/doc/doxygen
         COMMAND cd ${CMAKE_SOURCE_DIR} &&
@@ -460,6 +462,7 @@ if(BUILD_PYTHON_PACKAGE)
         )
     else()
       add_custom_target(doc
+        COMMAND pip3 install ${PIP_INSTALL_OPTS} ${CMAKE_BINARY_DIR}/dist/nnabla-*.whl
         COMMAND rm -rf ${CMAKE_BINARY_DIR}/doc
         COMMAND mkdir -p ${CMAKE_BINARY_DIR}/doc/doxygen
         COMMAND cd ${CMAKE_SOURCE_DIR} &&
