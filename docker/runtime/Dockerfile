@@ -28,15 +28,15 @@ RUN eval ${APT_OPTS} && apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && add-apt-repository -y ppa:deadsnakes/ppa \
-    && apt-get update
-
-RUN apt-get install -y --no-install-recommends \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
        bzip2 \
        ca-certificates \
        curl \
        libglib2.0-0 \
        libgl1-mesa-glx \
        python${PYVERNAME} \
+    && apt-get install -y --no-install-recommends \
        python${PYVERNAME}-distutils || echo "skip install python-distutils" \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
