@@ -23,21 +23,19 @@ ARG PYTHON_VERSION_MAJOR
 ARG PYTHON_VERSION_MINOR
 ENV PYVERNAME=${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}
 
-RUN eval ${APT_OPTS} && apt-get update
-RUN apt install -y software-properties-common
-RUN add-apt-repository ppa:deadsnakes/ppa
-RUN apt-get update
-RUN apt-get install -y --no-install-recommends \
-        bzip2 \
-        ca-certificates \
-        curl \
-        libglib2.0-0 \
-        libgl1-mesa-glx \
-        python${PYVERNAME} \
+RUN eval ${APT_OPTS} && apt-get update \
+    && apt-get install -y software-properties-common \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN apt-get update \
+    && rm -rf /var/lib/apt/lists/* \
+    && add-apt-repository -y ppa:deadsnakes/ppa \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+       bzip2 \
+       ca-certificates \
+       curl \
+       libglib2.0-0 \
+       libgl1-mesa-glx \
+       python${PYVERNAME} \
     && apt-get install -y --no-install-recommends \
        python${PYVERNAME}-distutils || echo "skip install python-distutils" \
     && apt-get clean \

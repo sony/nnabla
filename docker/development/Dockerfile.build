@@ -33,6 +33,7 @@ RUN eval ${YUM_OPTS} \
        epel-release \
        yum-utils \
     && yum install -y \
+        ca-certificates \
         curl \
         freetype-devel \
         git \

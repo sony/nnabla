@@ -33,12 +33,13 @@ ENV PYVERNAME=${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}
 
 ENV DEBIAN_FRONTEND noninteractive
 
-RUN eval ${APT_OPTS} && apt-get update
-RUN apt install -y software-properties-common
-RUN add-apt-repository -y ppa:deadsnakes/ppa
-RUN apt-get update
-
-RUN apt-get install -y --no-install-recommends \
+RUN eval ${APT_OPTS} && apt-get update \
+    && apt-get install -y software-properties-common \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && add-apt-repository -y ppa:deadsnakes/ppa \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
        bzip2 \
        ca-certificates \
        ccache \
@@ -65,10 +66,6 @@ RUN apt-get install -y --no-install-recommends \
        python3-venv \
        python${PYVERNAME} \
        python${PYVERNAME}-venv \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN apt-get update \
     && apt-get install -y --no-install-recommends \
        python${PYVERNAME}-distutils || echo "skip install python-distutils" \
     && apt-get clean \
