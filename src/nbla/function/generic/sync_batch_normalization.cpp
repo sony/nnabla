@@ -151,6 +151,21 @@ void SyncBatchNormalization<T>::backward_impl_batch(
       sum_dyx_ptr[i1] += dy[i] * x[i];
     }
   }
+
+  if (propagate_down[1] || propagate_down[2]) { // beta and gamma
+    NBLA_CHECK(propagate_down[1] && propagate_down[2], error_code::value,
+               "'need_grad' of beta and gamma must be the same.");
+    T *db = inputs[1]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[1]);
+    T *dg = inputs[2]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[2]);
+    for (int i1 = 0; i1 < this->size1_; ++i1) {
+      T dbv = accum[1] ? db[i1] : (T)0;
+      T dgv = accum[2] ? dg[i1] : (T)0;
+      db[i1] = dbv + sum_dy_ptr[i1];
+      dg[i1] = dgv + sum_dyx_ptr[i1] / std::sqrt(v[i1] + (T)this->eps_) -
+               m[i1] / std::sqrt(v[i1] + (T)this->eps_) * sum_dy_ptr[i1];
+    }
+  }
+
   this->comm_->all_reduce(buff_arr.data(), false, false, this->group_);
   buff = buff_arr.cast_data_and_get_pointer<T>(this->ctx_);
   sum_dy_ptr = buff;
@@ -191,20 +206,6 @@ void SyncBatchNormalization<T>::backward_impl_batch(
         else
           dx[i] = grad;
       }
-    }
-  }
-
-  if (propagate_down[1] || propagate_down[2]) { // beta and gamma
-    NBLA_CHECK(propagate_down[1] && propagate_down[2], error_code::value,
-               "'need_grad' of beta and gamma must be the same.");
-    T *db = inputs[1]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[1]);
-    T *dg = inputs[2]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[2]);
-    for (int i1 = 0; i1 < this->size1_; ++i1) {
-      T dbv = accum[1] ? db[i1] : (T)0;
-      T dgv = accum[2] ? dg[i1] : (T)0;
-      db[i1] = dbv + sum_dy_ptr[i1];
-      dg[i1] = dgv + sum_dyx_ptr[i1] / std::sqrt(v[i1] + (T)this->eps_) -
-               m[i1] / std::sqrt(v[i1] + (T)this->eps_) * sum_dy_ptr[i1];
     }
   }
 }

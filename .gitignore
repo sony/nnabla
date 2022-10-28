@@ -28,6 +28,7 @@
 /examples/cpp/nbla_train/*.nnp
 /include/nbla/functions.hpp
 /output/
+/python/src/nnabla/doc/
 /python/setup.cfg
 /python/setup.cfg-Debug
 /python/setup.cfg-MinSizeRel
@@ -61,11 +62,15 @@
 /python/src/nnabla/solver.pyx
 /python/src/nnabla/lms.cpp
 /python/src/nnabla/callback.cpp
-/python/src/nnabla/utils/converter/functions.pkl
+/python/src/nnabla/random.cpp
 /python/src/nnabla/utils/load_function.py
 /python/src/nnabla/utils/nnabla_pb2.py
 /python/src/nnabla/utils/save_function.py
 /python/src/nnabla/utils/dlpack.cpp
+/python/src/nnabla/utils/converter/tflite/flatc_linux
+/python/src/nnabla/utils/converter/tflite/flatc_mac
+/python/src/nnabla/utils/converter/tflite/flatc_windows.exe
+/python/src/nnabla/utils/converter/functions.pkl
 /python/src/nnabla/testing/clear_called_flag_recorder.cpp
 /python/test/Test-error.series.txt
 /python/test/Training-error.series.txt
@@ -87,6 +92,12 @@
 /third_party/libarchive-3.3.2tar.gz
 /third_party/protobuf-3.1.0tar.gz
 /third_party/zlib-1.2.11tar.gz
+/third_party/cmdline-master/
+/third_party/eigen-3.3.5/
+/third_party/flatc_linux
+/third_party/flatc_mac
+/third_party/flatc_windows.exe
+/third_party/googletest-release-1.10.0/
 
 /build/
 /build-android/
