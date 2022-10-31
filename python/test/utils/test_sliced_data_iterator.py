@@ -167,3 +167,4 @@ def test_sliced_data_iterator_race_condition(num_of_slices, size, batch_size, sh
         for i in range(size + 5):
             d = sliced_it.next()
         sliced_it.close()
+        iterator.close()
