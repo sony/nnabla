@@ -35,7 +35,7 @@ def _apply_gamma_correction(dicom_dataset):
         win_width = float(dicom_dataset.WindowWidth)
     else:
         win_width = (1 << bpp)
-    ################NCTB#######
+    ################ NCTB #######
     if 'PhotometricInterpretation' in dicom_dataset:
         photo_interpretation = dicom_dataset.PhotometricInterpretation
     else:
