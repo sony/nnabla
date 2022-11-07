@@ -70,6 +70,31 @@ public:
   NBLA_API void operator()(const CgFunctionPtr &f);
 };
 
+// This class is used to keep secure the memory reference, and to keep
+// that accessibility restricted to the setter method.
+class BaseCgVariable {
+  VariablePtr var_; /// Variable instance.
+
+  // The number of Variables (Python API) to refere this CgVariable instance.
+  int python_user_reference_counts = 0;
+
+public:
+  virtual NBLA_API ~BaseCgVariable();
+
+  /** Get variable reference held in this instance.
+   */
+  virtual inline VariablePtr variable() final { return var_; }
+
+  /** Update the refernce counts from a Python user.
+   */
+  virtual NBLA_API void
+  update_python_user_reference_counts(const int diff) final;
+
+  /** Set variable reference.
+   */
+  virtual void set_variable(VariablePtr var) final;
+};
+
 /** Computation graph variable.
 
 A Variable object is held in this object as a data container. In addition,
@@ -77,7 +102,7 @@ a CGVariable object keeps information about the computation
 graph it belongs to. The information if such as the pointer to the parent
 function which creates this variable and some performance optimization clues.
 */
-class CgVariable {
+class CgVariable : public BaseCgVariable {
   friend class CgFunction;
   enum NeedGrad { NG_NONE, NG_FALSE, NG_TRUE };
   struct FunctionReferenceInfo {
@@ -91,7 +116,6 @@ class CgVariable {
   bool recompute_{false}; ///< Whether the data is cleared during forward
                           /// propagation and recomputation is performed during
   /// backward propagation.
-  VariablePtr var_;               /// Variable instance.
   CgFunctionPtr parent_{nullptr}; ///< Function created this variable.
   int rank_{0};                   ///< Longest path from root variable.
   ///< Holds weak function references. <https://stackoverflow.com/a/22110715>
@@ -217,14 +241,6 @@ public:
    */
   inline bool has_parent() { return parent_ != nullptr; }
 
-  /** Get variable reference held in this instance.
-   */
-  inline VariablePtr variable() { return var_; }
-
-  /** Set variable reference.
-   */
-  inline void set_variable(VariablePtr var) { var_ = var; }
-
   /** @copydoc rank_
    */
   inline int rank() const { return rank_; }
@@ -336,6 +352,10 @@ public:
    */
   inline bool persistent() const { return persistent_; }
 
+  /** Clear the memory during forward propagation in auto-forward mode.
+   */
+  NBLA_API void clear_during_auto_forward();
+
   /** Set variable name
    */
   inline void set_name(string name) { name_ = name; }
@@ -361,6 +381,12 @@ public:
   void visit_function_backward(
       CgFunctionPtr func, function<void(CgFunctionPtr)> backward_callback,
       vector<CommunicatorBackwardCallbackPtr> communicator_callbacks);
+
+private:
+  /** Check whether this variable has the dependency on the backward computation
+   *  for some Function.
+   */
+  bool has_grad_dependency();
 };
 
 /** shared_ptr typedef of CGVariable

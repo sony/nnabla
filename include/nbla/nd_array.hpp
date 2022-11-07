@@ -22,13 +22,43 @@
 
 namespace nbla {
 
+using std::make_shared;
+
+// This class is used to keep secure the memory reference, and to keep
+// that accessibility restricted to the setter method.
+class BaseNdArray {
+  SyncedArrayPtr array_;
+
+  // The number of Variables (Python API) to refer data instance.
+  int python_user_reference_counts = 0;
+
+protected:
+  Size_t size_;
+
+public:
+  virtual NBLA_API ~BaseNdArray();
+
+  /** Update the refernce counts from a Python user.
+   */
+  virtual void update_python_user_reference_counts(const int diff) final;
+
+  /** Replace SyncedArray instance with previously created another one.
+   */
+  virtual NBLA_API void set_array(SyncedArrayPtr array) final;
+
+  /** Get SyncedArray instance held by this instance.
+
+      @note This is not copying data. Modifying content affects this.
+   */
+  virtual NBLA_API SyncedArrayPtr array() final;
+};
+
 /** Dtype and backend agnostic multi-dimensional array.
  */
-class NdArray {
-  SyncedArrayPtr array_;
+class NdArray : public BaseNdArray,
+                public std::enable_shared_from_this<NdArray> {
   Shape_t shape_;
   Shape_t strides_;
-  Size_t size_;
   Size_t ndim_;
 
   /** Update shape info by shape.
@@ -92,16 +122,6 @@ public:
   /** Get number of dimensions.
    */
   NBLA_API Size_t ndim() const;
-
-  /** Get SyncedArray instance held by this instance.
-
-      @note This is not copying data. Modifying content affects this.
-   */
-  NBLA_API SyncedArrayPtr array();
-
-  /** Replace SyncedArray instance with previously created another one.
-   */
-  NBLA_API void set_array(SyncedArrayPtr array);
 
   /** Set all value to zero.
 

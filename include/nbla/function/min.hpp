@@ -47,12 +47,22 @@ public:
   }
   virtual string name() { return "Min"; }
   virtual bool grad_depends_output_data(int i, int o) const { return false; }
+  virtual bool auto_grad_depends_output_data(int i, int o) const {
+    // min_backward requires outputs[0] because this->index_buff_ cannot be
+    // accessed there.
+    return true;
+  }
 
 protected:
   NBLA_API virtual void forward_impl_reduce(const T *x, T *y, int outer_size,
                                             int reduction_size);
   virtual bool grad_depends_input_data_impl(int i, int j) const {
     return false;
+  }
+  virtual bool auto_grad_depends_input_data_impl(int i, int j) const {
+    // min_backward requires inputs[0] because this->index_buff_ cannot be
+    // accessed there.
+    return true;
   }
 };
 }

@@ -23,6 +23,43 @@
 
 namespace nbla {
 
+// This class is used to keep secure the memory reference, and to keep
+// that accessibility restricted to the setter method.
+class BaseVariable {
+  NdArrayPtr data_; ///< Storing forwardprop results.
+  NdArrayPtr grad_; ///< Storing backprop results.
+
+  // The number of Variables (Python API) to refere data instance.
+  // This feature is used for auto-forward memory release during forward prop.
+  int python_user_reference_counts = 0;
+
+protected:
+  Shape_t shape_; ///< Shape.
+
+public:
+  virtual NBLA_API ~BaseVariable();
+
+  /** Update the refernce counts from a Python user.
+   */
+  virtual void update_python_user_reference_counts(const int diff) final;
+
+  /** Get data NdArray.
+   */
+  virtual inline NdArrayPtr data() final { return data_; }
+
+  /** Get grad NdArray.
+   */
+  virtual inline NdArrayPtr grad() final { return grad_; }
+
+  /** Set data NdArray.
+   */
+  virtual NBLA_API void set_data(NdArrayPtr data) final;
+
+  /** Set grad NdArray.
+   */
+  virtual NBLA_API void set_grad(NdArrayPtr grad) final;
+};
+
 /** User interface for Array and passed to Function.
 
 Users will create arrays via Variable and pass them to
@@ -32,13 +69,10 @@ grad region is used for storing backprop error of Function::backward().
 
 \ingroup NNablaCoreGrp
 */
-class Variable {
-  Shape_t shape_;   ///< Shape.
+class Variable : public BaseVariable {
   Shape_t strides_; ///< C-contiguous strides.
   Size_t size_;     ///< Size.
   Size_t ndim_;     ///< Number of dimensions.
-  NdArrayPtr data_; ///< Storing forwardprop results.
-  NdArrayPtr grad_; ///< Storing backprop results.
 
   /** Update shape info by shape.
    */
@@ -103,22 +137,6 @@ public:
   /** Number of dimensions of array. */
   inline Size_t ndim() const { return ndim_; }
 
-  /** Get data NdArray.
-   */
-  inline NdArrayPtr data() { return data_; }
-
-  /** Get grad NdArray.
-   */
-  inline NdArrayPtr grad() { return grad_; }
-
-  /** Set data NdArray.
-   */
-  NBLA_API void set_data(NdArrayPtr data);
-
-  /** Set grad NdArray.
-   */
-  NBLA_API void set_grad(NdArrayPtr grad);
-
   /**
   A shortcut function to cast data and get pointer.
 
@@ -126,7 +144,7 @@ public:
   */
   template <typename T>
   T *cast_data_and_get_pointer(const Context &ctx, bool write_only = false) {
-    Array *arr = data_->array()->cast(get_dtype<T>(), ctx, write_only);
+    Array *arr = this->data()->array()->cast(get_dtype<T>(), ctx, write_only);
     return arr->pointer<T>();
   }
 
@@ -137,7 +155,7 @@ public:
   */
   template <typename T>
   T *cast_grad_and_get_pointer(const Context &ctx, bool write_only = false) {
-    Array *arr = grad_->array()->cast(get_dtype<T>(), ctx, write_only);
+    Array *arr = this->grad()->array()->cast(get_dtype<T>(), ctx, write_only);
     return arr->pointer<T>();
   }
 
@@ -147,7 +165,7 @@ public:
   @sa SyncedArray::get() and Array::const_pointer().
   */
   template <typename T> const T *get_data_pointer(const Context &ctx) {
-    const Array *arr = data_->array()->get(get_dtype<T>(), ctx);
+    const Array *arr = this->data()->array()->get(get_dtype<T>(), ctx);
     return arr->const_pointer<T>();
   }
 
@@ -157,7 +175,7 @@ public:
   @sa SyncedArray::get() and Array::const_pointer().
   */
   template <typename T> const T *get_grad_pointer(const Context &ctx) {
-    const Array *arr = grad_->array()->get(get_dtype<T>(), ctx);
+    const Array *arr = this->grad()->array()->get(get_dtype<T>(), ctx);
     return arr->const_pointer<T>();
   }
 

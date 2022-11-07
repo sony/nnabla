@@ -20,20 +20,31 @@ from .utils import no_grad
 from .._dropout_workaround import _get_dropout_mask
 
 
-def dropout_backward(inputs, p=0.5, seed=-1):
+def dropout_backward(grad_inputs, inputs, input_shapes, outputs, output_shapes, p=0.5, seed=-1):
     """
     Args:
-      inputs (list of nn.Variable): Incomming grads/inputs to/of the forward function.
+      grad_inputs (list of :obj:`nnabla.Variable`): Propagated grads to this backward function.
+      inputs (list of :obj:`nnabla.Variable` and None): Input Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      input_shapes (list of tuple of :obj:`int`): Input shapes of the forward function.
+          The shapes of the inputs in which None is set can be passed.
+      outputs (list of :obj:`nnabla.Variable` and None): Output Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      output_shapes (list of tuple of :obj:`int`): Output shapes of the forward function.
+          The shapes of the outputs in which None is set can be passed.
       kwargs (dict of arguments): Dictionary of the corresponding function arguments.
 
     Return:
       list of Variable: Return the gradients wrt inputs of the corresponding function.
     """
+    # In auto-forward mode, the dynamic clear of inputs[0] is blocked by
+    # Dropout::auto_grad_depends_input_data_impl.
+
     # y = Dropout(x)
     # dy: the back-propagated gradient of y
     # xy: the back-propagated gradient of x
-    dy = inputs[0]
-    x = inputs[1]
+    dy = grad_inputs[0]
+    x = inputs[0]
 
     # Get mask to reproduce the random results of forward computation.
     # This variable is always prepared for dropout_backward because

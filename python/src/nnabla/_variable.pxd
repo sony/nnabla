@@ -85,10 +85,12 @@ cdef extern from "nbla/computation_graph/variable.hpp" namespace "nbla":
         void backward(NdArrayPtr grad, cpp_bool clear_buffer, vector[CommunicatorBackwardCallbackPtr] communicator_callbacks, function_hook_type function_pre_hook, function_hook_type function_post_hook, cpp_bool clear_initial_grad) nogil except+
         void set_persistent(cpp_bool b)
         cpp_bool persistent()
+        void clear_during_auto_forward() except +
         string name() except +
         void set_name(string name) except +
         vector[CgFunctionPtr] function_references() except+
         void remove_function_reference(CgFunction * func) except+
+        void update_python_user_reference_counts(const int diff) except+
     ctypedef shared_ptr[CgVariable] CgVariablePtr
 
 cdef extern from "nbla/computation_graph/function.hpp" namespace "nbla":
@@ -119,12 +121,18 @@ cdef class CommunicatorBackwardCallback:
     cdef create_from_ccallback(CommunicatorBackwardCallbackPtr varsp)
 
 cdef class Variable:
-    cdef CgVariablePtr var
-    cdef CgVariable * varp
+    cdef CgVariablePtr _var # DO NOT ACCESS IT DIRECTLY! Use setter and getter.
+    cdef CgVariable * _varp # DO NOT ACCESS IT DIRECTLY! Use setter and getter.
     cdef public object info
     """
     Information of the variable.
     """
+
+    # Setter and getter of _var and _varp
+    cdef void set_var(self, CgVariablePtr var)
+    cdef inline CgVariablePtr get_var(self)
+    cdef inline CgVariable * get_varp(self)
+    cdef inline CgVariable * get_varp_no_gil(self) nogil # for no-gil functions
 
     @staticmethod
     cdef create_from_cvariable(shared_ptr[CVariable] varsp)

@@ -111,35 +111,51 @@ class ConcatenateDataGrad(PythonFunction):
             self._func.forward(inputs_fwd, outputs_fwd)
 
 
-def concatenate_backward(inputs, axis=None):
+def concatenate_backward(grad_inputs, inputs, input_shapes, outputs, output_shapes, axis=None):
     """
     Args:
-      inputs (list of nn.Variable): Incomming grads/inputs to/of the forward function.
+      grad_inputs (list of :obj:`nnabla.Variable`): Propagated grads to this backward function.
+      inputs (list of :obj:`nnabla.Variable` and None): Input Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      input_shapes (list of tuple of :obj:`int`): Input shapes of the forward function.
+          The shapes of the inputs in which None is set can be passed.
+      outputs (list of :obj:`nnabla.Variable` and None): Output Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      output_shapes (list of tuple of :obj:`int`): Output shapes of the forward function.
+          The shapes of the outputs in which None is set can be passed.
       kwargs (dict of arguments): Dictionary of the corresponding function arguments.
 
     Return:
       list of Variable: Return the gradients wrt inputs of the corresponding function.
     """
-    dy = inputs[0]
+    dy = grad_inputs[0]
     axis = axis if axis is not None else len(dy.shape) - 1
     ctx = nn.get_current_context()
     df = ConcatenateDataGrad(ctx, axis=axis)
-    df.xshapes = [x.shape for x in inputs[1:]]
+    df.xshapes = input_shapes
     dx0 = df(dy)
     return dx0
 
 
-def concatenate_data_grad_backward(inputs, axis=None):
+def concatenate_data_grad_backward(grad_inputs, inputs, input_shapes, outputs, output_shapes, axis=None):
     """
     Args:
-      inputs (list of nn.Variable): Incomming grads/inputs to/of the forward function.
+      grad_inputs (list of :obj:`nnabla.Variable`): Propagated grads to this backward function.
+      inputs (list of :obj:`nnabla.Variable` and None): Input Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      input_shapes (list of tuple of :obj:`int`): Input shapes of the forward function.
+          The shapes of the inputs in which None is set can be passed.
+      outputs (list of :obj:`nnabla.Variable` and None): Output Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      output_shapes (list of tuple of :obj:`int`): Output shapes of the forward function.
+          The shapes of the outputs in which None is set can be passed.
       kwargs (dict of arguments): Dictionary of the corresponding function arguments.
 
     Return:
       list of Variable: Return the gradients wrt inputs of the corresponding function.
     """
-    gdx = inputs[:-1]
-    dy = inputs[-1]
+    gdx = grad_inputs
+    dy = inputs[0]
     axis = axis if axis is not None else len(dy.shape) - 1
     gdy = F.concatenate(*gdx, axis=axis)
     return gdy

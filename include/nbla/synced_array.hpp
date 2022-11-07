@@ -61,6 +61,9 @@ class NBLA_API SyncedArray : public enable_shared_from_this<SyncedArray> {
   std::vector<weak_ptr<SyncedArray>>
       children_; ///< list of pointers of child SyncedArrays
 
+  // Reference counts of this instance from Python user
+  int python_user_reference_counts = 0;
+
 public:
   SyncedArray(const Size_t size);
   SyncedArray(shared_ptr<SyncedArray> parent, const Size_t size,
@@ -205,6 +208,28 @@ public:
    */
   bool is_narrowed() const { return parent_ != nullptr; }
 
+  /** Returns true if this SyncedArray has the Parent.
+   */
+  inline bool is_child() const { return parent_ != nullptr; }
+
+  /** Returns true if this SyncedArray has not the Parent.
+   */
+  inline bool is_root() const { return parent_ == nullptr; }
+
+  /** Returns true if this SyncedArray has a parent or child SyncedArrays.
+   */
+  bool has_family() const {
+    return static_cast<bool>(parent_ || children_.size() > 0);
+  }
+
+  /** Get the refernce counts from a Python user.
+   */
+  int get_python_user_reference_counts() const;
+
+  /** Update the refernce counts from a Python user.
+   */
+  void update_python_user_reference_counts(const int diff);
+
 private:
   ArrayDesc sync(dtypes dtype, const Context &ctx, bool write_only = false,
                  const int async_flags = AsyncFlag::NONE);
@@ -237,20 +262,6 @@ private:
   /** Get offset of the Array.
    */
   Size_t offset() const { return offset_; }
-
-  /** Returns true if this SyncedArray has the Parent.
-   */
-  inline bool is_child() { return parent_ != nullptr; }
-
-  /** Returns true if this SyncedArray has not the Parent.
-   */
-  inline bool is_root() { return parent_ == nullptr; }
-
-  /** Returns true if this SyncedArray has a parent or child SyncedArrays.
-   */
-  bool has_family() {
-    return static_cast<bool>(parent_ || children_.size() > 0);
-  }
 
   /** Returns true if this SyncedArray has the head array.
    */

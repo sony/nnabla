@@ -64,6 +64,32 @@ def randn(rng, *shape):
     return np.asarray(rng.randn(*shape), dtype=np.float32)
 
 
+def quit_with_gc(func_or_gen):
+    '''A decorator function attaching garbage collection
+    at the end of the function.
+
+    Args:
+        func_or_gen (function or int): If an int is given, it returns a decorator with garbage collection with generation=2 for gc.collect(generation) with the specified value as generation.
+
+    '''
+    generation = 2
+
+    def _quit_with_gc(f):
+        def decorated(*args, **kw):
+            import gc
+            ret = f(*args, **kw)
+            gc.collect(generation)
+            return ret
+
+        return decorated
+
+    if isinstance(func_or_gen, int):
+        generation = func_or_gen
+        return _quit_with_gc
+    func = func_or_gen
+    return _quit_with_gc(func)
+
+
 def compute_analytical_and_numerical_grad_graph(terminal, inputs,
                                                 epsilon=1e-3,
                                                 recompute_graph=True):
@@ -927,6 +953,7 @@ def backward_function_tester(rng, func, inputs=None,
     with nn.context_scope(ctx), nn.auto_forward(auto_forward):
         outputs0 = func(*(vinputs_identity + func_args), **func_kwargs)
         outputs0 = force_list(outputs0)
+        voutputs_identity = outputs0
         F.sink(*outputs0).forward(clear_no_need_grad=False)
     grad_voutputs = []
     for output in outputs0:
@@ -971,9 +998,12 @@ def backward_function_tester(rng, func, inputs=None,
     func_backward = registry[func_name]
     grad_vinputs = grad_voutputs + vinputs
     grad_vinputs_identity = grad_voutputs + vinputs_identity
+    vinput_identity_shapes = [inp.shape for inp in vinputs_identity]
+    voutput_identity_shapes = [inp.shape for inp in voutputs_identity]
     func_info_args = output.parent.info.args
     with nn.context_scope(ctx), nn.auto_forward(auto_forward):
-        ograds0 = func_backward(grad_vinputs_identity, **func_info_args)
+        ograds0 = func_backward(grad_voutputs, vinputs_identity, vinput_identity_shapes,
+                                voutputs_identity, voutput_identity_shapes, **func_info_args)
         ograds0 = force_list(ograds0)
         ograds0_ = list(filter(lambda o: o is not None, ograds0))
         F.sink(*ograds0_).forward(clear_no_need_grad=True)

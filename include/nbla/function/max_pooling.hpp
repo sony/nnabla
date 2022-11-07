@@ -74,6 +74,11 @@ protected:
   virtual bool grad_depends_input_data_impl(int i, int j) const {
     return false;
   }
+  virtual bool auto_grad_depends_input_data_impl(int i, int j) const {
+    // max_pooling_backward requires inputs[0] because this->index_buff_ cannot
+    // be accessed there.
+    return true;
+  }
 };
 }
 #endif

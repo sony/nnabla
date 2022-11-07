@@ -207,6 +207,18 @@ cdef class NdArray:
         return tuple(self.arrp.shape())
 
 
+    def view(self, shape):
+        """Create viewd NdArray.
+        Create a new NdArray of sharing same data with specified shape.
+        Args:
+            shape (tuple): Shape of tuple.
+        Returns:
+            nnabla.NdArray
+        """
+        arr = self.arrp.view(shape)
+        return NdArray.create(arr)
+
+
     def data_ptr(self, dtype, ctx=None, cpp_bool write_only=False):
         """Get array's pointer.
 

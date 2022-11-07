@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import print_function
+
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 from libc.stdint cimport int64_t, intptr_t
@@ -20,6 +22,7 @@ from libcpp.memory cimport make_shared, shared_ptr, const_pointer_cast
 from cpython cimport PyObject, Py_INCREF, Py_DECREF
 cimport _variable
 from _variable cimport CVariable, CContext, Shape_t, dtypes
+from _nd_array cimport CNdArray, CSyncedArray
 cimport function
 from function cimport CgFunction
 
@@ -152,28 +155,54 @@ cdef class Variable:
         need_grad (bool): Flag for backprop or not.
 
     """
+    EXCEPTIONS_AT_DEALLOC = []
+
+    @staticmethod
+    def _check_exception_at_dealloc():
+        exceptions = Variable.EXCEPTIONS_AT_DEALLOC
+        if not exceptions:
+            return
+        err = exceptions.pop(0)
+        raise err
+
+    cdef void set_var(self, CgVariablePtr var):
+        # New CgVariable traces this Variable.
+        var.get().update_python_user_reference_counts(1)
+
+        if self._var:
+            # Old CgVariable purges this Variable.
+            self.get_varp().update_python_user_reference_counts(-1)
+
+        self._var = var
+        self._varp = var.get()
+
+    cdef inline CgVariablePtr get_var(self):
+        return self._var
+
+    cdef inline CgVariable * get_varp(self):
+        return self._varp
+
+    cdef inline CgVariable * get_varp_no_gil(self) nogil:
+        return self._varp
 
     def __cinit__(self, Shape_t shape=[], need_grad=None, info=None):
         self.info = info
         if need_grad is None:
-            self.var = make_shared[CgVariable](shape)
+            self.set_var(make_shared[CgVariable](shape))
         else:
-            self.var = make_shared[CgVariable](shape, < bint?> need_grad)
-        self.varp = self.var.get()
+            self.set_var(make_shared[CgVariable](shape, < bint?> need_grad))
 
     @staticmethod
     cdef create_from_cvariable(shared_ptr[CVariable] varsp):
         cdef shared_ptr[CgVariable] v_sp = make_shared[CgVariable](varsp)
         var = Variable()
-        var.var = v_sp
-        var.varp = v_sp.get()
+        var.set_var(v_sp)
         return var
 
     @staticmethod
     cdef create_from_cg_variable(CgVariablePtr cgv):
         var = Variable()
-        var.var = cgv
-        var.varp = cgv.get()
+        var.set_var(cgv)
         return var
 
     @staticmethod
@@ -209,7 +238,44 @@ cdef class Variable:
         return var
 
     def __dealloc__(self):
-        pass
+        # Clear data when an user releases all the references of this Variable.
+        # This feature is required to release the memory during forward
+        # execution in auto-forward mode.
+        # TODO: Implement this feature as the core design of NNabla and remove
+        #       this workaround.
+        # Dev Note: You must avoid invoking Python operations in Cython 
+        #           __dealloc__. When Cython __dealloc__() method is called,
+        #           Python objects are partially destroyed. In particular,
+        #           at the end of Python process, the invocations of
+        #           __dealloc__() of all Variables during Python object
+        #           destruction could return many errors.
+        try:
+            self.get_varp().clear_during_auto_forward()
+        except RuntimeError as err:
+            import sys
+            print("Ignoring an exception in __dealloc__.", err)
+            print("Please run nnabla.Variable._check_exception_at_dealloc() to handle the exception.")
+            Variable.EXCEPTIONS_AT_DEALLOC.append(err)
+        finally:
+            # Delete references
+            self.get_varp().update_python_user_reference_counts(-1)
+
+    @property
+    def get_number_of_references(self):
+        """
+        Gets the number of referneces to the same memory objects.
+
+
+        Returns: 
+            `int`
+
+        """
+        # This is mainly used for pytest.
+        cdef CgVariable* cgv = self.get_varp()
+        cdef CVariable* v = cgv.variable().get()
+        cdef CNdArray* ndarr = v.data().get()
+        cdef CSyncedArray* syncarr = ndarr.array().get()
+        return syncarr.get_python_user_reference_counts()
 
     def __repr__(self):
         return "<Variable({}, need_grad={}) at {}>".format(
@@ -219,14 +285,14 @@ cdef class Variable:
         '''Equal operator compares the addresses of underlying C++ objects
         (``nbla::Variable``).
         '''
-        cdef CVariable* v = (< Variable > self).varp.variable().get()
-        cdef CVariable* w = (< Variable ?> other).varp.variable().get()
+        cdef CVariable* v = (< Variable > self).get_varp().variable().get()
+        cdef CVariable* w = (< Variable ?> other).get_varp().variable().get()
         return v == w
 
     def __hash__(self):
         '''Returns hash of the integer address of holding C++ object.
         '''
-        cdef CVariable* v = ( < Variable > self).varp.variable().get()
+        cdef CVariable* v = ( < Variable > self).get_varp().variable().get()
         return hash(< intptr_t > (v))
 
     def apply(self, **kwargs):
@@ -246,7 +312,7 @@ cdef class Variable:
             tuple of :obj:`int`
 
         """
-        return tuple(self.varp.variable().get().shape())
+        return tuple(self.get_varp().variable().get().shape())
 
     @property
     def size(self):
@@ -257,7 +323,7 @@ cdef class Variable:
             :obj:`int`
 
         """
-        return self.varp.variable().get().size(-1)
+        return self.get_varp().variable().get().size(-1)
 
     @property
     def ndim(self):
@@ -268,7 +334,7 @@ cdef class Variable:
             int
 
         """
-        return self.varp.variable().get().ndim()
+        return self.get_varp().variable().get().ndim()
 
     def size_from_axis(self, axis=-1):
         """
@@ -294,7 +360,7 @@ cdef class Variable:
         Returns:
             :obj:`int`        
         """
-        return self.varp.variable().get().size(axis)
+        return self.get_varp().variable().get().size(axis)
 
     def reset_shape(self, shape, force=False):
         """Resizes the shape of the variable to a specified shape.
@@ -310,7 +376,7 @@ cdef class Variable:
             None
 
         """
-        self.varp.variable().get().reshape(shape, force)
+        self.get_varp().variable().get().reshape(shape, force)
 
     def reshape(self, shape, unlink=False):
         """Returns a new variable, where this variable is reshaped to a specified shape.
@@ -326,8 +392,8 @@ cdef class Variable:
         """
         if unlink:
             var = Variable.create_from_cvariable(
-                self.varp.variable().get().view(shape))
-            (< Variable > var).varp.set_need_grad(self.varp.need_grad_state())
+                self.get_varp().variable().get().view(shape))
+            (< Variable > var).get_varp().set_need_grad(self.get_varp().need_grad_state())
             return var
         from nnabla.functions import reshape
         return reshape(self, shape)
@@ -343,11 +409,11 @@ cdef class Variable:
         Returns:
            bool: Whether this variable requires gradient or not.
         """
-        return self.varp.need_grad_state()
+        return self.get_varp().need_grad_state()
 
     @need_grad.setter
     def need_grad(self, b):
-        self.varp.set_need_grad(b)
+        self.get_varp().set_need_grad(b)
 
     @property
     def recompute(self):
@@ -360,11 +426,11 @@ cdef class Variable:
         Returns:
            bool: Whether this variable is recomputed during backward propagation.
         """
-        return self.varp.recompute()
+        return self.get_varp().recompute()
 
     @recompute.setter
     def recompute(self, b):
-        self.varp.set_recompute(b)
+        self.get_varp().set_recompute(b)
 
     def rewire_on(self, var):
         '''Rewire a successor graph of this variable on top of ``var``.
@@ -399,7 +465,7 @@ cdef class Variable:
                 ya.backward()
 
         '''
-        steal_variable_from_to(( < Variable?> var).var, self.var)
+        steal_variable_from_to(( < Variable?> var).get_var(), self.get_var())
 
     @property
     def data(self):
@@ -413,11 +479,11 @@ cdef class Variable:
         Returns:
             :class:`~nnabla.NdArray`
         """
-        return NdArray.create(self.varp.variable().get().data())
+        return NdArray.create(self.get_varp().variable().get().data())
 
     @data.setter
     def data(self, NdArray ndarray):
-        self.varp.variable().get().set_data(ndarray.arr)
+        self.get_varp().variable().get().set_data(ndarray.arr)
 
     @property
     def grad(self):
@@ -431,11 +497,11 @@ cdef class Variable:
         Returns:
             :class:`~nnabla.NdArray`
         """
-        return NdArray.create(self.varp.variable().get().grad())
+        return NdArray.create(self.get_varp().variable().get().grad())
 
     @grad.setter
     def grad(self, NdArray ndarray):
-        self.varp.variable().get().set_grad(ndarray.arr)
+        self.get_varp().variable().get().set_grad(ndarray.arr)
 
     @property
     def d(self):
@@ -513,7 +579,7 @@ cdef class Variable:
             :obj:`nnabla.function.Function`
 
         """
-        cdef CgFunctionPtr cgf = self.varp.parent()
+        cdef CgFunctionPtr cgf = self.get_varp().parent()
         if not cgf:
             return None
         return function.Function.create_from_c(cgf)
@@ -522,7 +588,7 @@ cdef class Variable:
     def parent(self, func):
         cdef CgFunctionPtr cg_func = (< function.Function ?> func).fun
         assert cg_func, "TODO"
-        self.varp.set_parent(cg_func)
+        self.get_varp().set_parent(cg_func)
 
     @property
     def function_references(self):
@@ -534,7 +600,7 @@ cdef class Variable:
             list of `nnabla.function.Function`
 
         """
-        cdef vector[CgFunctionPtr] fs = self.varp.function_references()
+        cdef vector[CgFunctionPtr] fs = self.get_varp().function_references()
 
         return [function.Function.create_from_c(f) for f in fs]
 
@@ -579,7 +645,7 @@ cdef class Variable:
             function_post_hook_c = create_function_hook_with_object(function_post_hook)
 
         with nogil:
-            self.varp.forward(clear_buffer, clear_no_need_grad, NULL, function_pre_hook_c, function_post_hook_c)
+            self.get_varp_no_gil().forward(clear_buffer, clear_no_need_grad, NULL, function_pre_hook_c, function_post_hook_c)
 
 
     def backward(self, grad=1, cpp_bool clear_buffer=False, communicator_callbacks=None,
@@ -824,7 +890,7 @@ cdef class Variable:
             function_post_hook_c = create_function_hook_with_object(function_post_hook)
 
         with nogil:
-            self.varp.backward(p, clear_buffer, callback_list, function_pre_hook_c, function_post_hook_c, clear_initial_grad)
+            self.get_varp_no_gil().backward(p, clear_buffer, callback_list, function_pre_hook_c, function_post_hook_c, clear_initial_grad)
 
     def unlinked(self, need_grad=None):
         """
@@ -879,11 +945,11 @@ cdef class Variable:
                 # None
 
         """
-        var = Variable.create_from_cvariable(self.varp.variable())
+        var = Variable.create_from_cvariable(self.get_varp().variable())
         if need_grad is not None:
             var.need_grad = need_grad
         else:
-            (< Variable > var).varp.set_need_grad(self.varp.need_grad_state())
+            (< Variable > var).get_varp().set_need_grad(self.get_varp().need_grad_state())
         return var
 
     def no_grad(self):
@@ -924,23 +990,23 @@ cdef class Variable:
             bool
 
         """
-        return self.varp.persistent()
+        return self.get_varp().persistent()
 
     @persistent.setter
     def persistent(self, cpp_bool b):
-        self.varp.set_persistent(b)
+        self.get_varp().set_persistent(b)
 
     @property
     def name(self):
-        return self.varp.name()
+        return self.get_varp().name()
 
     @name.setter
     def name(self, string name):
-        self.varp.set_name(name)
+        self.get_varp().set_name(name)
 
     @property
     def rank(self, ):
-        return self.varp.rank()
+        return self.get_varp().rank()
 
     def visit(self, f):
         """
@@ -1098,7 +1164,7 @@ cdef class Variable:
         self.visit(_clear_all_graph_links)
 
     def _clear_parent(self, ):
-        self.varp.set_parent(< CgFunctionPtr?> NULL)
+        self.get_varp().set_parent(< CgFunctionPtr?> NULL)
 
     def __pos__(self):
         return AOP.pos(self)

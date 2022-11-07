@@ -26,7 +26,7 @@ def _get_dropout_mask(dropout_input):
         dropout_input(:class:`nnabla.Variable`): The input variable of
                                                  nnabla.functions.dropout
     """
-    cdef VariablePtr v = (<Variable?>dropout_input).varp.variable()
+    cdef VariablePtr v = (<Variable?>dropout_input).get_varp().variable()
     cdef VariablePtr mask = c_get_dropout_mask(v)
     return Variable.create_from_cvariable(mask)
 

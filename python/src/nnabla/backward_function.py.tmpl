@@ -49,15 +49,30 @@ arguments = as_args(func.get('arguments', {}))
 %>
 import nnabla.functions as F
 
-def ${func['snake_name']}_backward(inputs${arguments}):
+def ${func['snake_name']}_backward(grad_inputs, inputs, input_shapes, outputs, output_shapes${arguments}):
     """
     Args:
-      inputs (list of nn.Variable): Incomming grads/inputs to/of the forward function.
+      grad_inputs (list of :obj:`nnabla.Variable`): Propagated grads to this backward function.
+      inputs (list of :obj:`nnabla.Variable` and None): Input Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      input_shapes (list of tuple of :obj:`int`): Input shapes of the forward function.
+          The shapes of the inputs in which None is set can be passed.
+      outputs (list of :obj:`nnabla.Variable` and None): Output Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      output_shapes (list of tuple of :obj:`int`): Output shapes of the forward function.
+          The shapes of the outputs in which None is set can be passed.
       kwargs (dict of arguments): Dictionary of the corresponding function arguments.
 
     Return:
       list of Variable: Return the gradients wrt inputs of the corresponding function.
     """
-    dy = inputs[0]
-    x0 = inputs[1]
+    # The inputs and outputs could be cleared by graph engine during forward
+    # propagation before this backward function is called. The grad dependency
+    # defined by C++ Function class can prevent the deletion. To define it,
+    # see Function::grad_depends_input_data, Function::grad_depends_input_data_impl,
+    # Function::grad_depends_output_data, Function::auto_grad_depends_input_data,
+    # Function::auto_grad_depends_output_data, Function::auto_grad_depends_input_data_impl
+    # for more detail.
+    dy = grad_inputs[0]
+    x0 = inputs[0]
     raise NotImplementedError("${func['snake_name']}_backward is not implemented.")

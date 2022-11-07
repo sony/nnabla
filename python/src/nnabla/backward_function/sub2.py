@@ -14,23 +14,31 @@
 # limitations under the License.
 
 
-from .utils import sum_for_arithmetics
+from .utils import sum_for_arithmetics_with_shape
 
 
-def sub2_backward(inputs, inplace=False):
+def sub2_backward(grad_inputs, inputs, input_shapes, outputs, output_shapes, inplace=False):
     """
     Args:
-      inputs (list of nn.Variable): Incomming grads/inputs to/of the forward function.
+      grad_inputs (list of :obj:`nnabla.Variable`): Propagated grads to this backward function.
+      inputs (list of :obj:`nnabla.Variable` and None): Input Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      input_shapes (list of tuple of :obj:`int`): Input shapes of the forward function.
+          The shapes of the inputs in which None is set can be passed.
+      outputs (list of :obj:`nnabla.Variable` and None): Output Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      output_shapes (list of tuple of :obj:`int`): Output shapes of the forward function.
+          The shapes of the outputs in which None is set can be passed.
       kwargs (dict of arguments): Dictionary of the corresponding function arguments.
 
     Return:
       list of Variable: Return the gradients wrt inputs of the corresponding function.
     """
-    dy = inputs[0]
-    x0 = inputs[1]
-    x1 = inputs[2]
+    dy = grad_inputs[0]
+    x0_shape = input_shapes[0]
+    x1_shape = input_shapes[1]
     dx0 = dy
     dx1 = -dy
-    dx0 = sum_for_arithmetics(dx0, x0)
-    dx1 = sum_for_arithmetics(dx1, x1)
+    dx0 = sum_for_arithmetics_with_shape(dx0, x0_shape)
+    dx1 = sum_for_arithmetics_with_shape(dx1, x1_shape)
     return dx0, dx1

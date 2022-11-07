@@ -17,7 +17,7 @@
 import numpy as np
 import nnabla as nn
 import nnabla.functions as F
-from .utils import get_output, no_grad, sum_for_arithmetics
+from .utils import no_grad, sum_for_arithmetics
 
 
 def _spectral_norm_backward(dw_sn, w, u, dim=0, itr=1, eps=1e-12):
@@ -135,10 +135,18 @@ def _spectral_norm_outer_most_dim_backward(dw_sn, w, u, itr=1, eps=1e-12):
     return dw, None
 
 
-def spectral_norm_backward(inputs, dim=0, itr=1, eps=1e-12, test=False, output_u=False):
+def spectral_norm_backward(grad_inputs, inputs, input_shapes, outputs, output_shapes, dim=0, itr=1, eps=1e-12, test=False, output_u=False):
     """
     Args:
-      inputs (list of nn.Variable): Incomming grads/inputs to/of the forward function.
+      grad_inputs (list of :obj:`nnabla.Variable`): Propagated grads to this backward function.
+      inputs (list of :obj:`nnabla.Variable` and None): Input Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      input_shapes (list of tuple of :obj:`int`): Input shapes of the forward function.
+          The shapes of the inputs in which None is set can be passed.
+      outputs (list of :obj:`nnabla.Variable` and None): Output Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      output_shapes (list of tuple of :obj:`int`): Output shapes of the forward function.
+          The shapes of the outputs in which None is set can be passed.
       kwargs (dict of arguments): Dictionary of the corresponding function arguments.
 
     Return:
@@ -149,9 +157,9 @@ def spectral_norm_backward(inputs, dim=0, itr=1, eps=1e-12, test=False, output_u
         raise ValueError(
             "spectral_norm_backward is supported for output_u=True.")
 
-    dw_sn = inputs[0]
-    w = inputs[2]
-    u = get_output(w, "SpectralNorm", nth_output=1)
+    dw_sn = grad_inputs[0]
+    w = inputs[0]
+    u = outputs[1]
 
     if dim == w.ndim - 1:
         return _spectral_norm_outer_most_dim_backward(dw_sn, w, u, itr, eps)

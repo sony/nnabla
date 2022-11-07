@@ -112,6 +112,10 @@ protected:
   virtual bool grad_depends_input_data_impl(int i, int j) const {
     return false;
   }
+  virtual bool auto_grad_depends_input_data_impl(int i, int j) const {
+    // lstm_backward requires the all inputs for recomputation.
+    return true;
+  }
 
 private:
   vector<vector<CgVariablePtr>> create_fixed_length_lstm_graph(

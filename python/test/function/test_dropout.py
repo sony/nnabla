@@ -143,7 +143,8 @@ def test_dropout_double_backward(p, seed, ctx, func_name):
                 dy = nn.Variable.from_numpy_array(
                     init_dy).apply(need_grad=True)
                 # y = F.dropout(x, p, seed)  # Dropout is required to compute mask.
-                dx = registry['Dropout']([dy, x], p, seed)
+                dx = registry['Dropout'](
+                    [dy], [x], [None], [None], [None], p, seed)
 
             # Note: y.forward() is required for dx.forward(). However this test
             #       is skipped because the random results are randomly matched
@@ -157,7 +158,7 @@ def test_dropout_double_backward(p, seed, ctx, func_name):
         x = nn.Variable.from_numpy_array(init_x).apply(need_grad=True)
         dy = nn.Variable.from_numpy_array(init_dy).apply(need_grad=True)
         y = F.dropout(x, p, seed)  # Dropout is required to compute mask.
-        dx = registry['Dropout']([dy, x], p, seed)
+        dx = registry['Dropout']([dy], [x], [None], [None], [None], p, seed)
 
         # Execution
         y.forward()  # Dropout is required to compute mask.

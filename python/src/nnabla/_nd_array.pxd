@@ -37,6 +37,7 @@ cdef extern from "nbla/synced_array.hpp" namespace "nbla":
         cpp_bool clear_called() except+
         cpp_bool zeroing() const
         void clear() except+
+        int get_python_user_reference_counts() const
 
     ctypedef shared_ptr[CSyncedArray] SyncedArrayPtr
 
@@ -63,6 +64,7 @@ cdef extern from "nbla/nd_array.hpp" namespace "nbla":
         CArray * cast(dtypes dtype, const CContext & ctx, cpp_bool write_only) nogil except +
         ArrayPtr cast_sp(dtypes dtype, const CContext & ctx, cpp_bool write_only) nogil except +
         shared_ptr[CNdArray] narrow(const Size_t dim, const Size_t start, const Size_t length) except+
+        int python_user_reference_counts
 
     ctypedef shared_ptr[CNdArray] NdArrayPtr
 

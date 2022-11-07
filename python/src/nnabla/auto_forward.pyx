@@ -1,4 +1,5 @@
 # Copyright 2017,2018,2019,2020,2021 Sony Corporation.
+# Copyright 2022 Sony Group Corporation.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,11 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from contextlib import contextmanager
+from .auto_forward cimport c_get_auto_forward, c_set_auto_forward
 
-# State of auto forward computation.
-__auto_forward_state = False
+# State of auto forward computation of Python global variable is integrated to
+# C++ Singleton.
 
 
 @contextmanager
@@ -27,17 +28,13 @@ def auto_forward(auto=True):
     Args:
         auto (bool): Whether forward computation is executed during a
             computation graph construction.
-
-    Returns: bool
-
     """
-    global __auto_forward_state
-    prev = __auto_forward_state
-    __auto_forward_state = auto
+    prev = c_get_auto_forward()
+    c_set_auto_forward(auto)
     try:
         yield
     finally:
-        __auto_forward_state = prev
+        c_set_auto_forward(prev)
 
 
 def get_auto_forward():
@@ -46,11 +43,13 @@ def get_auto_forward():
     When it is true, forward execution is invoked during a computation graph
     definition.
 
+    Returns:
+        bool: Auto-forward flag
+    
     Note:
         This is called by users usually.  
     """
-    global __auto_forward_state
-    return __auto_forward_state
+    return c_get_auto_forward()
 
 
 def set_auto_forward(auto):
@@ -62,8 +61,5 @@ def set_auto_forward(auto):
     Args:
         auto (bool): Whether forward computation is executed when the
             computation graph is updated.
-
-    Returns: bool
     """
-    global __auto_forward_state
-    __auto_forward_state = auto
+    c_set_auto_forward(auto)

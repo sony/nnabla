@@ -21,7 +21,7 @@ from nnabla.function import PythonFunction
 
 from .batch_normalization import double_backward_for_batch as bn_double_backward_for_batch
 from .batch_normalization import double_backward_for_global as bn_double_backward_for_global
-from .utils import no_grad, get_output
+from .utils import no_grad
 
 
 def double_backward(g_dx0, g_db0, g_dg0, g_dz0,
@@ -221,11 +221,19 @@ class FusedBatchNormalizationBackward(PythonFunction):
                 g_g0.copy_from(g_g0_.data)
 
 
-def fused_batch_normalization_backward(inputs, axes=(1,), decay_rate=0.9, eps=1e-05,
+def fused_batch_normalization_backward(grad_inputs, inputs, input_shapes, outputs, output_shapes, axes=(1,), decay_rate=0.9, eps=1e-05,
                                        batch_stat=True, nonlinearity='relu'):
     """
     Args:
-      inputs (list of nn.Variable): Incomming grads/inputs to/of the forward function.
+      grad_inputs (list of :obj:`nnabla.Variable`): Propagated grads to this backward function.
+      inputs (list of :obj:`nnabla.Variable` and None): Input Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      input_shapes (list of tuple of :obj:`int`): Input shapes of the forward function.
+          The shapes of the inputs in which None is set can be passed.
+      outputs (list of :obj:`nnabla.Variable` and None): Output Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      output_shapes (list of tuple of :obj:`int`): Output shapes of the forward function.
+          The shapes of the outputs in which None is set can be passed.
       kwargs (dict of arguments): Dictionary of the corresponding function arguments.
 
     Return:
@@ -236,15 +244,15 @@ def fused_batch_normalization_backward(inputs, axes=(1,), decay_rate=0.9, eps=1e
     ctx = nn.get_current_context()
     df = FusedBatchNormalizationBackward(
         ctx, axes, decay_rate, eps, batch_stat, nonlinearity)
-    dy = inputs[0]
-    x0 = inputs[1]
-    b0 = inputs[2]
-    g0 = inputs[3]
-    rm = inputs[4]
-    rv = inputs[5]
-    z0 = inputs[6] if len(inputs) == 7 else None
+    dy = grad_inputs[0]
+    x0 = inputs[0]
+    b0 = inputs[1]
+    g0 = inputs[2]
+    rm = inputs[3]
+    rv = inputs[4]
+    z0 = inputs[5] if len(inputs) == 6 else None
     df.is_add = True if z0 else False
-    y0 = get_output(x0, "FusedBatchNormalization")
+    y0 = outputs[0]
     if df.is_add:
         dx0, db0, dg0, dz0 = df(dy, x0, b0, g0, rm, rv, y0, z0)
         return dx0, db0, dg0, None, None, dz0
@@ -253,41 +261,49 @@ def fused_batch_normalization_backward(inputs, axes=(1,), decay_rate=0.9, eps=1e
         return dx0, db0, dg0, None, None
 
 
-def fused_batch_normalization_backward_backward(inputs, axes=(1,), decay_rate=0.9, eps=1e-05,
+def fused_batch_normalization_backward_backward(grad_inputs, inputs, input_shapes, outputs, output_shapes, axes=(1,), decay_rate=0.9, eps=1e-05,
                                                 batch_stat=True, nonlinearity="relu"):
     """
     Args:
-      inputs (list of nn.Variable): Incomming grads/inputs to/of the forward function.
+      grad_inputs (list of :obj:`nnabla.Variable`): Propagated grads to this backward function.
+      inputs (list of :obj:`nnabla.Variable` and None): Input Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      input_shapes (list of tuple of :obj:`int`): Input shapes of the forward function.
+          The shapes of the inputs in which None is set can be passed.
+      outputs (list of :obj:`nnabla.Variable` and None): Output Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      output_shapes (list of tuple of :obj:`int`): Output shapes of the forward function.
+          The shapes of the outputs in which None is set can be passed.
       kwargs (dict of arguments): Dictionary of the corresponding function arguments.
 
     Return:
       list of Variable: Return the gradients wrt inputs of the corresponding function.
     """
-    is_add = True if len(inputs) == 12 else False
+    is_add = True if len(inputs) == 8 else False
     if is_add:
-        g_dx0 = inputs[0]
-        g_db0 = inputs[1]
-        g_dg0 = inputs[2]
-        g_dz0 = inputs[3]
-        dy = inputs[4]
-        x0 = inputs[5]
-        b0 = inputs[6]
-        g0 = inputs[7]
-        rm = inputs[8]
-        rv = inputs[9]
-        y0 = inputs[10]
-        z0 = inputs[11]
+        g_dx0 = grad_inputs[0]
+        g_db0 = grad_inputs[1]
+        g_dg0 = grad_inputs[2]
+        g_dz0 = grad_inputs[3]
+        dy = inputs[0]
+        x0 = inputs[1]
+        b0 = inputs[2]
+        g0 = inputs[3]
+        rm = inputs[4]
+        rv = inputs[5]
+        y0 = inputs[6]
+        z0 = inputs[7]
     else:
-        g_dx0 = inputs[0]
-        g_db0 = inputs[1]
-        g_dg0 = inputs[2]
-        dy = inputs[3]
-        x0 = inputs[4]
-        b0 = inputs[5]
-        g0 = inputs[6]
-        rm = inputs[7]
-        rv = inputs[8]
-        y0 = inputs[9]
+        g_dx0 = grad_inputs[0]
+        g_db0 = grad_inputs[1]
+        g_dg0 = grad_inputs[2]
+        dy = inputs[0]
+        x0 = inputs[1]
+        b0 = inputs[2]
+        g0 = inputs[3]
+        rm = inputs[4]
+        rv = inputs[5]
+        y0 = inputs[6]
         z0 = None
         g_dz0 = None
 

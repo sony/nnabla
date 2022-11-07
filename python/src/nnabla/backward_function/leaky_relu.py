@@ -16,21 +16,36 @@
 
 import nnabla.functions as F
 
-from .utils import no_grad, get_output
+from .utils import no_grad
 
 
-def leaky_relu_backward(inputs, alpha=0.1, inplace=False):
+def leaky_relu_backward(grad_inputs, inputs, input_shapes, outputs, output_shapes, alpha=0.1, inplace=False):
     """
     Args:
-      inputs (list of nn.Variable): Incomming grads/inputs to/of the forward function.
+      grad_inputs (list of :obj:`nnabla.Variable`): Propagated grads to this backward function.
+      inputs (list of :obj:`nnabla.Variable` and None): Input Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      input_shapes (list of tuple of :obj:`int`): Input shapes of the forward function.
+          The shapes of the inputs in which None is set can be passed.
+      outputs (list of :obj:`nnabla.Variable` and None): Output Variables of the forward function
+          if this backward function depends on it. Otherwise, None is set instead.
+      output_shapes (list of tuple of :obj:`int`): Output shapes of the forward function.
+          The shapes of the outputs in which None is set can be passed.
       kwargs (dict of arguments): Dictionary of the corresponding function arguments.
 
     Return:
       list of Variable: Return the gradients wrt inputs of the corresponding function.
     """
-    dy = inputs[0]
-    x0 = inputs[1]
-    x0 = get_output(x0, "LeakyReLU") if inplace else x0
+    dy = grad_inputs[0]
+    x0 = inputs[0]
+
+    # Keep the consistency with the grad dependency defined in C++ LeakyReLU.
+    # Inplace option is ignored because it was obsoleted. See leaky_relu.hpp
+    if alpha >= 0:
+        # grad_depends_output_data=True
+        x0 = outputs[0]
+        # else grad_depends_input_data=True
+
     m0 = F.greater_scalar(x0, 0)  # result is same even if inplace or not
     m1 = 1 - m0
     m0 = no_grad(m0)

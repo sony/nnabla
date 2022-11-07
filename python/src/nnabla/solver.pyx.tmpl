@@ -133,7 +133,7 @@ cdef class Solver:
         cdef string key
         cdef int i
         for key, x in iteritems(param_dict):
-            cparams.push_back(pair[string, shared_ptr[CVariable]](key, (< _Variable > x).varp.variable()))
+            cparams.push_back(pair[string, shared_ptr[CVariable]](key, (< _Variable > x).get_varp().variable()))
         self.solverp.set_parameters(cparams, reset, retain_state)
 
     def remove_parameters(self, vector[string] keys):
@@ -190,7 +190,7 @@ cdef class Solver:
         cdef _Variable pstate
         for pname, src_state in iteritems(states):
             for sname, var in iteritems(src_state.pstate):
-                dst_cstate.pstate[sname] = (< _Variable > var).varp.variable()
+                dst_cstate.pstate[sname] = (< _Variable > var).get_varp().variable()
             dst_cstate.t = src_state.t
             cstates.push_back(pair[string, CSolverState](pname, dst_cstate))
         self.solverp.set_states(cstates)

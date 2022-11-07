@@ -186,7 +186,8 @@ if __name__ == '__main__':
         'testing/clear_called_flag_recorder',
         'recompute',
         'lms',
-        '_dropout_workaround']
+        '_dropout_workaround',
+        'auto_forward']
 
     ext_modules = [Extension('nnabla.{}'.format(mname.replace('/', '.')),
                              [os.path.join(path_pkg,
