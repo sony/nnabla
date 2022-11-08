@@ -21,6 +21,8 @@ from os.path import abspath, join, dirname, expanduser
 import glob
 import os
 import yaml
+import certifi
+import ssl
 from nnabla.utils import nnabla_pb2
 from nnabla.logger import logger
 
@@ -31,6 +33,15 @@ _nnabla_func_info_cur = {}
 _onnx_func_info = None
 _api_level_info = None
 _nnabla_func_info_versions = {}
+
+
+def create_context():
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    context.load_verify_locations(certifi.where())
+    return context
+
+
+ssl._create_default_https_context = create_context
 
 
 def load_yaml_ordered(stream, Loader=yaml.Loader, object_pairs_hook=OrderedDict):

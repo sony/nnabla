@@ -56,6 +56,8 @@ RUN eval ${YUM_OPTS} \
         openssl-devel \
         bzip2-devel \
         libffi-devel \
+        openssl11 \
+        openssl11-devel \
     && yum group install -y "Development Tools" \
     && yum clean all
 
@@ -155,8 +157,10 @@ ADD python/test_requirements.txt /tmp/deps/
 RUN if [ "${PYVERNAME}" == "3.7" ]; then wget ${WGET_OPTS} https://www.python.org/ftp/python/3.7.10/Python-3.7.10.tgz; fi \
 	&& if [ "${PYVERNAME}" == "3.8" ]; then wget ${WGET_OPTS} https://www.python.org/ftp/python/3.8.8/Python-3.8.8.tgz; fi \
 	&& if [ "${PYVERNAME}" == "3.9" ]; then wget ${WGET_OPTS} https://www.python.org/ftp/python/3.9.8/Python-3.9.8.tgz; fi \
+	&& if [ "${PYVERNAME}" == "3.10" ]; then wget ${WGET_OPTS} https://www.python.org/ftp/python/3.10.7/Python-3.10.7.tgz; fi \
 	&& tar -xzf Python-${PYVERNAME}*.tgz \
 	&& cd Python-${PYVERNAME}* \
+	&& if [ "${PYVERNAME}" == "3.10" ]; then sed -i 's/PKG_CONFIG openssl /PKG_CONFIG openssl11 /g' configure; fi \
 	&& ./configure --enable-optimizations \
 	&& make altinstall \
 	&& ln -s -f /usr/local/bin/python${PYVERNAME} /usr/bin/python \

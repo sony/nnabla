@@ -1621,7 +1621,7 @@ class TFLiteExporter:
 
         bn_out = fork_name(inputs[0]) + "_bn"
         self.variables[bn_out] = input_shape
-        self.generate_bn_op(inputs, [bn_out], eps, axes, batch_stat)
+        self.generate_bn_op(inputs, outputs, eps, axes, batch_stat)
 
         if len(inputs) > 5:
             # Add
@@ -1631,12 +1631,13 @@ class TFLiteExporter:
             self.variables[add_out] = input_shape
             self.convert_generic_tflite_op(
                 [bn_out, inputs[5]], [add_out], 'ADD')
-            inputs = [add_out]
-        else:
-            inputs = [bn_out]
 
         if nonlinearity == "relu":
-            self.convert_generic_tflite_op(inputs, outputs, 'RELU')
+            # Here, we assume the last operator is 'Add'. Because it is lucky that
+            # previous operator only can be Add, although this assumption is vulnerable.
+            self.operators_list[-1]['builtin_options_type'] = 'AddOptions'
+            self.operators_list[-1]['builtin_options'] = {
+                'fused_activation_function': 'RELU'}
         else:
             raise ValueError(
                 "Currently, nonlinearity != relu is not supported!")
