@@ -50,8 +50,8 @@ cdef extern from "nbla/communicator.hpp" namespace "nbla":
         void allreduce(cpp_bool division, cpp_bool inplace) nogil except +
         void all_reduce(const vector[shared_ptr[CNdArray]] & ndarray_list, cpp_bool division, cpp_bool inplace, const string & group) nogil except +
         void all_reduce(shared_ptr[CNdArray] data, cpp_bool division, cpp_bool inplace, const string & group) nogil except +
-        CommunicatorBackwardCallbackPtr all_reduce_callback(const vector[shared_ptr[CNdArray]] & ndarray_list, size_t pack_size, cpp_bool division, const string & group) except +
-        CommunicatorBackwardCallbackPtr all_reduce_callback(shared_ptr[CNdArray] data, size_t pack_size, cpp_bool division, const string & group) except +
+        CommunicatorBackwardCallbackPtr all_reduce_callback(const vector[shared_ptr[CNdArray]] & ndarray_list, size_t pack_size, cpp_bool division, const string & group, float scale_grad, cpp_bool keep_dtype) except +
+        CommunicatorBackwardCallbackPtr all_reduce_callback(shared_ptr[CNdArray] data, size_t pack_size, cpp_bool division, const string & group, float scale_grad, cpp_bool keep_dtype) except +
         void reduce_scatter(const vector[shared_ptr[CNdArray]] & ndarray_list, shared_ptr[CNdArray] ndarray, cpp_bool division, const string & group) nogil except +
         void bcast(const vector[shared_ptr[CNdArray]] & ndarray_list, int src, cpp_bool inplace, const string & group) nogil except +
         void bcast(shared_ptr[CNdArray] ndarray, int src, cpp_bool inplace, const string & group) nogil except +
