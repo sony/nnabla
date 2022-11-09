@@ -17,7 +17,9 @@ Provide data iterator for Caltech101 examples.
 '''
 import numpy as np
 import tarfile
+import zipfile
 
+from io import BytesIO
 from nnabla.logger import logger
 from nnabla.utils.data_iterator import data_iterator
 from nnabla.utils.data_source import DataSource
@@ -70,27 +72,33 @@ class Caltech101DataSource(DataSource):
 
     def __init__(self, width, height, padding, train=True, shuffle=False, rng=None):
         super(Caltech101DataSource, self).__init__(shuffle=shuffle, rng=rng)
-        data_uri = "http://www.vision.caltech.edu/Image_Datasets/Caltech101/101_ObjectCategories.tar.gz"
+        data_uri = "http://data.caltech.edu/records/mzrjq-6wc02/files/caltech-101.zip"
         logger.info('Getting labeled data from {}.'.format(data_uri))
         r = download(data_uri)  # file object returned
         label_dict = dict()
-        with tarfile.open(fileobj=r, mode="r:gz") as fpin:
-            images = []
-            labels = []
-            for name in fpin.getnames():
-                if ".jpg" not in name or "Google" in name:
-                    continue
-                label, filename = name.split("/")[-2:]
-                if label not in label_dict:
-                    label_dict[label] = len(label_dict)
-                im = imread(fpin.extractfile(name), num_channels=3)
-                arranged_images = self._resize_image(
-                    im, width, height, padding)
-                images.append(arranged_images)
-                labels.append(label_dict[label])
-            self._size = len(images)
-            self._images = np.array(images)
-            self._labels = np.array(labels).reshape(-1, 1)
+        with zipfile.ZipFile(r, 'r') as zipf:
+            with zipf.open('caltech-101/101_ObjectCategories.tar.gz', 'r') as tr:
+                with tarfile.open(fileobj=tr, mode="r:gz") as fpin:
+                    images = []
+                    labels = []
+                    for name in fpin.getnames():
+                        if ".jpg" not in name or "Google" in name:
+                            continue
+                        label, filename = name.split("/")[-2:]
+                        if label not in label_dict:
+                            label_dict[label] = len(label_dict)
+                        with fpin.extractfile(name) as imf, BytesIO() as imio:
+                            imio.name = name
+                            imio.write(imf.read())
+                            imio.seek(0)
+                            im = imread(imio, num_channels=3)
+                            arranged_images = self._resize_image(
+                                im, width, height, padding)
+                            images.append(arranged_images)
+                            labels.append(label_dict[label])
+                    self._size = len(images)
+                    self._images = np.array(images)
+                    self._labels = np.array(labels).reshape(-1, 1)
         r.close()
         logger.info('Getting labeled data from {}.'.format(data_uri))
 
