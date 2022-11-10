@@ -422,7 +422,7 @@ def _nnp_file_saver(ctx, filename, ext):
 def _h5_parameter_file_saver(ctx, filename, ext):
     with get_file_handle_save(filename, ext) as hd:
         for i, (k, v) in enumerate(ctx.parameters.items()):
-            hd[k] = v.d
+            hd[k] = v.data.get_data("r")
             hd[k].attrs['need_grad'] = v.need_grad
             # To preserve order of parameters
             hd[k].attrs['index'] = i
@@ -434,7 +434,8 @@ def _protobuf_parameter_file_saver(ctx, filename, ext):
         parameter = proto.parameter.add()
         parameter.variable_name = variable_name
         parameter.shape.dim.extend(variable.shape)
-        parameter.data.extend(numpy.array(variable.d).flatten().tolist())
+        parameter.data.extend(numpy.array(
+            variable.data.get_data("r")).flatten().tolist())
         parameter.need_grad = variable.need_grad
     with get_file_handle_save(filename, ext) as f:
         f.write(proto.SerializeToString())
