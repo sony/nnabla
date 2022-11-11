@@ -36,7 +36,6 @@ RUN eval ${APT_OPTS} && apt-get update \
        libglib2.0-0 \
        libgl1-mesa-glx \
        python${PYTHON_VER} \
-       python3-pip \
        python${PYTHON_VER}-distutils \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
@@ -44,7 +43,10 @@ RUN eval ${APT_OPTS} && apt-get update \
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python${PYTHON_VER} 0
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python${PYTHON_VER} 0
 
-RUN pip3 install ${PIP_INS_OPTS} --upgrade pip
+RUN curl ${CURL_OPTS} https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
+    && python${PYTHON_VER} get-pip.py ${PIP_INS_OPTS} \
+    && rm get-pip.py
+
 RUN pip install ${PIP_INS_OPTS} wheel setuptools
 RUN pip install ${PIP_INS_OPTS} opencv-python || true
 
