@@ -39,6 +39,7 @@ if __name__ == '__main__':
         'ply',
         'tensorboard>=2.6.0, <=2.9.0',
         'tensorflow~=2.8.0',
+        'tensorflow-probability==0.16.0',
         'onnx_tf',
         'tf2onnx~=1.7.2',
         'tensorflow-addons',
