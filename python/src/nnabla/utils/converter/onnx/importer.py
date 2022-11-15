@@ -724,6 +724,7 @@ class OnnxImporter:
             "Range": self.Range,
             "Det": self.Det,
             "ScatterND": self.ScatterND,
+            "Unique": self.Unique,
         }
         if USE_ONNX_RESIZE:
             self.table_op_set_11["Resize"] = self.Resize_ONNXResize
@@ -4547,6 +4548,75 @@ class OnnxImporter:
         scatter_param.add = (reduction == "add")
         self._shape_output[n.output[0]] = data_shape
         func_list.append(scatter_func)
+
+    def Unique(self, func_list, n):
+        assert len(n.input) == 1
+        assert len(n.output) >= 1 and len(n.output) <= 4
+
+        # Check which outputs are needed
+        with_index = False
+        with_inverse = False
+        with_counts = False
+        for i in n.output:
+            if i == "indices":
+                with_index = True
+            elif i == "inverse_indices":
+                with_inverse = True
+            elif i == "counts":
+                with_counts = True
+
+        axis = None
+        sorted = True
+        for attr in n.attribute:
+            if attr.name == "axis":
+                check_attr_int_type(attr, n)
+                axis = attr.i
+            elif attr.name == "sorted":
+                check_attr_int_type(attr, n)
+                if attr.i == 0:
+                    sorted = False
+            else:
+                unsupported_attribute(attr.name, n)
+
+        x_shape = self.get_func_input_shape(n.input[0])
+        num_unique = 1 # dummy value: this value is computed at run-time
+        unique_output_shape = (num_unique,)
+        outputs_shape = []
+        # create y shape
+        if axis is None:
+            outputs_shape.append(unique_output_shape)
+        else:
+            outputs_shape.append(x_shape)
+            outputs_shape[0][axis] = num_unique
+        # create indices shape
+        if with_index:
+            outputs_shape.append(unique_output_shape)
+        # create inverse_indices shape
+        if with_inverse:
+            if axis is None:
+                outputs_shape.append((np.prod(x_shape),))
+            else:
+                outputs_shape.append((x_shape[axis],))
+        # create counts shape
+        if with_counts:
+            outputs_shape.append(unique_output_shape)
+
+        # Unique
+        func = self.generate_default_function("Unique", n)
+        func_param = func.unique_param
+        if axis is None:
+            func_param.flatten = True
+            func_param.axis = 0
+        else:
+            func_param.flatten = False
+            func_param.axis = axis
+        func_param.sorted = sorted
+        func_param.with_index = with_index
+        func_param.with_inverse = with_inverse
+        func_param.with_counts = with_counts
+        for o, s in zip(func.output, outputs_shape):
+            self._shape_output[o] = s
+        func_list.append(func)
 
     def convert_to_functions(self, n):
         ft = self._onnx_optype_to_nnabla_function_type.get(n.op_type)

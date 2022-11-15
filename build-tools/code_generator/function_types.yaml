@@ -662,3 +662,6 @@ RoiAlign:
 NonZero:
   float: [float]
   half: [Half]
+Unique:
+  float: [float]
+  half: [Half]

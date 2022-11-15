@@ -8093,3 +8093,54 @@ Unsupported, Special Use:
     c_runtime: not support
     function_ids:
       iIiIiIiIiI: 280
+  Unique:
+    snake_name: unique
+    doc: |2
+
+      Find the unique elements of input array.
+    inputs:
+      x:
+        doc: A N-D array.
+    arguments:
+      flatten:
+        doc: If True, unique values of the flatten input array are returned.
+        type: bool
+        default: 'True'
+      axis:
+        doc: If flatten is True and axis is specified, unique slices along axis are
+          returned.
+        type: int64
+        default: None
+      sorted:
+        doc: If True, unique values/slices sorted in ascending order are returned.
+        type: bool
+        default: 'True'
+      with_index:
+        doc: If True, `indices` is returned.
+        type: bool
+        default: 'False'
+      with_inverse:
+        doc: If True, `inverse_indices` is returned.
+        type: bool
+        default: 'False'
+      with_counts:
+        doc: If True, `counts` is returned.
+        type: bool
+        default: 'False'
+    outputs:
+      y:
+        doc: A N-D array.
+      indices:
+        doc: A 1-D array. It's indices of `y` elements first occurance in `x`. If
+          `flatten` is True, it contains indices to flattend input array `x`. If `flatten`
+          is False and `axis` is specified, it contains indices to input array `x`
+          on `axis`.
+      inverse_indices:
+        doc: A 1-D array. It's indices of `x` elements corresponding to `y`. If `flatten`
+          is True, it contains indices to output array `y`. If `flatten` is False
+          and `axis` is specified, it contains indices to output array `y` on `axis`.
+      counts:
+        doc: A 1-D array. It's the count of each element of 'y' in input array `x`.
+    c_runtime: not support
+    function_ids:
+      BiBBBB: 358
