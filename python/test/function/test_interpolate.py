@@ -523,8 +523,10 @@ def test_interpolate_nearest_double_backward(seed, inshape, outsize, scale, sdim
     func_args = [scale, outsize, 'nearest', align_corners,
                  half_pixel, half_pixel_for_nn, channel_last]
     # 2nd-order
+    import sys
+    rtol_accum = 6e-3 if sys.platform == 'win32' else 1e-5
     backward_function_tester(rng, F.interpolate, inputs,
-                             func_args=func_args,
+                             func_args=func_args, rtol_accum=rtol_accum,
                              atol_f=1e-6, atol_accum=1e-2, dstep=1e-3, ctx=ctx)
     # 3rd-order
     # F.interpolate takes scale and output_size while InterpolateDataGrad takes only output_size
