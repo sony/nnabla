@@ -38,7 +38,8 @@ if __name__ == '__main__':
     install_requires = [
         'ply',
         'tensorboard>=2.6.0, <=2.9.0',
-        'tensorflow~=2.8.0',
+        'tensorflow~=2.8.0;platform_system!="Windows"',
+        'tensorflow>=2.8.0, <=2.8.1;platform_system=="Windows"',
         'tensorflow-probability==0.16.0',
         'onnx_tf',
         'tf2onnx~=1.7.2',
