@@ -410,4 +410,14 @@ that we knew comm.all_reduce() should be perform synchronously after this point.
 Thus, we may ensure the whole training can be performed stably and not need to wait
 forever due to a corrupted process.
 
+When watch dog is enabled, developers may also change the timeout time if they think
+the default timeout time (default is 60s) is not proper. The timeout can be set by the
+following:
 
+.. code-block:: shell
+
+     export NNABLA_MPI_WATCH_DOG_TIMEOUT=30
+
+The time unit is second. Here, 30 means 30 seconds. It means if any node stops response
+for more than 30 seconds, the watch dog will kill the training process and show fatal
+error message.
