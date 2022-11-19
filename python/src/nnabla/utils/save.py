@@ -64,7 +64,7 @@ def _create_dataset(name, uri, cache_dir, variables, shuffle, batch_size, no_ima
 
 
 def _create_network(ctx, net, variable_batch_size):
-    names = net['names']
+    names = dict(net['names'])
     names.update(net['outputs'])
     g = nn.graph_def.create_graph_from_variable(net['name'], list(net['outputs'].values()), names=names,
                                                 parameter_scope=nn.parameter.get_current_parameter_scope())
