@@ -26,6 +26,7 @@ ARG APT_OPTS
 ENV LC_ALL C
 ENV LANG C
 ENV LANGUAGE C
+ENV DEBIAN_FRONTEND noninteractive
 
 RUN eval ${APT_OPTS} \
     && apt-get update && apt-get install -y --no-install-recommends \
@@ -36,9 +37,6 @@ RUN eval ${APT_OPTS} \
     g++ \
     git \
     make \
-    python3.7-dev \
-    python3.7 \
-    python3-setuptools \
     unzip \
     zip \
     zlib1g-dev \
@@ -46,13 +44,6 @@ RUN eval ${APT_OPTS} \
     libarchive-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
-
-RUN curl ${CURL_OPTS} https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
-    && python3.7 get-pip.py ${PIP_INS_OPTS} \
-    && rm get-pip.py
-
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.7 0
-RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 0
 
 RUN apt-get -yqq update \
     && apt-get -yqq install --no-install-recommends \
@@ -85,9 +76,55 @@ RUN apt-get -yqq update \
     && rm -rf /var/lib/apt/lists/*
 
 ADD python/setup_requirements.txt /tmp/deps/
-RUN pip3 install ${PIP_INS_OPTS} -U -r /tmp/deps/setup_requirements.txt
 ADD python/requirements.txt /tmp/deps/
-RUN pip3 install ${PIP_INS_OPTS} -U -r /tmp/deps/requirements.txt
-ADD doc/requirements.txt /tmp/deps/
-RUN sed -i '/nnabla==/d' /tmp/deps/requirements.txt \
-    && pip3 install ${PIP_INS_OPTS} -U -r /tmp/deps/requirements.txt
+ADD doc/requirements.txt /tmp/deps_doc/
+
+ENV PYVERNAME=3.7
+RUN eval ${APT_OPTS} \
+    && apt update \
+    && apt install -y --no-install-recommends \
+       git \
+       libssl-dev \
+       libbz2-dev \
+       libreadline-dev \
+       libsqlite3-dev \
+       wget \
+       llvm \
+       libncursesw5-dev \
+       xz-utils \
+       tk-dev \
+       libxml2-dev \
+       libxmlsec1-dev \
+       libffi-dev \
+       liblzma-dev \
+    && git clone https://github.com/pyenv/pyenv.git ~/.pyenv \
+    && export PYENV_ROOT="$HOME/.pyenv" \
+    && export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/plugins/python-build/bin:$PATH" \
+    && export PYTHON_BUILD_CURL_OPTS="${CURL_OPTS}" \
+    && export PYTHON_BUILD_WGET_OPTS="${WGET_OPTS}" \
+    && eval "$(pyenv init -)" \
+    && python-build `pyenv latest -k ${PYVERNAME}` /usr/local \
+    && pyenv global system \
+    && rm -rf ~/.pyenv \
+    && apt autoremove --purge -y \
+       git \
+       libssl-dev \
+       libbz2-dev \
+       libreadline-dev \
+       libsqlite3-dev \
+       wget \
+       llvm \
+       libncursesw5-dev \
+       xz-utils \
+       tk-dev \
+       libxml2-dev \
+       libxmlsec1-dev \
+       libffi-dev \
+       liblzma-dev \
+    && pip install ${PIP_INS_OPTS} --no-cache-dir -U -r /tmp/deps/setup_requirements.txt \
+    && pip install ${PIP_INS_OPTS} --no-cache-dir -U -r /tmp/deps/requirements.txt \
+    && sed -i '/nnabla==/d' /tmp/deps_doc/requirements.txt \
+    && pip install ${PIP_INS_OPTS} --no-cache-dir -U -r /tmp/deps_doc/requirements.txt \
+    && rm -rf /tmp/*
+
+

@@ -18,6 +18,7 @@ ARG PYTHONWARNINGS
 ARG CURL_OPTS
 ARG WGET_OPTS
 ARG APT_OPTS
+ENV DEBIAN_FRONTEND noninteractive
 
 ARG PYTHON_VERSION_MAJOR
 ARG PYTHON_VERSION_MINOR
@@ -35,25 +36,64 @@ RUN eval ${APT_OPTS} && apt-get update \
        curl \
        libglib2.0-0 \
        libgl1-mesa-glx \
-       python${PYVERNAME} \
-    && apt-get install -y --no-install-recommends \
-       python${PYVERNAME}-distutils || echo "skip install python-distutils" \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-RUN if [ "${PYVERNAME}" = "3.6" ]; then curl ${CURL_OPTS} https://bootstrap.pypa.io/pip/${PYVERNAME}/get-pip.py -o get-pip.py; else \
-    curl ${CURL_OPTS} https://bootstrap.pypa.io/get-pip.py -o get-pip.py; fi \
-    && python${PYVERNAME} get-pip.py ${PIP_INS_OPTS}
-
-RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python${PYVERNAME} 0
-
-RUN pip install ${PIP_INS_OPTS} wheel
-RUN pip install ${PIP_INS_OPTS} protobuf
-RUN pip install ${PIP_INS_OPTS} opencv-python || true
-
+################################################## build python from pyenv
 ARG WHL_PATH
 ADD $WHL_PATH/*.whl /tmp/
 
-RUN pip install ${PIP_INS_OPTS} /tmp/*.whl && rm -rf /tmp/*
+RUN eval ${APT_OPTS} \
+    && apt update \
+    && apt install -y --no-install-recommends \
+       git \
+       make \
+       build-essential \
+       libssl-dev \
+       zlib1g-dev \
+       libbz2-dev \
+       libreadline-dev \
+       libsqlite3-dev \
+       wget \
+       llvm \
+       libncursesw5-dev \
+       xz-utils \
+       tk-dev \
+       libxml2-dev \
+       libxmlsec1-dev \
+       libffi-dev \
+       liblzma-dev \
+    && git clone https://github.com/pyenv/pyenv.git ~/.pyenv \
+    && export PYENV_ROOT="$HOME/.pyenv" \
+    && export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/plugins/python-build/bin:$PATH" \
+    && export PYTHON_BUILD_CURL_OPTS="${CURL_OPTS}" \
+    && export PYTHON_BUILD_WGET_OPTS="${WGET_OPTS}" \
+    && if [ ${PYTHON_VERSION_MINOR} -ge 10 ]; then export CPPFLAGS=-I/usr/include/openssl11 && export LDFLAGS=-L/usr/lib64/openssl11; fi \
+    && eval "$(pyenv init -)" \
+    && python-build `pyenv latest -k ${PYVERNAME}` /usr/local \
+    && pyenv global system \
+    && rm -rf ~/.pyenv \
+    && apt autoremove --purge -y \
+       git \
+       make \
+       build-essential \
+       libssl-dev \
+       zlib1g-dev \
+       libbz2-dev \
+       libreadline-dev \
+       libsqlite3-dev \
+       wget \
+       llvm \
+       libncursesw5-dev \
+       xz-utils \
+       tk-dev \
+       libxml2-dev \
+       libxmlsec1-dev \
+       libffi-dev \
+       liblzma-dev \
+    && pip install ${PIP_INS_OPTS} --no-cache-dir wheel protobuf \
+    && pip install ${PIP_INS_OPTS} --no-cache-dir opencv-python || true \
+    && pip install ${PIP_INS_OPTS} --no-cache-dir /tmp/*.whl \
+    && rm -rf /tmp/*
 
 ENV LD_LIBRARY_PATH /usr/lib64:$LD_LIBRARY_PATH

@@ -53,6 +53,21 @@ RUN eval ${YUM_OPTS} \
         gmp-devel \
         openssl11 \
         openssl11-devel \
+        make \
+        build-essential \
+        libssl-dev \
+        zlib1g-dev \
+        libbz2-dev \
+        libreadline-dev \
+        libsqlite3-dev \
+        llvm \
+        libncursesw5-dev \
+        xz-utils \
+        tk-dev \
+        libxml2-dev \
+        libxmlsec1-dev \
+        libffi-dev \
+        liblzma-dev \
     && yum group install -y "Development Tools" \
     && yum clean all
 
@@ -141,30 +156,27 @@ RUN mkdir /tmp/deps \
 
 ARG PYTHON_VERSION_MAJOR
 ARG PYTHON_VERSION_MINOR
+ENV PYVERNAME=${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}
 
 ADD python/setup_requirements.txt /tmp/deps/
 ADD python/requirements.txt /tmp/deps/
 ADD python/test_requirements.txt /tmp/deps/
 
-################################################## build python from source
-RUN if [ "${PYVERNAME}" == "3.7" ]; then wget ${WGET_OPTS} https://www.python.org/ftp/python/3.7.10/Python-3.7.10.tgz; fi \
-	&& if [ "${PYVERNAME}" == "3.8" ]; then wget ${WGET_OPTS} https://www.python.org/ftp/python/3.8.8/Python-3.8.8.tgz; fi \
-	&& if [ "${PYVERNAME}" == "3.9" ]; then wget ${WGET_OPTS} https://www.python.org/ftp/python/3.9.8/Python-3.9.8.tgz; fi \
-	&& if [ "${PYVERNAME}" == "3.10" ]; then wget ${WGET_OPTS} https://www.python.org/ftp/python/3.10.7/Python-3.10.7.tgz; fi \
-	&& tar -xzf Python-${PYVERNAME}*.tgz \
-	&& cd Python-${PYVERNAME}* \
-	&& if [ "${PYVERNAME}" == "3.10" ]; then sed -i 's/PKG_CONFIG openssl /PKG_CONFIG openssl11 /g' configure; fi \
-	&& ./configure --enable-optimizations \
-	&& make altinstall \
-	&& ln -s -f /usr/local/bin/python${PYVERNAME} /usr/bin/python \
-	&& ln -s /usr/local/bin/pip${PYVERNAME} /usr/local/bin/pip \
-	&& pip install ${PIP_INS_OPTS} -y numpy scipy scikit-image six \
-	&& pip install ${PIP_INS_OPTS} -U -r /tmp/deps/setup_requirements.txt \
-	&& pip install ${PIP_INS_OPTS} -U -r /tmp/deps/requirements.txt \
-	&& pip install ${PIP_INS_OPTS} -U -r /tmp/deps/test_requirements.txt \
-	&& cd .. \
-	&& rm -rf Python-${PYVERNAME}* \
-	&& rm -rf /tmp/*
+################################################## build python from pyenv
+RUN git clone https://github.com/pyenv/pyenv.git ~/.pyenv \
+    && export PYENV_ROOT="$HOME/.pyenv" \
+    && export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/plugins/python-build/bin:$PATH" \
+    && export PYTHON_BUILD_CURL_OPTS="${CURL_OPTS}" \
+    && export PYTHON_BUILD_WGET_OPTS="${WGET_OPTS}" \
+    && if [ ${PYTHON_VERSION_MINOR} -ge 10 ]; then export CPPFLAGS=-I/usr/include/openssl11 && export LDFLAGS=-L/usr/lib64/openssl11; fi \
+    && eval "$(pyenv init -)" \
+    && python-build `pyenv latest -k ${PYVERNAME}` /usr/local \
+    && pyenv global system \
+    && pip install ${PIP_INS_OPTS} --no-cache-dir -y  scikit-image \
+    && pip install ${PIP_INS_OPTS} --no-cache-dir -U -r /tmp/deps/setup_requirements.txt \
+    && pip install ${PIP_INS_OPTS} --no-cache-dir -U -r /tmp/deps/requirements.txt \
+    && pip install ${PIP_INS_OPTS} --no-cache-dir -U -r /tmp/deps/test_requirements.txt \
+    && rm -rf ~/.pyenv/.git /tmp/*
 
 ENV PATH /tmp/.local/bin:$PATH
 ENV LD_LIBRARY_PATH /usr/local/lib64:$LD_LIBRARY_PATH

@@ -35,23 +35,64 @@ RUN eval ${APT_OPTS} && apt-get update \
        curl \
        libglib2.0-0 \
        libgl1-mesa-glx \
-       python${PYTHON_VER} \
-       python${PYTHON_VER}-distutils \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python${PYTHON_VER} 0
-RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python${PYTHON_VER} 0
-
-RUN curl ${CURL_OPTS} https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
-    && python${PYTHON_VER} get-pip.py ${PIP_INS_OPTS} \
-    && rm get-pip.py
-
-RUN pip install ${PIP_INS_OPTS} wheel setuptools
-RUN pip install ${PIP_INS_OPTS} opencv-python || true
 
 ARG NNABLA_VER
-RUN pip install ${PIP_INS_OPTS} nnabla==${NNABLA_VER} nnabla_converter==${NNABLA_VER}
+RUN eval ${APT_OPTS} \
+    && apt update \
+    && apt install -y --no-install-recommends \
+       git \
+       make \
+       build-essential \
+       libssl-dev \
+       zlib1g-dev \
+       libbz2-dev \
+       libreadline-dev \
+       libsqlite3-dev \
+       wget \
+       llvm \
+       libncursesw5-dev \
+       xz-utils \
+       tk-dev \
+       libxml2-dev \
+       libxmlsec1-dev \
+       libffi-dev \
+       liblzma-dev \
+    && git clone https://github.com/pyenv/pyenv.git ~/.pyenv \
+    && export PYENV_ROOT="$HOME/.pyenv" \
+    && export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/plugins/python-build/bin:$PATH" \
+    && export PYTHON_BUILD_CURL_OPTS="${CURL_OPTS}" \
+    && export PYTHON_BUILD_WGET_OPTS="${WGET_OPTS}" \
+    && PYTHON_VERSION_MINOR=${PYTHON_VER#*.} \
+    && if [ ${PYTHON_VERSION_MINOR} -ge 10 ]; then export CPPFLAGS=-I/usr/include/openssl11 && export LDFLAGS=-L/usr/lib64/openssl11; fi \
+    && eval "$(pyenv init -)" \
+    && python-build `pyenv latest -k ${PYTHON_VER}` /usr/local \
+    && pyenv global system \
+    && rm -rf ~/.pyenv \
+    && apt autoremove --purge -y \
+       git \
+       make \
+       build-essential \
+       libssl-dev \
+       zlib1g-dev \
+       libbz2-dev \
+       libreadline-dev \
+       libsqlite3-dev \
+       wget \
+       llvm \
+       libncursesw5-dev \
+       xz-utils \
+       tk-dev \
+       libxml2-dev \
+       libxmlsec1-dev \
+       libffi-dev \
+       liblzma-dev \
+    && pip install ${PIP_INS_OPTS} --no-cache-dir --upgrade pip \
+    && pip install ${PIP_INS_OPTS} --no-cache-dir wheel setuptools \
+    && pip install ${PIP_INS_OPTS} --no-cache-dir opencv-python || true \
+    && pip install ${PIP_INS_OPTS} --no-cache-dir nnabla==${NNABLA_VER} nnabla_converter==${NNABLA_VER}
 
 # Entrypoint
 COPY .entrypoint.sh /opt/.entrypoint.sh
