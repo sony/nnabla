@@ -1088,29 +1088,25 @@ CgVariablePtr CgVariable::create_deep_copy(Context ctx, bool copy_grad) {
   return ret;
 }
 
-// the vec is the inputs or outputs of a Function. If the target is found in the
-// vec, grad_depends_on_inputs/outputs is checked.
-bool find_grad_dependency(int target_idx, 
-                          const vector<CgVariablePtr> &vec,
+bool find_grad_dependency(int target_idx, size_t num_inputs,
                           std::function<bool(int, int)> grad_depends) {
-  for (size_t i = 0; i < vec.size(); i++) {
+  for (size_t i = 0; i < num_inputs; i++) {
     if (grad_depends(i, target_idx)) {
       return true;
     }
   }
-
   return false;
 }
 
-int get_variable_index(const CgVariable *const var,
-                       const vector<CgVariablePtr> &vec) {
-  const auto found = 
-      std::find_if(vec.cbegin(), vec.cend(), [var](const CgVariablePtr v) {
-        return var == v.get();
-      });
-  
-  return std::distance(vec.cbegin(), found);
-} 
+size_t get_variable_index(const CgVariable *const var,
+                          const vector<CgVariablePtr> &vec) {
+  const auto found =
+      std::find_if(vec.cbegin(), vec.cend(),
+                   [var](const CgVariablePtr v) { return var == v.get(); });
+
+  // We know that the result is unsigned.
+  return static_cast<size_t>(std::distance(vec.cbegin(), found));
+}
 
 bool CgVariable::has_grad_dependency() {
   // Check the grad dependency for the parent Function as an output.
@@ -1120,9 +1116,9 @@ bool CgVariable::has_grad_dependency() {
       return (f->grad_depends_output_data(i, o) ||
               f->auto_grad_depends_output_data(i, o));
     };
-    int o = get_variable_index(this, parent_->outputs());
-    if (o < parent_->outputs().size()
-         && find_grad_dependency(o, parent_->inputs(), grad_depends)) {
+    size_t o = get_variable_index(this, parent_->outputs());
+    if (o < parent_->outputs().size() &&
+        find_grad_dependency(o, parent_->inputs().size(), grad_depends)) {
       return true;
     }
   }
@@ -1137,9 +1133,9 @@ bool CgVariable::has_grad_dependency() {
         }
         return false;
       };
-      int i = get_variable_index(this, func->inputs());
-      if (i < func->inputs().size()
-           && find_grad_dependency(i, func->inputs(), grad_depends)) {
+      size_t i = get_variable_index(this, func->inputs());
+      if (i < func->inputs().size() &&
+          find_grad_dependency(i, func->inputs().size(), grad_depends)) {
         return true;
       }
     }
