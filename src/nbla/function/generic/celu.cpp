@@ -30,7 +30,6 @@ template <typename T>
 void CELU<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
   Shape_t in_shape = inputs[0]->shape();
   refine_axis(axis_, in_shape.size());
-  auto axis = static_cast<Shape_t::size_type>(axis_);
   in_shape[axis_] *= 2;
   outputs[0]->reshape(in_shape, true);
   Size_t size = inputs[0]->size();

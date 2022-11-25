@@ -43,8 +43,6 @@ void MeanSubtraction<T>::setup_impl(const Variables &inputs,
   Shape_t shape_i = inputs[0]->shape();
   refine_axis(base_axis_, shape_i.size());
 
-  auto base_axis = static_cast<Shape_t::size_type>(base_axis_);
-
   Shape_t shape_m = shape_i;
   shape_m.erase(shape_m.begin(), shape_m.begin() + base_axis_);
   NBLA_CHECK(inputs[1]->shape() == shape_m, error_code::value,

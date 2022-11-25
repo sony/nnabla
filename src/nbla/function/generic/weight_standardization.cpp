@@ -29,7 +29,6 @@ template <typename T>
 void WeightStandardization<T>::setup_impl(const Variables &inputs,
                                           const Variables &outputs) {
   const auto w_shape = inputs[0]->shape();
-  const int ndim = w_shape.size();
 
   refine_axis(channel_axis_, inputs.at(0)->ndim());
 
