@@ -111,8 +111,6 @@ def test_batch_normalization_forward_backward(seed, axis, decay_rate, eps,
     inputs = list(create_inputs(rng, axis))
     axes = [axis]
 
-    print(i.shape for i in inputs)
-
     if not batch_stat and (no_mean or no_variance):
         # check prohibited condition for mean=None and variance=None
         vinputs = []
