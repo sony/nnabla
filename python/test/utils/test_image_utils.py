@@ -134,7 +134,7 @@ def test_imsave_and_imread(tmpdir, backend, grayscale, size, channel_first, as_u
         with pytest.raises(ValueError):
             save_image_function()
 
-        return True
+        return
 
     # do imread
     def read_image_function():
@@ -145,7 +145,7 @@ def test_imsave_and_imread(tmpdir, backend, grayscale, size, channel_first, as_u
         with pytest.raises(ValueError):
             _ = read_image_function()
 
-        return True
+        return
     else:
         read_image = read_image_function()
 

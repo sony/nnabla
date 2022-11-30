@@ -46,9 +46,9 @@ def test_class_resource_file_reader(tmpdir, source_type):
     elif source_type == 'StringIO':
         with pytest.raises(ValueError):
             loaded_source = ResourceFileReader(StringIO(file_path))
-        return True
+        return
     elif source_type == 'strFileHandler':
         with pytest.raises(ValueError):
             with open(file_path, 'r') as f:
                 loaded_source = ResourceFileReader(f)
-        return True
+        return
