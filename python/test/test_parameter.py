@@ -133,9 +133,13 @@ def test_parametric_function_api():
     shape = (2, 3, 4)
 
     # Signature check
-    spec = inspect.getargspec(dummy_parametric_function)
-    assert spec.args == ['shape', 'f', 'i', 's', 'fix_parameters', 'name']
-    assert spec.defaults == (10, 1, 'dummy', False, None)
+    empty = inspect.Parameter.empty
+    sig = inspect.Signature.from_callable(dummy_parametric_function)
+    ref_name = ('shape', 'f', 'i', 's', 'fix_parameters', 'name')
+    ref_default = (empty, 10, 1, "dummy", False, None)
+    for param, rname, rdefault in zip(sig.parameters.values(), ref_name, ref_default):
+        assert param.name == rname
+        assert param.default == rdefault
     assert dummy_parametric_function.__doc__.splitlines()[0] == 'Doc'
 
     # Verify two different ways does the same thing.

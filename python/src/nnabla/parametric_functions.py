@@ -52,8 +52,7 @@ def parametric_function_api(scope_name=None, param_desc=None):
         scope_name = name
 
     def parametric_function_api_inside(func):
-        from nnabla.utils.py23_compatible import getargspec
-        import inspect
+        from .utils.signature_utils import SignatureEx
 
         name = func.__name__
         doc = func.__doc__
@@ -90,19 +89,15 @@ def parametric_function_api(scope_name=None, param_desc=None):
 
         """.format(name=name)
 
-        spec = getargspec(func)
-        defaults = spec.defaults
-        if defaults is None:
-            defaults = tuple()  # None will be appended later
-        signature = inspect.formatargspec(
-            spec.args + ['name'],
-            spec.varargs, spec.keywords,
-            defaults + (None,))
-        shortsignature = inspect.formatargspec(
-            spec.args, spec.varargs, spec.keywords, None)
+        # Parsing argspecs
+        sig = SignatureEx.from_callable(func)
+        sig2 = sig.add_arg('name', default=None)
+        signature = '(' + sig2.format_argument_signature() + ')' + \
+            sig.format_return_annotation()
+        shortsignature = sig.format_caller_argument_signature()
 
         # Check required argument
-        assert 'fix_parameters' in spec.args, \
+        assert 'fix_parameters' in sig.parameters, \
             "A parametric function must take `fix_parameters` as an argument." \
             " `{}{}` doesn't have it.".format(name, signature)
 
@@ -110,10 +105,10 @@ def parametric_function_api(scope_name=None, param_desc=None):
 def {name}{signature}:
     if name is None:
         with parameter_scope(scope_name):
-            return func{shortsignature}
+            return func({shortsignature})
     with parameter_scope(name):
         with parameter_scope(scope_name):
-            return func{shortsignature}
+            return func({shortsignature})
         """.format(**locals())
         execdict = dict(
             func=func, parameter_scope=nn.parameter_scope, scope_name=scope_name)
