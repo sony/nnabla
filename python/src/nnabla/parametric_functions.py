@@ -1561,7 +1561,7 @@ def lstm(x, h, c, w0_init=None, w_init=None, b_init=None, num_layers=1, dropout=
 
     """
     if type(w0_init) == int:
-        nn.logger.warn(
+        nn.logger.warning(
             "Arguments passed seem to be for previous LSTM function, which has been renamed to lstm_cell.")
         raise ValueError
 
@@ -1613,7 +1613,7 @@ def lstm(x, h, c, w0_init=None, w_init=None, b_init=None, num_layers=1, dropout=
             "bias", n_outmaps, b_init, True, not fix_parameters)
 
     if w0.shape != (num_directions, 4, hidden_size, input_size+hidden_size):
-        nn.logger.warn(
+        nn.logger.warning(
             "Parameters seem to have been saved prior to bug fix. It will be converted into the correct shape, but we highly recommend training again to obtain the correct parameters, as we will cease to support these parametetrs in future. We apologize for the inconveinences.")
         tmp = w0.d
         w0 = nn.Variable.from_numpy_array(np.reshape(
@@ -1731,7 +1731,7 @@ def gru(x, h, w0_init=None, w_init=None, b_init=None, num_layers=1, dropout=0.0,
             "bias", n_outmaps, b_init, True, not fix_parameters)
 
     if w0.shape != (num_directions, 3, hidden_size, input_size+hidden_size):
-        nn.logger.warn(
+        nn.logger.warning(
             "Parameters seem to have been saved prior to bug fix. It will be converted into the correct shape, but we highly recommend training again to obtain the correct parameters, as we will cease to support these parametetrs in future. We apologize for the inconveinences.")
         tmp = w0.d
         w0 = nn.Variable.from_numpy_array(np.reshape(

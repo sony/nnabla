@@ -238,7 +238,7 @@ def _opti_file_loader(ctx, fileloaders, nnp, filename, ext):
             if o:
                 o.solver.set_states_from_protobuf(p_opti)
             else:
-                logger.warn(
+                logger.warning(
                     'No matched optimizer is found for {}.'.format(filename))
     elif file_type == 'h5':
         loaded = False
@@ -251,7 +251,7 @@ def _opti_file_loader(ctx, fileloaders, nnp, filename, ext):
                 o.solver.set_states(_load_solve_state_from_h5(nnp, filename))
                 loaded = True
         if not loaded:
-            logger.warn(
+            logger.warning(
                 "No matched optimizer is found for {}.".format(filename))
 
 
@@ -371,7 +371,7 @@ def load_files(ctx, file_loaders, filenames, extension=None):
                     handled = True
             else:
                 if not handled:
-                    logger.warn('{} is omitted.'.format(filename))
+                    logger.warning('{} is omitted.'.format(filename))
 
     if isinstance(filenames, list) or isinstance(filenames, tuple):
         pass

@@ -97,7 +97,7 @@ def _check_context(ctx):
         x = nn.Variable()
         F.relu(x)
     except:
-        logger.warn('Fallback to CPU context.')
+        logger.warning('Fallback to CPU context.')
         import nnabla_ext.cpu
         ctx = nnabla_ext.cpu.context()
     return ctx
@@ -304,7 +304,7 @@ def _create_optimizer(ctx, o, networks, datasets, renamed):
 def _context(proto):
     comm = current_communicator()
     if not proto.backends:
-        logger.warn('Old-style context. Updating to new format.')
+        logger.warning('Old-style context. Updating to new format.')
         # Update from old Context
         backends = [x.strip() for x in proto.backend.split('|')]
         compute_backends = [x.strip()
@@ -319,7 +319,7 @@ def _context(proto):
                     import nnabla_ext.cudnn
                     ctx = nnabla_ext.cudnn.context(device_id=device_id)
                 except ImportError:
-                    logger.warn('Fallback to CPU context.')
+                    logger.warning('Fallback to CPU context.')
                     import nnabla_ext.cpu
                     ctx = nnabla_ext.cpu.context()
             elif 'default' in compute_backends:
@@ -327,7 +327,7 @@ def _context(proto):
                     import nnabla_ext.cuda
                     ctx = nnabla_ext.cuda.context(device_id=device_id)
                 except ImportError:
-                    logger.warn('Fallback to CPU context.')
+                    logger.warning('Fallback to CPU context.')
                     import nnabla_ext.cpu
                     ctx = nnabla_ext.cpu.context()
             else:
@@ -660,7 +660,7 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
             import nnabla_ext.cudnn
             default_context = nnabla_ext.cudnn.context(device_id=devid)
         if default_context is None:
-            logger.warn('Invalid context [{}]'.format(context))
+            logger.warning('Invalid context [{}]'.format(context))
         elif info.proto.HasField('global_config'):
             info.global_config = _global_config(info.proto)
             info.global_config.default_context = default_context

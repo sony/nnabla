@@ -91,7 +91,7 @@ def get_extension_context(ext_name, **kw):
     """
     if ext_name == 'cuda.cudnn':
         from nnabla import logger
-        logger.warn(
+        logger.warning(
             'Deprecated extension name "cuda.cudnn" passed. Use "cudnn" instead.')
         ext_name = 'cudnn'
     mod = import_extension_module(ext_name)

@@ -897,7 +897,7 @@ cdef class Variable:
         This function is `deprecated`, use get_unlinked_variable instead.
         """
         import nnabla as nn
-        nn.logger.warn(
+        nn.logger.warning(
             "This function is `deprecated`, use get_unlinked_variable instead.")
 
         return self.get_unlinked_variable(need_grad)
