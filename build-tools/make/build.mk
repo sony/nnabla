@@ -33,12 +33,10 @@ nnabla-clean:
 nnabla-clean-all:
 	@git clean -fdx
 
-.PHONY: clean-nnabla-build-cache
-clean-nnabla-build-cache:
-	cd $(NNABLA_DIRECTORY) && \
-	git reset --hard && \
-	git clean -xf python src && \
-	cd -
+# Touch the source file of .pyx to regenerate the cpp file.
+.PHONY: touch-pyx-source-file
+touch-pyx-source-file:
+	touch $(NNABLA_DIRECTORY)/python/src/nnabla/*.pyx
 
 ########################################################################################################################
 # Auto Format
@@ -131,7 +129,7 @@ nnabla-cpplib-android-test:
 # Execute the binary on emulator
 
 .PHONY: nnabla-wheel
-nnabla-wheel:clean-nnabla-build-cache
+nnabla-wheel:
 	@mkdir -p $(BUILD_DIRECTORY_WHEEL)
 	@cd $(BUILD_DIRECTORY_WHEEL) \
 	&& cmake \
