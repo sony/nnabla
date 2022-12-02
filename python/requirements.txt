@@ -3,7 +3,7 @@ boto3
 h5py
 imageio
 numpy
-pillow
+pillow>=9.1.0
 protobuf<=3.19.4
 pyyaml
 scipy
