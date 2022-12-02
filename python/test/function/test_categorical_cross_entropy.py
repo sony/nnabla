@@ -49,7 +49,7 @@ def test_categorical_cross_entropy_forward_backward(seed, axis, ctx, func_name):
 
     inputs = [
         rng.rand(2, 3, 4).astype(np.float32) * 0.9 + 0.05,
-        rng.randint(-1, n_class, size=l_shape).astype(np.int)]
+        rng.randint(-1, n_class, size=l_shape).astype(int)]
 
     function_tester(rng, F.categorical_cross_entropy,
                     ref_categorical_cross_entropy, inputs,
@@ -70,7 +70,7 @@ def test_categorical_cross_entropy_double_backward(seed, axis, ctx, func_name):
 
     inputs = [
         rng.rand(2, 3, 4).astype(np.float32) * 5,
-        rng.randint(0, n_class, size=l_shape).astype(np.int)]
+        rng.randint(0, n_class, size=l_shape).astype(int)]
 
     backward_function_tester(rng, F.categorical_cross_entropy,
                              inputs,

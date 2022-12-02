@@ -23,14 +23,14 @@ ctxs = list_context('BoolScatter')
 
 def ref_bool_scatter(sdata, mask):
     gdata_shape = mask.shape + sdata.shape[1:]
-    mask_bool = mask.astype(np.bool)
+    mask_bool = mask.astype(bool)
     gdata = np.zeros(gdata_shape)
     gdata[mask_bool] = sdata
     return gdata
 
 
 def ref_bool_scatter_inplace(sdata, mask, gdata):
-    mask_bool = mask.astype(np.bool)
+    mask_bool = mask.astype(bool)
     gdata0 = np.copy(gdata)
     gdata0[mask_bool] = sdata
     return gdata0
@@ -48,7 +48,7 @@ def test_bool_scatter_forward_backward(seed, ctx, func_name, gshape, mask_shape)
     rng = np.random.RandomState(seed)
     gdata0 = rng.randn(*gshape).astype(np.float32)
     mask = rng.randint(0, 2, size=mask_shape)
-    sdata = gdata0[mask.astype(np.bool)]
+    sdata = gdata0[mask.astype(bool)]
 
     inputs = [sdata, mask]
     backward = [True, False]
@@ -70,7 +70,7 @@ def test_bool_scatter_double_backward(seed, ctx, func_name, gshape, mask_shape):
     rng = np.random.RandomState(seed)
     gdata0 = rng.randn(*gshape).astype(np.float32)
     mask = rng.randint(0, 2, size=mask_shape).astype(np.float32)
-    sdata = gdata0[mask.astype(np.bool)]
+    sdata = gdata0[mask.astype(bool)]
     inputs = [sdata, mask]
     backward = [True, False]
 
@@ -92,7 +92,7 @@ def test_bool_scatter_inplace(seed, ctx, func_name, gshape, mask_shape):
     rng = np.random.RandomState(seed)
     gdata0 = rng.randn(*gshape).astype(np.float32)
     mask = rng.randint(0, 2, size=mask_shape)
-    sdata = gdata0[mask.astype(np.bool)]
+    sdata = gdata0[mask.astype(bool)]
     gdata1 = rng.randn(*gshape).astype(np.float32)
 
     v_sdata = nn.Variable.from_numpy_array(sdata).apply(need_grad=True)

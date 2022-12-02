@@ -32,7 +32,7 @@ class ObjectRect:
             self.rect = np.array([XYWH[0] - XYWH[2] * 0.5, XYWH[1] - XYWH[3]
                                   * 0.5, XYWH[0] + XYWH[2] * 0.5, XYWH[1] + XYWH[3] * 0.5])
         else:
-            self.rect = np.full((4,), 0.0, dtype=np.float)
+            self.rect = np.full((4,), 0.0, dtype=float)
 
     def clip(self):
         return ObjectRect(LRTB=self.rect.clip(0.0, 1.0))
@@ -221,9 +221,9 @@ def convert_image(args):
                   for label in labels]
     grid_w = width // grid_size
     grid_h = height // grid_size
-    label_array = np.full((len(anchors), grid_h, grid_w), -1, dtype=np.int)
+    label_array = np.full((len(anchors), grid_h, grid_w), -1, dtype=int)
     region_array = np.full(
-        (len(anchors), grid_h, grid_w, 4), 0.0, dtype=np.float)
+        (len(anchors), grid_h, grid_w, 4), 0.0, dtype=float)
 
     for label in labels:
         label_rect = ObjectRect(XYWH=label[1:]).clip()

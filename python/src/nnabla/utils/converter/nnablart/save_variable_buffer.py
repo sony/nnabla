@@ -129,7 +129,7 @@ def __assign_actual_buf_to_variable(info, actual_buf_sizes, buf_var_refs):
 
     # actual_assigned_flags is to remember if actual buffers are assigned or not
     actual_buf_num = len(actual_buf_sizes)
-    actual_assigned_flags = np.empty(actual_buf_num, dtype=np.bool)
+    actual_assigned_flags = np.empty(actual_buf_num, dtype=bool)
 
     for func_idx, _ in enumerate(info._network.function):
         actual_assigned_flags[:] = False

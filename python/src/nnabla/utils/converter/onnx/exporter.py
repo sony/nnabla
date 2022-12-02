@@ -30,7 +30,7 @@ except:
 
 TENSOR_TYPE_TO_DTYPE = {
     TensorProto.FLOAT: np.float32,
-    TensorProto.BOOL: np.bool,
+    TensorProto.BOOL: bool,
     TensorProto.UINT8: np.uint8,
     TensorProto.INT8: np.int8,
     TensorProto.UINT32: np.uint32,

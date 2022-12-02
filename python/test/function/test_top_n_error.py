@@ -51,7 +51,7 @@ def test_top_n_error_forward(seed, axis, n, ctx, func_name):
 
     inputs = [
         rng.rand(5, 6, 7).astype(np.float32) * 0.9 + 0.05,
-        rng.randint(0, n_class, size=l_shape).astype(np.int)]
+        rng.randint(0, n_class, size=l_shape).astype(int)]
 
     ref = ref_top_n_error(inputs[0], inputs[1], axis, n)
 

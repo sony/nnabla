@@ -25,15 +25,15 @@ def is_python_boolean_sequence(idx):
 
 
 def is_numpy_boolean_ndarray(idx):
-    return isinstance(idx, np.ndarray) and idx.dtype == np.bool
+    return isinstance(idx, np.ndarray) and idx.dtype == bool
 
 
 def is_nnabla_boolean_ndarray(idx):
-    return isinstance(idx, NdArray) and idx.dtype == np.bool
+    return isinstance(idx, NdArray) and idx.dtype == bool
 
 
 def is_nnabla_boolean_variable(idx):
-    return isinstance(idx, Variable) and idx.data.dtype == np.bool
+    return isinstance(idx, Variable) and idx.data.dtype == bool
 
 
 def broadcast(x, shape):

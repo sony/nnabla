@@ -26,10 +26,10 @@ def warp_by_flow(data, flow):
     for n in range(N):
         xx, yy = np.meshgrid(range(W), range(H))
         xf, yf = xx + flow[n, 0], yy + flow[n, 1]
-        xL = np.maximum(0, np.minimum(W - 1, np.floor(xf))).astype(np.int)
-        yT = np.maximum(0, np.minimum(H - 1, np.floor(yf))).astype(np.int)
-        xR = np.maximum(0, np.minimum(W - 1, np.floor(xf + 1))).astype(np.int)
-        yB = np.maximum(0, np.minimum(H - 1, np.floor(yf + 1))).astype(np.int)
+        xL = np.maximum(0, np.minimum(W - 1, np.floor(xf))).astype(int)
+        yT = np.maximum(0, np.minimum(H - 1, np.floor(yf))).astype(int)
+        xR = np.maximum(0, np.minimum(W - 1, np.floor(xf + 1))).astype(int)
+        yB = np.maximum(0, np.minimum(H - 1, np.floor(yf + 1))).astype(int)
         alpha = xf - np.floor(xf)
         beta = yf - np.floor(yf)
         for c in range(C):

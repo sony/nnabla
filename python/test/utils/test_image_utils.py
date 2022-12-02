@@ -27,8 +27,8 @@ SIZE = (8, 8, 3)
 imgs = [
     np.random.randint(low=0, high=255, size=SIZE).astype(np.uint8),
     np.random.randint(low=0, high=65535, size=SIZE).astype(np.uint16),
-    np.random.random(size=SIZE).astype(np.float),
-    np.random.random(size=SIZE).astype(np.float) - 10,
+    np.random.random(size=SIZE).astype(float),
+    np.random.random(size=SIZE).astype(float) - 10,
     np.random.randint(low=0, high=255, size=SIZE[:-1]).astype(np.uint8),
     np.random.randint(low=0, high=255, size=(1, 1, 3)).astype(np.uint8),
 ]

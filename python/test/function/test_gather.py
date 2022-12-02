@@ -24,7 +24,7 @@ def gather(x, indices, axis, batch_dims):
     xshape = x.shape
     ishape = indices.shape
     bshape = xshape[:batch_dims]
-    samples = np.prod(bshape).astype(np.int)
+    samples = np.prod(bshape).astype(int)
     x = x.reshape((samples, ) + xshape[batch_dims:])
     indices = indices.reshape((samples, ) + ishape[batch_dims:])
     y_list = []

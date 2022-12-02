@@ -205,7 +205,7 @@ QUANTIZATIONREQUIREMENTS = {
 DTYPES = {
     'INT8': np.int8,
     'INT32': np.int32,
-    'BOOL': np.bool
+    'BOOL': bool
 }
 
 

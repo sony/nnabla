@@ -26,7 +26,7 @@ def ref_confusion_matrix(x, l, axis):
     orig_x = x.copy()
     x = np.rollaxis(x, axis, x.ndim).reshape(-1, x.shape[axis])
     ll = np.rollaxis(l, axis, x.ndim).flatten()
-    y = np.zeros((orig_x.shape[axis], orig_x.shape[axis]), np.int)
+    y = np.zeros((orig_x.shape[axis], orig_x.shape[axis]), int)
     for x_, ll_ in zip(x, ll):
         index = -1
         for i, x__ in enumerate(x_):
@@ -49,7 +49,7 @@ def test_confusion_matrix_forward(seed, ctx, axis, func_name):
 
     inputs = [
         rng.rand(5, 6, 7).astype(np.float32),
-        rng.randint(0, n_class, size=l_shape).astype(np.int)]
+        rng.randint(0, n_class, size=l_shape).astype(int)]
 
     ref = ref_confusion_matrix(inputs[0], inputs[1], axis)
 

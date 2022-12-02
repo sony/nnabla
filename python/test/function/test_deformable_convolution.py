@@ -109,7 +109,7 @@ def test_forward_backward_2d(inshape, kernel, out_channels, pad, stride, dilatio
     #    values as 0.1-neighborhood (large enough dstep-neighborhood) and shifting
     #    them +0.5 (must larger than 2 * dstep).
     offsets += np.logical_or(np.abs(offsets - np.floor(offsets)) < 0.1,
-                             np.abs(offsets - np.ceil(offsets)) < 0.1).astype(np.int)*0.5
+                             np.abs(offsets - np.ceil(offsets)) < 0.1).astype(int)*0.5
 
     mask = rng.rand(*mask_shape).astype(np.float32) if with_mask else None
 
