@@ -27,27 +27,38 @@ endfunction()
 # Find HDF5 source package
 #
 function(prepend lib_paths prefix)
+  if (WIN32)
+    set(postfix ".lib")
+    set(libfix "")
+  else()
+    set(postfix ".so")
+    set(libfix "lib")
+  endif()
   set(listvar "")
   foreach(f ${ARGN})
     if (CMAKE_BUILD_TYPE MATCHES Debug)
-      list(APPEND listvar "${prefix}/lib${f}_debug.so")
+      list(APPEND listvar "${prefix}/${libfix}${f}_debug${postfix}")
     else()
-      list(APPEND listvar "${prefix}/lib${f}.so")
+      list(APPEND listvar "${prefix}/${libfix}${f}${postfix}")
     endif()
   endforeach(f)
   set (${lib_paths} "${listvar}" PARENT_SCOPE)
 endfunction(prepend)
 
 function(findhdf5)
+  if (WIN32)
+    set(build_type "${CMAKE_BUILD_TYPE}")
+  else()
+    set(build_type "")
+  endif()
   set(HDF5_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/third_party/hdf5-master/src
      ${PROJECT_SOURCE_DIR}/third_party/hdf5-master/hl/src
-     ${CMAKE_BINARY_DIR}/third_party/hdf5-master)
-  prepend(HDF5_LIBRARIES ${CMAKE_BINARY_DIR}/third_party/hdf5-master/bin/ ${HDF5_LIBRARIES_TO_EXPORT})
+     ${CMAKE_BINARY_DIR}/third_party/hdf5-master
+     ${CMAKE_BINARY_DIR}/third_party/hdf5-master/src)
+  prepend(HDF5_LIBRARIES ${CMAKE_BINARY_DIR}/third_party/hdf5-master/bin/${build_type} "hdf5" "hdf5_hl")
   set(HDF5_INCLUDE_DIRS "${HDF5_INCLUDE_DIRS}" PARENT_SCOPE)
   set(HDF5_LIBRARIES "${HDF5_LIBRARIES}" PARENT_SCOPE)
 endfunction(findhdf5)
-
-
 
 ################################################################################################
 # Clears variables from list

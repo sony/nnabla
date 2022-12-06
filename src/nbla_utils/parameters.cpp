@@ -23,6 +23,12 @@
 #include <string>
 #include <vector>
 
+// HDF5
+#ifdef NBLA_UTILS_WITH_HDF5
+#include <hdf5.h>
+#include <hdf5_hl.h>
+#endif
+
 #include <nbla/computation_graph/variable.hpp>
 #include <nbla/initializer.hpp>
 #include <nbla/logger.hpp>
@@ -40,12 +46,6 @@
 #include "nbla_utils/parameters.hpp"
 #include "nnabla.pb.h"
 #include "parameters_impl.hpp"
-
-// HDF5
-#ifdef NBLA_UTILS_WITH_HDF5
-#include <hdf5.h>
-#include <hdf5_hl.h>
-#endif
 
 using namespace std;
 
@@ -70,8 +70,8 @@ string get_extension(const string &filename) {
 bool parse_hdf5_dataset(string name, hid_t did, ParameterVector &pv) {
   hid_t sp = H5Dget_space(did);
   int rank = H5Sget_simple_extent_ndims(sp);
-  hsize_t dims[rank];
-  herr_t err = H5Sget_simple_extent_dims(sp, dims, nullptr);
+  nbla::vector<hsize_t> dims(rank);
+  herr_t err = H5Sget_simple_extent_dims(sp, dims.data(), nullptr);
 
   hsize_t size = H5Dget_storage_size(did);
   string variable_name = name.substr(1, name.length());
@@ -85,7 +85,7 @@ bool parse_hdf5_dataset(string name, hid_t did, ParameterVector &pv) {
   err = H5Dread(did, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT,
                 buffer.get());
   if (err >= 0) {
-    Shape_t shape(dims, dims + rank);
+    Shape_t shape((int64_t *)(dims.data()), (int64_t *)(dims.data() + rank));
     // fix crash bug by replacing bool with int,
     // since actual 4 bytes is read.
     int need_grad = false; // default need_grad
@@ -499,7 +499,11 @@ bool save_parameters_h5(const ParameterVector &pv, char *buffer,
 #ifdef NBLA_UTILS_WITH_HDF5
   hid_t file_id;
   nbla::string filename;
+#ifndef WIN32
   const char *tmp = getenv("TMPDIR");
+#else
+  const char *tmp = getenv("TEMP");
+#endif
 
   H5Eset_auto1(NULL, NULL);
   if (tmp == 0)

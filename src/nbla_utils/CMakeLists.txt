@@ -75,10 +75,6 @@ add_library(${LIB_NAME} SHARED
 )
 
 if (WIN32)
-  if (NNABLA_UTILS_WITH_HDF5)
-    message(FATAL_ERROR, "HDF5 cannot be enabled on Windows.")
-    error() # Undefined command to abort cmake process here.
-  endif()
   find_package(LibArchive REQUIRED)
   find_package(ZLIB REQUIRED)
   find_package(Protobuf REQUIRED)
@@ -93,6 +89,21 @@ if (WIN32)
     ${LibArchive_LIBRARIES}
     ${ZLIB_LIBRARIES}
     )
+
+  if (NNABLA_UTILS_WITH_HDF5)
+    if (NNABLA_UTILS_STATIC_LINK_DEPS)
+      set(HDF5_USE_STATIC_LIBRARIES 1)
+    endif()
+    findhdf5()
+    include_directories(
+      ${HDF5_INCLUDE_DIRS}
+    )
+    target_link_libraries(${LIB_NAME}
+      ${HDF5_LIBRARIES}
+    )
+    add_definitions(-DH5_BUILT_AS_DYNAMIC_LIB)
+  endif()
+
 else()
   if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     if (NNABLA_UTILS_WITH_HDF5)
@@ -183,10 +194,16 @@ if (BUILD_TEST)
   include_directories(${PROJECT_SOURCE_DIR}/src/nbla_cli/)
   if (NNABLA_UTILS_WITH_HDF5)
     list(APPEND NBLA_UTILS_TEST_SOURCES
-      test/test_expander.cpp
-      test/test_hdf5_load.cpp
-      ${PROJECT_SOURCE_DIR}/src/nbla_cli/internal.cpp
+        test/test_load_save.cpp
     )
+    if (NOT WIN32)
+      # These cases need to prepare test case files, disabled for windows.
+      list(APPEND NBLA_UTILS_TEST_SOURCES
+        test/test_expander.cpp
+        test/test_hdf5_load.cpp
+        ${PROJECT_SOURCE_DIR}/src/nbla_cli/internal.cpp
+      )
+    endif()
   endif()
   if (NNABLA_UTILS_WITH_NPY)
     if (NOT WIN32)
@@ -201,7 +218,6 @@ if (BUILD_TEST)
   endif()
   list(APPEND NBLA_UTILS_TEST_SOURCES
     test/test_load_save_parameters.cpp
-    test/test_load_save.cpp
   )
   add_executable(test_nbla_utils ${NBLA_UTILS_TEST_SOURCES})
   add_dependencies(test_nbla_utils ${NBLA_LIBRARY_NAME})

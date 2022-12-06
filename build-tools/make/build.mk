@@ -73,6 +73,20 @@ nnabla-doc:
 		$(NNABLA_DIRECTORY)
 	make -C $(DOC_DIRECTORY) -j$(PARALLEL_BUILD_NUM) all wheel doc
 
+
+########################################################################################################################
+# Third_party preparation for subsequent step of CI pipeline
+.PHONY: nnabla-cpplib-collect
+nnabla-cpplib-collect:
+	@cd $(BUILD_DIRECTORY_CPPLIB) && \
+	  if [ -d third_party/hdf5-master/bin ]; then \
+	     find third_party/hdf5-master/bin -name "libhdf5*.*" \
+	     -not -name "libhdf5*_tools.*" \
+	     -not -name "libhdf5*_test.*" -print0\
+	     |xargs -0 cp -Rt lib; \
+	  fi
+
+
 ########################################################################################################################
 # Build and test.
 .PHONY: nnabla-cpplib
@@ -191,7 +205,7 @@ nnabla-shell:
 ########################################################################################################################
 # test
 .PHONY: nnabla-test-cpplib
-nnabla-test-cpplib: nnabla-cpplib
+nnabla-test-cpplib: nnabla-cpplib nnabla-cpplib-collect
 	@$(MAKE) -C $(BUILD_DIRECTORY_CPPLIB) cpplibtest
 	@$(MAKE) -C $(BUILD_DIRECTORY_CPPLIB) test_nbla_utils
 	@bash -c "(cd $(BUILD_DIRECTORY_CPPLIB) && ctest -R cpplibtest --output-on-failure)"
