@@ -2,7 +2,7 @@ Cython
 boto3
 h5py
 imageio
-numpy>=1.20.0
+numpy
 pillow
 protobuf<=3.19.4
 pyyaml

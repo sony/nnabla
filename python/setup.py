@@ -20,13 +20,18 @@ from distutils.extension import Extension
 import os
 import shutil
 import sys
+import numpy
 from collections import namedtuple
 
 setup_requires = [
     'setuptools',
-    'numpy>=1.20.0',
     'Cython',  # Requires python-dev.
 ]
+
+numpy_version = ""
+numpy_version += numpy.__version__[0: numpy.__version__.rindex('.') + 1] + "0"
+numpy_requires = "numpy~={}".format(numpy_version)
+setup_requires.append(numpy_requires)
 
 install_requires = setup_requires + [
     'boto3',
