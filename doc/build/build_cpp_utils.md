@@ -3,7 +3,7 @@
 This document describes how to build and install C++ libraries,
 headers and executables that can be used for C++ standalone inference
 and training. The following instruction demonstrates the build
-procedure on Ubuntu 16.04, but we successfully build C++ libraries on
+procedure on Ubuntu 20.04 LTS and Python 3.8.10, but we successfully build C++ libraries on
 macOS and Windows ([manual](./build_cpp_utils_windows.md)) too in a
 similar way (the differences lie in the installation of some
 dependencies). We may add build instructions on another platform in
@@ -16,7 +16,9 @@ Source](build.md).
 
 * G++: `sudo apt-get install build-essential`
 * CMake>=3.1: `sudo apt-get install cmake`
-* Python: `sudo apt-get install python python-pip`(Used by code generator)
+* Git: `sudo apt-get install git`
+* Curl: `sudo apt-get install curl`
+* Python: `sudo apt-get install python3 python3-pip`(Used by code generator)
   * Python packages: PyYAML and MAKO: `sudo -H pip install pyyaml mako`
 * LibArchive: `sudo apt-get install libarchive-dev`
 * HDF5 (Optional): `sudo apt-get install libhdf5-dev`
@@ -25,7 +27,9 @@ Source](build.md).
 
 ### Installing protobuf3 C++ libraries and tools
 
-#### Install from source.
+Note: You can choose one of the following two installing methods.
+
+#### For method 1: Install from source.
 
 Unlike [Python Package compilation](./build.md) which requires
 `protoc` compiler only, the NNabla C++ utility library requires
@@ -58,13 +62,14 @@ to set environment variables such as a executable path and library
 paths (e.g. `PATH`, `LD_LIBRARY_PATH` etc) if you have runtime
 dependencies at your custom installation path.
 
-#### Install from PPA package.
+#### For method 2: Install from PPA package.
 
 Here is the procedure using an informal PPA package. If you can not
 trust unofficial packages, please use the procedure to build from the
 source shown above.
 
 ```shell
+sudo apt install software-properties-common
 sudo add-apt-repository ppa:maarten-fonville/protobuf
 sudo apt install protobuf-compiler libprotoc-dev libprotobuf-dev
 ```

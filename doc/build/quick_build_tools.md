@@ -10,17 +10,19 @@ You need to install just [Docker](https://docs.docker.com/install/) and `make`.
 
 ### Build
 ```
+cd nnabla
 $ make all
 ```
 
 `make all` is as same as `make bwd-cpplib bwd-wheel`
-After this you can find .whl file in `nnabla/build_wheel_py??/dist/`
+After this you can find .whl file in `nnabla/build_wheel/dist/`
 
 
 ### Build cpplib only
 
 If you want only cpp libraries.
 ```
+cd nnabla
 $ make bwd-cpplib
 ```
 After this you can find executable file and shared library in `nnabla/build/lib/` and `nnabla/build/bin/`
@@ -29,8 +31,8 @@ After this you can find executable file and shared library in `nnabla/build/lib/
 
 Prepare to specify python version.
 ```
-$ export PYTHON_VERSION_MAJOR=2
-$ export PYTHON_VERSION_MINOR=7
+$ export PYTHON_VERSION_MAJOR=3
+$ export PYTHON_VERSION_MINOR=8
 ```
 
 Then you can get with,
@@ -40,7 +42,7 @@ $ make all
 
 Or you can specify every time.
 ```
-$ make PYTHON_VERSION_MAJOR=2 PYTHON_VERSION_MINOR=7 all
+$ make PYTHON_VERSION_MAJOR=3 PYTHON_VERSION_MINOR=8 all
 ```
 
 ## Windows
