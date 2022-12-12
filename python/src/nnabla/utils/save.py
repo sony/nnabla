@@ -20,9 +20,11 @@ Save network structure into file.
 
 import os
 import re
+import types
 
 import nnabla as nn
 import numpy
+from collections import OrderedDict
 from nnabla.logger import logger
 from nnabla.parameter import get_parameters
 from nnabla.utils import nnabla_pb2
@@ -50,6 +52,13 @@ def _create_training_config(max_epoch, iter_per_epoch, save_best):
     return t
 
 
+def _format_opti_config_for_states_checkpoint(ctx, contents):
+    ctx.optimizers = OrderedDict()
+    for opti_i in contents['optimizers']:
+        opt = types.SimpleNamespace(**opti_i)
+        ctx.optimizers[opt.name] = types.SimpleNamespace(optimizer=opt)
+
+
 def _create_dataset(name, uri, cache_dir, variables, shuffle, batch_size, no_image_normalization):
     d = nnabla_pb2.Dataset()
     d.name = name
@@ -74,14 +83,15 @@ def _create_network(ctx, net, variable_batch_size):
     return n
 
 
-def _create_optimizer(ctx, opti_d):
+def _create_optimizer(ctx, opti_d, save_solver_in_proto):
     o = nnabla_pb2.Optimizer()
     dataset = None
 
     datasets = ctx.datasets
     name = opti_d['name']
     solver = opti_d['solver']
-    network = ctx.networks[opti_d['network']]
+    # ctx.networks might be missing when optimizer is used in transfer learning
+    network = ctx.networks[opti_d['network']] if ctx.networks else None
     dataset_names = opti_d['dataset']
     weight_decay = opti_d['weight_decay']
     lr_decay = opti_d['lr_decay']
@@ -89,9 +99,10 @@ def _create_optimizer(ctx, opti_d):
     update_interval = opti_d['update_interval']
 
     o.name = name
-    o.network_name = network.name
+    o.network_name = network.name if network else b'None'
 
-    proto_network = ctx.proto_graphs[opti_d['network']].default_graph()
+    proto_network = ctx.proto_graphs[opti_d['network']
+                                     ].default_graph() if network else None
 
     # Allow a list or tuple or a string for dataset names.
     if isinstance(dataset_names, tuple):
@@ -110,7 +121,9 @@ def _create_optimizer(ctx, opti_d):
             o.dataset_name.append(dataset_name)
             dataset = datasets[dataset_name]
     if dataset is None:
-        raise ValueError("Dataset is not defined in optimizer.")
+        # dataset setting in optimizer might be missing when optimizer is used in transfer learning
+        # raise ValueError("Dataset is not defined in optimizer.")
+        pass
     o.solver.type = re.sub(r'(|Cuda)$', '', str(solver.name))
     if o.solver.type == 'Adadelta':
         o.solver.adadelta_param.lr = solver.info['lr']
@@ -164,19 +177,24 @@ def _create_optimizer(ctx, opti_d):
         d = o.data_variable.add()
         d.variable_name = var_name
         d.data_name = data_name
-    for loss_name in opti_d.get('loss_variables', proto_network.outputs):
-        d = o.loss_variable.add()
-        d.variable_name = loss_name
-    for param in proto_network.parameters.keys():
+    if proto_network:
+        for loss_name in opti_d.get('loss_variables', proto_network.outputs):
+            d = o.loss_variable.add()
+            d.variable_name = loss_name
+    solver_params = solver.get_parameters()
+    network_keys = proto_network.parameters.keys(
+    ) if proto_network else nn.get_parameters().keys()
+    for param in network_keys:
         d = o.parameter_variable.add()
         d.variable_name = param
-        d.learning_rate_multiplier = 1.0
+        d.learning_rate_multiplier = 1.0 if param in solver_params else 0.0
     for g_var in opti_d.get('generator_variables', []):
         d = o.generator_variable.add()
         d.variable_name = g_var
         d.type = 'Constant'
         d.multiplier = 0
-    solver.set_states_to_protobuf(o)
+    if save_solver_in_proto:
+        solver.set_states_to_protobuf(o)
     return o
 
 
@@ -263,7 +281,7 @@ def _create_executor(ctx, executor):
 # ----------------------------------------------------------------------
 
 
-def create_proto(contents, include_params=False, variable_batch_size=True):
+def create_proto(contents, include_params=False, variable_batch_size=True, save_solver_in_proto=False):
     class Context:
         pass
 
@@ -310,7 +328,8 @@ def create_proto(contents, include_params=False, variable_batch_size=True):
     if 'optimizers' in contents:
         proto_optimizers = []
         for o in contents['optimizers']:
-            proto_optimizers.append(_create_optimizer(ctx, o))
+            proto_optimizers.append(
+                _create_optimizer(ctx, o, save_solver_in_proto))
         proto.optimizer.extend(proto_optimizers)
     if 'monitors' in contents:
         proto_monitors = []
@@ -336,7 +355,7 @@ def create_proto(contents, include_params=False, variable_batch_size=True):
     return proto
 
 
-def save(filename, contents, include_params=False, variable_batch_size=True, extension=".nnp", parameters=None):
+def save(filename, contents, include_params=False, variable_batch_size=True, extension=".nnp", parameters=None, include_solver_state=False, solver_state_format='.h5'):
     '''Save network definition, inference/training execution
     configurations etc.
 
@@ -357,6 +376,11 @@ def save(filename, contents, include_params=False, variable_batch_size=True, ext
             (more specifically ``-1``). The placeholder dimension will be
             filled during/after loading.
         extension: if files is file-like object, extension is one of ".nntxt", ".prototxt", ".protobuf", ".h5", ".nnp".
+        include_solver_state (bool): Indicate whether to save solver state or not. 
+        solver_state_format (str):
+            '.h5' or '.protobuf', default '.h5', indicate in which format will solver state be saved,
+            notice that this option only works when save network definition in .nnp format
+            and include_solver_state is True.
 
     Example:
         The following example creates a two inputs and two
@@ -450,13 +474,23 @@ def save(filename, contents, include_params=False, variable_batch_size=True, ext
 
     '''
     ctx = FileHandlerContext()
+    ext = extension
     if isinstance(filename, str):
-        _, ext = os.path.splitext(filename)
-    else:
-        ext = extension
+        _, ext_c = os.path.splitext(filename)
+        ext = ext_c if ext_c else ext
     include_params = False if ext == '.nnp' else include_params
-    ctx.proto = create_proto(contents, include_params, variable_batch_size)
+    save_solver_in_proto = include_solver_state and ext != '.nnp'
+    ctx.proto = create_proto(contents, include_params,
+                             variable_batch_size, save_solver_in_proto)
     ctx.parameters = parameters
-    file_savers = get_default_file_savers()
+    if include_solver_state and ext == '.nnp':
+        if 'optimizers' not in contents:
+            raise KeyError('optimizers should be specified in \
+                contents when include_solver_state is True')
+        _format_opti_config_for_states_checkpoint(ctx, contents)
+        file_savers = get_default_file_savers(
+            solver_state_format=solver_state_format)
+    else:
+        file_savers = get_default_file_savers()
     save_files(ctx, file_savers, filename, ext)
     logger.info("Model file is saved as ({}): {}".format(ext, filename))

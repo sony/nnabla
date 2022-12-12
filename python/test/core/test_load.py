@@ -708,7 +708,7 @@ def test_load_and_save_equivalence(nntxt_idx, parameter_format, dataset_sample_n
                     }
 
                     save.save(saved_nnp_file, contents,
-                              include_params, variable_batch_size)
+                              include_params, variable_batch_size, include_solver_state=True)
 
             new_config = TrainConfig()
             new_config.start_iteration = 0
@@ -837,3 +837,76 @@ def test_resume_suspend_equivalence(nntxt_idx, parameter_format, dataset_sample_
                 if i > new_config.start_iteration:
                     assert_allclose(np.array([cost_ref, error_ref]), np.array([cost, error]), rtol=1e-2, atol=1e-5,
                                     err_msg="Error: {}".format(nntxt_idx))
+
+
+@pytest.mark.parametrize("nntxt_idx", CASE_INDEX)
+@pytest.mark.parametrize("parameter_format", ['.protobuf'])
+@pytest.mark.parametrize("dataset_sample_num", [64])
+@pytest.mark.parametrize("batch_size", [16])
+@pytest.mark.parametrize("include_params", [False])
+@pytest.mark.parametrize("variable_batch_size", [True])
+def test_load_and_save_solver_states(nntxt_idx, parameter_format, dataset_sample_num, batch_size,
+                                     include_params, variable_batch_size):
+    '''Test equivalence between solver existed and loaded.
+    '''
+    a_few_iter = 10
+    with generate_case_from_nntxt_str(NNTXT_EQUIVALENCE_CASES[nntxt_idx], parameter_format, dataset_sample_num, batch_size) as nnp_file:
+        with create_temp_with_dir("saved.nnp") as saved_nnp_file:
+            class Callback:
+                pass
+
+            new_config = TrainConfig()
+            new_config.start_iteration = 0
+            new_config.end_iteration = a_few_iter
+            new_config.save_optimizer_variable = False
+            new_config.save_evaluation_variable = False
+            new_cb = Callback()
+            new_cb.forward = lambda x: x.target.forward(
+                clear_no_need_grad=True)
+            new_cb.backward = lambda x, b: x.target.backward(clear_buffer=True)
+            new_config.cb = new_cb
+            new_config.impl = "ref"
+
+            ref_result = []
+            ref_info = load.load(nnp_file, batch_size=batch_size)
+
+            # save solver states
+            new_config.on_iter = None
+            for cost, error in partial(train, config=new_config)(ref_info):
+                ref_result.append((cost, error))
+
+            contents = {
+                'optimizers': [
+                    {'name': o_name,
+                        'solver': o.solver,
+                        'network': 'None',
+                        'dataset': 'None',
+                        'weight_decay': o.weight_decay,
+                        'lr_decay': o.lr_decay,
+                        'lr_decay_interval': o.lr_decay_interval,
+                        'update_interval': o.update_interval}
+                    for o_name, o in ref_info.optimizers.items()]
+            }
+
+            save.save(saved_nnp_file, contents,
+                      include_params, variable_batch_size, include_solver_state=True)
+
+            info = load.base_load(saved_nnp_file, batch_size=batch_size)
+            params = nn.get_parameters()
+            for opti in info.optimizers.values():
+                parameters = {}
+                for p in opti.proto.parameter_variable:
+                    if p.variable_name in params.keys() and p.learning_rate_multiplier > 0.0:
+                        parameters[p.variable_name] = params[p.variable_name]
+                opti.solver.set_parameters(parameters)
+                load.restore_optimizer_state(opti)
+
+            for o_opti in ref_info.optimizers.values():
+                l_opti = info.optimizers[o_opti.name]
+                o_states = o_opti.solver.get_states()
+                l_states = l_opti.solver.get_states()
+                assert len(o_states.keys()) == len(l_states.keys())
+                for k1 in o_states.keys():
+                    for k2 in o_states[k1].pstate:
+                        assert_allclose(o_states[k1].pstate[k2].d, l_states[k1].pstate[k2].d, rtol=1e-2, atol=1e-5,
+                                        err_msg=f"Error: solver state mismatch in {o_opti.name}:{k1}:{k2}")
