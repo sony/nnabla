@@ -73,7 +73,8 @@ docker_image_nnabla_test:
 # CMAKE_SYSTEM_NAME = i686-linux-android     ==> ARCHITECTURE = x86 	 , ABI=x86
 # CMAKE_SYSTEM_NAME = x86_64-linux-android   ==> ARCHITECTURE = x86_64 	 , ABI=x86_64
 
-ANDROID_PLATFORM ?= android-26
+ANDROID_NDKNAME ?= android-ndk-r25b
+ANDROID_PLATFORM ?= android-33
 ANDROID_ARCHITECTURE ?= arm64
 ANDROID_CMAKE_SYSTEM_NAME ?= aarch64-linux-android
 ANDROID_EABI ?= arm64-v8a
@@ -82,15 +83,14 @@ DOCKER_IMAGE_BUILD_ANDROID ?= $(DOCKER_IMAGE_NAME_BASE)-build-android-$(ANDROID_
 
 .PHONY: docker_image_build_android
 docker_image_build_android:
-	if ! docker image inspect $(DOCKER_IMAGE_BUILD_ANDROID) >/dev/null 2>/dev/null; then \
-		docker pull ubuntu:16.04 && \
-		(cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_BUILD_ANDROID) \
-			--build-arg ANDROID_PLATFORM=$(ANDROID_PLATFORM) \
-			--build-arg ANDROID_ARCHITECTURE=$(ANDROID_ARCHITECTURE) \
-			--build-arg ANDROID_CMAKE_SYSTEM_NAME=$(ANDROID_CMAKE_SYSTEM_NAME) \
-			--build-arg ANDROID_EABI=$(ANDROID_EABI) \
-			-f docker/development/Dockerfile.android .) \
-	fi
+	docker pull ubuntu:18.04 && \
+	(cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_BUILD_ANDROID) \
+		--build-arg ANDROID_NDKNAME=$(ANDROID_NDKNAME) \
+		--build-arg ANDROID_PLATFORM=$(ANDROID_PLATFORM) \
+		--build-arg ANDROID_ARCHITECTURE=$(ANDROID_ARCHITECTURE) \
+		--build-arg ANDROID_CMAKE_SYSTEM_NAME=$(ANDROID_CMAKE_SYSTEM_NAME) \
+		--build-arg ANDROID_EABI=$(ANDROID_EABI) \
+		-f docker/development/Dockerfile.android .) \
 
 .PHONY: docker_image_build_android_emulator
 docker_image_build_android_emulator:
