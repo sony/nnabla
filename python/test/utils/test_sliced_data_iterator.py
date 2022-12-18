@@ -39,7 +39,7 @@ def test_sliced_data_iterator_equivalence(test_data_csv_png_10, num_of_slices, s
     max_epoch = lcm(batch_size, size) / size
 
     def test_load_func(position):
-        return np.full((1), position, dtype=np.int)
+        return np.full((1), position, dtype=int)
 
     def simple_load_func(data_set, position):
         return data_set[position]
@@ -65,7 +65,7 @@ def test_sliced_data_iterator_equivalence(test_data_csv_png_10, num_of_slices, s
         sliced_di_list.append(sliced_di)
 
     ref_di_list = []
-    all_data = [np.full((1), position, dtype=np.int)
+    all_data = [np.full((1), position, dtype=int)
                 for position in range(size)]
     slice_block_size = size // num_of_slices
     if not drop_last:

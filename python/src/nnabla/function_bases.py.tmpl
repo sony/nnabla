@@ -31,14 +31,12 @@ FUNCTION_API_HEADER = "def {name}{signature}:"
 FUNCTION_API_BODY = '''ctx = get_current_context()
 return _func_(ctx, {shortsignature})'''
 
-
 def function_api(func):
     """
     Decorator for making function called with current context.
     Some tricky things are done here so that signature and docstring are available.
     """
-    from nnabla.utils.py23_compatible import getargspec
-    import inspect
+    from .utils.signature_utils import SignatureEx
 
     name = func.__name__
     doc = func.__doc__
@@ -46,20 +44,14 @@ def function_api(func):
         doc = "No docstring."
 
     # Parsing argspecs
-    spec = getargspec(func)
-    defaults = spec.defaults
-    if spec.defaults is None:
-        defaults = None
-    elif len(spec.defaults) == len(spec.args):
-        defaults = defaults[1:]
+    sig = SignatureEx.from_callable(func)
+    sig = sig.drop_arg('ctx', raise_if_not_found=True)
     # Creating signature
     # e.g. (x, weights, biases=None, n_outputs=None)
-    signature = inspect.formatargspec(
-        spec.args[1:], spec.varargs, spec.keywords, defaults)
+    signature = '(' + sig.format_argument_signature() + ')' + sig.format_return_annotation()
     # Creating signature without params and defaults
     # e.g. x, weights, biases, n_outputs
-    shortsignature = inspect.formatargspec(
-        spec.args[1:], spec.varargs, spec.keywords, None)[1:-1]
+    shortsignature = sig.format_caller_argument_signature()
 
     # Create code by string
     src = (FUNCTION_API_HEADER + '\n' + '\n'.join(map(lambda x: '    ' +

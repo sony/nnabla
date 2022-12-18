@@ -1786,7 +1786,7 @@ class TFLiteExporter:
         TENSOR_TYPE_TO_DTYPE = {
             'FLOAT32': np.float32,
             'INT32': np.int32,
-            'BOOL': np.bool,
+            'BOOL': bool,
         }
         for name in var_list:
             dtype = tensor_type[name] if name in tensor_type else 'FLOAT32'

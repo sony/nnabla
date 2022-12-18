@@ -1669,7 +1669,7 @@ def test_pf_deformable_convolution_2d_execution(g_rng, inshape, kernel, out_chan
     rng_off_mask = np.random.RandomState(1223)
     offset = (3.8 * rng_off_mask.rand(*offset_shape).astype(np.float32)) - 1.9
     offset += np.logical_or(np.abs(offset - np.floor(offset)) < 0.1,
-                            np.abs(offset - np.ceil(offset)) < 0.1).astype(np.int)*0.5
+                            np.abs(offset - np.ceil(offset)) < 0.1).astype(int)*0.5
     offset = nn.Variable.from_numpy_array(offset)
 
     mask_shape = inshape[0:base_axis] + \

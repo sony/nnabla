@@ -55,9 +55,9 @@ def test_data_grad_reference():
 
 def test_dtype_conversion():
     v = nn.Variable([2, 3, 4])
-    a = v.data.cast(np.int)
+    a = v.data.cast(np.int64)
     a[...] = 2
-    assert (v.data.dtype == np.int)
+    assert (v.data.dtype == np.int64)
     assert np.all(a == 2)
     b = v.data.cast(np.float32)
     assert b.dtype == np.float32

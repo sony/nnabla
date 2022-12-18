@@ -20,6 +20,8 @@
 # - python/src/nnabla/solver.pyx.tmpl
 # - build-tools/code_generator/generate.py
 
+# cython: binding=True
+
 from six.moves import map
 from six import iteritems
 
@@ -525,27 +527,19 @@ def solver_api(func):
 
     """
     import context
-    import re
-    import inspect
+    from .utils.signature_utils import SignatureEx
+
     doc = func.__doc__
+    if doc is None:
+        doc = "No docstring."
+
     # Parsing signature
-    head = doc.splitlines()[0]
-    # Extract function name and args
-    m = re.match(r'([A-Za-z]\w+)\((.*)\)', head)
-    name, rawargs = m.groups()
-    # Parse arguments. Note: Here we drop the first argument which is a
-    # context.
-    r = re.compile(r'(\w+\s|)(\w+)(|=.*)$')
-    parsed_args = list(map(
-        lambda x: r.match(x.strip()).groups(), rawargs.split(',')[1:]))
-    types, args, defaults = zip(*parsed_args)
-    types = map(lambda x: x.strip(), types)
-    defaults = list(map(lambda x: eval(x), filter(
-        lambda x: len(x) > 0, map(lambda x: x.strip(' ='), defaults))))
-    # Create argument code.
-    argspec = inspect.formatargspec(args, None, None, defaults)
-    shortargspec = inspect.formatargspec(
-        args, None, None, None)[1:-1]  # Remove ()
+    name = func.__name__
+    sig = SignatureEx.from_callable(func)
+    sig = sig.drop_arg('ctx', raise_if_not_found=True)
+    argspec = '(' + sig.format_argument_signature() + ')' + sig.format_return_annotation()
+    shortargspec = sig.format_caller_argument_signature()
+
     code = """
 def {name}{argspec}:
     ctx = context.get_current_context()
@@ -563,6 +557,15 @@ def {name}{argspec}:
     return func_with_context
 
 <%
+def arg_field_py(kv):
+    from utils.type_conv import type_from_proto
+    name, arg = kv
+    '''Make arg info to string expression.'''
+    argstr = name
+    if 'default' in arg:
+        argstr += '={}'.format(arg['default'])
+    return argstr
+
 def arg_field(kv):
     from utils.type_conv import type_from_proto
     name, arg = kv
@@ -574,7 +577,7 @@ def arg_field(kv):
 %>
 %for solver_name, solver in solver_info.items():
 @solver_api
-def ${solver_name}(CContext ctx, ${', '.join(map(arg_field, solver['arguments'].items()))}):
+def ${solver_name}(ctx, ${', '.join(map(arg_field_py, solver['arguments'].items()))}):
     r"""
     ${solver['doc'].replace('\n', '\n' + ' ' * 4)}
 
@@ -601,6 +604,14 @@ def ${solver_name}(CContext ctx, ${', '.join(map(arg_field, solver['arguments'].
 %endif
 
     """
+    return _${solver_name}(ctx, ${', '.join(solver['arguments'].keys())})
+
+
+def _${solver_name}(CContext ctx, ${', '.join(map(arg_field, solver['arguments'].items()))}):
+    '''Cython interface for ${solver_name}.
+
+    Exposed to users via :py:meth:`${solver_name}` function.
+    '''
     info = {}
 %for argname in solver['arguments'].keys():
     info['${argname}'] = ${argname}

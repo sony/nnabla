@@ -1245,7 +1245,7 @@ def gather_nd(data, indices):
     from .function_bases import gather_nd as gather_nd_base
     if not isinstance(indices, (nn.Variable, nn.NdArray)):
         if not isinstance(indices, np.ndarray):
-            indices = np.asarray(indices, dtype=np.int)
+            indices = np.asarray(indices, dtype=int)
         indices = nn.Variable.from_numpy_array(indices)
     return gather_nd_base(data, indices)
 
@@ -1297,7 +1297,7 @@ def scatter_nd(data, indices, shape=None, out=None, add=False):
     from .function_bases import scatter_nd as scatter_nd_base
     if not isinstance(indices, (nn.Variable, nn.NdArray)):
         if not isinstance(indices, np.ndarray):
-            indices = np.asarray(indices, dtype=np.int)
+            indices = np.asarray(indices, dtype=int)
         indices = nn.Variable.from_numpy_array(indices)
     if shape is None and out is None:
         raise TypeError("One of `shape` or `out` argument must be supplied.")

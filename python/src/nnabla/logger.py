@@ -23,7 +23,7 @@ You can use the logger as follows:
 
     logger.debug('Log message(DEBUG)')
     logger.info('Log message(INFO)')
-    logger.warn('Log message(WARNING)')
+    logger.warning('Log message(WARNING)')
     logger.error('Log message(ERROR)')
     logger.critical('Log message(CRITICAL)')
 

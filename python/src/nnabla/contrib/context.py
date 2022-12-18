@@ -37,7 +37,7 @@ def extension_context(extension_name='cpu', **kw):
 
     """
     from nnabla import logger
-    logger.warn(
+    logger.warning(
         'Deprecated API. Use `nnabla.ext_util.get_extension_context(ext_name, **kw)`.')
     from nnabla.ext_utils import get_extension_context
     return get_extension_context(extension_name, **kw)

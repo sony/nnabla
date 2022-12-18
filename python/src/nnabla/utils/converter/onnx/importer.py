@@ -476,7 +476,7 @@ def add_tensor_as_parameter(pb, tensor):
             raise ValueError("int64 data not found for {}".format(tensor.name))
     elif tensor.data_type == TensorProto.BOOL:
         if tensor.raw_data:
-            p.data.extend(np.fromstring(tensor.raw_data, dtype=np.bool))
+            p.data.extend(np.fromstring(tensor.raw_data, dtype=bool))
         elif tensor.int32_data:
             p.data.extend(tensor.int32_data)
         else:
@@ -808,7 +808,7 @@ class OnnxImporter:
                         elif attr.t.data_type == TensorProto.BOOL:
                             if attr.t.raw_data:
                                 data.extend(np.fromstring(
-                                    attr.t.raw_data, dtype=np.bool))
+                                    attr.t.raw_data, dtype=bool))
                             break
 
         # Try to find data in the initializer.
@@ -831,7 +831,7 @@ class OnnxImporter:
                 elif data_type == TensorProto.BOOL:
                     if init.raw_data:
                         data.extend(np.fromstring(
-                            init.raw_data, dtype=np.bool))
+                            init.raw_data, dtype=bool))
                     break
 
         if not data:
@@ -1434,7 +1434,7 @@ class OnnxImporter:
                 shape = []
                 output_shape = []
                 if input0_dim < ndim:
-                    shape.extend(list(np.ones(ndim-input0_dim, dtype=np.int)))
+                    shape.extend(list(np.ones(ndim-input0_dim, dtype=int)))
                     shape.extend(input0_shape)
                     out = fork_name(n.input[0])+"_shape"
                     rp = generate_reshape(n.name, n.input[0], out, shape,
@@ -1445,7 +1445,7 @@ class OnnxImporter:
                     output_shape = [max(shape[i], input1_shape[i])
                                     for i in range(ndim)]
                 elif input1_dim < ndim:
-                    shape.extend(list(np.ones(ndim-input1_dim, dtype=np.int)))
+                    shape.extend(list(np.ones(ndim-input1_dim, dtype=int)))
                     shape.extend(input1_shape)
                     out = fork_name(n.input[1])+"_shape"
                     rp = generate_reshape(n.name, n.input[1], out, shape,
@@ -2751,7 +2751,7 @@ class OnnxImporter:
             for i in range(len(input_shape)):
                 if len(input_shape[i]) < ndim:
                     input_shape[i] = list(
-                        np.ones(ndim - len(input_shape[i]), dtype=np.int)) + input_shape[i]
+                        np.ones(ndim - len(input_shape[i]), dtype=int)) + input_shape[i]
                     rout = fork_name(inputs[i])+"_shape"
                     rp = generate_reshape(n.name, inputs[i], rout, input_shape[i],
                                           self._graph.name, self._func_counter)

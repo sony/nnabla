@@ -16,7 +16,7 @@ import numpy as np
 
 
 np_dtpye_to_int = dict()
-np_dtpye_to_int[np.bool] = 0
+np_dtpye_to_int[bool] = 0
 np_dtpye_to_int[np.byte] = 1
 np_dtpye_to_int[np.ubyte] = 2
 np_dtpye_to_int[np.short] = 3
@@ -34,7 +34,7 @@ np_dtpye_to_int[np.double] = 12
 np_dtpye_to_int[np.longdouble] = 13
 
 
-int_to_np_dtpye = {v: k for k, v in np_dtpye_to_int.items()}
+int_to_np_dtype = {v: k for k, v in np_dtpye_to_int.items()}
 
 # TODO:
 # Currently np.dtype is only supported, but we should support nn.dtype somehow,

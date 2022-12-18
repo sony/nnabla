@@ -22,7 +22,7 @@ ctxs = list_context('BoolGather')
 
 
 def ref_bool_gather(gdata, mask):
-    mask_bool = mask.astype(np.bool)
+    mask_bool = mask.astype(bool)
     return gdata[mask_bool]
 
 

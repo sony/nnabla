@@ -646,7 +646,7 @@ def MultiProcessDataParallelCommunicator(CContext ctx):
                 '# but it may not necessary for Open MPI versions other than Open MPI 1.x.\n' \
                 '###########################################################################\n'
             import nnabla as nn
-            nn.logger.warn(msg)
+            nn.logger.warning(msg)
     else:
         raise Exception(
             "MultiProcessDataParallelCommunicator is not supported other than linux.")

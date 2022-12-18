@@ -32,8 +32,6 @@ void VATNoise<T>::setup_impl(const Variables &inputs,
 
   refine_axis(base_axis_, inputs.at(0)->ndim());
 
-  auto base_axis = static_cast<Shape_t::size_type>(base_axis_);
-
   NBLA_CHECK(inputs[0]->shape() == inputs[1]->shape(), error_code::value,
              "Dimensions of inputs must match. "
              "inputs[0]: (%s) != inputs[1]: (%s).",

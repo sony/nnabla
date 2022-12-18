@@ -28,9 +28,9 @@ def ref_broadcast(x, shape):
 
 def get_combination(n):
     if n == 0:
-        return [(n, np.array([], dtype=np.bool))]
+        return [(n, np.array([], dtype=bool))]
     all_comb = np.vstack(map(lambda x: x.flatten(), np.meshgrid(
-        *[[0, 1] for _ in range(n)]))).T.astype(np.bool)
+        *[[0, 1] for _ in range(n)]))).T.astype(bool)
     return [(n, comb) for comb in all_comb]
 
 

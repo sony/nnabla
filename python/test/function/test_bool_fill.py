@@ -24,7 +24,7 @@ ctxs = list_context('BoolFill')
 def ref_bool_fill(data, mask, value):
     data0 = np.copy(data)
     bmask = np.broadcast_to(mask, data.shape)
-    data0[bmask.astype(np.bool)] = value
+    data0[bmask.astype(bool)] = value
     return data0
 
 
@@ -47,7 +47,7 @@ def test_bool_fill_forward_backward(seed, ctx, func_name, dshape, mshape, value,
     backward = [True, False]
     if inf_or_nan != 0:
         bmask = np.broadcast_to(mask, data.shape)
-        data[bmask.astype(np.bool)] = inf_or_nan
+        data[bmask.astype(bool)] = inf_or_nan
         # we can not compute the numerical gradients
         backward = [False, False]
     inputs = [data, mask]
@@ -77,7 +77,7 @@ def test_bool_fill_double_backward(seed, ctx, func_name, dshape, mshape, value, 
     backward_b = [True, True, False]
     if inf_or_nan != 0:
         bmask = np.broadcast_to(mask, data.shape)
-        data[bmask.astype(np.bool)] = inf_or_nan
+        data[bmask.astype(bool)] = inf_or_nan
         backward = [True, False]
         # we can not compute the numerical gradients
         backward_b = [False, False, False]
