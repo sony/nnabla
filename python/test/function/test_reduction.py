@@ -179,3 +179,19 @@ def test_reduction_double_backward(op, seed, inshape, axis, keepdims, ctx, func_
                              func_kwargs=dict(keepdims=keepdims),
                              ctx=ctx,
                              atol_accum=8e-2)
+
+
+@pytest.mark.parametrize("op, ctx, func_name", list_ctx_and_func_name(['max', 'min']))
+def test_max_min_int64_add_scalar(op, ctx, func_name):
+    expected = {
+        'max': [100.0],
+        'min': [1.0]
+    }
+    nn.set_default_context(ctx)
+    nn.set_auto_forward(True)
+    x = nn.Variable((1, 100,))
+    x.d = range(100)
+    func = getattr(F, op)
+    idx = func(x, axis=1, only_index=True)
+    idx += 1.0
+    assert np.allclose(expected[op], idx.d), "test long long copy failed!"
