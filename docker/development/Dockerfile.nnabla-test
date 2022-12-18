@@ -62,21 +62,11 @@ RUN eval ${APT_OPTS} && apt-get update \
        unzip \
        wget \
        zip \
-       python${PYVERNAME}-dev \
-       python3-venv \
-       python${PYVERNAME} \
-       python${PYVERNAME}-venv \
-    && apt-get install -y --no-install-recommends \
-       python${PYVERNAME}-distutils || echo "skip install python-distutils" \
+       patch \
+       libffi-dev \
+       libbz2-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
-
-RUN if [ "${PYVERNAME}" = "3.6" ]; then curl ${CURL_OPTS} https://bootstrap.pypa.io/pip/${PYVERNAME}/get-pip.py -o get-pip.py; else \
-    curl ${CURL_OPTS} https://bootstrap.pypa.io/get-pip.py -o get-pip.py; fi \
-    && python${PYVERNAME} get-pip.py ${PIP_INS_OPTS} \
-    && rm get-pip.py
-
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python${PYVERNAME} 0
 
 ################################################## protobuf
 RUN mkdir /tmp/deps \
@@ -125,11 +115,20 @@ ADD python/setup_requirements.txt /tmp/deps/
 ADD python/requirements.txt /tmp/deps/
 ADD python/test_requirements.txt /tmp/deps/
 
-RUN pip install ${PIP_INS_OPTS} numpy \
-    && pip install ${PIP_INS_OPTS} -U -r /tmp/deps/setup_requirements.txt \
-    && pip install ${PIP_INS_OPTS} -U -r /tmp/deps/requirements.txt \
-    && pip install ${PIP_INS_OPTS} -U -r /tmp/deps/test_requirements.txt \
-    && rm -rf /tmp/*
+RUN git clone https://github.com/pyenv/pyenv.git ~/.pyenv \
+    && export PYENV_ROOT="$HOME/.pyenv" \
+    && export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/plugins/python-build/bin:$PATH" \
+    && export PYTHON_BUILD_CURL_OPTS="${CURL_OPTS}" \
+    && export PYTHON_BUILD_WGET_OPTS="${WGET_OPTS}" \
+    && if [ ${PYTHON_VERSION_MINOR} -ge 10 ]; then export CPPFLAGS=-I/usr/include/openssl11 && export LDFLAGS=-L/usr/lib64/openssl11; fi \
+    && eval "$(pyenv init -)" \
+    && python-build `pyenv latest -k ${PYVERNAME}` /usr/local \
+    && pyenv global system \
+    && pip install ${PIP_INS_OPTS} --no-cache-dir -U setuptools \
+    && pip install ${PIP_INS_OPTS} --no-cache-dir -U -r /tmp/deps/setup_requirements.txt \
+    && pip install ${PIP_INS_OPTS} --no-cache-dir -U -r /tmp/deps/requirements.txt \
+    && pip install ${PIP_INS_OPTS} --no-cache-dir -U -r /tmp/deps/test_requirements.txt \
+    && rm -rf ~/.pyenv/.git /tmp/*
 
 ENV PATH /tmp/.local/bin:$PATH
 ENV LD_LIBRARY_PATH /usr/local/lib64:/usr/local/lib:$LD_LIBRARY_PATH

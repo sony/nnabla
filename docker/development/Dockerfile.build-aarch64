@@ -78,7 +78,7 @@ RUN mkdir /tmp/deps \
 
 ARG PYTHON_VERSION_MAJOR=3
 ARG PYTHON_VERSION_MINOR=9
-ENV PYVERNAME=${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}.14
+ENV PYVERNAME=${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}
 
 # Install pyenv
 RUN git clone https://github.com/pyenv/pyenv.git ~/.pyenv \
@@ -87,7 +87,7 @@ RUN git clone https://github.com/pyenv/pyenv.git ~/.pyenv \
     && eval "$(pyenv init -)" \
     && export PYTHON_BUILD_CURL_OPTS="${CURL_OPTS}" \
     && export PYTHON_BUILD_WGET_OPTS="${WGET_OPTS}" \
-    && python-build ${PYVERNAME} /usr/local/ \
+    && python-build `pyenv latest -k ${PYVERNAME}` /usr/local \
     && pyenv global system \
     && rm -rf ~/.pyenv/.git
 
@@ -95,12 +95,11 @@ ADD python/setup_requirements.txt /tmp/deps/
 ADD python/requirements.txt /tmp/deps/
 ADD python/test_requirements.txt /tmp/deps/
 
-RUN python3 -m pip install ${PIP_INS_OPTS} --upgrade pip \
+RUN python3 -m pip install ${PIP_INS_OPTS} --no-cache-dir --upgrade pip \
     && echo "[global]" >/etc/pip.conf \
     && echo "extra-index-url=https://www.piwheels.org/simple" >> /etc/pip.conf \
-    && pip3 install ${PIP_INS_OPTS} numpy\<1.22 \
-    && pip3 install ${PIP_INS_OPTS} -r /tmp/deps/setup_requirements.txt \
+    && pip install ${PIP_INS_OPTS} --no-cache-dir -r /tmp/deps/setup_requirements.txt \
     && sed -i '/onnx/d' /tmp/deps/requirements.txt \
-    && pip3 install ${PIP_INS_OPTS} -r /tmp/deps/requirements.txt
+    && pip install ${PIP_INS_OPTS} --no-cache-dir -r /tmp/deps/requirements.txt
 
 ENV PATH /tmp/.local/bin:$PATH

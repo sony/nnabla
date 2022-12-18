@@ -12,56 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM multiarch/debian-debootstrap:arm64-bullseye as python
-
-ARG PIP_INS_OPTS
-ARG PYTHONWARNINGS
-ARG CURL_OPTS
-ARG WGET_OPTS
-
-ENV DEBIAN_FRONTEND noninteractive
-
-ENV LC_ALL C
-ENV LANG C
-ENV LANGUAGE C
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates \
-    build-essential \
-    curl \
-    git \
-    make \
-    wget \
-    llvm \
-    xz-utils \
-    tk-dev \
-    zlib1g-dev \
-    libxml2-dev \
-    libxmlsec1-dev \
-    liblzma-dev \
-    libbz2-dev \
-    libreadline-dev \
-    libncursesw5-dev \
-    libsqlite3-dev \
-    libffi-dev \
-    libssl-dev
-
-ARG PYTHON_VERSION_MAJOR=3
-ARG PYTHON_VERSION_MINOR=9
-ENV PYVERNAME=${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}.14
-
-# Install pyenv
-RUN git clone https://github.com/pyenv/pyenv.git ~/.pyenv \
-    && export PYENV_ROOT="$HOME/.pyenv" \
-    && export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/plugins/python-build/bin:$PATH" \
-    && eval "$(pyenv init -)" \
-    && export PYTHON_BUILD_CURL_OPTS="${CURL_OPTS}" \
-    && export PYTHON_BUILD_WGET_OPTS="${WGET_OPTS}" \
-    && python-build ${PYVERNAME} /usr/local/ \
-    && pyenv global system \
-    && rm -rf ~/.pyenv/.git
-
-
 FROM multiarch/debian-debootstrap:arm64-bullseye
 
 ARG PIP_INS_OPTS
@@ -83,18 +33,68 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libhdf5-dev \
     libopenblas-dev \
     liblapack-dev \
+    pkg-config \
     curl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# python installation
-COPY --from=python /usr/local /usr/local
-
 ARG NNABLA_VER
-RUN echo "[global]" >/etc/pip.conf \
+ARG PYTHON_VERSION_MAJOR=3
+ARG PYTHON_VERSION_MINOR=9
+ENV PYVERNAME=${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}
+
+RUN eval ${APT_OPTS} \
+    && apt update \
+    && apt install -y --no-install-recommends \
+       build-essential \
+       git \
+       make \
+       wget \
+       llvm \
+       xz-utils \
+       tk-dev \
+       zlib1g-dev \
+       libxml2-dev \
+       libxmlsec1-dev \
+       liblzma-dev \
+       libbz2-dev \
+       libreadline-dev \
+       libncursesw5-dev \
+       libsqlite3-dev \
+       libffi-dev \
+       libssl-dev \
+    && git clone https://github.com/pyenv/pyenv.git ~/.pyenv \
+    && export PYENV_ROOT="$HOME/.pyenv" \
+    && export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/plugins/python-build/bin:$PATH" \
+    && export PYTHON_BUILD_CURL_OPTS="${CURL_OPTS}" \
+    && export PYTHON_BUILD_WGET_OPTS="${WGET_OPTS}" \
+    && eval "$(pyenv init -)" \
+    && python-build `pyenv latest -k ${PYVERNAME}` /usr/local \
+    && pyenv global system \
+    && rm -rf ~/.pyenv \
+    && apt autoremove --purge -y \
+       git \
+       build-essential \
+       git \
+       make \
+       wget \
+       llvm \
+       xz-utils \
+       tk-dev \
+       zlib1g-dev \
+       libxml2-dev \
+       libxmlsec1-dev \
+       liblzma-dev \
+       libbz2-dev \
+       libreadline-dev \
+       libncursesw5-dev \
+       libsqlite3-dev \
+       libffi-dev \
+       libssl-dev \
+    && echo "[global]" >/etc/pip.conf \
     && echo "extra-index-url=https://www.piwheels.org/simple" >> /etc/pip.conf \
     && python3 -m pip install ${PIP_INS_OPTS} --no-cache-dir \
-       numpy\<1.22 \
+       numpy \
        scipy \
        boto3 \
        cython \
