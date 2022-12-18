@@ -1,5 +1,5 @@
 # Copyright 2018,2019,2020,2021 Sony Corporation.
-# Copyright 2021 Sony Group Corporation.
+# Copyright 2021,2022 Sony Group Corporation.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,63 +23,84 @@ ARG CURL_OPTS
 ARG WGET_OPTS
 ARG APT_OPTS
 
+
+ARG PYVERNAME=3.8
+
 RUN eval ${APT_OPTS} \
-    && apt-get update && apt-get install -y --no-install-recommends \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
         bzip2 \
         ca-certificates \
         ccache \
         clang-format \
         curl \
         g++ \
-        git \
         libarchive-dev \
         libhdf5-dev \
         make \
         unzip \
-        wget \
         zip \
-        emacs \
-        python-pip \
+        python3-pip \
+        python${PYVERNAME} \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
     && cd / \
     && rm -rf /tmp/*
 
-RUN pip install ${PIP_INS_OPTS} setuptools
-RUN pip install ${PIP_INS_OPTS} --upgrade pip
-RUN pip install ${PIP_INS_OPTS} six
-RUN pip install ${PIP_INS_OPTS} PyYAML
-RUN pip install ${PIP_INS_OPTS} Mako
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python${PYVERNAME} 0
+RUN python -m pip install ${PIP_INS_OPTS} --upgrade pip \
+    && python -m pip install ${PIP_INS_OPTS} setuptools six PyYAML Mako
 
-ENV BUILD_DIR /usr/local/src
 
 ##### Install CMAKE #####
-ENV CMAKE_URL https://cmake.org/files/v3.11/cmake-3.11.3.tar.gz
-RUN cd ${BUILD_DIR} && curl ${CURL_OPTS} -O ${CMAKE_URL} \
-  && tar zxvf cmake*.tar.gz \
-  && rm cmake*.tar.gz \
-  && cd cmake* \
-  && ./bootstrap \
-  && make \
-  && make install
+ARG CMAKEVER=3.22.1
+
+RUN mkdir /tmp/deps \
+    && cd /tmp/deps \
+    && curl ${CURL_OPTS} -LO https://github.com/Kitware/CMake/releases/download/v${CMAKEVER}/cmake-${CMAKEVER}.tar.gz \
+    && tar xzf cmake-${CMAKEVER}.tar.gz \
+    && cd cmake-${CMAKEVER} \
+    && ./bootstrap -- -DCMAKE_USE_OPENSSL=OFF \
+    && make -j8 \
+    && make install \
+    && cd / \
+    && rm -rf /tmp/deps
 
 
 ##### Download and Install Android NDK #####
-ENV NDK_NAME android-ndk-r16b
-ENV NDK_URL https://dl.google.com/android/repository/${NDK_NAME}-linux-x86_64.zip
-RUN cd ${BUILD_DIR} \
-  && curl ${CURL_OPTS} -O ${NDK_URL} \
-  && unzip ${NDK_NAME}-linux-x86_64.zip \
-  && rm -f ${NDK_NAME}-linux-x86_64.zip \
-  && mv ${NDK_NAME} android-ndk
-ENV NDK_PATH ${BUILD_DIR}/android-ndk
+ARG ANDROID_NDKNAME=android-ndk-r25b
 
-ENV PROTOVER 3.19.4
-################################################## protobuf
+RUN cd /usr/local/src \
+    && VER=$(echo ${ANDROID_NDKNAME} | sed -e 's/^android-ndk-r\([0-9]\+\).*/\1/') \
+    && if [ "$VER" -le "22" ]; then \
+           NDKPKG=${ANDROID_NDKNAME}-linux-x86_64; \
+       else \
+           NDKPKG=${ANDROID_NDKNAME}-linux; \
+       fi \
+    && curl ${CURL_OPTS} -LO https://dl.google.com/android/repository/${NDKPKG}.zip \
+    && unzip -q ${NDKPKG}.zip \
+    && rm -f ${NDKPKG}.zip
+ENV NDK_PATH /usr/local/src/${ANDROID_NDKNAME}
+
+RUN mkdir -p /usr/local/android \
+    && chmod -R a+rw /usr/local/android
+
+ARG ANDROID_PLATFORM=android-33
+ARG ANDROID_ARCHITECTURE=arm64
+ARG ANDROID_CMAKE_SYSTEM_NAME=aarch64-linux-android
+ARG ANDROID_EABI=arm64-v8a
+
+
+##### Install protobuf for host and target #####
+ARG PROTOVER=3.19.4
+
 RUN mkdir /tmp/deps \
     && cd /tmp/deps \
-    && curl ${CURL_OPTS} -L https://github.com/google/protobuf/archive/v${PROTOVER}.tar.gz -o protobuf-v${PROTOVER}.tar.gz \
-    && tar xvf protobuf-v${PROTOVER}.tar.gz \
+    && curl ${CURL_OPTS} -LO https://github.com/google/protobuf/archive/v${PROTOVER}.tar.gz \
+    && tar xzf v${PROTOVER}.tar.gz \
+    && rm -f v${PROTOVER}.tar.gz \
     && cd protobuf-${PROTOVER} \
-    && mkdir build \
+    && mkdir build android-build \
     && cd build \
     && cmake \
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
@@ -87,76 +108,52 @@ RUN mkdir /tmp/deps \
         -DCMAKE_CXX_STANDARD=14 \
         -D CMAKE_C_COMPILER=gcc CMAKE_CXX_COMPILER=g++ /usr/bin/gcc \
         ../cmake \
-    && make \
+    && make -j8 \
     && make install \
-    && cd / \
-    && rm -rf /tmp/*
-
-RUN mkdir -p /usr/local/android
-RUN chmod -R a+rw /usr/local/android
-
-ARG ANDROID_PLATFORM
-ARG ANDROID_ARCHITECTURE
-ARG ANDROID_CMAKE_SYSTEM_NAME
-ARG ANDROID_EABI
-
-ENV SYSTEM_PYTHON /usr/bin/python
-ENV SYSTEM_PROTOC /usr/local/bin/protoc
-ENV NDK_PATH /usr/local/src/android-ndk
-
-ENV PLATFORM ${ANDROID_PLATFORM}
-ENV ARCHITECTURE ${ANDROID_ARCHITECTURE}
-ENV CMAKE_SYSTEM_NAME ${ANDROID_CMAKE_SYSTEM_NAME}
-ENV EABI ${ANDROID_EABI}
-ENV TOOLCHAIN_INSTALL_DIR /usr/local/android/${ARCHITECTURE}
-ENV GCC ${CMAKE_SYSTEM_NAME}-gcc
-ENV GCXX ${CMAKE_SYSTEM_NAME}-c++
-ENV SYSROOT ${NDK_PATH}/platforms/${PLATFORM}/arch-${ARCHITECTURE}
-
-
-RUN sh $NDK_PATH/build/tools/make-standalone-toolchain.sh --platform=$PLATFORM --arch=$ARCHITECTURE --install-dir=$TOOLCHAIN_INSTALL_DIR
-ENV CC ${GCC}
-ENV CXX ${GCXX}
-ENV PATH ${TOOLCHAIN_INSTALL_DIR}/bin:${PATH}
-
-RUN cd /tmp \
-    && curl ${CURL_OPTS} -L https://github.com/google/protobuf/archive/v${PROTOVER}.tar.gz -o protobuf-v${PROTOVER}.tar.gz \
-    && tar xvf protobuf-v${PROTOVER}.tar.gz \
-    && cd protobuf-${PROTOVER} \
-    && mkdir build \
-    && cd build \
+    && cd ../android-build \
     && cmake  -DCMAKE_TOOLCHAIN_FILE=$NDK_PATH/build/cmake/android.toolchain.cmake \
-              -DANDROID_TOOLCHAIN=clang \
-              -DCMAKE_SYSTEM_NAME=$CMAKE_SYSTEM_NAME \
-              -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
-              -Dprotobuf_BUILD_TESTS=OFF \
-              -DCMAKE_INSTALL_PREFIX=$TOOLCHAIN_INSTALL_DIR \
+              -DANDROID_ABI=$ANDROID_EABI \
               -DANDROID_STL=c++_shared \
-              -DANDROID_ABI=$EABI \
+              -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+              -DCMAKE_SYSTEM_NAME=$ANDROID_CMAKE_SYSTEM_NAME \
+              -Dprotobuf_BUILD_TESTS=OFF \
+              -DCMAKE_INSTALL_PREFIX=/usr/local/android/${ANDROID_ARCHITECTURE} \
               -DBUILD_SHARED_LIBS=ON \
               ../cmake \
-    && $TOOLCHAIN_INSTALL_DIR/bin/make \
-    && $TOOLCHAIN_INSTALL_DIR/bin/make install
+    && $NDK_PATH/prebuilt/linux-x86_64/bin/make -j8 \
+    && $NDK_PATH/prebuilt/linux-x86_64/bin/make install \
+    && cd / \
+    && rm -rf /tmp/deps
 
 
-RUN cd /tmp \
-    && set -xe \
-    && curl ${CURL_OPTS} -L https://www.libarchive.org/downloads/libarchive-3.3.2.tar.gz -o libarchive-3.3.2.tar.gz \
-    && tar xf libarchive-3.3.2.tar.gz \
+##### Install libarchive #####
+RUN mkdir /tmp/deps \
+    && cd /tmp/deps \
+    && curl ${CURL_OPTS} -LO https://www.libarchive.org/downloads/libarchive-3.3.2.tar.gz \
+    && tar xzf libarchive-3.3.2.tar.gz \
     && cd libarchive-3.3.2 \
-    && sed -i "/INCLUDE(CheckTypeSize)/aINCLUDE_DIRECTORIES(/tmp/libarchive-3.3.2/contrib/android/include/)" \
+    && sed -i "/INCLUDE(CheckTypeSize)/aINCLUDE_DIRECTORIES(/tmp/deps/libarchive-3.3.2/contrib/android/include/)" \
        CMakeLists.txt \
     && cmake  \
        -DCMAKE_TOOLCHAIN_FILE=$NDK_PATH/build/cmake/android.toolchain.cmake \
-       -DANDROID_TOOLCHAIN=clang \
-       -DCMAKE_SYSTEM_NAME=$CMAKE_SYSTEM_NAME \
-       -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
-       -DCMAKE_INSTALL_PREFIX=$TOOLCHAIN_INSTALL_DIR \
-       -DENABLE_TEST=OFF \
+       -DANDROID_ABI=$ANDROID_EABI \
        -DANDROID_STL=c++_shared \
-       -DANDROID_ABI=$EABI . \
-    && sed -i "/#define HAVE_STATFS 1/a#define HAVE_STATVFS 1" config.h \
+       -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+       -DCMAKE_SYSTEM_NAME=$ANDROID_CMAKE_SYSTEM_NAME \
+       -DCMAKE_INSTALL_PREFIX=/usr/local/android/${ANDROID_ARCHITECTURE} \
+       -DENABLE_TEST=OFF \
+       . \
     && sed -i "/#include \"passphrase.h\"/a#ifdef ANDROID\nint wctomb(char *s, wchar_t wc) { return wcrtomb(s,wc,NULL); }\nint mbtowc(wchar_t *pwc, const char *s, size_t n) { return mbrtowc(pwc, s, n, NULL); }\n#endif" tar/util.c \
-    && $TOOLCHAIN_INSTALL_DIR/bin/make \
-    && $TOOLCHAIN_INSTALL_DIR/bin/make install \
-    && cp /tmp/libarchive-3.3.2/contrib/android/include/* $TOOLCHAIN_INSTALL_DIR/include/
+    && $NDK_PATH/prebuilt/linux-x86_64/bin/make -j8 \
+    && $NDK_PATH/prebuilt/linux-x86_64/bin/make install \
+    && cp /tmp/deps/libarchive-3.3.2/contrib/android/include/* /usr/local/android/${ANDROID_ARCHITECTURE}/include/ \
+    && cd / \
+    && rm -rf /tmp/deps
+
+ENV PLATFORM=${ANDROID_PLATFORM} \
+    ARCHITECTURE=${ANDROID_ARCHITECTURE} \
+    CMAKE_SYSTEM_NAME=${ANDROID_CMAKE_SYSTEM_NAME} \
+    EABI=${ANDROID_EABI} \
+    SYSTEM_PYTHON=/usr/bin/python \
+    SYSTEM_PROTOC=/usr/local/bin/protoc \
+    TOOLCHAIN_INSTALL_DIR=/usr/local/android/${ANDROID_ARCHITECTURE}
