@@ -34,8 +34,15 @@ void Identity<T>::setup_impl(const Variables &inputs,
 template <class T>
 void Identity<T>::forward_impl(const Variables &inputs,
                                const Variables &outputs) {
-  const Array *x = inputs[0]->data()->get(get_dtype<T>(), this->ctx_);
-  Array *y = outputs[0]->data()->cast(get_dtype<T>(), this->ctx_, true);
+  dtypes dtype = get_dtype<T>();
+#if 1
+  auto arr = inputs[0]->data()->array();
+  if (arr->has_head_array()) {
+    dtype = arr->dtype();
+  }
+#endif
+  const Array *x = inputs[0]->data()->get(dtype, this->ctx_);
+  Array *y = outputs[0]->data()->cast(dtype, this->ctx_, true);
   y->copy_from(x);
 }
 

@@ -55,6 +55,11 @@ def test_copy_from():
     from nnabla.ext_utils import get_extension_context
     with nn.context_scope(get_extension_context('cpu', dtype='float')):
         dst.copy_from(src, use_current_context=True)
+    assert dst.dtype == np.uint8
+
+    src.zero()
+    with nn.context_scope(get_extension_context('cpu', dtype='float')):
+        dst.copy_from(src, use_current_context=True)
     assert dst.dtype == np.float32
 
 

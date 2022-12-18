@@ -150,6 +150,10 @@ public:
     return head_.dtype;
   };
 
+  /** Returns true if this SyncedArray has the head array.
+   */
+  bool has_head_array() { return !head_.key.empty() && !array_.empty(); }
+
   /** Get the array class of the head.
    *
    */
@@ -262,10 +266,6 @@ private:
   /** Get offset of the Array.
    */
   Size_t offset() const { return offset_; }
-
-  /** Returns true if this SyncedArray has the head array.
-   */
-  bool has_head_array() { return !head_.key.empty() && !array_.empty(); }
 
   /** Get root of parent-child SyncedArrays.
    */

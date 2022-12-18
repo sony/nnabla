@@ -659,11 +659,69 @@ def clear_no_need_grad_tester(rng, func, inputs, func_args=[], func_kwargs={}, b
         rng.set_state(state_rng)
 
 
+def auto_forward_backward_tester(ctx, vinputs, func, func_args, func_kwargs, backward):
+    '''Check if auto-forward and static mode give the same (close) gradients.
+
+    It mainly tests clear buffer mechanism in auto-forward mode.
+
+    '''
+    from contextlib import contextmanager
+
+    def zero_grads():
+        for v, b in zip(vinputs, backward):
+            if v is not None and b:
+                v.grad.zero()
+
+    def build_function():
+        zero_grads()
+        vinputs2 = [((F.identity(v) if b else v) if v is not None else None)
+                    for v, b in zip(vinputs, backward)]
+        outputs = func(*(vinputs2 + func_args), **func_kwargs)
+        outputs = force_tuple(outputs)
+        if len(outputs) == 1:
+            return outputs[0]
+        return F.add_n(*[(F.sum(o) if o.ndim != 0 else o) for o in outputs])
+
+    def copy_grads():
+        return [i.g.copy() if i is not None and b else None for i, b in zip(vinputs, backward)]
+
+    @contextmanager
+    def backup_inputs():
+        bak_inputs = [None if v is None else v.data.get_data(
+            'r').copy() for v in vinputs]
+        try:
+            yield
+        finally:
+            for v, bak in zip(vinputs, bak_inputs):
+                if v is not None:
+                    v.d = bak
+
+    # Static reference.
+    with backup_inputs():
+        with nn.context_scope(ctx):
+            out = build_function()
+        out.forward()
+        out.backward()
+        ref_grads = copy_grads()
+
+    # Auto-forward.
+    with nn.context_scope(ctx), nn.auto_forward():
+        out = build_function()
+    out.backward(clear_buffer=True)
+    act_grads = copy_grads()
+    for i, (v, b) in enumerate(zip(vinputs, backward)):
+        if v is None or not b:
+            continue
+        err_msg = f'Error in {i}-th input in auto-forward. It suggests that any member function of grad_depends_* or auto_grad_depends_* in nbla::Function is not properly defined.'
+        assert_allclose(ref_grads[i], act_grads[i], err_msg=err_msg)
+
+
 def function_tester(rng, func, ref_func, inputs,
                     func_args=[], func_kwargs={},
                     atol_f=1e-6, atol_b=1e-3, atol_accum=1e-6, dstep=1e-3, backward=None,
                     ctx=None, func_name=None, ref_grad=None, disable_half_test=False, atol_half=1e-1,
-                    insert_identity=[], disable_clear_no_need_grad_test=False, auto_forward=False):
+                    insert_identity=[], disable_clear_no_need_grad_test=False, auto_forward=False,
+                    disable_auto_forward_backward_tester=False):
     """ Automatic testing of forward/backward pass of `func` by comparing it
     to the reference implementation in `ref_func`.
 
@@ -841,6 +899,11 @@ def function_tester(rng, func, ref_func, inputs,
         f.forward(finputs, o)
         f.backward(finputs, o, accum)
         assert not np.any(np.isnan(v.g))
+
+    # Testing clear buffer mechanism in auto forward mode
+    if not disable_auto_forward_backward_tester:
+        auto_forward_backward_tester(
+            ctx, vinputs, func, func_args, func_kwargs, backward)
 
 
 def inplace_function_test_helper(inputs, func, func_args=[], func_kwargs={},
