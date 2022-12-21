@@ -1,7 +1,7 @@
 # Build C++ utility libraries using Android NDK  
 
 This document describes how to build NNabla C++ libraries using Android Native Development Kit(NDK).  
-The following instruction demonstrates the build procedure on Ubuntu 16.04 using Android NDK.  
+The following instruction demonstrates the build procedure on Ubuntu 20.04 using Android NDK.  
 <br>
 Most of the procedure is same as [Build C++ utility libraries](build_cpp_utils.md).  
 There are two options to build NNabla for Android.
@@ -49,7 +49,7 @@ Following build dependencies needs to be installed by the user manually.
   * Python packages: `sudo -H python3 -m pip install setuptools six pyyaml mako`
 * curl, make and git: `sudo apt-get install curl make git`
 * Android NDK: Download the required NDK version from [https://developer.android.com/ndk/downloads/](https://developer.android.com/ndk/downloads/).
-  Extract the downloaded NDK into folder, and set `ANDROID_NDK_HOME` environment variable to specify this extracted directory.
+  Extract the downloaded NDK into folder, and set ** `ANDROID_NDK_HOME` environment variable ** to specify this extracted directory.
  NNabla android build is tested with android-ndk-r25b, however the build should work with other NDK version as well.
 
 * Protobuf >=3: See next section.
@@ -75,7 +75,7 @@ make -j
 sudo make install  # See a note below if you want your system clean.
 cd ..
 
-cd build-anrdoid
+cd build-android
 cmake \
     -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake  \
     -DANDROID_ABI=arm64-v8a \
@@ -127,6 +127,7 @@ and install libarchive-3.3.2 from source.
 curl -LO https://www.libarchive.org/downloads/libarchive-3.3.2.tar.gz
 tar xzf libarchive-3.3.2.tar.gz
 cd libarchive-3.3.2
+sed -i "/INCLUDE(CheckTypeSize)/aINCLUDE_DIRECTORIES($(pwd)/contrib/android/include/)" CMakeLists.txt
 cmake  \
     -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
     -DANDROID_ABI=arm64-v8a \
@@ -136,6 +137,7 @@ cmake  \
     -DCMAKE_INSTALL_PREFIX=/usr/local/android/arm64 \
     -DENABLE_TEST=OFF \
     .
+sed -i "/#include \"passphrase.h\"/a#ifdef ANDROID\nint wctomb(char *s, wchar_t wc) { return wcrtomb(s,wc,NULL); }\nint mbtowc(wchar_t *pwc, const char *s, size_t n) { return mbrtowc(pwc, s, n, NULL); }\n#endif" tar/util.c
 $ANDROID_NDK_HOME/prebuilt/linux-x86_64/bin/make -j
 sudo $ANDROID_NDK_HOME/prebuilt/linux-x86_64/bin/make install
 sudo cp contrib/android/include/* /usr/local/android/arm64/include/
