@@ -208,6 +208,8 @@ class DataIterator(object):
             for i, v in enumerate(self._variables):
                 data[i].append(d[i])
 
+        if n_reset != 0:
+            self._data_source.apply_order()
         self._queue.put((tuple([numpy.array(x) for x in data]), n_reset))
 
     def next(self):

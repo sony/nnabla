@@ -62,6 +62,19 @@ class DataSource(object):
     def _get_data(self, position):
         pass
 
+    def _get_data_of_generation(self, position, generation):
+        return self._get_data(position)
+
+    def _generate_order(self, generation):
+        """
+        When this function is called, caller expected this data source re-generate an order.
+        This order is labelled with a generation number. It means old order is still kept,
+        not overwrite the old order. Because it might be used by another slice. Of course,
+        this case never occurs in multi-node scenario, because multiple slice data source
+        is strictly synchronized.
+        """
+        pass
+
     def __init__(self, shuffle=False, rng=None):
         '''
         Init method for DataSource
@@ -95,6 +108,10 @@ class DataSource(object):
             if six.PY3:
                 atexit.unregister(self.close)
             self._closed = True
+
+    @property
+    def order(self):
+        return self._order
 
     @property
     def variables(self):
@@ -147,6 +164,13 @@ class DataSource(object):
     def reset(self):
         self._position = 0
 
+    def apply_order(self):
+        """
+        This function is called when a batch is finished and an epoch is finished.
+        It is time for update the order if shuffle is true.
+        """
+        pass
+
 
 class DataSourceWithFileCacheError(Exception):
     pass
@@ -168,7 +192,7 @@ class DataSourceWithFileCache(DataSource):
             Default is None.
         cache_file_name_prefix (str):
             Beginning of the filenames of cache files.
-            Default is 'cache'. 
+            Default is 'cache'.
         shuffle (bool):
              Indicates whether the dataset is shuffled or not.
         rng (None or :obj:`numpy.random.RandomState`): Numpy random number
@@ -599,16 +623,19 @@ class SlicedDataSource(DataSource):
         self._slice_start = slice_start
         self._slice_end = slice_end
         self._size = self._slice_end - self._slice_start
-        self._generation = -1
-        self.reset()
+        self._generation = 0
+
+    def apply_order(self):
+        self._generation += 1
+        self._data_source._generate_order(self._generation)
 
     def reset(self):
         self._data_source.reset()
         self._data_source._position = self._slice_start
-        self._generation += 1
         self._position = 0
 
     def _get_data(self, position):
         self._position = position
-        data = self._data_source._get_data(self._slice_start + position)
+        data = self._data_source._get_data_of_generation(
+            self._slice_start + position, self._generation)
         return data
