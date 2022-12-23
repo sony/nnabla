@@ -468,7 +468,7 @@ cdef class Communicator:
             self.communicatorp.reduce_scatter(
                 cndarray_list, cndarray, division, group)
 
-    def all_reduce_callback(self, data, size_t pack_size, cpp_bool division=False, string group="world"):
+    def all_reduce_callback(self, data, size_t pack_size, cpp_bool division=False, string group="world", float scale_grad=1, cpp_bool keep_dtype=False):
         """All reduce over data in different device.
 
         Note:
@@ -480,6 +480,15 @@ cdef class Communicator:
             division (bool): Flag to divide the reduce data by the
                 number of `contexts` added, or the number of devices.
             group (string): Name of a group. This groups is used when the collective is called.
+            scale_grad (float): Apply scaling by the specified factor before performing all-reduce.
+                This is useful when you apply loss scaling in mixed precision training
+                and cancel it for gradient arrays before all-reduce.
+            keep_dtype (bool): If True, the dtype of arrays is kept the same regardless of
+                communicator's dtype used in all-reduce operation. This is useful when you
+                use the all-reduce callback in mixed precision training and when any of
+                gradient :obj:`NdArray`s is narrowed by :py:meth:`NdArray.narrow`.
+                In this case, you will get an error unless you specify True because
+                a narrowed array prohibits dtype casting.
 
         Example:
 
@@ -524,7 +533,7 @@ cdef class Communicator:
         else:
             cndarray_list.push_back((< NdArray > data).arr)
         return CommunicatorBackwardCallback.create_from_ccallback(
-            self.communicatorp.all_reduce_callback(cndarray_list, pack_size, division, group))
+            self.communicatorp.all_reduce_callback(cndarray_list, pack_size, division, group, scale_grad, keep_dtype))
 
 
 def DataParallelCommunicator(CContext ctx):

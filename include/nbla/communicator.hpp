@@ -173,20 +173,30 @@ public:
   @param ndarray_list Vector of NdArrayPtr
   @param pack_size The number of values contained in the packed data.
   @param division Divide the reduced value.
+  @param scale_grad Scaling gradient before allreduce. See Python documentation
+  for more details.
+  @param keep_dtype Keep dtype of arrays unchanged. See Python documentation for
+  more details.
    */
   virtual CommunicatorBackwardCallbackPtr
   all_reduce_callback(const vector<NdArrayPtr> &ndarray_list, size_t pack_size,
-                      bool division = false, const string &group = "world");
+                      bool division = false, const string &group = "world",
+                      float scale_grad = 1.0, bool keep_dtype = false);
 
   /** all_reduce over parameters added.
 
   @param ndarray NdArrayPtr
   @param pack_size The number of values contained in the packed data.
   @param division Divide the reduced value.
+  @param scale_grad Scaling gradient before allreduce. See Python documentation
+  for more details.
+  @param keep_dtype Keep dtype of arrays unchanged. See Python documentation for
+  more details.
    */
   virtual CommunicatorBackwardCallbackPtr
   all_reduce_callback(NdArrayPtr ndarray, size_t pack_size,
-                      bool division = false, const string &group = "world");
+                      bool division = false, const string &group = "world",
+                      float scale_grad = 1.0, bool keep_dtype = false);
 
   /** reducescatter.
 
