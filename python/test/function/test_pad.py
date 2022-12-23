@@ -119,22 +119,22 @@ def test_pad_constant_double_backward(seed, ctx, func_name, inshape,
 # @pytest.mark.parametrize("seed", [313])
 # @pytest.mark.parametrize("ctx, func_name", ctxs)
 # @pytest.mark.parametrize("inshape, pad_width", [
-##     ((4,), (2, 9)),
-##     ((5,), (4, 3)),
-##     ((4, 5), (5, 4)),
-##     ((3, 6), (1, 2, 3, 4)),
-##     ((3, 5, 7), (2, 3)),
-##     ((5, 4, 6), (2, 3, 1, 4)),
-##     ((2, 3, 5), (1, 2, 3, 4, 5, 6)),
-##     ((1, 2, 3, 4), (2, 3, 4, 5)),
-##     ((2, 2, 3, 3), (2, 2, 2, 2, 2, 2, 2, 2)),
+# ((4,), (2, 9)),
+# ((5,), (4, 3)),
+# ((4, 5), (5, 4)),
+# ((3, 6), (1, 2, 3, 4)),
+# ((3, 5, 7), (2, 3)),
+# ((5, 4, 6), (2, 3, 1, 4)),
+# ((2, 3, 5), (1, 2, 3, 4, 5, 6)),
+# ((1, 2, 3, 4), (2, 3, 4, 5)),
+# ((2, 2, 3, 3), (2, 2, 2, 2, 2, 2, 2, 2)),
 # ])
 # def test_pad_reflect_double_backward(seed, ctx, func_name, inshape,
 # pad_width):
-##     from nbla_test_utils import backward_function_tester
-##     rng = np.random.RandomState(seed)
-##     inputs = [rng.randn(*inshape).astype(np.float32)]
-##     func_args = [pad_width, "reflect"]
+# from nbla_test_utils import backward_function_tester
+# rng = np.random.RandomState(seed)
+# inputs = [rng.randn(*inshape).astype(np.float32)]
+# func_args = [pad_width, "reflect"]
 # backward_function_tester(rng, F.pad, ref_pad_reflect, inputs, ctx=ctx,
 # dstep=1e-3, atol_b=5e-2, atol_accum=5e-2,
 # func_name=func_name, func_args=func_args)

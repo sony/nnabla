@@ -358,7 +358,7 @@ def pooling_3d(x, mode, kernel, stride, pad, ignore_border=True,
         h_end = H + (1 + int(including_pad)) * pad[1]
         w_end = W + (1 + int(including_pad)) * pad[2]
         b_pad[:, z_beg:z_end, h_beg:h_end, w_beg:w_end] = 1
-        #b_pad[:, pad[0]:pad[0] + Z, pad[1]:pad[1] + H, pad[2]:pad[2] + W] = 1
+        # b_pad[:, pad[0]:pad[0] + Z, pad[1]:pad[1] + H, pad[2]:pad[2] + W] = 1
 
     y = np.zeros((C, Zo, Ho, Wo), dtype=dtype)
 
