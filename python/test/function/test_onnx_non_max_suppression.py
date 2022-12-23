@@ -19,9 +19,6 @@ import nnabla.functions as F
 from nbla_test_utils import list_context
 from nnabla.testing import assert_allclose
 
-import onnx
-import onnxruntime as ort
-
 ctxs = list_context('ONNXNonMaxSuppression')
 
 
@@ -88,6 +85,12 @@ def ref_non_max_suppression(boxes, scores, center_point_box,
 def test_onnx_non_max_suppression_forward(
         seed, batch_size, num_boxes, num_classes, center_point_box,
         max_output_boxes, iou_threshold, score_threshold, ctx, func_name):
+
+    pytest.skip('This test needs onnx, test locally.')
+
+    import onnx
+    import onnxruntime as ort
+
     rng = np.random.RandomState(seed)
     boxes = rng.rand(batch_size, num_boxes, 4).astype(np.float32)
     scores = rng.rand(batch_size, num_classes, num_boxes).astype(np.float32)
