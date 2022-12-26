@@ -18,6 +18,7 @@ from __future__ import print_function
 import os
 import shutil
 import sys
+import pathlib
 
 from setuptools import setup
 
@@ -71,6 +72,9 @@ if __name__ == '__main__':
     except:
         raise OSError(f"Not found: {fn} in third_party")
 
+    long_description = pathlib.Path(os.path.join(
+        os.path.dirname(__file__), 'README.md')).read_text()
+
     # Setup
     setup(
         name=pkg_name,
@@ -92,6 +96,8 @@ if __name__ == '__main__':
             'Programming Language :: Python :: 3.7',
             'Programming Language :: Python :: 3.8'
         ],
+        long_description=long_description,
+        long_description_content_type='text/markdown',
         packages=['nnabla.utils.converter.tensorflow',
                   'nnabla.utils.converter.onnx',
                   'nnabla.utils.converter.tflite'],
