@@ -22,6 +22,7 @@ import shutil
 import sys
 import numpy
 from collections import namedtuple
+import pathlib
 
 setup_requires = [
     'setuptools',
@@ -289,6 +290,9 @@ if __name__ == '__main__':
                 'nnabla_ext',
                 'nnabla_ext.cpu', ]
 
+    long_description = pathlib.Path(os.path.join(
+        os.path.dirname(__file__), 'README.md')).read_text()
+
     # Setup
     setup(
         entry_points={"console_scripts":
@@ -296,10 +300,11 @@ if __name__ == '__main__':
         setup_requires=setup_requires,
         install_requires=install_requires,
         ext_modules=ext_modules,
+        long_description=long_description,
+        long_description_content_type='text/markdown',
         package_dir=package_dir,
         packages=packages,
         package_data=package_data,
-        namespace_packages=['nnabla_ext'],
         **pkg_info)
 
     os.unlink(os.path.join(root_dir, 'src', 'nnabla', library_file_name))
