@@ -29,6 +29,7 @@ ARG PYVERNAME=3.8
 RUN eval ${APT_OPTS} \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
+        libssl-dev \
         bzip2 \
         ca-certificates \
         ccache \
@@ -60,7 +61,7 @@ RUN mkdir /tmp/deps \
     && curl ${CURL_OPTS} -LO https://github.com/Kitware/CMake/releases/download/v${CMAKEVER}/cmake-${CMAKEVER}.tar.gz \
     && tar xzf cmake-${CMAKEVER}.tar.gz \
     && cd cmake-${CMAKEVER} \
-    && ./bootstrap -- -DCMAKE_USE_OPENSSL=OFF \
+    && ./bootstrap \
     && make -j8 \
     && make install \
     && cd / \
