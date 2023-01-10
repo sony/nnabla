@@ -35,6 +35,8 @@ REM Build third party libraries.
 CALL %~dp0tools\build_zlib.bat       || GOTO :error
 CALL %~dp0tools\build_libarchive.bat || GOTO :error
 CALL %~dp0tools\build_protobuf.bat   || GOTO :error
+CALL %~dp0tools\build_hdf5.bat       || GOTO :error
+
 
 REM Get pre-built lz4 and zstd libraries
 CALL %~dp0tools\get_liblz4.bat || GOTO :error
@@ -77,6 +79,7 @@ cmake -G "%generate_target%" ^
       -DProtobuf_PROTOC_EXECUTABLE=%protobuf_protoc_executable% ^
       -DZLIB_INCLUDE_DIR=%zlib_include_dir% ^
       -DZLIB_LIBRARY_RELEASE=%zlib_library% ^
+      -DNNABLA_UTILS_WITH_HDF5=ON ^
       %nnabla_debug_options% ^
       %nnabla_root% || GOTO :error
 

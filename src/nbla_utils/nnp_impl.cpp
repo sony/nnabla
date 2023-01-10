@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #ifdef _WIN32
+#ifndef NBLA_UTILS_WITH_HDF5
 typedef int ssize_t;
+#endif
 #else
 #include <fcntl.h>
 #include <unistd.h>

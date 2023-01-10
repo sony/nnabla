@@ -408,15 +408,15 @@ def _nnp_file_saver(ctx, filename, ext):
 
     param = io.BytesIO()
     if ctx.parameters is None:
-        nn.parameter.save_parameters(param, extension='.protobuf')
+        nn.parameter.save_parameters(param, extension='.h5')
     else:
         nn.parameter.save_parameters(
-            param, ctx.parameters, extension='.protobuf')
+            param, ctx.parameters, extension='.h5')
 
     with get_file_handle_save(filename, ext) as nnp:
         nnp.writestr('nnp_version.txt', version.read())
         nnp.writestr('network.nntxt', nntxt.read())
-        nnp.writestr('parameter.protobuf', param.read())
+        nnp.writestr('parameter.h5', param.read())
 
 
 def _h5_parameter_file_saver(ctx, filename, ext):
