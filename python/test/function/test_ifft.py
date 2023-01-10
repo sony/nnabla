@@ -64,8 +64,8 @@ def test_fft_forward_backward(seed, ctx, func_name, batch_dims,
 
     if func_name == "IFFTCuda" and sys.platform == 'win32':
         from nnabla_ext import cuda
-        if cuda._version.__cuda_version__ == '11.4':
-            pytest.skip("Skip win32+CUDA114 tests")
+        if float(cuda._version.__cuda_version__) >= 11.4:
+            pytest.skip("Skip win32 + CUDA>=114 tests")
 
     if func_name == "IFFT":
         pytest.skip("Not implemented in CPU.")
@@ -101,8 +101,8 @@ def test_fft_double_backward(seed, ctx, func_name, batch_dims,
 
     if func_name == "IFFTCuda" and sys.platform == 'win32':
         from nnabla_ext import cuda
-        if cuda._version.__cuda_version__ == '11.4':
-            pytest.skip("Skip win32+CUDA114 tests")
+        if float(cuda._version.__cuda_version__) >= 11.4:
+            pytest.skip("Skip win32 + CUDA>=114 tests")
 
     if func_name == "IFFT":
         pytest.skip("Not implemented in CPU.")
