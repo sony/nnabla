@@ -70,7 +70,7 @@ RUN eval ${APT_OPTS} \
     && eval "$(pyenv init -)" \
     && python-build `pyenv latest -k ${PYTHON_VER}` /usr/local \
     && pyenv global system \
-    && rm -rf ~/.pyenv \
+    && rm -rf ~/.pyenv /tmp/* \
     && apt autoremove --purge -y \
        git \
        make \

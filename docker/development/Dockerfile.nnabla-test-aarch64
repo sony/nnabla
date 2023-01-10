@@ -123,6 +123,7 @@ RUN python3 -m pip install ${PIP_INS_OPTS} --upgrade pip \
     && pip install ${PIP_INS_OPTS} --no-cache-dir -r /tmp/deps/setup_requirements.txt \
     && sed -i '/onnx/d' /tmp/deps/requirements.txt \
     && pip install ${PIP_INS_OPTS} --no-cache-dir -r /tmp/deps/requirements.txt \
-    && pip install ${PIP_INS_OPTS} --no-cache-dir -r /tmp/deps/test_requirements.txt
+    && pip install ${PIP_INS_OPTS} --no-cache-dir -r /tmp/deps/test_requirements.txt \
+    && rm -rf /tmp/*
 
 ENV PATH /tmp/.local/bin:$PATH

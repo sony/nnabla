@@ -100,6 +100,7 @@ RUN python3 -m pip install ${PIP_INS_OPTS} --no-cache-dir --upgrade pip \
     && echo "extra-index-url=https://www.piwheels.org/simple" >> /etc/pip.conf \
     && pip install ${PIP_INS_OPTS} --no-cache-dir -r /tmp/deps/setup_requirements.txt \
     && sed -i '/onnx/d' /tmp/deps/requirements.txt \
-    && pip install ${PIP_INS_OPTS} --no-cache-dir -r /tmp/deps/requirements.txt
+    && pip install ${PIP_INS_OPTS} --no-cache-dir -r /tmp/deps/requirements.txt \
+    && rm -rf /tmp/*
 
 ENV PATH /tmp/.local/bin:$PATH
