@@ -20,7 +20,7 @@ REM set build_type=Debug
 REM 
 REM Usage:
 REM   build_wheel.bat PYTHON_VERSION [VISUAL_STUDIO_ EDITION]
-REM                PYTHON_VERSION: 3.6, 3.7 or 3.8
+REM                PYTHON_VERSION: 3.7, 3.8, 3.9 or 3.10
 REM     (optional) VISUAL_STUDIO_ EDITION: 2015 or 2019(experimental)
 REM
 SETLOCAL

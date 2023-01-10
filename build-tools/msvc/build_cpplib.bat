@@ -17,7 +17,7 @@ REM
 REM 
 REM Usage:
 REM   build_cpplib.bat [PYTHON_VERSION] [VISUAL_STUDIO_EDITION]
-REM     (optional) PYTHON_VERSION: 3.7 or 3.8 or 3.9
+REM     (optional) PYTHON_VERSION: 3.7, 3.8, 3.9 or 3.10
 REM     (optional) VISUAL_STUDIO_EDITION: 2015 or 2019(experimental)
 REM
 @ECHO ON
