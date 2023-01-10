@@ -91,7 +91,7 @@ def test_sliced_data_iterator_equivalence(test_data_csv_png_10, num_of_slices, s
             set_a = set_a.union(set(ref))
             set_b = set_b.union(set(t))
         else:
-            #print("-" * 30)
+            # print("-" * 30)
             assert ref == t
     # str_a = ','.join([str(f) for f in set_a])
     # str_b = ','.join([str(f) for f in set_b])

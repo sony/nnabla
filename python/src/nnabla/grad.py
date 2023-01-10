@@ -75,7 +75,7 @@ class Grad(object):
             v = vf_vb_map.get(o, [F.constant(0.0, o.shape)])
             if len(v) > 1:
                 grad_inputs += [sum(v)]
-                #grad_inputs += [F.add_n(v)]
+                # grad_inputs += [F.add_n(v)]
             else:
                 grad_inputs += v
 

@@ -393,7 +393,7 @@ def _get_current_parameter(args, config):
         last_parameter = ex_list[last_epoch]
         logger.log(99, "Load parameter from [{}]".format(
             os.path.basename(last_parameter)))
-        #load.load([last_parameter], parameter_only=True)
+        # load.load([last_parameter], parameter_only=True)
         load_train_state(last_parameter, info)
         return last_epoch, best_epoch, best_error
 
@@ -623,7 +623,7 @@ def train_command(args):
     if args.param:
         # If this parameter file contains optimizer information
         # we need to info to recovery.
-        #load.load([args.param], parameter_only=True)
+        # load.load([args.param], parameter_only=True)
         load_train_state(args.param, info)
 
     config.timelimit = callback.get_timelimit(args)
