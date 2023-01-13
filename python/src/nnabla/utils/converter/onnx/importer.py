@@ -475,11 +475,11 @@ def tensor_to_sequence(tensor):
             return np.array([], dtype=np.int64)
     elif tensor.data_type == TensorProto.BOOL:
         if tensor.raw_data:
-            return np.fromstring(tensor.raw_data, dtype=np.bool)
+            return np.fromstring(tensor.raw_data, dtype=bool)
         elif tensor.int32_data:
             return tensor.int32_data
         else:
-            return np.array([], dtype=np.bool)
+            return np.array([], dtype=bool)
     elif tensor.data_type == TensorProto.INT8:
         if tensor.raw_data:
             return np.fromstring(tensor.raw_data, dtype=np.int8)
