@@ -5364,7 +5364,7 @@ Signal Processing:
         doc: N-D array.
     c_runtime: not support
     function_ids:
-      fFfFiIiififi: 353
+      fFfFiIiififi: 352
   FFT:
     snake_name: fft
     doc: |2+
@@ -7915,7 +7915,7 @@ Unsupported, Special Use:
         doc: A 2-dimensional array.
     c_runtime: not support
     function_ids:
-      iiff: 352
+      iiff: 353
   MaxPoolingBackward:
     snake_name: max_pooling_backward
     doc: |2
