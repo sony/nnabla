@@ -79,7 +79,7 @@ ADD python/setup_requirements.txt /tmp/deps/
 ADD python/requirements.txt /tmp/deps/
 ADD doc/requirements.txt /tmp/deps_doc/
 
-ENV PYVERNAME=3.7
+ENV PYVERNAME=3.8
 RUN eval ${APT_OPTS} \
     && apt update \
     && apt install -y --no-install-recommends \

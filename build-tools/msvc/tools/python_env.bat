@@ -16,7 +16,7 @@ REM limitations under the License.
 
 SET PYVER=%1
 IF [%PYVER%] == [] (
-   ECHO Please specify Python version 3.7, 3.8 or 3.9.
+   ECHO Please specify Python version 3.7, 3.8, 3.9 or 3.10.
    EXIT /b 255
 )
 FOR /F "TOKENS=1 DELIMS=." %%A IN ("%PYVER%") DO SET PYVER_MAJOR=%%A
