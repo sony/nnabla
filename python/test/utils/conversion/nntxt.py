@@ -3650,3 +3650,421 @@ executor {
   }
 }
 '''
+
+N0006 = r'''
+network {
+  name: "tf2onnx"
+  variable {
+    name: "model/dense/MatMul/ReadVariableOp:0"
+    type: "Parameter"
+    shape {
+      dim: 32
+      dim: 1
+    }
+    initializer {
+      type: "Constant"
+      multiplier: 1.0
+    }
+  }
+  variable {
+    name: "x:0"
+    type: "Buffer"
+    shape {
+      dim: -1
+      dim: 32
+    }
+  }
+  variable {
+    name: "Identity:0"
+    type: "Buffer"
+    shape {
+      dim: -1
+      dim: 1
+    }
+  }
+  variable {
+    name: "x:0_0001_reshape"
+    type: "Buffer"
+    shape {
+      dim: 1
+      dim: 1
+      dim: 32
+    }
+  }
+  variable {
+    name: "model/dense/MatMul/ReadVariableOp:0_0002_reshape"
+    type: "Buffer"
+    shape {
+      dim: 1
+      dim: 32
+      dim: 1
+    }
+  }
+  variable {
+    name: "Identity:0_0003_batchmatmul"
+    type: "Buffer"
+    shape {
+      dim: 1
+      dim: 1
+      dim: 1
+    }
+  }
+  function {
+    name: "tf2onnx/model/dense/MatMul/Reshape_0"
+    type: "Reshape"
+    input: "x:0"
+    output: "x:0_0001_reshape"
+    reshape_param {
+      shape {
+        dim: 1
+        dim: 1
+        dim: 32
+      }
+    }
+  }
+  function {
+    name: "tf2onnx/model/dense/MatMul/Reshape_1"
+    type: "Reshape"
+    input: "model/dense/MatMul/ReadVariableOp:0"
+    output: "model/dense/MatMul/ReadVariableOp:0_0002_reshape"
+    reshape_param {
+      shape {
+        dim: 1
+        dim: 32
+        dim: 1
+      }
+    }
+  }
+  function {
+    name: "tf2onnx/model/dense/MatMul/BatchMatmul_0"
+    type: "BatchMatmul"
+    input: "x:0_0001_reshape"
+    input: "model/dense/MatMul/ReadVariableOp:0_0002_reshape"
+    output: "Identity:0_0003_batchmatmul"
+    batch_matmul_param {
+    }
+  }
+  function {
+    name: "tf2onnx/model/dense/MatMul/Reshape_2"
+    type: "Reshape"
+    input: "Identity:0_0003_batchmatmul"
+    output: "Identity:0"
+    reshape_param {
+      shape {
+        dim: 1
+        dim: 1
+      }
+    }
+  }
+}
+executor {
+  name: "exec_0"
+  network_name: "tf2onnx"
+  data_variable {
+    variable_name: "x:0"
+    data_name: "x:0"
+  }
+  output_variable {
+    variable_name: "Identity:0"
+    data_name: "Identity:0"
+  }
+  parameter_variable {
+    variable_name: "model/dense/MatMul/ReadVariableOp:0"
+  }
+}
+'''
+
+N0007 = r'''
+network {
+  name: "tf2onnx"
+  variable {
+    name: "model/dense/MatMul/ReadVariableOp:0"
+    type: "Parameter"
+    shape {
+      dim: 32
+      dim: 1
+    }
+    initializer {
+      type: "Constant"
+      multiplier: 1.0
+    }
+  }
+  variable {
+    name: "x:0"
+    type: "Buffer"
+    shape {
+      dim: -1
+      dim: 32
+    }
+  }
+  variable {
+    name: "Identity:0"
+    type: "Buffer"
+    shape {
+      dim: -1
+      dim: 1
+    }
+  }
+  variable {
+    name: "x:0_0001_reshape"
+    type: "Buffer"
+    shape {
+      dim: 1
+      dim: 1
+      dim: 32
+    }
+  }
+  variable {
+    name: "model/dense/MatMul/ReadVariableOp:0_0002_reshape"
+    type: "Buffer"
+    shape {
+      dim: 1
+      dim: 32
+      dim: 1
+    }
+  }
+  variable {
+    name: "Identity:0_0003_batchmatmul"
+    type: "Buffer"
+    shape {
+      dim: 1
+      dim: 1
+      dim: 1
+    }
+  }
+  function {
+    name: "tf2onnx/model/dense/MatMul/Reshape_0"
+    type: "Reshape"
+    input: "x:0"
+    output: "x:0_0001_reshape"
+    reshape_param {
+      shape {
+        dim: 1
+        dim: 1
+        dim: 32
+      }
+    }
+  }
+  function {
+    name: "tf2onnx/model/dense/MatMul/Reshape_1"
+    type: "Reshape"
+    input: "model/dense/MatMul/ReadVariableOp:0"
+    output: "model/dense/MatMul/ReadVariableOp:0_0002_reshape"
+    reshape_param {
+      shape {
+        dim: 1
+        dim: 32
+        dim: 1
+      }
+    }
+  }
+  function {
+    name: "tf2onnx/model/dense/MatMul/BatchMatmul_0"
+    type: "BatchMatmul"
+    input: "x:0_0001_reshape"
+    input: "model/dense/MatMul/ReadVariableOp:0_0002_reshape"
+    output: "Identity:0_0003_batchmatmul"
+    batch_matmul_param {
+    }
+  }
+  function {
+    name: "tf2onnx/model/dense/MatMul/Reshape_2"
+    type: "Reshape"
+    input: "Identity:0_0003_batchmatmul"
+    output: "Identity:0"
+    reshape_param {
+      shape {
+        dim: 1
+        dim: 1
+      }
+    }
+  }
+}
+executor {
+  name: "exec_0"
+  network_name: "tf2onnx"
+  data_variable {
+    variable_name: "x:0"
+    data_name: "x:0"
+  }
+  output_variable {
+    variable_name: "Identity:0"
+    data_name: "Identity:0"
+  }
+  parameter_variable {
+    variable_name: "model/dense/MatMul/ReadVariableOp:0"
+  }
+}
+'''
+
+N0008 = r'''
+network {
+  name: "tf2onnx"
+  variable {
+    name: "model/dense/MatMul/ReadVariableOp:0"
+    type: "Parameter"
+    shape {
+      dim: 32
+      dim: 1
+    }
+    initializer {
+      type: "Constant"
+      multiplier: 1.0
+    }
+  }
+  variable {
+    name: "model/dense/BiasAdd/ReadVariableOp:0"
+    type: "Parameter"
+    shape {
+      dim: 1
+    }
+    initializer {
+      type: "Constant"
+      multiplier: 1.0
+    }
+  }
+  variable {
+    name: "x:0"
+    type: "Buffer"
+    shape {
+      dim: -1
+      dim: 32
+    }
+  }
+  variable {
+    name: "Identity:0"
+    type: "Buffer"
+    shape {
+      dim: -1
+      dim: 1
+    }
+  }
+  variable {
+    name: "x:0_0001_reshape"
+    type: "Buffer"
+    shape {
+      dim: 1
+      dim: 1
+      dim: 32
+    }
+  }
+  variable {
+    name: "model/dense/MatMul/ReadVariableOp:0_0002_reshape"
+    type: "Buffer"
+    shape {
+      dim: 1
+      dim: 32
+      dim: 1
+    }
+  }
+  variable {
+    name: "model/dense/MatMul:0_0003_batchmatmul"
+    type: "Buffer"
+    shape {
+      dim: 1
+      dim: 1
+      dim: 1
+    }
+  }
+  variable {
+    name: "model/dense/MatMul:0"
+    type: "Buffer"
+    shape {
+      dim: 1
+      dim: 1
+    }
+  }
+  variable {
+    name: "model/dense/BiasAdd/ReadVariableOp:0_0004_shape"
+    type: "Buffer"
+    shape {
+      dim: 1
+      dim: 1
+    }
+  }
+  function {
+    name: "tf2onnx/model/dense/MatMul/Reshape_0"
+    type: "Reshape"
+    input: "x:0"
+    output: "x:0_0001_reshape"
+    reshape_param {
+      shape {
+        dim: 1
+        dim: 1
+        dim: 32
+      }
+    }
+  }
+  function {
+    name: "tf2onnx/model/dense/MatMul/Reshape_1"
+    type: "Reshape"
+    input: "model/dense/MatMul/ReadVariableOp:0"
+    output: "model/dense/MatMul/ReadVariableOp:0_0002_reshape"
+    reshape_param {
+      shape {
+        dim: 1
+        dim: 32
+        dim: 1
+      }
+    }
+  }
+  function {
+    name: "tf2onnx/model/dense/MatMul/BatchMatmul_0"
+    type: "BatchMatmul"
+    input: "x:0_0001_reshape"
+    input: "model/dense/MatMul/ReadVariableOp:0_0002_reshape"
+    output: "model/dense/MatMul:0_0003_batchmatmul"
+    batch_matmul_param {
+    }
+  }
+  function {
+    name: "tf2onnx/model/dense/MatMul/Reshape_2"
+    type: "Reshape"
+    input: "model/dense/MatMul:0_0003_batchmatmul"
+    output: "model/dense/MatMul:0"
+    reshape_param {
+      shape {
+        dim: 1
+        dim: 1
+      }
+    }
+  }
+  function {
+    name: "tf2onnx/model/dense/BiasAdd/Reshape_3"
+    type: "Reshape"
+    input: "model/dense/BiasAdd/ReadVariableOp:0"
+    output: "model/dense/BiasAdd/ReadVariableOp:0_0004_shape"
+    reshape_param {
+      shape {
+        dim: 1
+        dim: 1
+      }
+    }
+  }
+  function {
+    name: "tf2onnx/model/dense/BiasAdd/Add2_0"
+    type: "Add2"
+    input: "model/dense/MatMul:0"
+    input: "model/dense/BiasAdd/ReadVariableOp:0_0004_shape"
+    output: "Identity:0"
+  }
+}
+executor {
+  name: "exec_0"
+  network_name: "tf2onnx"
+  data_variable {
+    variable_name: "x:0"
+    data_name: "x:0"
+  }
+  output_variable {
+    variable_name: "Identity:0"
+    data_name: "Identity:0"
+  }
+  parameter_variable {
+    variable_name: "model/dense/MatMul/ReadVariableOp:0"
+  }
+  parameter_variable {
+    variable_name: "model/dense/BiasAdd/ReadVariableOp:0"
+  }
+}
+'''

@@ -85,8 +85,8 @@ def main():
     from nnabla.utils.cli.func_info import add_function_info_command
     add_function_info_command(subparsers)
 
-    from nnabla.utils.cli.optimize_pb_model import add_optimize_pb_model_command
-    add_optimize_pb_model_command(subparsers)
+    from nnabla.utils.cli.optimize_model import add_optimize_command
+    add_optimize_command(subparsers)
 
     from nnabla.utils.cli.plot import (
         add_plot_series_command, add_plot_timer_command)

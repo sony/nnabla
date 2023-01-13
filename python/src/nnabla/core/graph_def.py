@@ -284,6 +284,19 @@ def _create_initializer(v, rng):
     return initializer
 
 
+class ProtoExecutor:
+    def __init__(self, proto):
+        self.proto = proto
+
+    @staticmethod
+    def from_proto(proto):
+        executor = ProtoExecutor(proto)
+        return executor
+
+    def as_proto(self):
+        return self.proto
+
+
 class ProtoNetwork:
     """
     This class represents a protobuf network, which comes from a corresponding computation graph or restored from
@@ -1267,6 +1280,7 @@ class ProtoGraph:
 
     def __init__(self, networks=None, parameter_scope=None):
         self.networks = networks if networks is not None else OrderedDict()
+        self.executors = OrderedDict()
         self.parameter_scope = parameter_scope if parameter_scope else OrderedDict()
         self.global_variables = {}
 
@@ -1330,6 +1344,9 @@ class ProtoGraph:
         for p in proto.network:
             g.networks[p.name] = ProtoNetwork.from_proto(g, p, rng, batch_size)
 
+        for e in proto.executor:
+            g.executors[e.name] = ProtoExecutor.from_proto(e)
+
         return g
 
     def as_proto(self, include_parameter=False, only_parameter=False, networks=None, variable_batch_size=True):
@@ -1357,6 +1374,9 @@ class ProtoGraph:
                 networks = [m.as_proto(
                     variable_batch_size=variable_batch_size) for m in networks]
             proto.network.extend(networks)
+            if self.executors:
+                executors = [e.as_proto() for e in self.executors.values()]
+                proto.executor.extend(executors)
         if include_parameter:
             for k, v in self.get_parameters().items():
                 parameter = proto.parameter.add()

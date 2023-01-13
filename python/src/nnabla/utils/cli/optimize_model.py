@@ -17,7 +17,17 @@ import json
 import os
 
 
-def optimize_pb_model_command(args):
+def optimize_nnp_model_command(input_file, output_file):
+    from nnabla.utils.converter.nnabla.optimizer import optimize_nnp
+    import nnabla as nn
+
+    g = nn.graph_def.load(input_file)
+    network = optimize_nnp(g)
+    g.networks[network.name] = network
+    g.save(output_file)
+
+
+def optimize_pb_model_command(input_pb_file, output_pb_file):
     try:
         import tensorflow as tf
         from tensorflow.python.platform import gfile
@@ -26,11 +36,6 @@ def optimize_pb_model_command(args):
         raise ImportError(
             'nnabla_converter python package is not found, install nnabla_converter package with "pip install nnabla_converter"')
 
-    input_pb_file = args.input_pb_file[0]
-    output_pb_file = args.output_pb_file[0]
-    if os.path.splitext(input_pb_file)[1] != '.pb' or \
-            os.path.splitext(output_pb_file)[1] != '.pb':
-        ValueError("Input or output file format error.")
     with gfile.GFile(input_pb_file, 'rb') as f:
         graph_def = tf.compat.v1.GraphDef()
         graph_def.ParseFromString(f.read())
@@ -41,13 +46,29 @@ def optimize_pb_model_command(args):
             json.dump(optimize.get_optimization_rate(), f)
 
 
-def add_optimize_pb_model_command(subparsers):
+def optimization_command(args):
+    input_file = args.input_file[0]
+    output_file = args.output_file[0]
+    ext = os.path.splitext(input_file)[1]
+    if ext == '.pb':
+        if os.path.splitext(output_file)[1] != '.pb':
+            raise ValueError("Input or output file format error.")
+        optimize_pb_model_command(input_file, output_file)
+    elif ext == '.nnp':
+        if os.path.splitext(output_file)[1] != '.nnp':
+            raise ValueError("Input or output file format error.")
+        optimize_nnp_model_command(input_file, output_file)
+    else:
+        raise ValueError(f"{ext} is unsupported file format.")
+
+
+def add_optimize_command(subparsers):
     ################################################################################
     # Optimize pb model
     subparser = subparsers.add_parser(
         'optimize', help='Optimize pb model.')
-    subparser.add_argument('input_pb_file', nargs=1,
+    subparser.add_argument('input_file', nargs=1,
                            help='Input pre-optimized pb model.')
-    subparser.add_argument('output_pb_file', nargs=1,
+    subparser.add_argument('output_file', nargs=1,
                            help='Output optimized pb model.')
-    subparser.set_defaults(func=optimize_pb_model_command)
+    subparser.set_defaults(func=optimization_command)

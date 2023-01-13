@@ -37,7 +37,6 @@ if __name__ == '__main__':
         __email__ = a['__email__']
 
     install_requires = [
-        'ply',
         'tensorboard>=2.6.0, <=2.9.0',
         'tensorflow~=2.8.0;platform_system!="Windows"',
         'tensorflow>=2.8.0, <=2.8.1;platform_system=="Windows"',

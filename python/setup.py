@@ -46,7 +46,8 @@ install_requires = setup_requires + [
     'six',
     'tqdm',
     'imageio',
-    'pillow'
+    'pillow',
+    'ply'
 ]
 
 if sys.platform == 'win32':
