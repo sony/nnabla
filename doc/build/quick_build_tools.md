@@ -53,7 +53,7 @@ Please see [Official site](https://chocolatey.org/install)
 After installing Chocolatey do following command on Administrator cmd.exe.
 ```
 choco feature enable -n allowGlobalConfirmation
-choco install cmake git vcbuildtools
+choco install cmake git visualstudio2019-workload-vctools visualstudio2019buildtools
 pip install pywin32 Cython boto3 protobuf h5py ipython numpy pip pytest scikit-image scipy wheel pyyaml mako tqdm
 ```
 
@@ -66,4 +66,5 @@ pip install pywin32 Cython boto3 protobuf h5py ipython numpy pip pytest scikit-i
 ```
 > call build-tools\msvc\build_wheel.bat PYTHON_VERSION
 ```
-The python version we tested is 3.7, 3.8 3.9 and 3.10.
+The PYTHON_VERSION we tested is 3.7, 3.8 3.9 and 3.10.
+
