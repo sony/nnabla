@@ -102,6 +102,7 @@ RUN eval ${APT_OPTS} \
     && export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/plugins/python-build/bin:$PATH" \
     && export PYTHON_BUILD_CURL_OPTS="${CURL_OPTS}" \
     && export PYTHON_BUILD_WGET_OPTS="${WGET_OPTS}" \
+    && export PYTHON_CONFIGURE_OPTS=--disable-shared \
     && eval "$(pyenv init -)" \
     && python-build `pyenv latest -k ${PYVERNAME}` /usr/local \
     && pyenv global system \
