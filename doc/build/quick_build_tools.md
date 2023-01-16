@@ -53,13 +53,9 @@ Please see [Official site](https://chocolatey.org/install)
 After installing Chocolatey do following command on Administrator cmd.exe.
 ```
 choco feature enable -n allowGlobalConfirmation
-choco install cmake git miniconda3 vcbuildtools
-set PATH=C:\tools\Miniconda3\Scripts;%PATH%
-conda install -y pywin32 Cython=0.25 boto3 protobuf h5py ipython numpy=1.11 pip pytest scikit-image scipy wheel pyyaml mako
-pip install tqdm
+choco install cmake git vcbuildtools
+pip install pywin32 Cython boto3 protobuf h5py ipython numpy pip pytest scikit-image scipy wheel pyyaml mako tqdm
 ```
-And make sure that `C:\tools\Miniconda3\Scripts` in your PATH environment.
-
 
 ### Build cpplib
 ```
@@ -68,5 +64,6 @@ And make sure that `C:\tools\Miniconda3\Scripts` in your PATH environment.
 
 ### Build wheel
 ```
-> call build-tools\msvc\build_wheel.bat
+> call build-tools\msvc\build_wheel.bat PYTHON_VERSION
 ```
+The python version we tested is 3.7, 3.8 3.9 and 3.10.
