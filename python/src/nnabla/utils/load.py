@@ -103,12 +103,13 @@ def _check_context(ctx):
     return ctx
 
 
-def _create_optimizer(ctx, o, networks, datasets, renamed):
+def _create_optimizer(ctx, o, optimizer_states_checkpoint):
     class Optimizer:
         pass
 
     optimizer = Optimizer()
 
+    optimizer.proto = o
     optimizer.comm = current_communicator()
     comm_size = optimizer.comm.size if optimizer.comm else 1
     optimizer.start_iter = (o.start_iter - 1) // comm_size + \
@@ -118,42 +119,11 @@ def _create_optimizer(ctx, o, networks, datasets, renamed):
     optimizer.name = o.name
     optimizer.order = o.order
     optimizer.update_interval = o.update_interval if o.update_interval > 0 else 1
-    optimizer.network = networks[o.network_name]
-    optimizer.data_iterators = OrderedDict()
-    for d in o.dataset_name:
-        optimizer.data_iterators[d] = datasets[d].data_iterator
-
-    optimizer.dataset_assign = OrderedDict()
-    for d in o.data_variable:
-        optimizer.dataset_assign[
-            optimizer.network.variables[renamed.get(d.variable_name, d.variable_name)]] = d.data_name
-
-    optimizer.generator_assign = OrderedDict()
-    for g in o.generator_variable:
-        optimizer.generator_assign[optimizer.network.variables[
-            renamed.get(g.variable_name, g.variable_name)]] = _get_generator(g)
-
-    # for debugging
-    # optimizer.net_variables = optimizer.network.variables
-    # optimizer.net_variables.update(optimizer.network.parameters)
-
-    optimizer.loss_variables = []
-    for l in o.loss_variable:
-        optimizer.loss_variables.append(
-            optimizer.network.variables[renamed.get(l.variable_name, l.variable_name)])
-
-    optimizer.parameter_learning_rate_multipliers = OrderedDict()
-    for p in o.parameter_variable:
-        param_variable_names = _get_matching_variable_names(
-            p.variable_name, list(itertools.chain(optimizer.network.parameters.keys(),
-                                                  optimizer.network.variables.keys())))
-        for v_name in param_variable_names:
-            if v_name in optimizer.network.parameters:
-                optimizer.parameter_learning_rate_multipliers[
-                    optimizer.network.parameters[v_name]] = p.learning_rate_multiplier
-            elif v_name in optimizer.network.variables:
-                optimizer.parameter_learning_rate_multipliers[
-                    optimizer.network.variables[v_name]] = p.learning_rate_multiplier
+    optimizer.network = None
+    if optimizer_states_checkpoint:
+        for k, v in optimizer_states_checkpoint.items():
+            if optimizer.name == k:
+                optimizer.solver_checkpoint = v
 
     with nn.context_scope(ctx):
         if o.solver.type == 'Adagrad':
@@ -237,22 +207,11 @@ def _create_optimizer(ctx, o, networks, datasets, renamed):
             raise ValueError('Solver "' + o.solver.type +
                              '" is not supported.')
 
-    parameters = {}
-    for v, local_lr in optimizer.parameter_learning_rate_multipliers.items():
-        if local_lr > 0.0:
-            parameters[v.name] = v.variable_instance
-        else:
-            v.variable_instance.need_grad = False
-    optimizer.solver.set_parameters(parameters)
-    optimizer.parameters = OrderedDict(
-        sorted(parameters.items(), key=lambda x: x[0]))
-
     optimizer.weight_decay = o.solver.weight_decay
 
     # keep following 2 lines for backward compatibility
     optimizer.lr_decay = o.solver.lr_decay if o.solver.lr_decay > 0.0 else 1.0
     optimizer.lr_decay_interval = o.solver.lr_decay_interval if o.solver.lr_decay_interval > 0 else 1
-    optimizer.solver.set_states_from_protobuf(o)
 
     optimizer.comm = current_communicator()
     comm_size = optimizer.comm.size if optimizer.comm else 1
@@ -288,15 +247,6 @@ def _create_optimizer(ctx, o, networks, datasets, renamed):
         if o.solver.linear_warmup_scheduler_param.warmup_iter >= comm_size:
             optimizer.scheduler = LinearWarmupScheduler(
                 optimizer.scheduler, o.solver.linear_warmup_scheduler_param.warmup_iter // comm_size)
-
-    for v in optimizer.loss_variables:
-        v.variable_instance.grad.fill(1.0 / v.variable_instance.size)
-
-    if len(optimizer.loss_variables) == 1:
-        optimizer.target = optimizer.loss_variables[0].variable_instance
-    else:
-        optimizer.target = F.sink(
-            *[v.variable_instance for v in optimizer.loss_variables], one_input_grad=False)
 
     return optimizer
 
@@ -478,24 +428,24 @@ def _datasets(proto, prepare_data_iterator=True):
 
 
 def _optimizers(info):
-    proto, default_context, networks, datasets = info.proto, info.default_context, info.networks, info.datasets
+    proto, default_context = info.proto, info.default_context
+    if hasattr(info, 'optimizer_states_checkpoint'):
+        optimizer_states_checkpoint = info.optimizer_states_checkpoint
+    else:
+        optimizer_states_checkpoint = None
     optimizers = OrderedDict()
-    renamed_variables = info.renamed_variables
 
     for o in proto.optimizer:
         ctx = default_context if not o.solver.context.backends else _context(
             o.solver.context)
-        optimizer = _create_optimizer(
-            ctx, o, networks, datasets, renamed_variables)
+        optimizer = _create_optimizer(ctx, o, optimizer_states_checkpoint)
         optimizers[o.name] = optimizer
 
     return optimizers
 
 
 def _monitors(info):
-    proto, default_context, networks, datasets = \
-      info.proto, info.default_context, info.networks, info.datasets
-    renamed = info.renamed_variables
+    proto = info.proto
 
     class Monitor:
         pass
@@ -503,44 +453,15 @@ def _monitors(info):
 
     for m in proto.monitor:
         monitor = Monitor()
-
-        monitor.network = networks[m.network_name]
-
-        # for debugging
-        # monitor.net_variables = monitor.network.variables
-        # monitor.net_variables.update(monitor.network.parameters)
-
-        monitor.data_iterators = OrderedDict()
-        for d in m.dataset_name:
-            monitor.data_iterators[d] = datasets[d].data_iterator
-
-        monitor.dataset_assign = OrderedDict()
-        for d in m.data_variable:
-            monitor.dataset_assign[monitor.network.variables[
-                renamed.get(d.variable_name, d.variable_name)]] = d.data_name
-
-        monitor.generator_assign = OrderedDict()
-        for g in m.generator_variable:
-            monitor.generator_assign[monitor.network.variables[
-                renamed.get(g.variable_name, g.variable_name)]] = _get_generator(g)
-
-        monitor.monitor_variables = []
-        for e in m.monitor_variable:
-            monitor.monitor_variables.append(
-                monitor.network.variables[
-                    renamed.get(e.variable_name, e.variable_name)])
-
-        monitor.target = F.sink(
-            *[v.variable_instance for v in monitor.monitor_variables])
-
+        monitor.proto = m
+        monitor.network = None
         monitors[m.name] = monitor
 
     return monitors
 
 
 def _executors(info):
-    renamed = info.renamed_variables
-    proto, networks = info.proto, info.networks
+    proto = info.proto
 
     class Executor:
         pass
@@ -549,64 +470,12 @@ def _executors(info):
     for e in proto.executor:
         executor = Executor()
 
-        executor.network = networks[e.network_name]
+        executor.proto = e
+        executor.network = None
         executor.num_evaluations = e.num_evaluations if e.num_evaluations > 0 else 1
         executor.repeat_evaluation_type = e.repeat_evaluation_type
         executor.need_back_propagation = e.need_back_propagation
         executor.no_image_normalization = e.no_image_normalization
-
-        executor.dataset_assign = OrderedDict()
-        for d in e.data_variable:
-            executor.dataset_assign[executor.network.variables[
-                renamed.get(d.variable_name, d.variable_name)]] = d.data_name
-
-        executor.generator_assign = OrderedDict()
-        for g in e.generator_variable:
-            executor.generator_assign[executor.network.variables[
-                renamed.get(g.variable_name, g.variable_name)]] = _get_generator(g)
-
-        executor.output_assign = OrderedDict()
-        for o in e.output_variable:
-            executor.output_assign[executor.network.variables[
-                renamed.get(o.variable_name, o.variable_name)]] = [o.type, o.data_name]
-
-        executor.parameters = OrderedDict()
-        for p in e.parameter_variable:
-            param_variable_names = _get_matching_variable_names(
-                p.variable_name, list(itertools.chain(executor.network.parameters.keys(),
-                                                      executor.network.variables.keys())))
-            for v_name in param_variable_names:
-                if v_name in executor.network.parameters:
-                    executor.parameters[
-                        executor.network.parameters[v_name]] = v_name
-                if v_name in executor.network.variables:
-                    executor.parameters[
-                        executor.network.variables[v_name]] = v_name
-
-        executor.forward_target = F.sink(*[v.variable_instance
-                                           for v in executor.output_assign.keys()])
-
-        if executor.need_back_propagation:
-            executor.loss_variables = []
-            for l in e.loss_variable:
-                executor.loss_variables.append(executor.network.variables[
-                    l.variable_name])
-
-            executor.parameter_learning_rate_multipliers = OrderedDict()
-            for p in e.parameter_variable:
-                param_variable_names = _get_matching_variable_names(
-                    p.variable_name, list(itertools.chain(executor.network.parameters.keys(),
-                                                          executor.network.variables.keys())))
-                for v_name in param_variable_names:
-                    if v_name in executor.network.parameters:
-                        executor.parameter_learning_rate_multipliers[
-                            executor.network.parameters[v_name]] = p.learning_rate_multiplier
-                    elif v_name in executor.network.variables:
-                        executor.parameter_learning_rate_multipliers[
-                            executor.network.variables[v_name]] = p.learning_rate_multiplier
-
-            executor.backward_target = F.sink(
-                *[v.variable_instance for v in executor.loss_variables])
 
         executors[e.name] = executor
 
@@ -616,16 +485,20 @@ def _executors(info):
 ##########################################################################
 # API
 #
-def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_parameter=False, parameter_only=False, extension=".nntxt", context=None):
-    '''load
-    Load network information from files.
+def restore_optimizer_state(optimizer):
+    optimizer.solver.set_states_from_protobuf(optimizer.proto)
+    if hasattr(optimizer, 'solver_checkpoint'):
+        ext, handler = optimizer.solver_checkpoint
+        if ext == '.protobuf':
+            optimizer.solver.set_states_from_protobuf(handler)
+        elif ext == '.h5':
+            from nnabla.utils.get_file_handle import load_solve_state_from_h5
+            optimizer.solver.set_states(
+                load_solve_state_from_h5(None, handler))
+            handler.seek(0)
 
-    Args:
-        filenames (list): file-like object or List of filenames.
-        extension: if filenames is file-like object, extension is one of ".nntxt", ".prototxt", ".protobuf", ".h5", ".nnp".
-    Returns:
-        dict: Network information.
-    '''
+
+def base_load(filenames, prepare_data_iterator=True, batch_size=None, exclude_parameter=False, parameter_only=False, extension=".nntxt", context=None):
     class Info:
         pass
     info = Info()
@@ -701,5 +574,184 @@ def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_paramet
     info.optimizers = _optimizers(info)
     info.monitors = _monitors(info)
     info.executors = _executors(info)
+
+    return info
+
+
+def link_components(info):
+    networks, datasets, renamed = info.networks, info.datasets, info.renamed_variables
+
+    def _link_optimizer(info, networks, datasets, renamed):
+        # optimizer
+        for optimizer in info.optimizers.values():
+            o = optimizer.proto
+            optimizer.network = networks[o.network_name]
+            optimizer.data_iterators = OrderedDict()
+            for d in o.dataset_name:
+                optimizer.data_iterators[d] = datasets[d].data_iterator
+
+            optimizer.dataset_assign = OrderedDict()
+            for d in o.data_variable:
+                optimizer.dataset_assign[
+                    optimizer.network.variables[renamed.get(d.variable_name, d.variable_name)]] = d.data_name
+
+            optimizer.generator_assign = OrderedDict()
+            for g in o.generator_variable:
+                optimizer.generator_assign[optimizer.network.variables[
+                    renamed.get(g.variable_name, g.variable_name)]] = _get_generator(g)
+
+            # for debugging
+            # optimizer.net_variables = optimizer.network.variables
+            # optimizer.net_variables.update(optimizer.network.parameters)
+
+            optimizer.loss_variables = []
+            for l in o.loss_variable:
+                optimizer.loss_variables.append(
+                    optimizer.network.variables[renamed.get(l.variable_name, l.variable_name)])
+
+            optimizer.parameter_learning_rate_multipliers = OrderedDict()
+            for p in o.parameter_variable:
+                param_variable_names = _get_matching_variable_names(
+                    p.variable_name, list(itertools.chain(optimizer.network.parameters.keys(),
+                                                          optimizer.network.variables.keys())))
+                for v_name in param_variable_names:
+                    if v_name in optimizer.network.parameters:
+                        optimizer.parameter_learning_rate_multipliers[
+                            optimizer.network.parameters[v_name]] = p.learning_rate_multiplier
+                    elif v_name in optimizer.network.variables:
+                        optimizer.parameter_learning_rate_multipliers[
+                            optimizer.network.variables[v_name]] = p.learning_rate_multiplier
+
+            parameters = {}
+            for v, local_lr in optimizer.parameter_learning_rate_multipliers.items():
+                if local_lr > 0.0:
+                    parameters[v.name] = v.variable_instance
+                else:
+                    v.variable_instance.need_grad = False
+            optimizer.solver.set_parameters(parameters)
+            optimizer.parameters = OrderedDict(
+                sorted(parameters.items(), key=lambda x: x[0]))
+
+            # restore solver checkpoint if exists
+            restore_optimizer_state(optimizer)
+
+            for v in optimizer.loss_variables:
+                v.variable_instance.grad.fill(1.0 / v.variable_instance.size)
+
+            if len(optimizer.loss_variables) == 1:
+                optimizer.target = optimizer.loss_variables[0].variable_instance
+            else:
+                optimizer.target = F.sink(
+                    *[v.variable_instance for v in optimizer.loss_variables], one_input_grad=False)
+
+    def _link_monitor(info, networks, datasets, renamed):
+        # monitor
+        for monitor in info.monitors.values():
+            m = monitor.proto
+            monitor.network = networks[m.network_name]
+
+            # for debugging
+            # monitor.net_variables = monitor.network.variables
+            # monitor.net_variables.update(monitor.network.parameters)
+
+            monitor.data_iterators = OrderedDict()
+            for d in m.dataset_name:
+                monitor.data_iterators[d] = datasets[d].data_iterator
+
+            monitor.dataset_assign = OrderedDict()
+            for d in m.data_variable:
+                monitor.dataset_assign[monitor.network.variables[
+                    renamed.get(d.variable_name, d.variable_name)]] = d.data_name
+
+            monitor.generator_assign = OrderedDict()
+            for g in m.generator_variable:
+                monitor.generator_assign[monitor.network.variables[
+                    renamed.get(g.variable_name, g.variable_name)]] = _get_generator(g)
+
+            monitor.monitor_variables = []
+            for e in m.monitor_variable:
+                monitor.monitor_variables.append(
+                    monitor.network.variables[
+                        renamed.get(e.variable_name, e.variable_name)])
+
+            monitor.target = F.sink(
+                *[v.variable_instance for v in monitor.monitor_variables])
+
+    def _link_executor(info, networks, renamed):
+        # executor
+        for executor in info.executors.values():
+            e = executor.proto
+            executor.network = networks[e.network_name]
+            executor.dataset_assign = OrderedDict()
+            for d in e.data_variable:
+                executor.dataset_assign[executor.network.variables[
+                    renamed.get(d.variable_name, d.variable_name)]] = d.data_name
+
+            executor.generator_assign = OrderedDict()
+            for g in e.generator_variable:
+                executor.generator_assign[executor.network.variables[
+                    renamed.get(g.variable_name, g.variable_name)]] = _get_generator(g)
+
+            executor.output_assign = OrderedDict()
+            for o in e.output_variable:
+                executor.output_assign[executor.network.variables[
+                    renamed.get(o.variable_name, o.variable_name)]] = [o.type, o.data_name]
+
+            executor.parameters = OrderedDict()
+            for p in e.parameter_variable:
+                param_variable_names = _get_matching_variable_names(
+                    p.variable_name, list(itertools.chain(executor.network.parameters.keys(),
+                                                          executor.network.variables.keys())))
+                for v_name in param_variable_names:
+                    if v_name in executor.network.parameters:
+                        executor.parameters[
+                            executor.network.parameters[v_name]] = v_name
+                    if v_name in executor.network.variables:
+                        executor.parameters[
+                            executor.network.variables[v_name]] = v_name
+
+            executor.forward_target = F.sink(*[v.variable_instance
+                                               for v in executor.output_assign.keys()])
+
+            if executor.need_back_propagation:
+                executor.loss_variables = []
+                for l in e.loss_variable:
+                    executor.loss_variables.append(executor.network.variables[
+                        l.variable_name])
+
+                executor.parameter_learning_rate_multipliers = OrderedDict()
+                for p in e.parameter_variable:
+                    param_variable_names = _get_matching_variable_names(
+                        p.variable_name, list(itertools.chain(executor.network.parameters.keys(),
+                                                              executor.network.variables.keys())))
+                    for v_name in param_variable_names:
+                        if v_name in executor.network.parameters:
+                            executor.parameter_learning_rate_multipliers[
+                                executor.network.parameters[v_name]] = p.learning_rate_multiplier
+                        elif v_name in executor.network.variables:
+                            executor.parameter_learning_rate_multipliers[
+                                executor.network.variables[v_name]] = p.learning_rate_multiplier
+
+                executor.backward_target = F.sink(
+                    *[v.variable_instance for v in executor.loss_variables])
+
+    _link_optimizer(info, networks, datasets, renamed)
+    _link_monitor(info, networks, datasets, renamed)
+    _link_executor(info, networks, renamed)
+
+
+def load(filenames, prepare_data_iterator=True, batch_size=None, exclude_parameter=False, parameter_only=False, extension=".nntxt", context=None):
+    '''load
+    Load network information from files.
+
+    Args:
+        filenames (list): file-like object or List of filenames.
+        extension: if filenames is file-like object, extension is one of ".nntxt", ".prototxt", ".protobuf", ".h5", ".nnp".
+    Returns:
+        dict: Network information.
+    '''
+    info = base_load(filenames, prepare_data_iterator, batch_size,
+                     exclude_parameter, parameter_only, extension, context)
+    link_components(info)
 
     return info

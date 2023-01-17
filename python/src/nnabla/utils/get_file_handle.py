@@ -19,6 +19,7 @@ import os
 import re
 import zipfile
 from collections import OrderedDict
+from functools import partial
 
 import google.protobuf.text_format as text_format
 import h5py
@@ -176,7 +177,7 @@ def _nnp_file_loader(ctx, file_loaders, nnp, filename, ext):
                     file_loader(ctx, file_loaders, n, name, ext)
 
 
-def _load_solve_state_from_h5(nnp, filename):
+def load_solve_state_from_h5(nnp, filename):
     '''Load solve state from h5 file
     This code is duplicated with solver.pyx, since solver.pyx only accept a string file
     as its filename input, not support ByteIO style input. But supporting ByteIO is
@@ -248,11 +249,34 @@ def _opti_file_loader(ctx, fileloaders, nnp, filename, ext):
                 re.sub(r'(|Cuda)$', '', str(o.solver.name))
             )
             if key == filename:
-                o.solver.set_states(_load_solve_state_from_h5(nnp, filename))
+                o.solver.set_states(load_solve_state_from_h5(nnp, filename))
                 loaded = True
         if not loaded:
             logger.warning(
                 "No matched optimizer is found for {}.".format(filename))
+
+
+def _opti_file_rough_loader(ctx, fileloaders, nnp, filename, ext):
+    '''.optimizer
+    optimizer solver checkpoint file rough loader
+    This loader loads solver state and allow user to decide when to restore it
+    '''
+    file_type = get_buf_type(filename)
+    optimizer_states = OrderedDict()
+    if file_type == 'protobuf':
+        opti_proto = nnabla_pb2.NNablaProtoBuf()
+        with get_file_handle_load(nnp, filename, '.protobuf') as f:
+            opti_proto.MergeFromString(f.read())
+        for p_opti in opti_proto.optimizer:
+            optimizer_states[p_opti.name] = ('.protobuf', p_opti)
+    elif file_type == 'h5':
+        h5fio = io.BytesIO()
+        h5fio.name = f"{'_'.join(filename.split('_')[:2])}.h5"
+        with nnp.open(filename, 'r') as f:
+            h5fio.write(f.read())
+            h5fio.seek(0)
+        optimizer_states[filename.split('_')[0]] = ('.h5', h5fio)
+    ctx.optimizer_states_checkpoint = optimizer_states
 
 
 def _h5_parameter_file_loader(ctx, file_loader, nnp, filename, ext):
@@ -324,7 +348,8 @@ def get_initial_file_loader():
     file_loaders = OrderedDict([
         ('.nntxt,.prototxt', _nntxt_file_loader),
         ('.protobuf,.h5', _parameter_file_loader),
-        ('.nnp', _nnp_file_loader)
+        ('.nnp', _nnp_file_loader),
+        ('.optimizer', _opti_file_rough_loader)
     ])
     return file_loaders
 
@@ -397,8 +422,12 @@ def _protobuf_file_saver(ctx, filename, ext):
         f.write(ctx.proto.SerializeToString())
 
 
-def _nnp_file_saver(ctx, filename, ext):
+def _nnp_file_saver(ctx, filename, ext, ssf=None):
     logger.info("Saving {} as nnp".format(filename))
+    if ssf and ssf not in ['.h5', '.protobuf']:
+        logger.error(
+            f"{ssf} format is not supported when save optimizer solver state.")
+
     nntxt = io.StringIO()
     _nntxt_file_saver(ctx, nntxt, ".nntxt")
 
@@ -412,11 +441,23 @@ def _nnp_file_saver(ctx, filename, ext):
     else:
         nn.parameter.save_parameters(
             param, ctx.parameters, extension='.h5')
+    if ssf:
+        from nnabla.utils.cli.utility import save_optimizer_states
+        filenamebase = os.path.splitext(filename)[0]
+        opti_filenames = save_optimizer_states(
+                filenamebase, ssf, ctx)
 
     with get_file_handle_save(filename, ext) as nnp:
         nnp.writestr('nnp_version.txt', version.read())
         nnp.writestr('network.nntxt', nntxt.read())
         nnp.writestr('parameter.h5', param.read())
+        if ssf:
+            for f in opti_filenames:
+                nnp.write(f, f[len(filenamebase) + 1:])
+
+    if ssf:
+        for f in opti_filenames:
+            os.unlink(f)
 
 
 def _h5_parameter_file_saver(ctx, filename, ext):
@@ -441,13 +482,13 @@ def _protobuf_parameter_file_saver(ctx, filename, ext):
         f.write(proto.SerializeToString())
 
 
-def get_default_file_savers():
+def get_default_file_savers(solver_state_format=None):
     '''get_default_file_savers
     '''
     file_savers = OrderedDict([
         ('.nntxt, .prototxt', _nntxt_file_saver),
         ('.protobuf', _protobuf_file_saver),
-        ('.nnp', _nnp_file_saver)
+        ('.nnp', partial(_nnp_file_saver, ssf=solver_state_format))
     ])
     return file_savers
 
