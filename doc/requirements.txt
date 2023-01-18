@@ -1,4 +1,4 @@
-nnabla==1.33.0.dev1
+nnabla==1.33.0
 Sphinx==4.5.0
 sphinx-rtd-theme
 mock==1.0.1
