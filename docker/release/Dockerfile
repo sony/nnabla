@@ -65,6 +65,7 @@ RUN eval ${APT_OPTS} \
     && export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/plugins/python-build/bin:$PATH" \
     && export PYTHON_BUILD_CURL_OPTS="${CURL_OPTS}" \
     && export PYTHON_BUILD_WGET_OPTS="${WGET_OPTS}" \
+    && export PYTHON_CONFIGURE_OPTS=--disable-shared \
     && PYTHON_VERSION_MINOR=${PYTHON_VER#*.} \
     && if [ ${PYTHON_VERSION_MINOR} -ge 10 ]; then export CPPFLAGS=-I/usr/include/openssl11 && export LDFLAGS=-L/usr/lib64/openssl11; fi \
     && eval "$(pyenv init -)" \

@@ -109,6 +109,7 @@ RUN git clone https://github.com/pyenv/pyenv.git ~/.pyenv \
     && eval "$(pyenv init -)" \
     && export PYTHON_BUILD_CURL_OPTS="${CURL_OPTS}" \
     && export PYTHON_BUILD_WGET_OPTS="${WGET_OPTS}" \
+    && export PYTHON_CONFIGURE_OPTS=--disable-shared \
     && python-build `pyenv latest -k ${PYVERNAME}` /usr/local \
     && pyenv global system \
     && rm -rf ~/.pyenv/.git
