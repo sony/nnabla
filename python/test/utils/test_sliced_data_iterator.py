@@ -39,7 +39,7 @@ def test_sliced_data_iterator_equivalence(test_data_csv_png_10, num_of_slices, s
     max_epoch = lcm(batch_size, size) / size
 
     def test_load_func(position):
-        return np.full((1), position, dtype=int)
+        return np.full((1), position, dtype=np.int32)
 
     def simple_load_func(data_set, position):
         return data_set[position]
@@ -65,7 +65,7 @@ def test_sliced_data_iterator_equivalence(test_data_csv_png_10, num_of_slices, s
         sliced_di_list.append(sliced_di)
 
     ref_di_list = []
-    all_data = [np.full((1), position, dtype=int)
+    all_data = [np.full((1), position, dtype=np.int32)
                 for position in range(size)]
     slice_block_size = size // num_of_slices
     if not drop_last:
@@ -109,9 +109,11 @@ def test_sliced_data_iterator_equivalence(test_data_csv_png_10, num_of_slices, s
 @pytest.mark.parametrize("shuffle", [False, True])
 @pytest.mark.parametrize("drop_last", [True])
 def test_sliced_data_iterator_duplicated_unexpectedly(test_data_csv_png_10, num_of_slices, size, batch_size, shuffle, drop_last):
-
+    # As the discussion in this: https://app.slack.com/client/TAVSDRN92/CCWT3ENA2/thread/CCWT3ENA2-1653356233.062649
+    # Each slice might have overlapped items after the random order of each epoch is updated.
+    # It only assumes that each slice at each epoch have different dataset.
     def test_load_func(position):
-        return np.full((1), position, dtype=np.float32)
+        return np.full((1), position, dtype=np.int32)
 
     di = data_iterator_simple(test_load_func, size,
                               batch_size, shuffle=shuffle)
@@ -119,36 +121,58 @@ def test_sliced_data_iterator_duplicated_unexpectedly(test_data_csv_png_10, num_
     def lcm(a, b):
         return abs(a * b) / math.gcd(a, b) if a and b else 0
 
-    max_epoch = lcm(batch_size, size) / size
+    max_epoch = int(lcm(batch_size, size) / size)
 
-    all_data = []
+    epoch = []
+    data_per_epoch = []
+
+    slice_di_list = []
     for slice_pos in range(num_of_slices):
         sliced_di = di.slice(
             rng=None, num_of_slices=num_of_slices, slice_pos=slice_pos, drop_last=drop_last)
-        sliced_data = {}
-        while True:
-            current_epoch = sliced_di.epoch
-            if current_epoch > max_epoch + 1:
-                break
-            data = sliced_di.next()
-            if current_epoch not in sliced_data:
-                sliced_data[current_epoch] = []
-            for dat in data:
-                for d in dat:
-                    sliced_data[current_epoch].append(d)
-        all_data.append(sliced_data)
+        slice_di_list.append(sliced_di)
 
-    epochs = {}
-    for slice_pos, sliced_data in enumerate(all_data):
-        for epoch in sorted(sliced_data.keys()):
-            if epoch not in epochs:
-                epochs[epoch] = []
-            epochs[epoch].append(set(sliced_data[epoch]))
+    offset = 0
+    for _ in range(max_epoch):
+        data_per_batch = []
+        for sliced_di in slice_di_list:
+            batch = sliced_di.next()
+            data_per_batch.append([d for dat in batch for d in dat])
+            data_per_epoch.append(data_per_batch[-1][:])
+        for i in range(len(data_per_batch)-1):
+            for j in range(i + 1, len(data_per_batch)):
+                ok = len(set(data_per_batch[i]) & set(data_per_batch[j])) == 0
+                if not ok:
+                    print("=" * 50)
+                    for x in range(len(data_per_batch)):
+                        print(
+                            f"{len(epoch)}: {i} <--> {j}: {sorted(data_per_batch[x])}")
+                    print(f"{set(data_per_batch[i]) & set(data_per_batch[j])}")
+                    print("=" * 50)
+                assert ok, "data overlapped in same epoch!"
+        if offset + batch_size >= size:
+            epoch.append(data_per_epoch)
+            data_per_epoch = []
+            offset += batch_size
+            offset -= size
+        else:
+            offset += batch_size
 
-    for epoch in sorted(epochs.keys()):
-        x0 = epochs[epoch][0]
-        for dup in [x0 & x for x in epochs[epoch][1:]]:
-            assert len(dup) == 0
+    if shuffle:
+        for i in range(len(epoch) - 1):
+            for j in range(i + 1, len(epoch)):
+                for k in range(len(epoch[i])):
+                    ok = set(epoch[i][k]) != set(epoch[j][k])
+                    if not ok:
+                        print("-" * 50)
+                        print(f"{k}: {i} {sorted(epoch[i][k])}")
+                        print(f"{k}: {j} {sorted(epoch[j][k])}")
+                        print("-" * 50)
+                    assert ok, "Not allow duplicated data set occurs in shuffle mode."
+
+    for sliced_di in slice_di_list:
+        sliced_di.close()
+    di.close()
 
 
 @pytest.mark.parametrize("num_of_slices", [2, 3, 5])

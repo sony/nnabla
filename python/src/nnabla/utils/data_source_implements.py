@@ -21,7 +21,7 @@ import atexit
 import csv
 import os
 import threading
-from collections import OrderedDict
+from collections import OrderedDict, deque
 from time import sleep
 
 import numpy
@@ -42,25 +42,49 @@ class SimpleDataSource(DataSource):
     '''
 
     def _get_data(self, position):
-        return self._load_func(self._order[position])
+        return self._get_data_of_generation(position, 0)
+
+    def _get_data_of_generation(self, position, generation):
+        index = None
+        for s in self._orders:
+            if s.generation == generation:
+                index = s.order
+                break
+        if index is None:
+            raise ValueError("Its client is not synchronized!")
+        return self._load_func(index[position])
+
+    def apply_order(self):
+        self._generation += 1
+        self._generate_order(self._generation)
+
+    def _generate_order(self, generation):
+        for s in self._orders:
+            if s.generation == generation:
+                return
+
+        class Snapshot:
+            pass
+        snapshot = Snapshot()
+        snapshot.order = self._rng.permutation(
+                self._size) if self._shuffle else numpy.arange(self._size)
+        snapshot.generation = generation
+        self._orders.append(snapshot)
 
     def reset(self):
-        self._indexes = self._rng.permutation(
-            self._size) if self._shuffle else numpy.arange(self._size)
         super(SimpleDataSource, self).reset()
 
     def __init__(self, load_func, num_examples, shuffle=False, rng=None):
         super(SimpleDataSource, self).__init__(shuffle=shuffle, rng=rng)
-        super(SimpleDataSource, self).reset()
         self._load_func = load_func
         self._size = num_examples
+        self._generation = 0
         self._variables = ['x' + str(x)
                            for x in range(len(self._load_func(0)))]
-        if shuffle:
-            self._order = list(
-                self._rng.permutation(list(range(self._size))))
-        else:
-            self._order = list(range(self._size))
+        # We set maximal unsynchnonized generations.
+        self._orders = deque(maxlen=15)
+        self.reset()
+        self._generate_order(0)
 
 
 class CachePrefetcher(object):
