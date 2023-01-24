@@ -406,6 +406,9 @@ BatchCholesky:
 Interpolate:
   float: [float]
   half: [Half]
+ONNXResize:
+  float: [float]
+  half: [Half]
 Dropout:
   float: [float]
   half: [Half]
@@ -578,6 +581,9 @@ Erf:
 NmsDetection2d:
   float: [float]
 #  half: [Half]
+ONNXNonMaxSuppression:
+  float: [float]
+#  half: [Half]
 FFT:
   float: [float]
 #  half: [Half]
@@ -651,5 +657,8 @@ Norm:
   float: [float]
   half: [Half]
 RoiAlign:
+  float: [float]
+  half: [Half]
+NonZero:
   float: [float]
   half: [Half]

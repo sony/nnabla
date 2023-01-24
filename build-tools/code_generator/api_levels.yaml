@@ -294,3 +294,7 @@
   Erf_Empty: 349
 43:
   TopKData_iBBiBB: 350
+44:
+  NonZero_Empty: 351
+  ONNXNonMaxSuppression_iiff: 353
+  ONNXResize_fFfFiIiififi: 352

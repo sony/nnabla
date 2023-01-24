@@ -23,10 +23,21 @@ ctxs = list_context('OneHot')
 
 
 def ref_one_hot(x, shape):
+    num_classes = shape
     result = np.zeros((x.shape[0],) + shape)
     for i in range(x.shape[0]):
-        idx = (i, ) + tuple(x[i])
-        result[idx] = 1
+        class_idxs = []
+        valid_class = True
+        for class_idx, num_classes in zip(x[i], shape):
+            if class_idx < 0:
+                class_idx += num_classes
+            if class_idx < 0 or num_classes <= class_idx:
+                valid_class = False
+                break
+            class_idxs.append(class_idx)
+        idx = (i, ) + tuple(class_idxs)
+        if valid_class:
+            result[idx] = 1
     return result
 
 
@@ -45,7 +56,11 @@ def test_one_hot_forward(seed, inshape, shape, ctx, func_name):
             y = F.one_hot(nn.Variable(input.shape), shape)
     else:
         for i in range(inshape[-1]):
-            input[:, i] = rng.randint(0, shape[i], size=inshape[0])
+            # this input data contains out-of-range class index.
+            num_classes = shape[i]
+            low = -2 * num_classes
+            high = 2 * num_classes
+            input[:, i] = rng.randint(low, high, size=inshape[0])
         vinput = nn.Variable(input.shape, need_grad=False)
         vinput.d = input
 

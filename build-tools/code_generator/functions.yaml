@@ -4395,6 +4395,9 @@ Array Manipulation:
     doc: |2
 
       This function creates one-hot vector based on input indices.
+      The range [-shape[i], -1] of input indices are regarded as [0, shape[i]-1],
+      and an input index outside [-shape[i], shape[i]-1] generates a vector 
+      filled with zero.
 
               Example:
 
@@ -4404,7 +4407,7 @@ Array Manipulation:
                 import nnabla.functions as F
                 import numpy as np
 
-                labels = nn.Variable.from_numpy_array(np.array([[9], [4], [5], [1], [0]]))
+                labels = nn.Variable.from_numpy_array(np.array([[9], [4], [5], [-9], [10]]))
                 print(labels.shape)  # (5, 1)
 
                 num_class = 10
@@ -4419,7 +4422,7 @@ Array Manipulation:
                 #  [0. 0. 0. 0. 1. 0. 0. 0. 0. 0.]
                 #  [0. 0. 0. 0. 0. 1. 0. 0. 0. 0.]
                 #  [0. 1. 0. 0. 0. 0. 0. 0. 0. 0.]
-                #  [1. 0. 0. 0. 0. 0. 0. 0. 0. 0.]]
+                #  [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]]
 
                 # Can also be used for ndarray.
 
@@ -4450,11 +4453,8 @@ Array Manipulation:
         template: TI
     arguments:
       shape:
-        doc: Number of classes. Note that it must be exactly the same as the number
-          of classes included in label data. Passing incorrect numbers might cause
-          an unexpected error and currently this function doesn't check if the input
-          is valid or not. Also, when nd-labels are given, dimensions must match.
-          See the example above.
+        doc: Number of classes. When nd-labels are given, dimensions must match. See
+          the example above.
         type: Shape
     outputs:
       output:
@@ -5202,6 +5202,43 @@ Array Manipulation:
     c_runtime: not support
     function_ids:
       Bfi: 306
+  NonZero:
+    snake_name: nonzero
+    doc: |2
+
+      Find indices of non-zero elements.
+
+      NonZero behaves similar to NonZero Operator in ONNX.
+
+      Examples:
+
+      >>> import numpy as np, nnabla as nn, nnabla.functions as F
+      >>> nn.set_auto_forward(True)
+      >>> x = F.arange(1, 10).reshape([3, 3])
+      >>> x.d[0, 1] = x.d[1, 2] = x.d[2, 2] = 0
+      >>> print(x.d)
+      [[1. 0. 3.],
+       [4. 5. 0.],
+       [7. 8. 0.]]
+      >>> y = F.nonzero(x)
+      >>> print(y.shape)
+      (2, 6)
+      >>> print(y.d)
+      [[0 0 1 1 2 2],
+       [0 2 0 1 0 1]]
+
+      Note that this function is normally used with the dynamic graph 
+      since this function outputs a variable-length output. If used with 
+      the static graph, a network has to be constructed all time in iteration.
+    inputs:
+      x:
+        doc: N-D arrays.
+    outputs:
+      y:
+        doc: N-D array indices.
+    c_runtime: not support
+    function_ids:
+      Empty: 351
 Signal Processing:
   Interpolate:
     snake_name: interpolate
@@ -5254,6 +5291,80 @@ Signal Processing:
       iIiBB: 286
       iIiBBBB: 291
     c_runtime: not support
+  ONNXResize:
+    snake_name: onnx_resize
+    doc: |2
+
+      Resize an ND array with interpolation. This function provides a 
+      compatible interface to ONNX Resize.
+
+      References:
+          * `ONNX Operators documentation.
+          <https://github.com/onnx/onnx/blob/main/docs/Operators.md>`
+    inputs:
+      x:
+        doc: N-D array.
+    arguments:
+      roi:
+        doc: RoIs for tf_crop_and_resize.
+        type: repeated float
+        default: ()
+      scales:
+        doc: Scale factors along axes.
+        type: repeated float
+        default: ()
+      sizes:
+        doc: Output size.
+        type: repeated int64
+        default: ()
+      mode:
+        doc: Interpolation mode chosen from ('nearest'|'linear'|'cubic').
+        type: string
+        available_values:
+        - nearest
+        - linear
+        - cubic
+        default: '''nearest'''
+      coordinate_transformation_mode:
+        doc: How to transform the coordinate in the resized tensor to the coordinate
+          in the original tensor. This mode is chosen from ('half_pixel'|'pytorch_half_pixel'|'align_corners'|'asymmetric'|'tf_crop_and_resize').
+        type: string
+        available_values:
+        - half_pixel
+        - pytorch_half_pixel
+        - align_corners
+        - asymmetric
+        - tf_crop_and_resize
+        default: '''half_pixel'''
+      cubic_coeff_a:
+        doc: The coefficient used in cubic interpolation.
+        type: float
+        default: -0.75
+      exclude_outside:
+        doc: Whether to set coefficients to zero when sampling locations is outside
+          the input tensor.
+        type: int64
+        default: 0
+      extrapolation_value:
+        doc: An extrapolation value used when a sampling location is outside the input
+          tensor at tf_crop_and_resize mode.
+        type: float
+        default: 0.0
+      nearest_mode:
+        doc: Rounding mode for nearest-neighbor interpolation.
+        type: string
+        available_values:
+        - round_prefer_floor
+        - round_prefer_ceil
+        - floor
+        - ceil
+        default: '''round_prefer_floor'''
+    outputs:
+      y:
+        doc: N-D array.
+    c_runtime: not support
+    function_ids:
+      fFfFiIiififi: 352
   FFT:
     snake_name: fft
     doc: |2+
@@ -7753,6 +7864,58 @@ Unsupported, Special Use:
     function_ids:
       ffB: 231
     c_runtime: not support
+  ONNXNonMaxSuppression:
+    snake_name: onnx_non_max_suppression
+    doc: |2
+
+      Non-Maximum Suppression (NMS) to 2D Object detector output. This function
+      provides a ONNX-compatible interface of Non-Maximum Suppression.
+      The first input is a 3-dimensional bounding box tensor with shape of
+      ``(B, N, 4)`` where ``B`` denotes batch size and ``N`` denotes the 
+      number of detection box candidates.
+      ``4`` consists of the box coordinates ``y1, x1, y2, x2`` in normalized
+      coordinates (size of each x and y are 1.0).
+      The second input is a 3-dimensional score tensor with shape of
+      ``(B, C, N)`` where ``C`` denotes the number of classes of object
+      detection.
+      It outputs the indices of the selected boxes as a tensor with shape of
+      ``(M, 3)`` where ``M`` denotes the number of the selected boxes.
+      ``3`` consists of 3-dimensional indices
+      ``batch_index, class_index, box_index``.
+
+      References:
+          * `Joseph Redmon, Ali Farhadi, YOLO9000: Better, Faster, Stronger.
+            <https://arxiv.org/abs/1612.08242>`_
+          * `ONNX Operators documentation.
+            <https://github.com/onnx/onnx/blob/main/docs/Operators.md>`
+    inputs:
+      boxes:
+        doc: A 3-dimensional array.
+      scores:
+        doc: A 3-dimensional array.
+    arguments:
+      center_point_box:
+        doc: Bounding box format (0 or 1).
+        type: int64
+        default: 0
+      max_output_boxes_per_class:
+        doc: The maximum number of boxes selected per batch per class.
+        type: int64
+        default: 0
+      iou_threshold:
+        doc: IoU threshold for Non-maximum suppression (NMS).
+        type: float
+        default: 0.0
+      score_threshold:
+        doc: Detection score threshold.
+        type: float
+        default: 0.0
+    outputs:
+      y:
+        doc: A 2-dimensional array.
+    c_runtime: not support
+    function_ids:
+      iiff: 353
   MaxPoolingBackward:
     snake_name: max_pooling_backward
     doc: |2
