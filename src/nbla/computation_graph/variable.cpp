@@ -1157,15 +1157,6 @@ void CgVariable::clear_during_auto_forward() {
 
   auto synced_array = variable()->data()->array();
 
-  // NOTE: We prohibit clearing narrowed SyncedArray.
-  // Once we implement a Function relying SyncedArray::narrow(),
-  // we consider allowing releasing memory.
-  NBLA_CHECK(!synced_array->has_family(), error_code::value,
-             "Clearing any SyncedArray with a parent or a child created by "
-             "narrow is prohibited in the current implementation. This "
-             "restriction could be relaxed by considering new use cases of the "
-             "narrow function.");
-
   // Memory is released if the reference is the last one and is required for
   // gradient computation have any gradient computation in Function::backward or
   // Python backward functions.
@@ -1173,6 +1164,17 @@ void CgVariable::clear_during_auto_forward() {
       synced_array->get_python_user_reference_counts() < 2 &&
       // This data must not be released if it is used when backprop.
       !has_grad_dependency()) {
+
+    // NOTE: We prohibit clearing narrowed SyncedArray.
+    // Once we implement a Function relying SyncedArray::narrow(),
+    // we consider allowing releasing memory.
+    NBLA_CHECK(
+        !synced_array->has_family(), error_code::value,
+        "Clearing any SyncedArray with a parent or a child created by "
+        "narrow is prohibited in the current implementation. This "
+        "restriction could be relaxed by considering new use cases of the "
+        "narrow function.");
+
     synced_array->clear();
   }
 }
