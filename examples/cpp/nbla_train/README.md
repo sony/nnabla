@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This example demonstrates the workflow to train a classification model in C++ training cli.
+This example demonstrates the workflow to train a classification model in C++ training cli. We tested on Ubuntu 20.04 LTS and Python 3.8.10.
 
 # Install C++ libraries
 
@@ -13,8 +13,10 @@ Note: this example requires zlib and NNabla Python package installed.
 ## Download MNIST dataset and create cached files.
 This example requires cached MNIST dataset files.
 We provide an example script which creates them with utils in mnist-example collections.
+You need to download the `nnabla-examples` repository, which is located in the same grade directory as the `nnabla` repository.
+
 ```shell
-python create_mnist_cached.py
+python create_mnist_cache.py
 ```
 This command create 'cache' directory in the current directory.
 
@@ -23,7 +25,6 @@ This example requires initialized model parameters and a network definition save
 We provide an example script which creates the NNP file from a classification example in mnist-example collections.
 
 ```shell
-export NNABLA_DIR=../../../../nnabla_examples/
 python create_initialized_model.py
 ```
 
@@ -80,6 +81,9 @@ Following code specifies the information necessary for the network definition.
             {'name': 'validation_loss',
              'network': 'validation',
              'dataset': 'mnist_validation'}],
+        'executors': [
+            {'name': 'Executor',
+             'network': 'training'}],
     }
 
     nn.utils.save.save(nnp_file, training_contents)
@@ -95,12 +99,12 @@ The computation graph can be set by the output variable `loss` in the `outputs` 
 At the same time, the input variables `x` and `y` of the computation graph are registered in `names` field.
 To query an input or intermediate variable in the computation graph via the C++ interface, you should set a filed `names` in a format of `{<name>: <Variable>}`.
 
-## Build MNIST training example in C++ code
-You can find an executable file 'mnist_training' under the build directory located at nnabla/build/bin.
-If you want to build it yourself using makefile you can refer to the following commands in linux environments.
+## MNIST training example with nbla
+You can find an executable file 'nbla' under the build directory located at nnabla/build/bin. 
+then, copy 'nbla' file to current directory.
 
 ```shell
-nbla train lenet_initialized.nnp result
+./nbla train lenet_initialized.nnp result
 ```
 
 The above command creates result directory and we can see the logs of the training operation.

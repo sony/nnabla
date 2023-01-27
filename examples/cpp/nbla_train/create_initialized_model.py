@@ -150,6 +150,9 @@ def main():
             {'name': 'validation_loss',
              'network': 'validation',
              'dataset': 'mnist_validation'}],
+        'executors': [
+            {'name': 'Executor',
+             'network': 'training'}],
     }
     nn.utils.save.save(nnp_file, training_contents)
 

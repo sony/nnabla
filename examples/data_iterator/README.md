@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is demonstration of DataIterator in NNabla.
+This is demonstration of DataIterator in NNabla. We tested on Ubuntu 20.04 LTS and Python 3.8.10.
 
 ## dataiterator.py
 
@@ -44,6 +44,13 @@ optional arguments:
 You can use your own data with CSV_DATASET format, MNIST or TINY
 IMAGENET download on-demand from internet.
 
+You need to copy `mnist_data.py` and `tiny_imagenet_data.py` files from the [nnabla-examples](https://github.com/sony/nnabla-examples) repository to the same grade directory as the `dataiterator.py` file. 
+Download path:
+
+`nnabla-examples/image-classification/mnist-collection/mnist_data.py` 
+
+`nnabla-examples/image-classification/imagenet/obsolete/tiny_imagenet_data.py`
+
 Detailed specification of CSV_DATASET format will be coming soon.
 Before document comes, please see python/src/nnabla/utils/data-iterator.py
 
@@ -53,7 +60,7 @@ Before document comes, please see python/src/nnabla/utils/data-iterator.py
 Here is demonstration with MNIST dataset.
 
 ```
-$ python examples/data_iterator/dataiteretor.py MNIST_TRAIN
+$ python examples/data_iterator/dataiterator.py MNIST_TRAIN
 2017-06-23 13:23:24,711 [nnabla][INFO]: Initializing CPU extension...
 2017-06-23 13:23:24,904 [nnabla][INFO]: DataSource with shuffle(False)
 2017-06-23 13:23:24,904 [nnabla][INFO]: Getting label data from http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz.

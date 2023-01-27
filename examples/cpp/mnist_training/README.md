@@ -3,7 +3,7 @@
 ## Introduction
 
 This example demonstrates the workflow to train a classification model in C++.
-Although this example is only tested on Ubuntu 16.04 so far,
+Although this example is only tested on Ubuntu 20.04 LTS and Python 3.8.10 so far,
 a similar procedure to build the system should work on other operating systems with little effort.
 We will add more useful examples in near future.
 
@@ -11,7 +11,7 @@ We will add more useful examples in near future.
 
 Please follow [the installation manual](https://github.com/sony/nnabla/blob/master/doc/build/build_cpp_utils.md).
 
-Note: this example requires zlib and NNabla Python package installed.
+Note: this example requires `zlib` and `nnabla` Python package installed.
 
 Also MNIST dataset is required in the same directory.
 It can be downloaded from the following URLs.
@@ -21,6 +21,7 @@ It can be downloaded from the following URLs.
 ## Create NNP file of an initialized model for MNIST classification.
 This sample requires initialized model parameters and a network definition saved as an NNP file.
 We provide an example script which creates the NNP file from a classification example in mnist-example collections.
+You need to download the `nnabla-examples` repository, which is located in the same grade directory as the `nnabla` repository.
 
 ```shell
 python create_initialized_model.py
@@ -67,8 +68,10 @@ Please download and refer to `nnabla-ext-cuda` repository for details.
 ## Handwritten digit training
 By running the generated example with no argument, you can see the usage documentation.
 
+Note: The `mnist_training` execution file must be in the same grade directory as the MNIST dataset.
+
 ```shell
-./mnist_training
+./mnist_training 
 ```
 
 Output:
@@ -94,12 +97,9 @@ The output file named `parameter.protobuf` contains the learned parameters.
 Following process is temporary and at a later date, we will prepare a save function for nnp.
 
 ```shell
- cp lenet_initialized.nnp lenet_learned.nnp
- unzip lenet_learned.nnp
- zip lenet_learned.nnp nnp_version.txt network.nntxt parameter.protobuf
+cp lenet_initialized.nnp lenet_learned.nnp
+zip lenet_learned.nnp parameter.protobuf
 ```
-
-You will be asked "replace parameter.protobuf?" when unzipping, so please answer "n".
 
 After getting learned.nnp, you can use it as a model file for "mnist_runtime".
 

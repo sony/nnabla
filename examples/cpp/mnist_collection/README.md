@@ -3,7 +3,7 @@
 ## Introduction
 
 These examples demonstrate the workflow to design and train models for MNIST in C++.
-Although these are only tested on Ubuntu 16.04 so far,
+Although these are only tested on Ubuntu 20.04 LTS and Python 3.8.10 so far,
 a similar procedure to build the system should work on other operating systems with little effort.
 
 ## Install C++ libraries
@@ -20,7 +20,7 @@ It can be downloaded from the following URLs.
 * Test labels : http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz
 
 ## Build training example in C++ code
-You can find executable files `train_lenet_classifier`, `train_resnet_classifier`, `train_vae`, `train_siamese`, `train_dcgan` and `train_vat`  under the build directory located at nnabla/build/bin.
+You can find executable files `train_lenet_classifier`, `train_resnet_classifier`, `train_vae`, `train_siamese`, `train_dcgan` and `train_vat` under the build directory located at nnabla/build/bin.
 If you want to build it yourself using makefile you can refer to the following command in linux environments.
 
 ```shell
@@ -37,7 +37,9 @@ Also you can compile an executable `training_lenet_classifier_cuda` and other cu
 Please download and refer to `nnabla-ext-cuda` repository for details.
 
 ## Run training example
-By running the generated example without any arguments.
+By running the generated example without any arguments. 
+
+Note: The `train_lenet_classifier` execution file must be in the same grade directory as the MNIST dataset.
 
 ```shell
 ./train_lenet_classifier

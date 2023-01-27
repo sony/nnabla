@@ -5,6 +5,10 @@ NNabla CUDA extension package installation using PIP
 
 Note: please refer to the :ref:`pip_os_specific` for the OS specific dependencies setup.
 
+In addition to NNabla's requirements, CUDA extension requires CUDA setup has done on your system. If you don't have CUDA on your system, follow the procedure described below.
+
+Download and install `CUDA toolkit <https://developer.nvidia.com/cuda-downloads>`_ and `cuDNN library(Registration required) <https://developer.nvidia.com/rdp/cudnn-download>`_ (both runtime library and development library). Please follow the instruction in the document provided by NVIDIA. Do NOT see any instruction provided by any third party. They are often incorrect or based on old instructions, that could destroy your system.
+
 By installing the NNabla CUDA extension package ``nnabla-ext-cuda``, you can accelerate the computation by NVIDIA CUDA GPU (CUDA must be setup on your environment accordingly).
 
 Several pip packages of NNabla CUDA extension are provided for each CUDA version and its corresponding cuDNN version as following.
@@ -103,13 +107,13 @@ If you already installed NNabla, uninstall all of it, or start from a clean envi
 
 You should also install OpenMPI and NCCL in addition to CUDA and CuDNN.
 
-If you are using Ubuntu18.04 and choose mpi2.1.1, you can install mpi with following command.
+If you are using Ubuntu 20.04 and choose mpi4.0.3, you can install mpi with following command.
 
 .. code-block:: bash
 
   sudo apt install -y --no-install-recommends openmpi-bin libopenmpi-dev
 
-Otherwise, you must install openmpi with following command.(MPIVER=3.1.6 or 4.1.3)
+Otherwise, you must install a version openmpi by supported on ubuntu 20.04. (e.g. 3.1.6 or 4.1.3). In theory, all versions of openmpi are supported.
 
 .. code-block:: bash
 
