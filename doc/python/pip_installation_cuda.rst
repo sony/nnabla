@@ -23,6 +23,7 @@ Package name       CUDA version cuDNN version
 ================== ============ =====================
 nnabla-ext-cuda110 11.0.3       8.0(Linux & Win)
 nnabla-ext-cuda114 11.4.3       8.0(Linux & Win)
+nnabla-ext-cuda116 11.6.2       8.0(Linux & Win)
 ================== ============ =====================
 
 The latest CUDA version is always preferred if your GPU accepts.
@@ -92,6 +93,7 @@ Package name                        CUDA version cuDNN version
 =================================== ============ =============
 nnabla-ext-cuda110                  11.0.3       8.0
 nnabla-ext-cuda114                  11.4.3       8.0
+nnabla-ext-cuda116                  11.6.2       8.0
 =================================== ============ =============
 
 You can install as the following.
