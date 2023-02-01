@@ -11,15 +11,15 @@ NOTE: Our testing coverage in terms of environments and machines on macOS is ver
 Prerequisites
 ^^^^^^^^^^^^^
 
-We test the installation on macOS Sierra.
+We test the installation on macOS 11.
 
 The following software are required for installation:
 
-* Python>=3.7 (We'd recommend you to setup Python using Anaconda or `Miniconda <https://conda.io/miniconda.html>`_).
+* Python>=3.7 (You can also use another distribution. e.g. `pyenv <https://github.com/pyenv/pyenv>`_ or `Miniconda <https://conda.io/miniconda.html>`_).
 
-  * pip (bundled in Conda Python)
-  * wheel (bundled in Conda Python)
-  * setuptools (bundled in Conda Python. You may need to upgrade the version of setuptools with ``pip install -U --no-deps setuptools``.)
+  * pip
+  * wheel (``pip install wheel``)
+  * setuptools (You may need to upgrade the version of setuptools with ``pip install -U --no-deps setuptools``.)
 
 Install
 ^^^^^^^
