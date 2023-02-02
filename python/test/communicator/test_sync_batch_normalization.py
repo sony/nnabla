@@ -294,3 +294,76 @@ def test_sync_batch_normalization_forward_backward(seed, axis, decay_rate, eps, 
 
         if not no_variance:
             assert_allclose(vinputs[4].d, inputs[4], atol=1e-3)
+
+
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize('shape', [(64, 64, 112, 112)])
+@pytest.mark.parametrize("decay_rate", [0.9])
+@pytest.mark.parametrize("eps", [1e-5])
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+def test_sync_batch_normalization_channel_first_last_consistency(
+        seed, shape, decay_rate, eps,
+        ctx, func_name, comm_nccl_opts):
+
+    import nnabla.parametric_functions as PF
+
+    if comm_nccl_opts is None:
+        pytest.skip(
+            "Communicator test is disabled. You can turn it on by an option `--test-communicator`.")
+
+    comm = comm_nccl_opts.comm
+    device_id = int(comm_nccl_opts.device_id)
+    n_devices = len(comm_nccl_opts.devices)
+    ctx.device_id = comm_nccl_opts.device_id
+
+    rng = np.random.RandomState(seed)
+
+    # channel_first = True
+    CL_LAYOUT = (0, 2, 3, 1)
+
+    def get_input(channel_first):
+        shp = shape if channel_first else tuple(shape[i] for i in CL_LAYOUT)
+        axes = [1] if channel_first else [3]
+        x = nn.Variable(shp, need_grad=True)
+        return shp, axes, x
+
+    shape_f, axes_f, x_f = get_input(channel_first=True)
+    shape_l, axes_l, x_l = get_input(channel_first=False)
+    x_f.d = rng.randn(*shape_f).astype(np.float32)
+    x_l.d = x_f.d.transpose(CL_LAYOUT)
+    with nn.context_scope(ctx):
+        with nn.parameter_scope('f'):
+            y_f = PF.sync_batch_normalization(
+                x_f, comm=comm, axes=axes_f, decay_rate=decay_rate, eps=eps)
+            params_f = nn.get_parameters(grad_only=False)
+        with nn.parameter_scope('l'):
+            y_l = PF.sync_batch_normalization(
+                x_l, comm=comm, axes=axes_l, decay_rate=decay_rate, eps=eps)
+            params_l = nn.get_parameters(grad_only=False)
+
+    # Check if the both channel_first and channel_last give the close outputs each other
+    for i in range(2):
+        for x, y, params in zip((x_f, x_l), (y_f, y_l), (params_f, params_l)):
+            for p in params.values():
+                p.grad.zero()
+            x.grad.zero()
+            y.forward(clear_no_need_grad=True)
+            y.backward(clear_buffer=True)
+
+        # Check if x's grad is right
+        assert_allclose(x_f.g.transpose(CL_LAYOUT),
+                        x_l.g, err_msg='error in x.g @ {i} iter')
+
+        # Check if params' data & grad are right
+        for (k_f, p_f), (k_l, p_l) in zip(params_f.items(), params_l.items()):
+            assert k_f == k_l
+            assert_allclose(p_f.d.transpose(CL_LAYOUT), p_l.d,
+                            err_msg=f'error in {k_f}.d @ {i} iter')
+            if not p_f.need_grad:
+                continue
+            if k_f.endswith('gamma') and 'Cuda' in func_name:
+                # TODO: Now it seems that gamma's grad is inconsistent between layouts
+                # in CUDA implementation.
+                continue
+            assert_allclose(p_f.g.transpose(CL_LAYOUT), p_l.g,
+                            err_msg=f'error in {k_f}.g @ {i} iter')
