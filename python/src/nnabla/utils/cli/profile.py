@@ -235,11 +235,15 @@ def profile_command(args):
         m.data_iterators = []
         config.monitors[name] = m
 
-    ext_module = import_extension_module(
-        config.global_config.default_context.backend[0].split(':')[0])
+    try:
+        ext_module = import_extension_module(
+            config.global_config.default_context.backend[0].split(':')[0])
 
-    def synchronize(): return ext_module.synchronize(
-        device_id=config.global_config.default_context.device_id)
+        def synchronize(): return ext_module.synchronize(
+            device_id=config.global_config.default_context.device_id)
+
+    except (ImportError, ModuleNotFoundError):
+        def synchronize(): return None
 
     result_array = [['time in ms']]
 
