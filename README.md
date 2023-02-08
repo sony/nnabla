@@ -21,16 +21,15 @@ Installing Neural Network Libraries is easy:
 pip install nnabla
 ```
 
-This installs the CPU version of Neural Network Libraries. GPU-acceleration can be added by installing the CUDA extension with following command.  
+This installs the CPU version of Neural Network Libraries. GPU-acceleration can be added by installing the CUDA extension with following command.
 ```
 pip install nnabla-ext-cuda110
-```  
-Above command is for version 11.0 CUDA Toolkit.  
+```
+Above command is for version 11.0 CUDA Toolkit.
 
-for other versions:  
-`pip install nnabla-ext-cuda102` for CUDA version 10.2.  
-  
-CUDA ver. 10.1, ver. 9.x, ver. 8.x are not supported now.  
+The other supported CUDA packages are listed [here](https://nnabla.readthedocs.io/en/latest/python/pip_installation_cuda.html#cuda-vs-cudnn-compatibility).
+
+CUDA ver.10.x, ver.9.x, ver.8.x are not supported now.
 
 
 For more details, see the [installation section](http://nnabla.readthedocs.io/en/latest/python/installation.html) of the documentation.
@@ -144,6 +143,8 @@ Neural Network Libraries provides a command line utility `nnabla_cli` for easier
 - Dataset and Parameter manipulation.
 - File format converter
   - From ONNX to NNP and NNP to ONNX.
+  - From TensorFlow to NNP and NNP to TensorFlow.
+  - From NNP to TFLite.
   - From ONNX or NNP to NNB or C source code.
 
 For more details see [Documentation](doc/python/command_line_interface.rst)
@@ -152,7 +153,7 @@ For more details see [Documentation](doc/python/command_line_interface.rst)
 ### Portable and multi-platform
 
 * Python API can be used on Linux and Windows
-* Most of the library code is written in C++11, deployable to embedded devices
+* Most of the library code is written in C++14, deployable to embedded devices
 
 ### Extensible
 
@@ -204,7 +205,10 @@ It also depends on some open source software packages. For more information, see
 ```
 @misc{hayakawa2021neural,
       title={Neural Network Libraries: A Deep Learning Framework Designed from Engineers' Perspectives}, 
-      author={Akio Hayakawa and Masato Ishii and Yoshiyuki Kobayashi and Akira Nakamura and Takuya Narihira and Yukio Obuchi and Andrew Shin and Takuya Yashima and Kazuki Yoshiyama},
+      author={Takuya Narihira and Javier Alonsogarcia and Fabien Cardinaux and Akio Hayakawa
+              and Masato Ishii and Kazunori Iwaki and Thomas Kemp and Yoshiyuki Kobayashi
+              and Lukas Mauch and Akira Nakamura and Yukio Obuchi and Andrew Shin and Kenji Suzuki
+              and Stephen Tiedmann and Stefan Uhlich and Takuya Yashima and Kazuki Yoshiyama},
       year={2021},
       eprint={2102.06725},
       archivePrefix={arXiv},
