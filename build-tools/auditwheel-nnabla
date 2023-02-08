@@ -50,6 +50,7 @@ then
             if [[ "$SOFILE" = *"libcudnn_"* ]]; then
                 patchelf --add-needed $SOFILE $NNABLA_EXT_SO
                 patchelf --set-rpath '$ORIGIN' $NNABLA_EXT_SO
+                patchelf --set-rpath '$ORIGIN' $SOFILE
                 echo "Add dependency $SOFILE to $NNABLA_EXT_SO"
             fi
         done
