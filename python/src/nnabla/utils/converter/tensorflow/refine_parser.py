@@ -32,6 +32,10 @@ class RefineParser:
                                  tracking=False
                                  )
 
+    def p_empty(self, p):
+        """empty :"""
+        pass
+
     def p_rf_net(self, p):
         """ rf_net   :    rf_layers
         """
@@ -88,9 +92,17 @@ class RefineParser:
          """
         p[0] = p[1]
 
+    def p_rf_add(self, p):
+        """ rf_add : Add
+                   | AddV2
+                   | empty
+        """
+        p[0] = p[1]
+
     def p_rf_split_stmt(self, p):
         """ rf_split_stmt     :    Split
                              |    SplitV
+                             |    empty
         """
         p[0] = p[1]
 
@@ -101,11 +113,10 @@ class RefineParser:
         p[0] = p[1]
 
     def p_rf_conv_transpose(self, p):
-        """ rf_conv_transpose  :    Transpose rf_split_stmt Conv2DBackpropInput Slice Identity Add Transpose
-                               |    Transpose rf_split_stmt Conv2DBackpropInput Slice Identity Transpose
-                               |    Transpose rf_split_stmt Conv2DBackpropInput Pad Slice Identity Add Transpose
+        """ rf_conv_transpose  :    Transpose rf_split_stmt Conv2DBackpropInput Slice Identity rf_add Transpose
+                               |    Transpose rf_split_stmt Conv2DBackpropInput Pad Slice Identity rf_add Transpose
         """
-        p[0] = self.graph.conv_transpose(p[1:])
+        p[0] = self.graph.conv_transpose([v for v in p[1:] if v is not None])
 
     def p_rf_p_relu(self, p):
         """ rf_p_relu  :    Relu Abs Sub Mul Mul Add
@@ -120,15 +131,15 @@ class RefineParser:
         p[0] = self.graph.conv_bn(p[1:])
 
     def p_rf_conv_2d(self, p):
-        """ rf_conv_2d  :    Pad Transpose rf_split_stmt Conv2D Identity Add Transpose
+        """ rf_conv_2d  :    Pad Transpose rf_split_stmt Conv2D Identity rf_add Transpose
                         |   Pad Transpose rf_split_stmt Conv2D Identity Transpose
-                        |   Pad Transpose rf_split_stmt rf_conv2d_loop_stmt ConcatV2 Add Transpose
+                        |   Pad Transpose rf_split_stmt rf_conv2d_loop_stmt ConcatV2 rf_add Transpose
                         |   Pad Transpose rf_split_stmt rf_conv2d_loop_stmt ConcatV2 Transpose
-                        |   Transpose rf_split_stmt rf_conv2d_loop_stmt Identity Add Transpose
+                        |   Transpose rf_split_stmt rf_conv2d_loop_stmt Identity rf_add Transpose
                         |   Transpose rf_split_stmt rf_conv2d_loop_stmt Identity Transpose
                         |   Transpose rf_split_stmt rf_conv2d_loop_stmt ConcatV2 Transpose
         """
-        p[0] = self.graph.conv2d(p[1:])
+        p[0] = self.graph.conv2d([v for v in p[1:] if v is not None])
 
     def p_rf_pool_stmt(self, p):
         """ rf_pool_stmt     :    MaxPool
@@ -152,10 +163,9 @@ class RefineParser:
         p[0] = self.graph.bn(p[1:])
 
     def p_rf_affine(self, p):
-        """ rf_affine    :    Reshape Reshape MatMul Mul Add Reshape
-                         |    Reshape Reshape MatMul Mul Add
-                         |    Reshape Reshape MatMul Mul Add Reshape Reshape Mul Add
-                         |    Reshape Reshape MatMul Mul AddV2
+        """ rf_affine    :    Reshape Reshape MatMul Mul rf_add Reshape
+                         |    Reshape Reshape MatMul Mul rf_add
+                         |    Reshape Reshape MatMul Mul rf_add Reshape Reshape Mul rf_add
         """
         p[0] = self.graph.affine(p[1:])
 

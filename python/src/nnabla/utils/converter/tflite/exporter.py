@@ -17,12 +17,17 @@ import numpy as np
 import json
 import os
 import subprocess
+from contextlib import contextmanager
 from functools import partial
+import itertools
 from enum import Enum
 from nnabla.utils import nnabla_pb2
 import nnabla as nn
 from nnabla.core.graph_optimizer import IdentityRemover
 import sys
+import time
+import copy
+import tensorflow as tf
 
 
 random_seed = 0
@@ -33,6 +38,23 @@ elif sys.platform == 'darwin':
 else:
     fn = 'flatc_windows.exe'
 flatc_path = os.path.join(os.path.dirname(__file__), fn)
+
+
+TENSOR_TYPE_TO_DTYPE = {
+    'FLOAT32': np.float32,
+    'INT32': np.int32,
+    'BOOL': bool,
+}
+
+
+@contextmanager
+def time_consumed_scope(message):
+    t = time.time()
+    sys.stdout.write(message)
+    sys.stdout.flush()
+    yield
+    sys.stdout.write(
+        f'done. (elpased time: {time.time() - t: .3f} seconds).\n')
 
 
 def fork_name(name):
@@ -98,7 +120,6 @@ class TFLiteExporter:
         self.models = None
         self.operator_codes_list = []
         self.operators_list = []
-        self.buffer_list = ['Version']
         self.tensor_list = []
         self.tflite_model_info = {'inputs': {}, 'outputs': {}}
         self.cur_base_axis = 1
@@ -106,6 +127,7 @@ class TFLiteExporter:
         self.executor = None
         self.inputs = []
         self.outputs = []
+        self.output_file = None
 
         self.map_nn_func_to_tflite_op = {
             'Abs': partial(self.SignalInputGenericFunc, 'ABS'),
@@ -273,7 +295,7 @@ class TFLiteExporter:
                 [sum_out, reduce_size], [div_out], 'DIV')
             inputs[4] = div_out
 
-        if self.quantization:
+        if self.parameters.get(inputs[1]) is not None:
             mean = self.parameters[inputs[3]]
             var = self.parameters[inputs[4]]
             beta = self.parameters[inputs[1]]
@@ -1215,7 +1237,40 @@ class TFLiteExporter:
         inputs[0], outputs[0] = self.format_nn_function(
             inputs[0], outputs[0], to_2d=False)
 
-        self.convert_generic_tflite_op(inputs, outputs, 'PRELU')
+        if not self.quantization:
+            self.convert_generic_tflite_op(inputs, outputs, 'PRELU')
+        else:
+            # Maximun(input, 0)
+            input_shape = self.variables[pf.inputs[0]][:]
+            inputs = [pf.inputs[0]]
+            zero = fork_name('PRELU') + "_zero"
+            self.create_parameter(zero, [1] * len(input_shape), [0.0])
+            inputs.append(zero)
+            p_outputs = [fork_name('PRELU') + "_p_out"]
+            self.variables[p_outputs[0]] = input_shape
+            self.convert_generic_tflite_op(inputs, p_outputs, "MAXIMUM")
+
+            # Minimum(input, 0)
+            inputs = [pf.inputs[0]]
+            inputs.append(zero)
+            n_outputs = [fork_name('PRELU') + "_n_out"]
+            self.variables[n_outputs[0]] = input_shape
+            self.convert_generic_tflite_op(inputs, n_outputs, "MINIMUM")
+
+            # MUL(n_out, slope)
+            inputs = [n_outputs[0], pf.inputs[1]]
+            m_outputs = [fork_name('PRELU') + "_mul_out"]
+            self.variables[m_outputs[0]] = input_shape
+            slope_shape_broadcast = [1] * len(input_shape)
+            slope_shape_broadcast[-1] = slope_shape[0]
+            self.variables[pf.inputs[1]] = slope_shape_broadcast
+            self.convert_generic_tflite_op(inputs, m_outputs, "MUL")
+
+            # ADD(p_out, mul_out)
+            inputs = [p_outputs[0], m_outputs[0]]
+            outputs = pf.outputs[:]
+            self.convert_generic_tflite_op(inputs, outputs, "ADD")
+
         self.propagate_variable_semantic(pf)
 
     def Tan(self, pf):
@@ -1769,7 +1824,6 @@ class TFLiteExporter:
         else:  # variable.type == 'Buffer'
             buffer_data = {}
         self.models['buffers'].append(buffer_data)
-        self.buffer_list.append(name)
 
     def create_tensor_info(self, shape, buffer_index, name, quantization, dtype, shape_signature=None):
         tensor_info = dict()
@@ -1783,11 +1837,6 @@ class TFLiteExporter:
         return tensor_info
 
     def create_tensors(self, var_list, tensor_type):
-        TENSOR_TYPE_TO_DTYPE = {
-            'FLOAT32': np.float32,
-            'INT32': np.int32,
-            'BOOL': bool,
-        }
         for name in var_list:
             dtype = tensor_type[name] if name in tensor_type else 'FLOAT32'
             if name in self.tensor_list:
@@ -1799,7 +1848,7 @@ class TFLiteExporter:
             else:
                 self.create_model_buffer(name, TENSOR_TYPE_TO_DTYPE[dtype])
                 var_shape = self.variables[name]
-                var_buffer_index = self.buffer_list.index(name)
+                var_buffer_index = len(self.models['buffers']) - 1
                 var_quantization = {}
                 tensor_info = self.create_tensor_info(
                     var_shape, var_buffer_index, name, var_quantization, dtype)
@@ -1912,7 +1961,7 @@ class TFLiteExporter:
         models_info["version"] = 3
         models_info['operator_codes'] = []
         models_info['subgraphs'] = [subgraph_info]
-        models_info['description'] = "MLIR Converted."
+        models_info['description'] = "Exported from nnabla."
         models_info['buffers'] = [
             {"data": [49, 46, 49, 49, 46, 48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}]
         models_info['metadata'] = [{
@@ -2073,11 +2122,253 @@ class TFLiteExporter:
                                     updated_outputs.append(tensor_index)
                                 self.models['subgraphs'][0]['outputs'] = updated_outputs
 
+    def precompute_const_branches(self):
+        def subgraph_new(graph_name):
+            subgraph = {
+                "name": graph_name,
+                "tensors": [],
+                "inputs": [],
+                "outputs": [],
+                "operators": []
+            }
+            return subgraph
+
+        def subgraph_add_operator(subgraph, op, model):
+            def add_tensor(tensor_indics):
+                indics = []
+                for i in tensor_indics:
+                    tensor = origin_subgraph['tensors'][i]
+                    b_idx = tensor['buffer']
+                    if b_idx not in existing_tensors:
+                        # record the index of current tensor
+                        indics.append(len(subgraph['tensors']))
+                        subgraph['tensors'].append(copy.deepcopy(tensor))
+                        if model != self.models:
+                            model['buffers'][b_idx] = self.models['buffers'][b_idx]
+                    else:
+                        indics.append(existing_tensors[b_idx])
+                return indics
+
+            current_operator = copy.deepcopy(op)
+            subgraph['operators'].append(current_operator)
+            existing_tensors = dict([(tensor['buffer'], idx)
+                                     for idx, tensor in enumerate(subgraph['tensors'])])
+            current_operator['inputs'] = add_tensor(op['inputs'])
+            current_operator['outputs'] = add_tensor(op['outputs'])
+            inputs = subgraph['inputs'] + current_operator['inputs']
+            outputs = set(subgraph['outputs']) - set(current_operator['inputs']) | \
+                set(current_operator['outputs'])
+            subgraph['outputs'] = list(outputs)
+            subgraph['inputs'] = list(inputs)
+
+        def subgraph_update_inputs(subgraph):
+            subgraph['inputs'] = list(set(subgraph['inputs']) - set(
+                i for i, tensor in enumerate(compact_subgraph['tensors'])
+                if self.models['buffers'][tensor['buffer']]
+            ) - set(i for op in subgraph['operators'] for i in op['outputs']))
+            output_names = [tensor['name'] for tensor in subgraph['tensors']]
+            subgraph['outputs'] = [output_names.index(origin_subgraph['tensors'][tensor_index]['name'])
+                                   for tensor_index in origin_subgraph['outputs']
+                                   if origin_subgraph['tensors'][tensor_index]['name'] in output_names]
+
+        def precomp_model_infer():
+            interpreter = tf.lite.Interpreter(output_pcb_model_filename)
+            interpreter.allocate_tensors()
+            interpreter.invoke()
+            output_details = interpreter.get_output_details()
+            result_tensors = {}
+            for output_detail in output_details:
+                output_tensor = interpreter.get_tensor(
+                    output_detail['index'])
+                result_tensors[output_detail['index']] = output_tensor
+            return result_tensors
+
+        def model_update_current(graph, b_graph, tensors):
+            self.models['subgraphs'][0] = graph
+            for idx, tensor in tensors.items():
+                b_idx = b_graph['tensors'][idx]['buffer']
+                bytes = tensor.tobytes()
+                self.models['buffers'][b_idx] = {
+                    'data': [bytes[i] for i in range(len(bytes))]
+                }
+
+        precomp_model = {
+            'version': 3,
+            'operator_codes': self.models['operator_codes'][:],
+            'subgraphs': [],
+            'description': "Precomputation Model",
+            'buffers': [{} for _ in self.models['buffers']],
+            'metadata': self.models['metadata'][:]
+        }
+
+        # step 1: collect all const inputs
+        # The outputs of an operator with all const inputs should be set to const inputs
+        const_inputs = set()
+        subgraph_num = 0
+        origin_subgraph = self.models['subgraphs'][0]
+        current_subgraph = subgraph_new("precomp_subgraph")
+        precomp_model['subgraphs'].append(current_subgraph)
+        compact_subgraph = subgraph_new(self.models['subgraphs'][0]["name"])
+
+        for operator in origin_subgraph['operators']:
+            for idx in operator['inputs']:
+                buf_idx = origin_subgraph['tensors'][idx]['buffer']
+                if bool(self.models['buffers'][buf_idx]):
+                    const_inputs.add(buf_idx)
+            all_consts = [origin_subgraph['tensors'][i]['buffer']
+                          in const_inputs for i in operator["inputs"]]
+            if all(all_consts):
+                for idx in operator['outputs']:
+                    buf_idx = origin_subgraph['tensors'][idx]['buffer']
+                    const_inputs.add(buf_idx)
+                subgraph_add_operator(
+                    current_subgraph, operator, precomp_model)
+            else:
+                subgraph_add_operator(compact_subgraph, operator, self.models)
+
+        output_pcb_model_filename = self.output_file.replace(
+            ".tflite", "_pcb.tflite")
+        self.export_to_tflite(precomp_model, output_pcb_model_filename)
+        with time_consumed_scope("Precomputing constant branches..."):
+            output_tensors = precomp_model_infer()
+            model_update_current(
+                compact_subgraph, current_subgraph, output_tensors)
+            subgraph_update_inputs(compact_subgraph)
+            os.remove(output_pcb_model_filename)
+            os.remove(output_pcb_model_filename.replace(
+                "_pcb.tflite", "_pcb.json"))
+
+    def remove_redundant_ops(self):
+        def get_tensor_shape(i):
+            return graph['tensors'][i]['shape']
+        graph = self.models['subgraphs'][0]
+        ops_redundant = {
+            'SPLIT': 1,
+            'SLICE': 0
+        }
+        replacement = {}
+        ops = []
+
+        for operator in graph['operators']:
+            ops.append(operator)
+            op_name = self.get_operator_name(operator)
+            if op_name in ops_redundant:
+                input_shape = get_tensor_shape(
+                    operator['inputs'][ops_redundant[op_name]])
+                if len(operator['outputs']) == 1:
+                    output_shape = get_tensor_shape(operator['outputs'][0])
+                    if input_shape == output_shape:
+                        replacement[operator['outputs'][0]
+                                    ] = operator['inputs'][ops_redundant[op_name]]
+                        ops.pop()
+        graph['operators'] = ops
+
+        for operator in graph['operators']:
+            operator['inputs'] = [replacement.get(
+                i, i) for i in operator['inputs']]
+
+        graph["outputs"] = [replacement.get(
+            i, i) for i in graph['outputs']]
+
+    def pack_and_reassign_ops(self):
+        ops_reference_map = {op['builtin_code']: 0
+                             for op in self.models['operator_codes']}
+        ops_name_index_map = {op['builtin_code']: i for i,
+                              op in enumerate(self.models['operator_codes'])}
+        for op in self.models['subgraphs'][0]['operators']:
+            op_def = self.models['operator_codes'][op['opcode_index']]
+            ops_reference_map[op_def['builtin_code']] += 1
+        new_operator_codes = []
+        ops_index_map = {}
+        for op in self.models['operator_codes']:
+            if ops_reference_map[op['builtin_code']] > 0:
+                ops_reference_map[op['builtin_code']] = 0
+                new_operator_codes.append(op)
+                op_idx = len(new_operator_codes) - 1
+                ops_index_map[ops_name_index_map[op['builtin_code']]] = op_idx
+        self.models['operator_codes'] = new_operator_codes
+        for op in self.models['subgraphs'][0]['operators']:
+            old_index = op['opcode_index']
+            op['opcode_index'] = ops_index_map.get(old_index, old_index)
+
+    def replace_split_for_quant(self):
+        def update_tables():
+            self.operator_codes_list = [op['builtin_code']
+                                        for op in self.models['operator_codes']]
+            self.tensor_list = [tensor['name']
+                                for tensor in self.models['subgraphs'][0]['tensors']]
+
+        def get_tensor_shape(i):
+            subgraph = self.models['subgraphs'][0]
+            return subgraph['tensors'][i]['shape']
+
+        def get_tensor_buffer_value(i):
+            subgraph = self.models['subgraphs'][0]
+            buf_idx = subgraph['tensors'][i]['buffer']
+            type = subgraph['tensors'][i]['type']
+            shape = subgraph['tensors'][i]['shape']
+            data = np.frombuffer(
+                bytes(self.models['buffers'][buf_idx]['data']),
+                dtype=TENSOR_TYPE_TO_DTYPE[type])
+            data = data.reshape(shape)
+            return data
+
+        def get_tensor_name(i):
+            subgraph = self.models['subgraphs'][0]
+            return subgraph['tensors'][i]['name']
+
+        def get_tensor_names(v):
+            subgraph = self.models['subgraphs'][0]
+            return [subgraph['tensors'][i]['name'] for i in v]
+
+        if not self.quantization:
+            return
+
+        origin_subgraph = self.models['subgraphs'][0]
+        updated_ops = []
+        update_tables()
+        for operator in origin_subgraph['operators']:
+            op_name = self.get_operator_name(operator)
+            if op_name != "SPLIT":
+                updated_ops.append(operator)
+                continue
+
+            input_shape = get_tensor_shape(operator['inputs'][1])
+            axis = get_tensor_buffer_value(operator['inputs'][0])[0]
+            input_name = get_tensor_name(operator['inputs'][1])
+            output_names = get_tensor_names(operator['outputs'])
+            begin = [0] * len(input_shape)
+            size = input_shape[:]
+            size[axis] = 1
+            for i in range(input_shape[axis]):
+                begin[axis] = i
+                begin_name = fork_name(output_names[i]) + "_slice_begin"
+                size_name = fork_name(output_names[i]) + "_slice_size"
+                self.create_parameter(begin_name, [len(begin)], begin)
+                self.create_parameter(size_name, [len(begin)], size)
+                tensor_type = {begin_name: 'INT32', size_name: 'INT32'}
+                self.convert_generic_tflite_op([input_name, begin_name, size_name], [output_names[i]],
+                                               'SLICE', tensor_type=tensor_type)
+                updated_ops.append(self.operators_list.pop())
+        origin_subgraph['operators'] = updated_ops
+
     def optimize_graph(self):
         self.fuse_activation_function()
+        self.precompute_const_branches()
+        # Remove redundant split or slice
+        with time_consumed_scope('Remove redundant operators...'):
+            self.remove_redundant_ops()
+
+        # Replace split with slice if quant is enabled
+        self.replace_split_for_quant()
+
+        # Pack operator_codes by removing unused operators
+        self.pack_and_reassign_ops()
+
+        # Temporarily added for debug
+        # self.models['buffers'] = [{} for _ in self.models['buffers']]
 
     def mark_all_buffers_as_output(self):
-        import copy
         self.backup_output = copy.copy(self.models['subgraphs'][0]['outputs'])
         for operator in self.models['subgraphs'][0]['operators']:
             outputs = operator['outputs']
@@ -2094,23 +2385,23 @@ class TFLiteExporter:
         :param output (str): file path of exported tflite
         :return:
         """
-        json_file = output.replace("tflite", "json")
-        with open(json_file, 'w') as f:
-            json.dump(models, f)
-        schema_path = os.path.join(os.path.dirname(__file__), "schema.fbs")
-        output_path = os.path.dirname(output)
-        try:
-            subprocess.check_output(
-                [flatc_path, '-b', '-o', output_path, schema_path, json_file], stderr=subprocess.STDOUT)
-        except subprocess.CalledProcessError as e:
-            print(e.returncode, e.output)
-            raise ValueError("Convert nnp to tflite failed.")
+        with time_consumed_scope("Generating tflite model from json description..."):
+            json_file = output.replace(".tflite", ".json")
+            with open(json_file, 'w') as f:
+                json.dump(models, f)
+            schema_path = os.path.join(os.path.dirname(__file__), "schema.fbs")
+            output_path = os.path.dirname(output)
+            try:
+                subprocess.check_output(
+                    [flatc_path, '-b', '-o', output_path, schema_path, json_file], stderr=subprocess.STDOUT)
+            except subprocess.CalledProcessError as e:
+                print(e.returncode, e.output)
+                raise ValueError("Convert nnp to tflite failed.")
 
     def execute(self, output):
+        self.output_file = output
         self.init_models()
-
         self.export_graph()
-
         self.optimize_graph()
 
         if self.quantization:

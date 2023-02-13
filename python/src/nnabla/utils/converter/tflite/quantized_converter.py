@@ -15,12 +15,14 @@
 
 import numpy as np
 import tensorflow as tf
+import tqdm
 
 # OPs that support INT8 data type
 QUANTIZATION_OPS = [
     'ADD',
     'AVERAGE_POOL_2D',
     'CONCATENATION',
+    'TRANSPOSE_CONV',
     'CONV_2D',
     'DEPTHWISE_CONV_2D',
     'FULLY_CONNECTED',
@@ -73,6 +75,7 @@ class Restriction(object):
     SAME_WITH_INPUT = 2
     SOFTMAX = 3
     CONCAT = 4
+    LOGISTIC = 5
 
 
 # Constant
@@ -103,6 +106,10 @@ QUANTIZATIONREQUIREMENTS = {
     'CONCATENATION': {'Input_0': construct_requirement('int8', QuantizeGranularity.PER_TENSOR),
                       'Output_0': construct_requirement('int8', QuantizeGranularity.PER_TENSOR, Restriction.CONCAT),
                       'op_version': 2},
+    'TRANSPOSE_CONV': {'Input_1': construct_requirement('int8', QuantizeGranularity.PER_AXIS_DIM0,
+                                                        Restriction.ZERO_POINT_TO_ZERO, (MIN_INT8 + 1, MAX_INT8)),
+                       'Input_2': construct_requirement('int8', QuantizeGranularity.PER_TENSOR),
+                       'op_version': 3},
     'CONV_2D': {'Input_0': construct_requirement('int8', QuantizeGranularity.PER_TENSOR),
                 'Input_1': construct_requirement('int8', QuantizeGranularity.PER_AXIS_DIM0, Restriction.ZERO_POINT_TO_ZERO, (MIN_INT8+1, MAX_INT8)),
                 'Input_2': construct_requirement('int32', QuantizeGranularity.PER_AXIS_DIM0, Restriction.CONV_2D_BIAS, (MIN_INT32, MAX_INT32)),
@@ -122,6 +129,7 @@ QUANTIZATIONREQUIREMENTS = {
     'L2_NORMALIZATION': {'Input_0': construct_requirement('int8', QuantizeGranularity.PER_TENSOR),
                          'op_version': 4},
     'LOGISTIC': {'Input_0': construct_requirement('int8', QuantizeGranularity.PER_TENSOR),
+                 'Output_0': construct_requirement('int8', QuantizeGranularity.PER_TENSOR, Restriction.LOGISTIC),
                  'op_version': 2},
     'MAX_POOL_2D': {'Input_0': construct_requirement('int8', QuantizeGranularity.PER_TENSOR),
                     'Output_0': construct_requirement('int8', QuantizeGranularity.PER_TENSOR, Restriction.SAME_WITH_INPUT),
@@ -169,6 +177,7 @@ QUANTIZATIONREQUIREMENTS = {
     'LOG_SOFTMAX': {'Input_0': construct_requirement('int8', QuantizeGranularity.PER_TENSOR),
                     'op_version': 2},
     'MAXIMUM': {'Input_0': construct_requirement('int8', QuantizeGranularity.PER_TENSOR),
+                'Input_1': construct_requirement('int8', QuantizeGranularity.PER_TENSOR),
                 'Output_0': construct_requirement('int8', QuantizeGranularity.PER_TENSOR, Restriction.SAME_WITH_INPUT),
                 'op_version': 2},
     'ARG_MAX': {'Input_0': construct_requirement('int8', QuantizeGranularity.PER_TENSOR),
@@ -295,6 +304,13 @@ class QuantizationConverter(object):
                 if requirement['restriction'] == Restriction.SOFTMAX:
                     scale = 1.0 / 256.0
                     zero_point = -128
+                    output_tensor_idx = outputs[output_idx]
+                    output_tensor = self.get_tensor_by_index(output_tensor_idx)
+                    output_tensor['quantization']['scale'] = [scale]
+                    output_tensor['quantization']['zero_point'] = [zero_point]
+                if requirement['restriction'] == Restriction.LOGISTIC:
+                    scale = 1.0 / 256.0
+                    zero_point = 0
                     output_tensor_idx = outputs[output_idx]
                     output_tensor = self.get_tensor_by_index(output_tensor_idx)
                     output_tensor['quantization']['scale'] = [scale]
@@ -484,7 +500,7 @@ class Calibrator(object):
     def run(self):
         # Forward on represent dataset to collect max and min value of each buffer
         alpha = 0.1
-        for input_data in self.dataset:
+        for input_data in tqdm.tqdm(self.dataset, desc="Calibrating..."):
             input_data = np.array(input_data).astype(np.float32)
             input_data = np.expand_dims(input_data, 0)
             input_shape = self.input_details[0]['shape']
@@ -501,7 +517,7 @@ class Calibrator(object):
                     self.quantization_param[output_detail['name']
                                             ]['max'] = output_tensor.max()
                 # Using exponential moving averages to smooth max value and min value
-                # Reference： https://arxiv.org/pdf/1712.05877.pdf
+                # Reference: https://arxiv.org/pdf/1712.05877.pdf
                 if output_tensor.max() > self.quantization_param[output_detail['name']]['max']:
                     self.quantization_param[output_detail['name']]['max'] = alpha * output_tensor.max(
                     ) + (1 - alpha) * self.quantization_param[output_detail['name']]['max']
