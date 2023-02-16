@@ -60,12 +60,6 @@ def ref_grad_fft(x, dy, signal_ndim, normalized, **kw):
 @pytest.mark.parametrize("normalized", [True, False])
 def test_fft_forward_backward(seed, ctx, func_name, batch_dims,
                               signal_ndim, dims, normalized):
-
-    if func_name == "FFTCuda" and sys.platform == 'win32':
-        from nnabla_ext import cuda
-        if float(cuda._version.__cuda_version__) >= 11.4:
-            pytest.skip("Skip win32 + CUDA>=114 tests")
-
     if func_name == "FFT":
         pytest.skip("Not implemented in CPU.")
 
@@ -97,12 +91,6 @@ def test_fft_forward_backward(seed, ctx, func_name, batch_dims,
 @pytest.mark.parametrize("normalized", [True, False])
 def test_fft_double_backward(seed, ctx, func_name, batch_dims,
                              signal_ndim, dims, normalized):
-
-    if func_name == "FFTCuda" and sys.platform == 'win32':
-        from nnabla_ext import cuda
-        if float(cuda._version.__cuda_version__) >= 11.4:
-            pytest.skip("Skip win32 + CUDA>=114 tests")
-
     if func_name == "FFT":
         pytest.skip("Not implemented in CPU.")
 
