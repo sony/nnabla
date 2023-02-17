@@ -24,13 +24,14 @@ DOCKER_RUN_OPTS += -w $$(pwd)
 DOCKER_RUN_OPTS += -u $$(id -u):$$(id -g)
 DOCKER_RUN_OPTS += -e HOME=/tmp
 DOCKER_RUN_OPTS += -e CMAKE_OPTS=$(CMAKE_OPTS)
-DOCKER_RUN_OPTS += -e PIP_INS_OPTS="${PIP_INS_OPTS}"
+DOCKER_RUN_OPTS += -e PIP_INS_OPTS="${PIP_INS_OPTS} --cache-dir=/tmp/pip_cache/"
 DOCKER_RUN_OPTS += -e PIP_INS_OPTS_EXTRA="${PIP_INS_OPTS_EXTRA}"
 DOCKER_RUN_OPTS += -e CURL_OPTS="${CURL_OPTS}"
 DOCKER_RUN_OPTS += -e WGET_OPTS="${WGET_OPTS}"
 DOCKER_RUN_OPTS += -e PYTEST_OPTS="${PYTEST_OPTS}"
 
 DOCKER_RUN_OPTS += -v $(HOME)/.ccache:/tmp/.ccache
+DOCKER_RUN_OPTS += -v $(HOME)/.cache/pip:/tmp/pip_cache
 
 ## If your environment is under proxy uncomment following lines.
 DOCKER_BUILD_ARGS = --build-arg HTTP_PROXY=${http_proxy} --build-arg HTTPS_PROXY=${https_proxy}
