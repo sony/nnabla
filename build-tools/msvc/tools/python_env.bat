@@ -55,7 +55,7 @@ CALL pip install %PIP_INS_OPTS% ^
            boto3 ^
            h5py ^
            ipython ^
-           librosa ^
+           librosa~=0.9.2 ^
            mako ^
            numpy ^
            pip ^
