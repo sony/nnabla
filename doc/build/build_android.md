@@ -62,12 +62,12 @@ Following build dependencies needs to be installed by the user manually.
 Unlike [Python Package compilation](./build.md) which requires
 `protoc` compiler only, the NNabla C++ utility library requires
 protobuf C++ library too.  The following snippet running on your
-terminal will build and install protobuf-3.19.4 from source.
+terminal will build and install protobuf-3.19.6 from source.
 
 ```shell
-curl -L https://github.com/google/protobuf/archive/v3.19.4.tar.gz -o protobuf-v3.19.4.tar.gz
-tar xvf protobuf-v3.19.4.tar.gz
-cd protobuf-3.19.4
+curl -L https://github.com/google/protobuf/archive/v3.19.6.tar.gz -o protobuf-v3.19.6.tar.gz
+tar xvf protobuf-v3.19.6.tar.gz
+cd protobuf-3.19.6
 mkdir build build-android
 cd build
 cmake -DCMAKE_POSITION_INDEPENDENT_CODE=ON -Dprotobuf_BUILD_TESTS=OFF -DCMAKE_CXX_STANDARD=14 ../cmake
