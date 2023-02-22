@@ -47,15 +47,15 @@ endfunction(prepend)
 
 function(findhdf5)
   if (WIN32)
-    set(build_type "${CMAKE_BUILD_TYPE}")
+    set(build_type_hdf5 "${CMAKE_BUILD_TYPE}")
   else()
-    set(build_type "")
+    set(build_type_hdf5 "")
   endif()
   set(HDF5_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/third_party/hdf5-master/src
      ${PROJECT_SOURCE_DIR}/third_party/hdf5-master/hl/src
      ${CMAKE_BINARY_DIR}/third_party/hdf5-master
      ${CMAKE_BINARY_DIR}/third_party/hdf5-master/src)
-  prepend(HDF5_LIBRARIES ${CMAKE_BINARY_DIR}/third_party/hdf5-master/bin/${build_type} "hdf5" "hdf5_hl")
+  prepend(HDF5_LIBRARIES ${CMAKE_BINARY_DIR}/third_party/hdf5-master/bin/${build_type_hdf5} "hdf5" "hdf5_hl")
   set(HDF5_INCLUDE_DIRS "${HDF5_INCLUDE_DIRS}" PARENT_SCOPE)
   set(HDF5_LIBRARIES "${HDF5_LIBRARIES}" PARENT_SCOPE)
 endfunction(findhdf5)
