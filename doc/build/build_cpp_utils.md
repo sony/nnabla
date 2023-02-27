@@ -37,9 +37,9 @@ protobuf C++ library too.  The following snippet running on your
 terminal will build and install protobuf-3.1.0 from source.
 
 ```shell
-curl -L https://github.com/google/protobuf/archive/v3.1.0.tar.gz -o protobuf-v3.1.0.tar.gz
-tar xvf protobuf-v3.1.0.tar.gz
-cd protobuf-3.1.0
+curl -L https://github.com/google/protobuf/archive/v3.19.6.tar.gz -o protobuf-v3.19.6.tar.gz
+tar xvf protobuf-v3.19.6.tar.gz
+cd protobuf-3.19.6
 mkdir build && cd build
 cmake -DCMAKE_POSITION_INDEPENDENT_CODE=ON -Dprotobuf_BUILD_TESTS=OFF ../cmake
 make
