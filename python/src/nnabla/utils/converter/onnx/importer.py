@@ -4332,7 +4332,7 @@ class OnnxImporter:
         assert len(n.output) == 1
 
         axes = []
-        keep_dims = False
+        keep_dims = True
         for attr in n.attribute:
             if attr.name == "axes":
                 check_attr_ints_type(attr, n)
