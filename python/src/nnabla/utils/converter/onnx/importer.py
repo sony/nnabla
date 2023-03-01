@@ -3521,6 +3521,7 @@ class OnnxImporter:
 
         func = self.generate_default_function("Norm", n)
         func_param = func.norm_param
+        func_param.keep_dims = True
         if func_name == "ReduceL1":
             func_param.p = 1.0
         elif  func_name == "ReduceL2":
