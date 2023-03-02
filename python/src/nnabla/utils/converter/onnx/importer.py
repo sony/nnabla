@@ -409,10 +409,12 @@ def check_attr_int_type(attr, node):
         raise ValueError(
             f"Only INT is supported for {attr.name} in {node.op_type} op_type")
 
+
 def check_attr_ints_type(attr, node):
     if attr.type != AttributeProto.INTS:
         raise ValueError(
             f"Only INTS is supported for {attr.name} in {node.op_type} op_type")
+
 
 def check_attr_string_type(attr, node):
     if attr.type != AttributeProto.STRING:
@@ -3524,7 +3526,7 @@ class OnnxImporter:
         func_param.keep_dims = True
         if func_name == "ReduceL1":
             func_param.p = 1.0
-        elif  func_name == "ReduceL2":
+        elif func_name == "ReduceL2":
             func_param.p = 2.0
         for attr in n.attribute:
             if attr.name == "axes":
@@ -4347,7 +4349,7 @@ class OnnxImporter:
             axes.extend(list(range(len(input_shape))))
         if keep_dims:
             reduced_shape = [1 if i in axes else input_shape[i]
-                            for i in range(len(input_shape))]
+                             for i in range(len(input_shape))]
         else:
             reduced_shape = [input_shape[i] for i in range(
                 len(input_shape)) if i not in axes]
@@ -4355,20 +4357,20 @@ class OnnxImporter:
          # Exp
         expout_x = fork_name(n.input[0]) + "_exp"
         exp_func = generate_unary("Exp", n.name, n.input[0], expout_x,
-                            self._graph.name, self._func_counter)
+                                  self._graph.name, self._func_counter)
         self._shape_output[expout_x] = input_shape
         func_list.append(exp_func)
 
         # Sum
         sumout_x = fork_name(expout_x) + "_sum"
         sum_func = generate_reduction("Sum", n.name, expout_x, sumout_x,
-                                axes, keep_dims, self._graph.name, self._func_counter)
+                                      axes, keep_dims, self._graph.name, self._func_counter)
         self._shape_output[sumout_x] = reduced_shape
         func_list.append(sum_func)
 
         # Log
         log_func = generate_unary("Log", n.name, sumout_x, n.output[0],
-                            self._graph.name, self._func_counter)
+                                  self._graph.name, self._func_counter)
         self._shape_output[n.output[0]] = reduced_shape
         func_list.append(log_func)
 
@@ -4405,7 +4407,8 @@ class OnnxImporter:
         func = self.generate_default_function("Arange", n)
         func_param = func.arange_param
 
-        warning_types = [TensorProto.INT16, TensorProto.INT32, TensorProto.INT64]
+        warning_types = [TensorProto.INT16,
+                         TensorProto.INT32, TensorProto.INT64]
 
         start_info = self.get_input_raw_data_with_info(n.input[0])
         if start_info is None:
@@ -4449,7 +4452,7 @@ class OnnxImporter:
             matrix_dims = input_shape[-2:]
             det_x_shape = [int(np.prod(batch_dims))] + matrix_dims
         reshape_func0 = generate_reshape(n.name, n.input[0], reshape_out,
-            det_x_shape, self._graph.name, self._func_counter)
+                                         det_x_shape, self._graph.name, self._func_counter)
         self._shape_output[reshape_out] = det_x_shape
         func_list.append(reshape_func0)
 
@@ -4467,7 +4470,7 @@ class OnnxImporter:
         else:
             det_y_shape = batch_dims
         reshape_func1 = generate_reshape(n.name, det_out, n.output[0],
-            det_y_shape, self._graph.name, self._func_counter)
+                                         det_y_shape, self._graph.name, self._func_counter)
         self._shape_output[n.output[0]] = det_y_shape
         func_list.append(reshape_func1)
 
