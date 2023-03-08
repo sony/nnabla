@@ -32,8 +32,8 @@ You can also use another distribution (e.g. [Pyenv](https://github.com/pyenv/pye
 [Google Protocol Buffer](https://github.com/google/protobuf) compiler is also required to create NNabla's neural network format serializer/desrializer in Python or C++.
 
 ```shell
-curl -L https://github.com/google/protobuf/releases/download/v3.1.0/protoc-3.1.0-linux-x86_64.zip -o /tmp/protoc-3.1.0-linux-x86_64.zip
-sudo unzip -d /usr/local /tmp/protoc-3.1.0-linux-x86_64.zip && sudo chmod 755 /usr/local/bin/protoc
+curl -L https://github.com/google/protobuf/releases/download/v3.19.6/protoc-3.19.6-linux-x86_64.zip -o /tmp/protoc-3.19.6-linux-x86_64.zip
+sudo unzip -d /usr/local /tmp/protoc-3.19.6-linux-x86_64.zip && sudo chmod 755 /usr/local/bin/protoc
 ```
 
 ### Build and installation

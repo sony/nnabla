@@ -103,7 +103,7 @@ RUN mkdir /tmp/deps \
     && rm -rf /tmp/*
 
 ################################################## protobuf
-ENV PROTOVER=3.19.4
+ENV PROTOVER=3.19.6
 RUN mkdir /tmp/deps \
     && cd /tmp/deps \
     && curl ${CURL_OPTS} -L https://github.com/google/protobuf/archive/v${PROTOVER}.tar.gz -o protobuf-v${PROTOVER}.tar.gz \

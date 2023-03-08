@@ -40,7 +40,7 @@ install_requires = setup_requires + [
     'contextlib2',
     'h5py',
     'protobuf<=3.20.1;platform_system=="Windows"',
-    'protobuf<=3.19.4;platform_system!="Windows"',
+    'protobuf<=3.19.6;platform_system!="Windows"',
     'pyyaml',
     'scipy',
     'six',
