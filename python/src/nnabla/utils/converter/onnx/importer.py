@@ -410,6 +410,12 @@ def check_attr_int_type(attr, node):
             f"Only INT is supported for {attr.name} in {node.op_type} op_type")
 
 
+def check_attr_ints_type(attr, node):
+    if attr.type != AttributeProto.INTS:
+        raise ValueError(
+            f"Only INTS is supported for {attr.name} in {node.op_type} op_type")
+
+
 def check_attr_string_type(attr, node):
     if attr.type != AttributeProto.STRING:
         raise ValueError(
@@ -642,6 +648,9 @@ class OnnxImporter:
             "RandomNormalLike": self.RandomNormalLike,
             "RandomUniform": self.RandomUniform,
             "RandomUniformLike": self.RandomUniformLike,
+            "ReduceL1": partial(self.ReduceLp, "ReduceL1"),
+            "ReduceL2": partial(self.ReduceLp, "ReduceL2"),
+            "ReduceLogSumExp": self.ReduceLogSumExp,
         }
 
         # opset_7 table
@@ -688,6 +697,8 @@ class OnnxImporter:
             "Compress": self.Compress,
             "NonZero": self.NonZero,
             "OneHot": self.OneHot,
+            "Scatter": self.ScatterElements_13,
+            "Erf": partial(self.GeneralOperator, 'Erf'),
         }
         self.table_op_set_9 = dict(self.table_op_set_7, **self.table_op_set_9)
 
@@ -709,6 +720,9 @@ class OnnxImporter:
             "Clip": partial(self.Clip, 11),
             "Round": self.Round,
             "Pad": partial(self.Pad, '11'),
+            "CumSum": self.CumSum,
+            "Range": self.Range,
+            "Det": self.Det,
         }
         if USE_ONNX_RESIZE:
             self.table_op_set_11["Resize"] = self.Resize_ONNXResize
@@ -3502,6 +3516,38 @@ class OnnxImporter:
             func.input.append(zero_point)
 
         self._shape_output[n.output[0]] = input_shape
+
+    def ReduceLp(self, func_name, func_list, n):
+        assert len(n.input) == 1
+        assert len(n.output) == 1
+
+        func = self.generate_default_function("Norm", n)
+        func_param = func.norm_param
+        func_param.keep_dims = True
+        if func_name == "ReduceL1":
+            func_param.p = 1.0
+        elif func_name == "ReduceL2":
+            func_param.p = 2.0
+        for attr in n.attribute:
+            if attr.name == "axes":
+                check_attr_ints_type(attr, n)
+                func_param.axes.extend(attr.ints)
+            elif attr.name == "keepdims":
+                check_attr_int_type(attr, n)
+                func_param.keep_dims = bool(attr.i)
+
+        input_shape = self.get_func_input_shape(n.input[0])
+
+        if len(func_param.axes) == 0:
+            func_param.axes.extend(list(range(len(input_shape))))
+
+        if func_param.keep_dims:
+            output_shape = [1 if i in func_param.axes else input_shape[i]
+                            for i in range(len(input_shape))]
+        else:
+            output_shape = [input_shape[i] for i in range(
+                len(input_shape)) if i not in func_param.axes]
+        self._shape_output[n.output[0]] = output_shape
         func_list.append(func)
 
     def Celu(self, func_list, n):
@@ -4283,6 +4329,150 @@ class OnnxImporter:
 
         self._shape_output[out] = last_shape
         func_list.append(last_func)
+
+    def ReduceLogSumExp(self, func_list, n):
+        assert len(n.input) == 1
+        assert len(n.output) == 1
+
+        axes = []
+        keep_dims = True
+        for attr in n.attribute:
+            if attr.name == "axes":
+                check_attr_ints_type(attr, n)
+                axes.extend(attr.ints)
+            elif attr.name == "keepdims":
+                check_attr_int_type(attr, n)
+                keep_dims = bool(attr.i)
+
+        input_shape = self.get_func_input_shape(n.input[0])
+        if len(axes) == 0:
+            axes.extend(list(range(len(input_shape))))
+        if keep_dims:
+            reduced_shape = [1 if i in axes else input_shape[i]
+                             for i in range(len(input_shape))]
+        else:
+            reduced_shape = [input_shape[i] for i in range(
+                len(input_shape)) if i not in axes]
+
+         # Exp
+        expout_x = fork_name(n.input[0]) + "_exp"
+        exp_func = generate_unary("Exp", n.name, n.input[0], expout_x,
+                                  self._graph.name, self._func_counter)
+        self._shape_output[expout_x] = input_shape
+        func_list.append(exp_func)
+
+        # Sum
+        sumout_x = fork_name(expout_x) + "_sum"
+        sum_func = generate_reduction("Sum", n.name, expout_x, sumout_x,
+                                      axes, keep_dims, self._graph.name, self._func_counter)
+        self._shape_output[sumout_x] = reduced_shape
+        func_list.append(sum_func)
+
+        # Log
+        log_func = generate_unary("Log", n.name, sumout_x, n.output[0],
+                                  self._graph.name, self._func_counter)
+        self._shape_output[n.output[0]] = reduced_shape
+        func_list.append(log_func)
+
+    def CumSum(self, func_list, n):
+        assert len(n.input) == 2
+        assert len(n.output) == 1
+
+        func = self.generate_default_function("CumSum", n)
+        del func.input[1:]
+        func_param = func.cumsum_param
+        for attr in n.attribute:
+            if attr.name == "exclusive":
+                check_attr_int_type(attr, n)
+                func_param.exclusive = bool(attr.i)
+            elif attr.name == "reverse":
+                check_attr_int_type(attr, n)
+                func_param.reverse = bool(attr.i)
+
+        axis_types = [TensorProto.INT32, TensorProto.INT64]
+        axis_info = self.get_input_raw_data_with_info(n.input[1])
+        if axis_info is None:
+            raise ValueError("Not found axis")
+        assert axis_info.data_type in axis_types
+        assert len(axis_info.data) == 1
+        func_param.axis = int(axis_info.data[0])
+
+        self._shape_output[n.output[0]] = self.get_func_input_shape(n.input[0])
+        func_list.append(func)
+
+    def Range(self, func_list, n):
+        assert len(n.input) == 3
+        assert len(n.output) == 1
+
+        func = self.generate_default_function("Arange", n)
+        func_param = func.arange_param
+
+        warning_types = [TensorProto.INT16,
+                         TensorProto.INT32, TensorProto.INT64]
+
+        start_info = self.get_input_raw_data_with_info(n.input[0])
+        if start_info is None:
+            raise ValueError("Not found start")
+        if start_info.data_type in warning_types:
+            logger.warning(
+                "ONNX Range with integer types is converted to " +
+                "nnabla Arange which only supports float types.")
+        assert len(start_info.data) == 1
+        func_param.start = start_info.data[0]
+
+        limit_info = self.get_input_raw_data_with_info(n.input[1])
+        if limit_info is None:
+            raise ValueError("Not found limit")
+        assert len(limit_info.data) == 1
+        func_param.stop = limit_info.data[0]
+
+        delta_info = self.get_input_raw_data_with_info(n.input[2])
+        if delta_info is None:
+            raise ValueError("Not found delta")
+        assert len(delta_info.data) == 1
+        func_param.step = delta_info.data[0]
+
+        number_of_elements = int(np.max(
+            np.ceil((func_param.stop - func_param.start) / func_param.step), 0))
+        self._shape_output[n.output[0]] = [number_of_elements]
+        func_list.append(func)
+
+    def Det(self, func_list, n):
+        assert len(n.input) == 1
+        assert len(n.output) == 1
+
+        input_shape = self.get_func_input_shape(n.input[0])
+
+        # Reshape
+        reshape_out = fork_name(n.input[0]) + "_reshape"
+        if len(input_shape) == 2:
+            det_x_shape = [1] + input_shape
+        else:
+            batch_dims = input_shape[:-2]
+            matrix_dims = input_shape[-2:]
+            det_x_shape = [int(np.prod(batch_dims))] + matrix_dims
+        reshape_func0 = generate_reshape(n.name, n.input[0], reshape_out,
+                                         det_x_shape, self._graph.name, self._func_counter)
+        self._shape_output[reshape_out] = det_x_shape
+        func_list.append(reshape_func0)
+
+        # Det
+        det_func = self.generate_default_function("BatchDet", n)
+        det_out = fork_name(reshape_out) + "_det"
+        det_func.input[0] = reshape_out
+        det_func.output[0] = det_out
+        self._shape_output[det_out] = det_x_shape[:-2]
+        func_list.append(det_func)
+
+        # Reshape
+        if len(input_shape) == 2:
+            det_y_shape = []
+        else:
+            det_y_shape = batch_dims
+        reshape_func1 = generate_reshape(n.name, det_out, n.output[0],
+                                         det_y_shape, self._graph.name, self._func_counter)
+        self._shape_output[n.output[0]] = det_y_shape
+        func_list.append(reshape_func1)
 
     def convert_to_functions(self, n):
         ft = self._onnx_optype_to_nnabla_function_type.get(n.op_type)
