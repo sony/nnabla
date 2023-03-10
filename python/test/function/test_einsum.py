@@ -67,11 +67,55 @@ def ref_einsum(*x, equation):
     ([(4, 2, 3, 5), (2, 3, 5, 6)], "i...j,...jk->ik..."),
     ([(4, 2, 3, 5), (2, 3, 5, 6)], "i...j,...jk"),
     # All pass
+
+    # 1. Diagonal: bjibw => bjiw
+    # 2. Sum: bjiw => bji
+    # 3. Transpose: bji => bij
+    # 4. Sum: zkjb => kjb
+    # 5. Transpose: kjb => bjk
+    # 6. Matmul: bij, bjk => bik
+    # 7. Transpose: bik => ikb
     ([(2, 3, 4, 2, 5), (2, 4, 3, 2)], "bjibw,zkjb->ikb"),
+
+    # 1. Diagonal: bjibw => bjiw
+    # 2. Sum: bjiw => bji
+    # 3. Transpose: bji => bij
+    # 4. Sum: zkjb => kjb
+    # 5. Transpose: kjb => bjk
+    # 6. Matmul: bij, bjk => bik
     ([(1, 1, 1, 1, 1), (1, 1, 1, 1)], "bjibw,zkjb"),
+
+    # 1. Diagonal: wijw... => wij...
+    # 2. Sum: wij... => ij...
+    # 3. Transpose: ij... => ...ij
+    # 4. Sum: k...xj => k...j
+    # 5. Transpose: k...j => ...jk
+    # 6. Matmul: ...ij., ...jk => ...ik
+    # 7. Sum: ...zkl => ...kl
+    # 8. Matmul: ...ik, ...kl => ...il
+    # 9. Transpose: ...il => li...
     ([(2, 2, 3, 2, 2, 2), (2, 2, 2, 2, 3), (2, 2, 2, 2, 3)],
      "wijw...,k...xj,...zkl->li..."),
+
+    # 1. Diagonal: wijw... => wij...
+    # 2. Sum: wij... => ij...
+    # 3. Transpose: ij... => ...ij
+    # 4. Sum: k...xj => k...j
+    # 5. Transpose: k...j => ...jk
+    # 6. Matmul: ...ij., ...jk => ...ik
+    # 7. Sum: ...zkl => ...kl
+    # 8. Matmul: ...ik, ...kl => ...il
     ([(2, 2, 3, 2, 2, 2), (2, 2, 2, 2, 3), (2, 2, 2, 2, 3)], "wijw...,k...xj,...zkl"),
+
+    # 1. Sum: zabc => abc
+    # 2. Sum: aycd => acd
+    # 3. Matmul: abc, acd => abd
+    # 4. Sum: abd => bd
+    # 5. Sum: daxe => de
+    # 6. Matmul: bd, de => bde
+    # 7. Sum: bdfw => bdf
+    # 8. Transpose: bde => bed
+    # 9. Matmul: bed, bdf => bef
     [[(1, 2, 3, 4), (2, 1, 4, 2), (2, 2, 1, 3),
       (3, 2, 3, 1)], "zabc,aycd,daxe,bdfw->bef"]
 ])
