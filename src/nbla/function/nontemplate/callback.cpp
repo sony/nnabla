@@ -33,4 +33,13 @@ void Callback::backward_impl(const Variables &inputs, const Variables &outputs,
 vector<string> Callback::allowed_array_classes() {
   return SingletonManager::get<Cpu>()->array_classes();
 }
+
+NBLA_API shared_ptr<Function> create_Callback(
+    const Context &ctx, void *obj, int min_outputs,
+    Callback::setup_callback_type s, Callback::forward_callback_type f,
+    Callback::backward_callback_type b, Callback::cleanup_callback_type c,
+    Callback::grad_depends_output_data_callback_type go,
+    Callback::grad_depends_input_data_callback_type gi) {
+  return make_shared<Callback>(ctx, obj, min_outputs, s, f, b, c, go, gi);
+}
 }
