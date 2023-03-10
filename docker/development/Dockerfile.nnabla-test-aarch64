@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM multiarch/debian-debootstrap:arm64-bullseye
+FROM arm64v8/debian:bullseye
 
 ARG PIP_INS_OPTS
 ARG PYTHONWARNINGS
