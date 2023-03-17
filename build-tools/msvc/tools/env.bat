@@ -30,10 +30,6 @@ IF [%VCVER%] == [] (
    SET VCVER=2019
 )
 
-if [%VS2019_ENV%] == [] (
-   SET VS2019_ENV=C:\VS\2019
-)
-
 REM Visual Studio 2015 Compiler
 IF NOT [%VCVER%] == [2015] GOTO :SKIP_VS2015
 CALL "%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
@@ -67,11 +63,7 @@ SET generate_target=Visual Studio 14 2015 Win64
 REM  Visual Studio 2019 Compiler
 IF NOT [%VCVER%] == [2019] GOTO :SKIP_VS2019
 IF [%SKIP_VC_SETUP%] == [True] GOTO :MSBUILD2019_FOUND
-IF NOT "%VS2019_ENV%" == "" GOTO :SHORT_VS_PATH
 CALL "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvars64.bat" >NUL 2>NUL
-GOTO :CL2019_FOUND
-:SHORT_VS_PATH
-call "%VS2019_ENV%\BuildTools\VC\Auxiliary\Build\vcvars64.bat" >NUL 2>NUL
 cl >NUL 2>NUL && GOTO :CL2019_FOUND
 ECHO Visual Studio C++ 2019 compiler not found. Please check your installation.
 EXIT /b 255
@@ -89,7 +81,7 @@ SET nnabla_build_folder_name=build
 
 REM cmake
 cmake --version >NUL 2>NUL && GOTO :CMAKE_FOUND
-SET PATH="%ProgramFiles%\Cmake\bin";%PATH%
+SET PATH="C:\Program Files "("x86")"\Microsoft Visual Studio\2019\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin";%PATH%
 cmake --version >NUL 2>NUL && GOTO :CMAKE_FOUND
 ECHO Please install cmake.
 EXIT /b 255
