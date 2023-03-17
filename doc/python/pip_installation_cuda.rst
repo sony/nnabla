@@ -22,8 +22,8 @@ CUDA vs cuDNN Compatibility
 Package name       CUDA version cuDNN version
 ================== ============ =====================
 nnabla-ext-cuda110 11.0.3       8.0(Linux & Win)
-nnabla-ext-cuda114 11.4.3       8.0(Linux & Win)
-nnabla-ext-cuda116 11.6.2       8.0(Linux & Win)
+nnabla-ext-cuda114 11.4.3       8.2(Linux & Win)
+nnabla-ext-cuda116 11.6.2       8.4(Linux & Win)
 ================== ============ =====================
 
 The latest CUDA version is always preferred if your GPU accepts.
@@ -83,7 +83,7 @@ Installation with Multi-GPU supported
 
 Multi-GPU wheel package is only available on python3.7+.
 
-.. _cuda-cudnn-compatibility:
+.. _cuda-cudnn-compatibility-multi-gpu:
 
 CUDA vs cuDNN Compatibility
 ---------------------------
@@ -92,8 +92,8 @@ CUDA vs cuDNN Compatibility
 Package name                        CUDA version cuDNN version
 =================================== ============ =============
 nnabla-ext-cuda110                  11.0.3       8.0
-nnabla-ext-cuda114                  11.4.3       8.0
-nnabla-ext-cuda116                  11.6.2       8.0
+nnabla-ext-cuda114                  11.4.3       8.2
+nnabla-ext-cuda116                  11.6.2       8.4
 =================================== ============ =============
 
 You can install as the following.

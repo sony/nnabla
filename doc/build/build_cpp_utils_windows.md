@@ -6,17 +6,12 @@
 ### Chocolatey
 
 ```bat
-    choco install cmake git VisualCppBuildTools
+    choco upgrade all
+    choco install cmake git visualstudio2019-workload-vctools visualstudio2019buildtools
 ```
 
-
 ```bat
-    choco install cmake git visualstudio2019-workload-vctools
-```
-
-
-```bat
-    choco install -y python3 --version=3.7.6
+    choco install -y python3 --version=3.10.8
 ```
 
 ## Build
@@ -31,16 +26,6 @@ Then, the following batch script does everything including setting up the rest o
 ```bat
     cmd /c nnabla\build-tools\msvc\test_nbla.bat
 ```
-
-```bat
-    cmd /c nnabla\build-tools\msvc\build_cpplib.bat 2019
-```
-```bat
-    cmd /c nnabla\build-tools\msvc\test_nbla.bat 2019
-```
-
-
-
 
 This will setup the following dependency libraries of the NNabla C++ utility
 
