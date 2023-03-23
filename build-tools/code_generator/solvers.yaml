@@ -645,3 +645,38 @@ Lamb:
       type: bool
       doc: Whether to apply bias correction in momentum computation :math:`\hat{m}` and :math:`\hat{v}`.
       default: False
+
+Lion:
+  snake_name: lion
+  doc: |
+    Lion optimizer.
+
+    .. math::
+        u = \beta_1 m_{t} + (1 - \beta_1) g_{t}\\
+        u = {\rm sign}(u)\\
+        m_{t+1} &\leftarrow \beta_2 m_{t} + (1 - \beta_2) g_{t}\\
+        w_{t+1} &\leftarrow w_t - \alpha \left( u + \lambda w_t \right)
+
+    where :math:`g_t` denotes a gradient,
+    :math:`m_t` is momentum of the gradient initialized with 0 at :math:`t=0`,
+    :math:`\lambda` is the decoupled weight decay rate set by :py:meth:`~nnabla.solver.Solver.weight_decay` method (lazy evaluation),
+    and the rest is described in the arguments.
+
+  references:
+    - |
+      `Xiangning Chen et al., Symbolic Discovery of Optimization Algorithms.
+      <https://arxiv.org/abs/2302.06675>`_
+
+  arguments:
+    lr:
+      type: float
+      default: 1e-4
+      doc: Step size (:math:`\alpha`).
+    beta1:
+      type: float
+      default: 0.9
+      doc: Decay rate (:math:`\beta_1`).
+    beta2:
+      type: float
+      default: 0.99
+      doc: Decay rate (:math:`\beta_2`).
