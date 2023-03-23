@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from tensorflow.core.framework.tensor_pb2 import TensorProto
 from tensorflow.core.framework.tensor_shape_pb2 import TensorShapeProto
 
