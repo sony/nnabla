@@ -238,7 +238,7 @@ if __name__ == '__main__':
 
     for root, dirs, files in os.walk(os.path.join(build_dir, 'lib')):
         for fn in files:
-            if os.path.splitext(fn)[1] == '.so' or os.path.splitext(fn)[1] == '.dylib':
+            if os.path.splitext(fn)[1] == '.so' or os.path.splitext(fn)[1] == '.dylib' or os.path.splitext(fn)[0].startswith("libhdf5"):
                 os.makedirs(os.path.join(path_pkg, 'bin'), exist_ok=True)
                 shutil.copyfile(os.path.join(root, fn),
                                 os.path.join(path_pkg, 'bin', fn))
