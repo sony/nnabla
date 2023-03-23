@@ -4,7 +4,7 @@
 
 ### Chocolatey
 
-Install chocolatey with instruction in [Official page](https://chocolatey.org/）
+Install chocolatey with instruction in [Official page](https://chocolatey.org/)
 
 Then, install required tools with following command.
 ```bat
@@ -40,7 +40,9 @@ You can build windows binary with following command.
     build-tools\msvc\build_cpplib.bat
     build-tools\msvc\build_wheel.bat PYTHON_VERSION
 ```
-The python version we tested is 3.7, 3.8 3.9 and 3.10.
+
+The PYTHON_VERSION we tested is 3.7, 3.8 3.9 and 3.10.
+
 
 Then you can run test with following.
 ```bat
