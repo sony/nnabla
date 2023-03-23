@@ -373,7 +373,7 @@ if(BUILD_PYTHON_PACKAGE)
         COMMAND ${CMAKE_COMMAND} -E env
                 WHEEL_SUFFIX=${WHEEL_SUFFIX}
                 ${PYTHON_COMMAND} ${NNABLA_CONVERTER_SETUP} -q bdist_wheel
-        COMMAND ${CMAKE_SOURCE_DIR}/build-tools/auditwheel-nnabla ${CMAKE_BINARY_DIR}/dist/*-linux_*.whl
+        COMMAND ${CMAKE_SOURCE_DIR}/build-tools/auditwheel-nnabla ${CMAKE_BINARY_DIR}/dist/*-linux_*.whl ${CMAKE_BUILD_TYPE}
         COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_BINARY_DIR}/dist/*-linux*.whl
         COMMAND ${CMAKE_COMMAND} -E touch ${NBLA_PYTHON_OUTPUT_WHEEL}
         DEPENDS ${NBLA_WHEEL_DEPENDS})

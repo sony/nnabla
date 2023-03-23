@@ -39,7 +39,19 @@ then
         cat $WHEEL | sed "s/-linux_/$TAG/g" > $WHEEL.bak && mv $WHEEL.bak $WHEEL
     done
 
-    INCLUDE_CUDA_CUDNN_LIB_IN_WHL=$2
+    CMAKE_BUILD_TYPE=$2
+    # Strip shared libraries.
+    if [[ "$CMAKE_BUILD_TYPE" != "Debug" ]]; then
+        for STRIP_LIB in $(find . -name "*.so*")
+        do
+            if [[ "$STRIP_LIB" = *"cpython"* ]] || [[ "$STRIP_LIB" = *"libnnabla"* ]] ; then
+                echo "Striping $STRIP_LIB"
+                strip --strip-unneeded $STRIP_LIB
+            fi
+        done
+    fi
+
+    INCLUDE_CUDA_CUDNN_LIB_IN_WHL=$3
     if [[ "$INCLUDE_CUDA_CUDNN_LIB_IN_WHL" == "True" ]]; then
         NNABLA_EXT_SO=$(find . -name *libnnabla_cuda*.so)
         LIBDIR=$(cd $(dirname $NNABLA_EXT_SO) && pwd)
