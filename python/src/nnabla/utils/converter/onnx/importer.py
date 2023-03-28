@@ -4564,12 +4564,12 @@ class OnnxImporter:
         with_index = False
         with_inverse = False
         with_counts = False
-        for i in n.output:
-            if i == "indices":
+        for idx, output_name in enumerate(n.output):
+            if idx == 1 and output_name != "":
                 with_index = True
-            elif i == "inverse_indices":
+            elif idx == 2 and output_name != "":
                 with_inverse = True
-            elif i == "counts":
+            elif idx == 3 and output_name != "":
                 with_counts = True
 
         axis = None
@@ -4593,7 +4593,7 @@ class OnnxImporter:
         if axis is None:
             outputs_shape.append(unique_output_shape)
         else:
-            outputs_shape.append(x_shape)
+            outputs_shape.append(x_shape.copy())
             outputs_shape[0][axis] = num_unique
         # create indices shape
         if with_index:
