@@ -79,8 +79,8 @@ cdef extern from "nbla/computation_graph/function.hpp" namespace "nbla":
         void set_info(const string &info)
     ctypedef shared_ptr[CgFunction] CgFunctionPtr
     
-cdef extern from "nbla/function/callback.hpp":
-    shared_ptr[CFunction] create_Callback "std::make_shared<nbla::Callback>" (
+cdef extern from "nbla/function/callback.hpp" namespace "nbla":
+    shared_ptr[CFunction] create_Callback(
         const CContext &, void *, int,
         void(void *, const Variables&, const Variables &) nogil except+,
         void(void *, const Variables&, const Variables &) nogil except+,
