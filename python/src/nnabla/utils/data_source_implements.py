@@ -42,7 +42,7 @@ class SimpleDataSource(DataSource):
     '''
 
     def _get_data(self, position):
-        return self._get_data_of_generation(position, 0)
+        return self._get_data_of_generation(position, self._generation)
 
     def _get_data_of_generation(self, position, generation):
         index = None
