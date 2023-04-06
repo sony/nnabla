@@ -46,6 +46,31 @@ def test_csv_data_source(test_data_csv_csv_10, test_data_csv_csv_20, size, shuff
         assert list(range(size)) == order
 
 
+@pytest.mark.parametrize("shuffle", [True])
+def test_simple_data_source_duplicated_order(test_data_csv_png_20, shuffle):
+    src_data = tuple(zip(range(100), range(100)))
+
+    def test_load_func(position):
+        return src_data[position]
+
+    epoch_num = 10
+    size = len(src_data)
+    ds = SimpleDataSource(test_load_func, size, shuffle=shuffle)
+    orders = []
+    for k in range(epoch_num):
+        order = []
+        for i in range(ds.size):
+            data = ds.next()
+            order.append(data)
+        orders.append(order)
+        ds.reset()
+        ds.apply_order()
+
+    for i in range(len(orders) - 1):
+        for j in range(i+1, len(orders)):
+            assert orders[i] != orders[j]
+
+
 @pytest.mark.parametrize("shuffle", [False, True])
 def test_simple_data_source(test_data_csv_png_20, shuffle):
     src_data = []
