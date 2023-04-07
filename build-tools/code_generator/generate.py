@@ -300,6 +300,7 @@ def generate():
     utils.generate_version(join(base, 'python/src/nnabla/_version.py.tmpl'), base, version=version)
     utils.generate_version(join(base, 'src/nbla/version.cpp.tmpl'), base, version=version)
     utils.generate_version(join(base, 'doc/requirements.txt.tmpl'), base, version=version)
+    utils.generate_version(join(base, 'python/src/nnabla/utils/converter/setup.py.tmpl'), base, version=version)
     generate_solver_python_interface(solver_info)
     generate_function_python_interface(function_info)
     generate_python_utils(function_info)
