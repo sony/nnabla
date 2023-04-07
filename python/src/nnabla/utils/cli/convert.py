@@ -194,7 +194,7 @@ def add_convert_command(subparsers):
                                 argument \'--export-format\' will have to be set!!!'.format(export_formats_string))
     subparser.add_argument('-f', '--force', action='store_true',
                            help='[export] overwrite output file.')
-    subparser.add_argument('-b', '--batch-size', type=int, default=-1,
+    subparser.add_argument('-b', '--batch-size', type=int, default=1,
                            help='[export] overwrite batch size.')
     subparser.add_argument('-S', '--split', type=str, default=None,
                            help='[export] This option need to set  "-E" option.' +
