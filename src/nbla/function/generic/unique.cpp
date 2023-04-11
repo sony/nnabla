@@ -244,8 +244,12 @@ void Unique<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
 template <typename T>
 void Unique<T>::forward_impl(const Variables &inputs,
                              const Variables &outputs) {
-  // Forward is done at setup_impl() because the output shape is calculated
-  // during forward computation.
+  VariablePtr reshaped_x_ptr;
+  unique_preprocess(inputs, this->ctx_, this->flatten_, this->axis_,
+                    reshaped_x_ptr);
+
+  // Peform forward computation to determine the output shape.
+  unique(inputs, outputs, reshaped_x_ptr);
 }
 
 template <typename T>
