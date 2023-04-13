@@ -70,6 +70,12 @@ if(NOT EXISTS ${PROTOC_COMMAND})
   error() # Place Unknown command to stop cmake process here.
 endif()
 
+if (NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE "Release" CACHE STRING
+    "Build type release is default on single-configuration build system like GNU make."
+    FORCE)
+endif()
+
 ###############################################################################
 # Preprocessing
 ###############################################################################
@@ -177,12 +183,6 @@ if(BUILD_CPP_LIB)
   # Third party libraries
   ###############################################################################
   add_subdirectory(third_party)
-
-  if (NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Release" CACHE STRING
-      "Build type release is default on single-configuration build system like GNU make."
-      FORCE)
-  endif()
 
   # Flags
   if(MSVC)
