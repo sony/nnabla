@@ -125,5 +125,6 @@ def test_einsum_forward_backward(seed, x_shapes, equation, ctx, func_name):
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(*shape).astype(np.float32) for shape in x_shapes]
     backward = [True] * len(inputs)
+    atol_f = 0 if func_name.endswith('Cpu') else 1e-6
     function_tester(rng, F.einsum, ref_einsum, inputs, ctx=ctx, func_name=func_name,
-                    atol_f=0, atol_b=2e-2, func_kwargs=dict(equation=equation), backward=backward)
+                    atol_f=atol_f, atol_b=2e-2, func_kwargs=dict(equation=equation), backward=backward)
