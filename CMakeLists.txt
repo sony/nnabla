@@ -70,6 +70,12 @@ if(NOT EXISTS ${PROTOC_COMMAND})
   error() # Place Unknown command to stop cmake process here.
 endif()
 
+if (NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE "Release" CACHE STRING
+    "Build type release is default on single-configuration build system like GNU make."
+    FORCE)
+endif()
+
 ###############################################################################
 # Preprocessing
 ###############################################################################
@@ -177,12 +183,6 @@ if(BUILD_CPP_LIB)
   # Third party libraries
   ###############################################################################
   add_subdirectory(third_party)
-
-  if (NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Release" CACHE STRING
-      "Build type release is default on single-configuration build system like GNU make."
-      FORCE)
-  endif()
 
   # Flags
   if(MSVC)
@@ -373,7 +373,7 @@ if(BUILD_PYTHON_PACKAGE)
         COMMAND ${CMAKE_COMMAND} -E env
                 WHEEL_SUFFIX=${WHEEL_SUFFIX}
                 ${PYTHON_COMMAND} ${NNABLA_CONVERTER_SETUP} -q bdist_wheel
-        COMMAND ${CMAKE_SOURCE_DIR}/build-tools/auditwheel-nnabla ${CMAKE_BINARY_DIR}/dist/*-linux_*.whl
+        COMMAND ${CMAKE_SOURCE_DIR}/build-tools/auditwheel-nnabla ${CMAKE_BINARY_DIR}/dist/*-linux_*.whl ${CMAKE_BUILD_TYPE}
         COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_BINARY_DIR}/dist/*-linux*.whl
         COMMAND ${CMAKE_COMMAND} -E touch ${NBLA_PYTHON_OUTPUT_WHEEL}
         DEPENDS ${NBLA_WHEEL_DEPENDS})
