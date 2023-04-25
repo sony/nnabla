@@ -1441,7 +1441,7 @@ class OnnxImporter:
         self._shape_output[func.output[0]] = self._shape_output[bout]
         func_list.append(func)
 
-    def BroadcastOperator_9(self, func_name, func_list, n, attr_callback = None):
+    def BroadcastOperator_9(self, func_name, func_list, n, attr_callback=None):
         func = self.generate_default_function(func_name, n)
         if attr_callback is not None:
             attr_callback(func, n)
@@ -4497,7 +4497,8 @@ class OnnxImporter:
                 check_attr_string_type(attr, n)
                 reduction = attr.s.decode("utf-8")
                 if reduction not in reduction_values:
-                    raise ValueError("Invalid reduction value: {}".format(reduction))
+                    raise ValueError(
+                        "Invalid reduction value: {}".format(reduction))
                 if reduction == "mul":
                     raise ValueError("Unsupported reduction type: mul")
 
@@ -4584,7 +4585,7 @@ class OnnxImporter:
                 unsupported_attribute(attr.name, n)
 
         x_shape = self.get_func_input_shape(n.input[0])
-        num_unique = 1 # dummy value: this value is computed at run-time
+        num_unique = 1  # dummy value: this value is computed at run-time
         unique_output_shape = (num_unique,)
         outputs_shape = []
         # create y shape
@@ -4622,7 +4623,6 @@ class OnnxImporter:
         for o, s in zip(func.output, outputs_shape):
             self._shape_output[o] = s
         func_list.append(func)
-
 
     def EyeLike(self, func_list, n):
         # Get inputs
@@ -4667,7 +4667,8 @@ class OnnxImporter:
                 else:
                     unsupported_attribute(attr.name, n)
             assert func_param.direction in ["RIGHT", "LEFT"]
-        self.BroadcastOperator_9("BitShift", func_list, n, bitshift_attr_callback)
+        self.BroadcastOperator_9(
+            "BitShift", func_list, n, bitshift_attr_callback)
 
     def convert_to_functions(self, n):
         ft = self._onnx_optype_to_nnabla_function_type.get(n.op_type)

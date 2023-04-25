@@ -22,6 +22,7 @@
 
 import nnabla.functions as F
 
+
 def bit_shift_backward(grad_inputs, inputs, input_shapes, outputs, output_shapes, direction='LEFT'):
     """
     Args:

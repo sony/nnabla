@@ -22,6 +22,7 @@
 
 import nnabla.functions as F
 
+
 def mod2_backward(grad_inputs, inputs, input_shapes, outputs, output_shapes, fmod=False):
     """
     Args:

@@ -22,6 +22,7 @@
 
 import nnabla.functions as F
 
+
 def unique_backward(grad_inputs, inputs, input_shapes, outputs, output_shapes, flatten=True, axis=None, sorted=True, with_index=False, with_inverse=False, with_counts=False):
     """
     Args:

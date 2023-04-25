@@ -15,6 +15,7 @@
 
 import nnabla.functions as F
 
+
 def eye_like_backward(grad_inputs, inputs, input_shapes, outputs, output_shapes, k=0):
     """
     Args:
