@@ -178,7 +178,7 @@ You do not want to use nnabla-c-runtime library's ``Convolution``, you want to s
 
     $ nnabla_cli convert -c functions.txt a.nnp b.nnb
 
-Thus, the network is splitted into pieces, the output shows as the following:
+Thus, the network is split into pieces, the output shows as the following:
 
 .. parsed-literal::
 

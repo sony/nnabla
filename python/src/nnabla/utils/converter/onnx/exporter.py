@@ -656,7 +656,7 @@ class OnnxExporter:
         if func_name == "Equal":
             self._output_types[func.output[0]] = TensorProto.BOOL
 
-        # Check if the second input is a brodcast target.
+        # Check if the second input is a broadcast target.
         bt = func.input[1]
         nl = []
         if bt in self._broadcast_target:

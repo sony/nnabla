@@ -9,7 +9,7 @@ Introduction
 ------------
 
 Neural networks show reliable results on AI fields, such as object recognition
-and detections are useful in real applications. Concurrent to the the
+and detection are useful in real applications. Concurrent to the the
 progress in recognition, the increase of IoT devices at the edge of the
 network is producing a massive amount of data to be computed to data
 centers, pushing network bandwidth requirements to the limit. Despite
@@ -430,7 +430,7 @@ Quantization functions
 ----------------------
 
 The mainly difference between binary\_weight series functions and
-binary\_connect series functions is the quantizing formular:
+binary\_connect series functions is the quantizing formula:
 
 For binary\_weight\_convolution or binary\_weight\_affine:
 
@@ -476,7 +476,7 @@ where \sigma is the "hard sigmoid" function,
 
 
 In nnabla implementation, binary\_connect\_xxxx() implements the
-following formular:
+following formula:
 
 .. math::
 

@@ -121,7 +121,7 @@ Here is a usage to see detailed information of a graph.
 
 .. code:: ipython3
 
-    nn.clear_parameters()  # call this in case you want to run the following code agian
+    nn.clear_parameters()  # call this in case you want to run the following code again
     
     x = nn.Variable.from_numpy_array(np.random.randn(*[4, 3, 128, 128]))
     pred = network(x)
@@ -142,7 +142,7 @@ straightforward, as shown in the following code:
 
 .. code:: ipython3
 
-    nn.clear_parameters()  # call this in case you want to run the following code agian
+    nn.clear_parameters()  # call this in case you want to run the following code again
     
     x = nn.Variable([4, 3, 128, 128])
     pred = network(x)
@@ -181,7 +181,7 @@ To create the profiler and see the results, run the following codes.
 
 .. code:: ipython3
 
-    nn.clear_parameters()  # call this in case you want to run the following code agian
+    nn.clear_parameters()  # call this in case you want to run the following code again
     
     # Context
     from nnabla.ext_utils import get_extension_context
@@ -214,7 +214,7 @@ To create the profiler and see the results, run the following codes.
 
 You can also find
 `TimeProfiler <http://43.196.179.83:8000/build-doc/doc/html/python/api/utils/debug_utils.html#nnabla.utils.inspection.profile.TimeProfiler>`__
-to profile, but it is more fine-grained in measureing execution time.
+to profile, but it is more fine-grained in measuring execution time.
 
 With TimeProfiler, you can put a callback function to the forward and/or
 backward method in the training loop.
@@ -222,14 +222,14 @@ backward method in the training loop.
 Value Tracer
 ------------
 
-We sometimes want to check if there exsits NaN/Inf. NanInfTracer is a
+We sometimes want to check if there exists NaN/Inf. NanInfTracer is a
 convenient way to check if one of all layers in a graph has NaN/Inf
 value.
 
 .. code:: ipython3
 
     # Create graph again just in case
-    nn.clear_parameters()  # call this in case you want to run the following code agian
+    nn.clear_parameters()  # call this in case you want to run the following code again
     
     # Try to switch these two
     x = nn.Variable.from_numpy_array(np.random.randn(*[4, 3, 64, 64]))

@@ -501,10 +501,10 @@ def _func_set_nnabla_unsupport():
             if f in unsupported:
                 break
 
-        # check arguments compability
-        # if argment in old, not in new, set to old default value
+        # check arguments compatibility
+        # if arguments in old, not in new, set to old default value
         #     if no default value, add to unsupported set
-        # if argment in new, not in old, remove it
+        # if arguments in new, not in old, remove it
         if f not in unsupported:
             if 'arguments' in cur_info and 'arguments' in old_info:
                 for arg_name, arg_dict in old_info['arguments'].items():

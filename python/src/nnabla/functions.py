@@ -331,7 +331,7 @@ def split(x, axis=0):
 def slice(ctx, x, start=None, stop=None, step=None, n_outputs=-1, outputs=None):
     r"""
     Slice arrays along specified axis. This function 
-    complies with python slice wherre `slice(None, None, -1)` and 
+    complies with python slice where `slice(None, None, -1)` and 
     `slice(-1, None, -1)` are the special case, which flips the 
     input array and results in the output array from the end to the beginning
     of the input array along the corresponding dimension.
@@ -889,7 +889,7 @@ def sort(x, axis=-1, reverse=False, with_index=False, only_index=False):
     """Sorts the elements of `x` along a given `axis` in ascending order
     by value. A negative `axis` counts from the last dimension of `x`,
     so the default of -1 sorts along the last dimension. If `reverse`
-    is True, then the elements are soreted in descending order.
+    is True, then the elements are sorted in descending order.
 
     If `with_index` is True, result is a tuple ``(sorted, indices)``
     or only ``indices`` if `only_index` is True. Setting `only_index`
@@ -1586,7 +1586,7 @@ def patch_correlation(x1, x2, patch=(1, 1), shift=(0, 0), patch_step=(1, 1),
         padding: A tuple of top, bottom, left and right padding extent. A tuple
             of two values yields identical top/bottom and left/right padding
             from the first and second tuple value. A single integer expands to
-            indential padding extent for all sides.
+            identical padding extent for all sides.
         channel_last: Last dimension is the channel (NHWC order) if True.
 
     Returns:
@@ -1598,7 +1598,7 @@ def patch_correlation(x1, x2, patch=(1, 1), shift=(0, 0), patch_step=(1, 1),
 
             H_o = \frac{H + (top\_pad + bottom\_pad) - patch_v}{patch\_step_v} + 1.
 
-          A channel size of the ouptut is calculated as
+          A channel size of the output is calculated as
 
           .. math::
 

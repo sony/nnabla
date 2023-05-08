@@ -36,7 +36,7 @@ The pre-trained models can be used for both inference and training as following:
     x = nn.Variable((batch_size,) + model.input_shape)
     # * By training=True, it sets batch normalization mode for training
     #   and gives trainable attributes to parameters.
-    # * By use_up_to='pool', it creats a network up to the output of
+    # * By use_up_to='pool', it creates a network up to the output of
     #   the final global average pooling.
     pool = model(x, training=True, use_up_to='pool')
 

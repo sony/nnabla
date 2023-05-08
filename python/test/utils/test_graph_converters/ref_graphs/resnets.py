@@ -133,7 +133,7 @@ def small_bn_resnet(image, test=False, w_bias=False, channel_last=False, name='b
     return pred
 
 
-# Small deconv network
+# Small deconvolution network
 def small_bn_dcn(image, test=False, w_bias=False, channel_last=False, name='small-bn-dcn', dims=2):
     h = image
     h /= 255.0
@@ -171,7 +171,7 @@ def small_bn_dcn(image, test=False, w_bias=False, channel_last=False, name='smal
     return pred
 
 
-# Small deconv network
+# Small deconvolution network
 def small_dcn(image, test=False, w_bias=True, channel_last=False, name='small-dcn', dims=2):
     h = image
     h /= 255.0
@@ -200,7 +200,7 @@ def small_dcn(image, test=False, w_bias=True, channel_last=False, name='small-dc
     return pred
 
 
-# Small deconv network bn opp
+# Small deconvolution network bn opp
 def small_bn_opp_dcn(image, test=False, w_bias=False, channel_last=False, name='small-bn-opp-dcn', dims=2):
     h = image
     h /= 255.0

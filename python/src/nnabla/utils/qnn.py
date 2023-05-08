@@ -149,7 +149,7 @@ class MinMaxMinMaxRecorderCallback(object):
 
 class AbsMaxRecorder(PythonFunction):
     """
-    AbsMaxRecorder records the max of the aboslute of the batch over the training iterations.
+    AbsMaxRecorder records the max of the absolute of the batch over the training iterations.
     """
 
     def __init__(self, ctx, training=True):
@@ -613,7 +613,7 @@ class PrecisionMode(Enum):
 class QNNState(Enum):
     # Floating network
     NON_QNN = 0
-    # Recording min/max at some weights and activations
+    # Recording min/max at some weights and activation
     RECORDING = 1
     # Quantized network, some layers are quantized, depending on layer configuration
     TRAINING = 2

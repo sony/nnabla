@@ -52,7 +52,7 @@ def test_slice_forward_backward(seed, inshape, start, stop, step, ctx, fname):
 
     oshape = ref_slice(x, start, stop, step).shape
     disable_clear_no_need_grad_test = False
-    # If oshape has a dimention of size 0, disable clear_no_need_grad_test.
+    # If oshape has a dimension of size 0, disable clear_no_need_grad_test.
     if 0 in oshape:
         disable_clear_no_need_grad_test = True
     function_tester(rng, F.slice, ref_slice, [x], ctx=ctx, func_name=fname,

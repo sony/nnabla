@@ -68,7 +68,7 @@ class DataSource(object):
     def _generate_order(self, generation):
         """
         When this function is called, caller expected this data source re-generate an order.
-        This order is labelled with a generation number. It means old order is still kept,
+        This order is labeled with a generation number. It means old order is still kept,
         not overwrite the old order. Because it might be used by another slice. Of course,
         this case never occurs in multi-node scenario, because multiple slice data source
         is strictly synchronized.
@@ -357,7 +357,7 @@ class DataSourceWithFileCache(DataSource):
         if single_or_rankzero():
             progress(None)
 
-        # Adjust data size into reseted position. In most case it means
+        # Adjust data size into reset position. In most case it means
         # multiple of bunch(mini-batch) size.
         num_of_cache_files = int(numpy.ceil(
             float(self._data_source._size) / self._cache_size))

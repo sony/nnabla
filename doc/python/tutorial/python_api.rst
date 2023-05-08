@@ -30,7 +30,7 @@ NdArray
 
 NdArray is a data container of a multi-dimensional array. NdArray is
 device (e.g. CPU, CUDA) and type (e.g. uint8, float32) agnostic, in
-which both type and device are implicitly casted or transferred when it
+which both type and device are implicitly cast or transferred when it
 is used. Below, you create a NdArray with a shape of ``(2, 3, 4)``.
 
 .. code:: python
@@ -816,7 +816,7 @@ the new ``NdArray`` object to the Python variable ``x`` on the lhs.
 For in-place editing of ``NdArrays``, the in-place assignment operators
 ``+=``, ``-=``, ``*=``, and ``/=`` can be used. The ``copy_from`` method
 can also be used to copy values of an existing ``NdArray`` to another.
-For example, incrementing 1 to ``x``, an ``NdArray``, can be done by
+For example, increment 1 to ``x``, an ``NdArray``, can be done by
 ``x.copy_from(x+1)``. The copy is performed with device acceleration if
 a device context is specified by using ``nnabla.set_default_context`` or
 ``nnabla.context_scope``.
@@ -1030,7 +1030,7 @@ consumption due to that by clearing (erasing) memory of ``data`` and
 ``grad`` when it is not referenced by any subsequent computation. (More
 precisely speaking, it doesn't free memory actually. We use our memory
 pool engine by default to avoid memory alloc/free overhead). The
-unreferenced buffers can be re-used in subsequent computation. See the
+unused buffers can be re-used in subsequent computation. See the
 document of ``Variable`` for more details. Note that the following
 ``loss.forward(clear_buffer=True)`` clears ``data`` of any intermediate
 variables. If you are interested in intermediate variables for some

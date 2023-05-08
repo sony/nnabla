@@ -136,7 +136,7 @@ def get_transpose_output_shape(input_shape, axes):
 
 
 def generate_broadcast_to(node_name, x, y, out_name, axis, base_name, func_counter):
-    """Generate a BroadcastTo operator to brodcastto specified buffer"""
+    """Generate a BroadcastTo operator to broadcastto specified buffer"""
     bt = nnabla_pb2.Function()
     bt.type = "BroadcastTo"
     set_function_name(bt, node_name, base_name, func_counter)
@@ -148,7 +148,7 @@ def generate_broadcast_to(node_name, x, y, out_name, axis, base_name, func_count
 
 
 def generate_broadcast(node_name, in_name, out_name, shape, base_name, func_counter):
-    """Generate a Broadcast operator to brodcast specified buffer"""
+    """Generate a Broadcast operator to broadcast specified buffer"""
     bt = nnabla_pb2.Function()
     bt.type = "Broadcast"
     set_function_name(bt, node_name, base_name, func_counter)
@@ -983,7 +983,7 @@ class OnnxImporter:
                 raise ValueError("Unsupported attribute {} was specified at {}"
                                  .format(attr.name, n.op_type))
 
-        # NNabla requires for the dimensions of strides, pads, dilations to match.
+        # NNabla requires for the dimensions of strides, pads, dilation to match.
         # We align the dimensions for all three attributes to the shortest one
         cp.stride.dim.extend(strides[:])
         cp.dilation.dim.extend(dilations[:])
@@ -2879,7 +2879,7 @@ class OnnxImporter:
                 raise ValueError("Unsupported attribute {} was specified at {}"
                                  .format(attr.name, n.op_type))
 
-        # NNabla requires for the dimensions of strides, pads, dilations to match.
+        # NNabla requires for the dimensions of strides, pads, dilation to match.
         # We align the dimensions for all three attributes to the shortest one
         if strides:
             cp.stride.dim.extend(strides[:])
@@ -3689,7 +3689,7 @@ class OnnxImporter:
         input_len = len(n.input)
         sizes = n.input[3] if input_len == 4 else None
         scales = n.input[2] if input_len >= 3 else None
-        # roi input is not suppoted
+        # roi input is not supported
 
         # precheck
         if sizes and scales:

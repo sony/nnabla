@@ -208,7 +208,7 @@ class GraphProfiler:
         backward_accum(bool):
             Accumulation flag passed to the each backward function. The flag will fulfill the all accumulation flags
             with the same value of backward_accum. This flag is only valid for the time measurement of each function.
-            For whole graph comutation, the NNabla graph engine set the appropriate accumulation flags to functions.
+            For whole graph computation, the NNabla graph engine set the appropriate accumulation flags to functions.
             Pay attention to inplace flag for your graph because accumulation and inplace flags cannot be set
             at the same time. If even one inplace flag is true in your graph, this backward_accum must be false.
             Default value is False.

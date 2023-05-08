@@ -81,7 +81,7 @@ class SimpleDataSource(DataSource):
         self._generation = 0
         self._variables = ['x' + str(x)
                            for x in range(len(self._load_func(0)))]
-        # We set maximal unsynchnonized generations.
+        # We set maximal asynchronized generations.
         self._orders = deque(maxlen=15)
         self.reset()
         self._generate_order(0)

@@ -397,7 +397,7 @@ Plot Monitor class output files
 - By default, the following commands show a plot on your display using a
   backend rendering engine of matplotlib depending on your environment.
   If you want to save a plot as an image or a vector data, use ``-o`` option to
-  specifiy a file name where a plot is saved.
+  specify a file name where a plot is saved.
 
 MonitorSeries
 -------------

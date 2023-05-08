@@ -47,7 +47,7 @@ The parameter variables are registered with ``need_grad`` properties specific
 to a parametric function. The variables with ``need_grad=False`` flag will not
 be updated by gradient descent. Hence, backward computation is not executed for
 those variables. ``False`` is usually specified when the parameters are updated
-during foward pass and/or backward pass, e.g., batch normalization.
+during forward pass and/or backward pass, e.g., batch normalization.
 
 All parametric functions take an optional argument ``fix_parameters=False``.
 By giving ``True``, the associated parameter variables are connected to a

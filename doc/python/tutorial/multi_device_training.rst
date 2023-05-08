@@ -5,7 +5,7 @@ Data Parallel Distributed Training
 DataParallelCommunicator enables to train your neural network using
 multiple devices. It is normally used for gradients exchange in data
 parallel distributed training. Basically, there are two types of
-distributed trainings in Neural Network literature: Data Parallel and
+distributed training in Neural Network literature: Data Parallel and
 Model Parallel. Here we only focus on the former, Data Parallel
 Training. Data Parallel Distributed Training is based on the very simple
 equation used for the optimization of a neural network called
@@ -353,7 +353,7 @@ The watch dog is default disabled, if want to enable it, please set environment 
      export NNABLA_MPI_WATCH_DOG_ENABLE=1
 
 
-But in pratice, some task required to be performed on one a few of nodes,
+But in practice, some task required to be performed on one a few of nodes,
 and let other nodes wait there. If no explicitly sychronization, the watch dog might
 be unexpectedly triggered. As the following:
 

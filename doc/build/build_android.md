@@ -185,9 +185,9 @@ CB5A2AG8N7	device
 
 NNabla android build script also compiles mnist\_runtime example program located in [here](https://github.com/sony/nnabla/tree/master/examples/cpp/mnist_runtime).
 The executable can be found at `build-android/bin/mnist_runtime` on successful build of NNabla.
-Follow the instructions present [here](https://github.com/sony/nnabla/blob/master/examples/cpp/mnist_runtime/README.md) for creating the nnp file which is required for c++ inferencing.
+Follow the instructions present [here](https://github.com/sony/nnabla/blob/master/examples/cpp/mnist_runtime/README.md) for creating the nnp file which is required for c++ inferring.
 
-Execute the following commands to run the mnist c++ inferencing sample program in native layer.
+Execute the following commands to run the mnist c++ inferring sample program in native layer.
 
 ```shell
 $adb push build-android/bin/mnist_runtime /data/local/tmp/

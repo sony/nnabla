@@ -145,7 +145,7 @@ def test_all_reduce_skip_by_zero(seed, inplace, division, comm_nccl_opts):
 
     # C-3. performing allreduce during backward
     # NOTE: It's not supported because callbacks over devices are not
-    # consistently callled due to skipping backward operation on
+    # consistently called due to skipping backward operation on
     # variables not requiring gradients.
     # if comm.rank == 0:
     #     for x in xs:

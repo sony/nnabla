@@ -28,8 +28,8 @@ class ChannelLastModifier(FunctionModifier):
     `MaxPooling`, `AveragePooling`, `SumPooling`, `Unpooling`, `Concatenate`
 
     Args:
-        inputs (list of nn.Variable): Original very begining inputs (NCHW) of a network.
-        inputs_cl (list of nn.Variable): Channel last version of very begining inputs (NHWC) of a network.
+        inputs (list of nn.Variable): Original very beginning inputs (NCHW) of a network.
+        inputs_cl (list of nn.Variable): Channel last version of very beginning inputs (NHWC) of a network.
           If this is not given, `inputs_cl` are generated internally and holded.
 
     Examples:
@@ -64,7 +64,7 @@ class ChannelLastModifier(FunctionModifier):
                 inputs_cl.append(x)
         self.inputs_cl = inputs_cl
 
-        # Replace the very begining of input
+        # Replace the very beginning of input
         for inp, inp_cl in zip(inputs, inputs_cl):
             f = inp.function_references[0]
             self.init_map_func_inputs(f, [inp_cl])

@@ -65,8 +65,8 @@ Again, see the resnet architecture converted.
 
     pprint(yy)
 
-You can see that the converterd network does not contain the batch
-normalization any more!
+You can see that the converted network does not contain the batch
+normalization anymore!
 
 In some cases, we can not fold the batch normalization, but the batch
 normalization can also be self-folded, i.e., the four parameters: scale,
@@ -77,13 +77,13 @@ Channel Last Conversion
 -----------------------
 
 In NVIDIA latest GPU architectures since Volta, it supports TensorCore
-to accelerate the computatoinal performance. To boost the performance as
+to accelerate the computational performance. To boost the performance as
 maximum as possible, we need the channel-last tensor format aka NHWC. In
 NNabla, the default tensor format is the channel first aka NCHW, so as
 to utilize TensorCore, we need to change the tensor format to NHWC
 format.
 
-ChannelLastModifier convert a network with NCHW tesnor format to another
+ChannelLastModifier convert a network with NCHW tensor format to another
 network with NHWC tensor format.
 
 .. code:: ipython3

@@ -41,7 +41,7 @@ def test_assign_forward_backward(seed, ctx, func_name):
 
     # destination variable should be equal to source variable
     assert_allclose(dst.d, src.d)
-    # output variable of assign function should be equal to soure variable
+    # output variable of assign function should be equal to source variable
     assert_allclose(assign.d, src.d)
 
     dummy = assign + rng.rand()
