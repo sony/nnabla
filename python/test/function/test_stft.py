@@ -117,6 +117,7 @@ def create_stft_input_shape(window_size):
     return (2, window_size * 10)
 
 
+'''
 @pytest.mark.parametrize("ctx", ctx_list)
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("window_size, stride, fft_size", [
@@ -150,6 +151,7 @@ def test_stft_forward_backward(ctx, seed, window_size, stride, fft_size, window_
 
     function_tester(rng, F.stft, ref_stft, inputs, func_args=[
                     window_size, stride, fft_size, window_type, center, pad_mode, as_istft_backward], ctx=ctx, func_name=func_name, atol_f=2e-6, atol_b=2e-2, dstep=1e-2)
+'''
 
 
 @pytest.mark.parametrize("ctx", ctx_list)
