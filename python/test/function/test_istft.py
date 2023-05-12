@@ -112,7 +112,6 @@ def check_nola_violation(y_r, y_i, window_size, stride, fft_size, window_type, c
                     fft_size, window_type, center, pad_mode, as_stft_backward)
 
 
-'''
 @pytest.mark.parametrize("ctx", ctx_list)
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("window_size, stride, fft_size", [
@@ -154,7 +153,6 @@ def test_istft_forward_backward(ctx, seed, window_size, stride, fft_size, window
 
     function_tester(rng, F.istft, ref_istft, istft_inputs, func_args=[
                     window_size, stride, fft_size, window_type, center, pad_mode, as_stft_backward], ctx=ctx, func_name=func_name, atol_f=1e-5, atol_b=3e-2, dstep=1e-2)
-'''
 
 
 @pytest.mark.parametrize("ctx", ctx_list)

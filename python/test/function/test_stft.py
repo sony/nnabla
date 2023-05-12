@@ -17,7 +17,6 @@ import pytest
 import numpy as np
 import nnabla as nn
 import nnabla.functions as F
-import scipy.signal as sig
 import librosa
 from nbla_test_utils import list_context
 
@@ -77,6 +76,7 @@ def ref_stft(x, window_size, stride, fft_size, window_type, center, pad_mode, as
 
         # librosa.stft does not support batched input.
         window_type = 'hann' if window_type == 'hanning' else window_type
+        window_type = 'boxcar' if window_type == 'rectangular' else window_type
         b = x.shape[0]
         ys = []
         for i in range(b):
@@ -117,11 +117,10 @@ def create_stft_input_shape(window_size):
     return (2, window_size * 10)
 
 
-'''
 @pytest.mark.parametrize("ctx", ctx_list)
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("window_size, stride, fft_size", [
-    (16, 8, 16), (16, 4, 16), (16, 8, 32),
+    (16, 2, 16), (16, 4, 16), (16, 8, 32),
 ])
 @pytest.mark.parametrize("window_type", ["hanning", "hamming", "rectangular"])
 @pytest.mark.parametrize("center", [True, False])
@@ -151,7 +150,6 @@ def test_stft_forward_backward(ctx, seed, window_size, stride, fft_size, window_
 
     function_tester(rng, F.stft, ref_stft, inputs, func_args=[
                     window_size, stride, fft_size, window_type, center, pad_mode, as_istft_backward], ctx=ctx, func_name=func_name, atol_f=2e-6, atol_b=2e-2, dstep=1e-2)
-'''
 
 
 @pytest.mark.parametrize("ctx", ctx_list)
