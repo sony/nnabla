@@ -138,3 +138,25 @@ def test_pad_constant_double_backward(seed, ctx, func_name, inshape,
 # backward_function_tester(rng, F.pad, ref_pad_reflect, inputs, ctx=ctx,
 # dstep=1e-3, atol_b=5e-2, atol_accum=5e-2,
 # func_name=func_name, func_args=func_args)
+
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("inshape,reset_shape, pad_width", [
+    ((4,), (5,), (2, 9)),
+    ((4, 5), (5, 4), (5, 4)),
+    ((3, 6), (4, 8), (1, 2, 3, 4)),
+    ((3, 5, 7), (4, 6, 8), (2, 3)),
+    ((5, 4, 6), (4, 6, 5), (2, 3, 1, 4)),
+    ((2, 3, 5), (3, 2, 4), (1, 2, 3, 4, 5, 6)),
+    ((1, 2, 3, 4), (2, 3, 2, 2), (2, 3, 4, 5)),
+    ((2, 2, 3, 3), (3, 3, 2, 2), (2, 2, 2, 2, 2, 2, 2, 2)),
+])
+@pytest.mark.parametrize("constant_value", [0.11, -1.1])
+def test_pad_constant_forward_backward_with_reset(seed, ctx, func_name, inshape,
+                                                  reset_shape, pad_width, constant_value):
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*inshape).astype(np.float32)]
+    reset_inputs = [rng.randn(*reset_shape).astype(np.float32)]
+    func_args = [pad_width, "constant", constant_value]
+    function_tester(rng, F.pad, ref_pad_constant, inputs, ctx=ctx, dstep=1e-1,
+                    func_name=func_name, func_args=func_args, reset_inputs=reset_inputs)

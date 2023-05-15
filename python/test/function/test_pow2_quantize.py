@@ -110,3 +110,37 @@ def test_pow2_quantize_forward_backward(seed,
             o.backward()
             np.allclose(v.d, o.d)
             np.allclose(v.g, o.g)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("sign", [False, True])
+@pytest.mark.parametrize("with_zero", [False, True])
+@pytest.mark.parametrize("n", [3, 5])
+@pytest.mark.parametrize("m", [0, 1])
+@pytest.mark.parametrize("ste_fine_grained", [False, True])
+def test_pow2_quantize_forward_backward_with_reset(seed,
+                                                   sign, with_zero, n, m,
+                                                   ste_fine_grained,
+                                                   ctx, func_name):
+    from nbla_test_utils import cap_ignore_region, \
+        function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [
+        cap_ignore_region(
+            rng.randn(2, 3, 4).astype(np.float32) * 2,
+            (-1e-3, 1e-3))]
+    reset_inputs = [
+        cap_ignore_region(
+            rng.randn(3, 2, 4).astype(np.float32) * 2,
+            (-1e-3, 1e-3))]
+    func_args = [sign, with_zero, n, m, True, ste_fine_grained]
+    function_tester(rng,
+                    F.pow2_quantize,
+                    ref_pow2_quantize,
+                    inputs,
+                    func_args=func_args,
+                    atol_b=1e-3, backward=[True],
+                    ctx=ctx, func_name=func_name,
+                    ref_grad=ref_grad_pow2_quantize,
+                    reset_inputs=reset_inputs)

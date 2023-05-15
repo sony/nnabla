@@ -187,3 +187,35 @@ def test_sum_pooling_3d_double_backward(seed, inshape, kernel, stride, pad, igno
     ginputs = [rng.randn(*y.shape)]
     backward_function_tester(rng, df,
                              inputs=ginputs, ctx=ctx, atol_accum=3e-2, non_accum_check=True)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("ignore_border", [True, False])
+@pytest.mark.parametrize("channel_last", [False, True])
+@pytest.mark.parametrize("inshape,reset_inshape, kernel, stride, pad", [
+    ((2, 2, 4, 6), (3, 3, 5, 5), (2, 2), (2, 1), (1, 0)),
+    ((2, 2, 2, 4, 6), (3, 3, 3, 5, 5), (2, 2), (1, 2), (0, 1)),
+    ((2, 2, 2, 3, 4, 6), (3, 3, 3, 2, 4, 4), (2, 2, 2), (1, 1, 2), (0, 1, 0)),
+])
+def test_sum_pooling_with_reset(seed, inshape, reset_inshape, kernel, stride, pad, ignore_border, channel_last,
+                                ctx, func_name):
+    from nbla_test_utils import function_tester
+    if channel_last and not func_name.endswith('Cudnn'):
+        pytest.skip('Channel last is only supported in Cudnn so far')
+    if channel_last:
+        t = refs.ChannelLastToFirstTranspose(len(inshape), len(kernel))
+        inshape = tuple(inshape[i] for i in t.inv_axes)
+        # reset inshape
+        reset_t = refs.ChannelLastToFirstTranspose(
+            len(reset_inshape), len(kernel))
+        reset_inshape = tuple(reset_inshape[i] for i in reset_t.inv_axes)
+    if not ignore_border and func_name.endswith('Cudnn'):
+        pytest.skip('ignore_border=False in Cudnn is not supported.')
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*inshape).astype(np.float32)]
+    reset_inputs = [rng.randn(*reset_inshape).astype(np.float32)]
+    func_args = [kernel, stride, ignore_border, pad, channel_last]
+    function_tester(rng, F.sum_pooling, ref_sum_pooling, inputs=inputs,
+                    func_args=func_args, func_name=func_name, ctx=ctx,
+                    atol_f=1e-6, atol_b=1e-2, reset_inputs=reset_inputs)

@@ -148,3 +148,33 @@ def test_pad_packed_long_sequence_forward_backward(total_length, padding_value,
                                    packed_sequence1.d.flatten(),
                                    atol=1e-4,
                                    err_msg="{} test (w/ accum) with long sequence failed.".format(func_name))
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("Ds,reset_Ds", [((), (4,))])
+@pytest.mark.parametrize("batch_sizes,reset_batch_sizes", [([5, 3, 1, 1], [4, 2, 2, 1],)])
+@pytest.mark.parametrize("batch_first", [False, True])
+@pytest.mark.parametrize("padding_value", [0.0])
+@pytest.mark.parametrize("total_length", [3, 5])
+def test_pad_packed_sequence_forward_backward_with_reset(total_length, padding_value, batch_first,
+                                                         batch_sizes, reset_batch_sizes, Ds, reset_Ds,
+                                                         seed, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    packed_sequence = rng.randn(
+        *((sum(batch_sizes),) + Ds)).astype(np.float32)
+    batch_sizes = np.array(batch_sizes)
+    inputs = [packed_sequence, batch_sizes]
+    # reset inputs
+    reset_packed_sequence = rng.randn(
+        *((sum(reset_batch_sizes),) + reset_Ds)).astype(np.float32)
+    reset_batch_sizes = np.array(reset_batch_sizes)
+    reset_inputs = [reset_packed_sequence, reset_batch_sizes]
+    func_args = [batch_first, padding_value, total_length]
+    insert_identity = [True, False]
+    function_tester(rng, F.pad_packed_sequence, ref_pad_packed_sequence, inputs,
+                    ctx=ctx, func_name=func_name, func_args=func_args,
+                    backward=[True, False], disable_half_test=False,
+                    atol_f=1e-3, atol_b=1e-2, insert_identity=insert_identity,
+                    reset_inputs=reset_inputs)

@@ -29,7 +29,7 @@ ctxs = list_context('Embed')
 @pytest.mark.parametrize("shape_x", [(10,), (2, 8), (2, 3, 4), (2, 2, 3, 4)])
 @pytest.mark.parametrize("shape_w", [(5, 3), (4, 3, 4), (6, 2, 2, 3)])
 def test_embed_forward_backward(seed, shape_x, shape_w, ctx, func_name):
-    from nbla_test_utils import cap_ignore_region, function_tester
+    from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
     n_class = shape_w[0]
     x = rng.randint(0, n_class - 1, shape_x).astype(np.int32)
@@ -65,3 +65,30 @@ def test_embed_double_backward(seed, shape_x, shape_w, ctx, func_name):
     ginputs = [rng.randn(*y.shape), inputs[0]]
     backward_function_tester(rng, df, ginputs, func_args=[], backward=[True, False],
                              atol_accum=3e-2, dstep=1e-3, ctx=ctx, non_accum_check=True)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+def test_embed_forward_backward_with_reset(seed, ctx, func_name):
+    from nbla_test_utils import function_tester
+
+    shape_x = (10,)
+    shape_w = (5, 3)
+    reset_shape_x = (2, 8)
+    reset_shape_w = (4, 3, 4)
+    rng = np.random.RandomState(seed)
+    # input
+    n_class = shape_w[0]
+    x = rng.randint(0, n_class - 1, shape_x).astype(np.int32)
+    w = rng.randn(*shape_w).astype(np.float32)
+    inputs = [x, w]
+
+    # reset input
+    reset_n_class = reset_shape_w[0]
+    reset_x = rng.randint(0, reset_n_class - 1, reset_shape_x).astype(np.int32)
+    reset_w = rng.randn(*reset_shape_w).astype(np.float32)
+    reset_inputs = [reset_x, reset_w]
+
+    function_tester(rng, F.embed, lambda x, w: w[x], inputs,
+                    ctx=ctx, func_name=func_name, atol_b=1e-2,
+                    backward=[False, True], reset_inputs=reset_inputs)

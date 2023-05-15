@@ -37,7 +37,7 @@ def test_abs_forward_backward(seed, ctx, func_name):
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
 def test_abs_double_backward(seed, ctx, func_name):
-    from nbla_test_utils import cap_ignore_region, backward_function_tester
+    from nbla_test_utils import backward_function_tester
     rng = np.random.RandomState(seed)
     inputs = []
     for _ in range(2):
@@ -46,3 +46,20 @@ def test_abs_double_backward(seed, ctx, func_name):
     backward_function_tester(rng, F.absolute_error, inputs,
                              ctx=ctx,
                              atol_accum=1e-3)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+def test_abs_forward_backward_with_reset(seed, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    inputs = []
+    for _ in range(2):
+        inputs.append(rng.randn(2, 3,).astype(np.float32) * 2)
+    reset_inputs = []
+    for _ in range(2):
+        reset_inputs.append(rng.randn(4, 5, ).astype(np.float32) * 2)
+    function_tester(rng, F.absolute_error, lambda x, y: np.abs(x - y), inputs,
+                    ctx=ctx, func_name=func_name,
+                    atol_b=1e-2,
+                    reset_inputs=reset_inputs)

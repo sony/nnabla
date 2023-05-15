@@ -132,3 +132,40 @@ def test_spectral_norm_double_backward(seed, output_u, test, eps, itr, w_shape, 
                              backward=backward,
                              skip_backward_check=True,
                              ctx=ctx)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("w_shape, reset_w_shape,dim", [((32, 16, 3, 3), (16, 8, 3, 3), 0),  # convolution
+                                                        # affine
+                                                        ((16, 1), (16, 32), 1),
+                                                        # affine
+                                                        ((16, 32), (16, 1), 1),
+                                                        # affine
+                                                        ((8, 8, 16), (8, 4, 16), 2),
+                                                        # affine
+                                                        ((8, 4, 16), (8, 8, 16), 1),
+                                                        ])
+@pytest.mark.parametrize("itr", [1, 2, 3])
+@pytest.mark.parametrize("eps", [1e-12])
+@pytest.mark.parametrize("test", [False, True])
+@pytest.mark.parametrize("output_u", [False, True])
+@pytest.mark.parametrize("seed", [313])
+def test_spectral_norm_forward_backward_with_reset(seed, output_u, test, eps, itr, w_shape, reset_w_shape, dim, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+
+    w = rng.randn(*w_shape).astype(np.float32)
+    u = rng.randn(*(w_shape[dim],)).astype(np.float32)
+    inputs = [w, u]
+
+    # reset inputs
+    reset_w = rng.randn(*reset_w_shape).astype(np.float32)
+    reset_u = rng.randn(*(reset_w_shape[dim],)).astype(np.float32)
+    reset_inputs = [reset_w, reset_u]
+
+    backward = [False, False] if test else [True, False]
+    ref_grad = ref_grad_spectral_norm if output_u else ref_grad_spectral_norm_no_output_u
+
+    function_tester(rng, F.spectral_norm, ref_spectral_norm, inputs, func_args=[dim, itr, eps, test, output_u],
+                    backward=backward, ref_grad=ref_grad, atol_accum=3e-2, ctx=ctx, func_name=func_name,
+                    reset_inputs=reset_inputs)

@@ -69,3 +69,40 @@ def test_one_hot_forward(seed, inshape, shape, ctx, func_name):
         r = ref_one_hot(input, shape)
         assert_allclose(o.d, r)
         assert func_name == o.parent.name
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape,reset_inshape", [((100, 1), (50, 1))])
+@pytest.mark.parametrize("shape", [(10,), (10, 8)])
+def test_one_hot_forward_with_reset(seed, inshape, reset_inshape, shape, ctx, func_name):
+    # Input
+    input = np.zeros(inshape, dtype=int)
+    reset_input = np.zeros(reset_inshape, dtype=int)
+    rng = np.random.RandomState(seed)
+
+    if len(shape) != inshape[-1]:
+        # input inshape and shape don't match.
+        with pytest.raises(RuntimeError):
+            y = F.one_hot(nn.Variable(input.shape), shape)
+    else:
+        for i in range(inshape[-1]):
+            # this input data contains out-of-range class index.
+            num_classes = shape[i]
+            low = -2 * num_classes
+            high = 2 * num_classes
+            input[:, i] = rng.randint(low, high, size=inshape[0])
+        vinput = nn.Variable(input.shape, need_grad=False)
+        vinput.d = input
+        with nn.context_scope(ctx):
+            o = F.one_hot(vinput, shape)
+        o.forward()
+        # reset input
+        for i in range(reset_inshape[-1]):
+            reset_input[:, i] = rng.randint(low, high, size=reset_inshape[0])
+        vinput.reset_shape(reset_input.shape, True)
+        vinput.d = reset_input
+        o.forward()
+        r = ref_one_hot(reset_input, shape)
+        assert_allclose(o.d, r)
+        assert func_name == o.parent.name

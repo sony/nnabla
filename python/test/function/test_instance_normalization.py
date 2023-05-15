@@ -172,3 +172,38 @@ def test_instance_normalization_double_backward(ctx, func_name, seed, x_shape, b
                              backward=backward,
                              atol_f=2e-4,
                              ctx=ctx)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("x_shape ,reset_x_shape, batch_axis, channel_axis",
+                         [
+                          # convolution (NCHW)
+                          ((4, 32, 8, 8), (5, 16, 6, 6), -4, -3),
+                          # convolution (NHWC)
+                          ((2, 3, 3, 4), (1, 6, 6, 3), 0, 3),
+                          ((16, 4), (4, 16), 0, 1),  # affine
+                          # time-series (T, B, C) or (B, T, C)
+                          ((5, 2, 6), (4, 3, 5), [0, 1], 2),
+                          ((5, 2, 6), (4, 3, 5), [-3, -2], -1)
+                          ])
+@pytest.mark.parametrize("eps", [1e-05])
+@pytest.mark.parametrize("output_stat", [False, True])
+@pytest.mark.parametrize("no_scale", [False, True])
+@pytest.mark.parametrize("no_bias", [False, True])
+@pytest.mark.parametrize("broadcast_affine_params", [False, True])
+def test_instance_normalization_forward_backward_with_reset(ctx, func_name, seed, x_shape, reset_x_shape, batch_axis,
+                                                            channel_axis, eps, output_stat, no_scale, no_bias,
+                                                            broadcast_affine_params):
+    from nbla_test_utils import function_tester
+
+    rng = np.random.RandomState(seed)
+    x, beta, gamma = create_inputs(
+        rng, x_shape, batch_axis, channel_axis, no_scale, no_bias, broadcast_affine_params)
+    reset_inputs = list(create_inputs(
+        rng, reset_x_shape, batch_axis, channel_axis, no_scale, no_bias, broadcast_affine_params))
+
+    function_tester(rng, F.instance_normalization, ref_instance_normalization, [x, beta, gamma],
+                    [channel_axis, batch_axis, eps, output_stat], ctx=ctx,
+                    func_name=func_name, dstep=1e-2, atol_b=1e-2, backward=[True, not no_bias, not no_scale],
+                    disable_half_test=True, reset_inputs=reset_inputs)

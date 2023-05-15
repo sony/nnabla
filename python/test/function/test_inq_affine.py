@@ -181,3 +181,43 @@ def test_inq_affine_recomputation(seed, base_axis, weight_shape, num_bits, bias,
 
     recomputation_test(rng=rng, func=F.inq_affine, vinputs=vinputs,
                        func_args=func_args, func_kwargs={}, ctx=ctx)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape,reset_inshape,base_axis, weight_shape, reset_weight_shape,num_bits",
+                         [((2, 3, 4), (3, 2, 4), 1, (12, 2, 3), (8, 2, 2), 2)])
+@pytest.mark.parametrize("bias", [True, False])
+@pytest.mark.parametrize("inq_iterations", [(10, 20), (0,), (0, 10)])
+def test_inq_affine_forward_backward_with_reset(seed, inshape, reset_inshape, base_axis, weight_shape,
+                                                reset_weight_shape, num_bits, bias, inq_iterations, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    # Input
+    inputs = [rng.randn(*inshape).astype(np.float32)]
+    # Weights
+    inputs += [rng.randn(*weight_shape).astype(np.float32)]
+    # Indices
+    inputs += [np.random.randint(2, size=weight_shape)]
+
+    # reset_Input
+    reset_inputs = [rng.randn(*reset_inshape).astype(np.float32)]
+    # reset_Weights
+    reset_inputs += [rng.randn(*reset_weight_shape).astype(np.float32)]
+    # reset_Indices
+    reset_inputs += [np.random.randint(2, size=reset_weight_shape)]
+    # Bias
+    if bias:
+        inputs += [rng.randn(*weight_shape[1:]).astype(np.float32)]
+        reset_inputs += [rng.randn(*reset_weight_shape[1:]).astype(np.float32)]
+    else:
+        inputs += [None]
+        reset_inputs += [None]
+
+    selection_algorithm = 'largest_abs'
+
+    function_tester(rng, F.inq_affine, ref_inq_affine, inputs,
+                    func_args=[base_axis, num_bits,
+                               inq_iterations, selection_algorithm, seed],
+                    atol_b=1e-2, backward=[True, True, False, True], ctx=ctx, func_name=func_name,
+                    ref_grad=ref_grad_inq_affine, reset_inputs=reset_inputs)

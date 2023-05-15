@@ -54,3 +54,21 @@ def test_searchsorted_forward(seed, right, low, high, num_values, ctx, func_name
         low=-10, high=20, size=(3, 5, 7, num_values))]
     function_tester(rng, F.searchsorted, ref_searchsorted, inputs, func_args=[right],
                     backward=[False, False], ctx=ctx, func_name=func_name, disable_half_test=True)
+
+
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("right", [True, False])
+@pytest.mark.parametrize("low", [-1, 0])
+@pytest.mark.parametrize("high", [1, 10])
+@pytest.mark.parametrize("num_values", [1, 5, 10, 20])
+@pytest.mark.parametrize("ctx, func_name", list_context('SearchSorted'))
+def test_searchsorted_forward_with_reset(seed, right, low, high, num_values, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [np.sort((rng.randint(low=low, high=high, size=(3, 5, 7, 10)))), rng.randint(
+        low=-10, high=20, size=(3, 5, 7, num_values))]
+    reset_inputs = [np.sort((rng.randint(low=low, high=high, size=(5, 3, 10, 10)))), rng.randint(
+        low=-10, high=20, size=(5, 3, 10, num_values))]
+    function_tester(rng, F.searchsorted, ref_searchsorted, inputs, func_args=[right],
+                    backward=[False, False], ctx=ctx, func_name=func_name, disable_half_test=True,
+                    reset_inputs=reset_inputs)

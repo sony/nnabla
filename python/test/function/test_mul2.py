@@ -34,3 +34,29 @@ def test_mul2_double_backward(inplace, seed, ctx, func_name):
                              atol_accum=1e-2,
                              dstep=1e-3,
                              ctx=ctx)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inplace", [False, True])
+def test_mul2_forward_backward(inplace, seed, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(2, 3).astype(np.float32),
+              rng.randn(2, 3).astype(np.float32) * 2]
+    function_tester(rng, F.mul2, np.multiply, inputs,
+                    ctx=ctx, func_name=func_name, atol_b=2e-3)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inplace", [False, True])
+def test_mul2_forward_backward_with_reset(inplace, seed, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(2, 3).astype(np.float32),
+              rng.randn(2, 3).astype(np.float32) * 2]
+    reset_inputs = [rng.randn(3, 2).astype(np.float32),
+                    rng.randn(3, 2).astype(np.float32) * 2]
+    function_tester(rng, F.mul2, np.multiply, inputs,
+                    ctx=ctx, func_name=func_name, atol_b=2e-3, reset_inputs=reset_inputs)

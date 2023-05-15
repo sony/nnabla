@@ -43,3 +43,16 @@ def test_batch_logdet_forward_backward(seed, ctx, func_name):
     function_tester(rng, F.batch_logdet, ref_log_det, inputs, ctx=ctx,
                     func_name=func_name, atol_b=2e-2, dstep=1e-4,
                     disable_half_test=True)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [314])
+def test_batch_logdet_forward_backward_with_reset(seed, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    # input must be batched square matrix
+    inputs = [np.clip(rng.randn(2, 3, 3).astype(np.float32), -0.9, 0.9)]
+    reset_inputs = [np.clip(rng.randn(3, 2, 2).astype(np.float32), -0.9, 0.9)]
+    function_tester(rng, F.batch_logdet, ref_log_det, inputs, ctx=ctx,
+                    func_name=func_name, atol_b=2e-2, dstep=1e-4,
+                    disable_half_test=True, reset_inputs=reset_inputs)

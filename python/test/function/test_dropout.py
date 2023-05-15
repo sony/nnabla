@@ -302,3 +302,68 @@ def test_dropout_recompute(p, seed, ctx, func_name):
     func_args = [p, seed]
     recomputation_test(rng=rng, func=F.dropout, vinputs=[x],
                        func_args=func_args, func_kwargs={}, ctx=ctx)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("p", [p / 10. for p in range(1, 9)] + [0])
+def test_dropout_forward_backward_with_reset(p, seed, ctx, func_name):
+    from nbla_test_utils import cap_ignore_region
+    rng = np.random.RandomState(seed)
+    input_shape = (2, 3, 4)
+    reset_input_shape = (2, 3)
+    # Create inputs
+    inputs = [
+        cap_ignore_region(
+            rng.randn(*input_shape).astype(np.float32) * 2,
+            (-1e-3, 1e-3))]  # Ensure there is no zero.
+    x = nn.Variable(inputs[0].shape, need_grad=True)
+    x.d = inputs[0]
+    init_dx = rng.randn(*x.shape).astype(x.data.dtype)
+    init_dy = rng.randn(*x.shape).astype(x.data.dtype)
+
+    with nn.context_scope(ctx):
+        # # Construct graph
+        y = F.dropout(x, p)
+        # Reference parameter
+        scale = 1. / (1. - p)
+
+    # Test forward
+    y.forward(clear_buffer=True)
+    mask = (y.d != 0)
+    ref_y = x.d * mask * scale
+    assert_allclose(y.d, ref_y)
+    assert y.parent.name == func_name
+
+    # Test backward
+    x.g[...] = init_dx
+    y.backward(init_dy, clear_buffer=True)
+    ref_dx = init_dy * mask * scale
+    assert_allclose(x.g, init_dx + ref_dx)
+
+    mask = (y.d != 0)
+    ref_y = x.d * mask * scale
+    assert_allclose(y.d, ref_y)
+    assert y.parent.name == func_name
+
+    # reset inputs
+    reset_inputs = cap_ignore_region(
+            rng.randn(*reset_input_shape).astype(np.float32) * 2,
+            (-1e-3, 1e-3))
+    init_dx = rng.randn(*reset_input_shape).astype(x.data.dtype)
+    init_dy = rng.randn(*reset_input_shape).astype(x.data.dtype)
+
+    x.reset_shape(reset_inputs.shape, True)
+    x.d = reset_inputs
+    # reset forward
+    y.forward(clear_buffer=True)
+    mask = (y.d != 0)
+    ref_y = x.d * mask * scale
+    assert_allclose(y.d, ref_y)
+    assert y.parent.name == func_name
+
+    # reset backward
+    x.g[...] = init_dx
+    y.backward(init_dy, clear_buffer=True)
+    ref_dx = init_dy * mask * scale
+    assert_allclose(x.g, init_dx + ref_dx)

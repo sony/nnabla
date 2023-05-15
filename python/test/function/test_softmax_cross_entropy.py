@@ -105,3 +105,31 @@ def test_softmax_cross_entropy_backward_with_negative_label(seed, axis, ctx, fun
         out, [inp0, inp1], recompute_graph=True)
     numerical_grad[inp0.size:] = 0
     assert_allclose(analytical_grad, numerical_grad, rtol=0.01, atol=0.01)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [314])
+@pytest.mark.parametrize("axis", [0, 1, 2, -1, -2, -3])
+def test_softmax_cross_entropy_forward_backward_with_reset(seed, axis, ctx, func_name):
+    from nbla_test_utils import function_tester
+    ishape = [2, 3, 4]
+    reset_inshape = [3, 2, 4]
+    rng = np.random.RandomState(seed)
+
+    l_shape = list(ishape)
+    l_shape[axis] = 1
+    n_class = ishape[axis]
+
+    inputs = [
+        rng.randn(*ishape).astype(np.float32) * 2,
+        rng.randint(-1, n_class, size=l_shape).astype(int)]
+    # reset inputs
+    reset_l_shape = list(reset_inshape)
+    reset_l_shape[axis] = 1
+    reset_n_class = reset_inshape[axis]
+    reset_inputs = [
+        rng.randn(*reset_inshape).astype(np.float32) * 2,
+        rng.randint(-1, reset_n_class, size=reset_l_shape).astype(int)]
+    function_tester(rng, F.softmax_cross_entropy, ref_softmax_cross_entropy,
+                    inputs, func_args=[axis], backward=[True, False],
+                    atol_b=2e-3, ctx=ctx, func_name=func_name, reset_inputs=reset_inputs)

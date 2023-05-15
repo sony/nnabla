@@ -152,3 +152,75 @@ def test_parametric_function_2d(inshape, kernel, divisor, outshape):
     assert p['depthwise_deconv/W'].shape == (sample_channels,) + kernel
     assert p['depthwise_deconv/b'].shape == (outmap_channels,)
     nn.clear_parameters()
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape, kernel, reset_inshape, reset_kernel, pad, stride, dilation, divisor", [
+    ((2, 3, 10, 10), (3, 2), (2, 6, 10, 10), (3, 2), (3, 0), (1, 2), (2, 1), 3),
+    ((2, 4, 8, 8), (2, 2), (2, 2, 10, 10), (3, 2), (3, 0), (1, 2), (2, 1), 2),
+])
+@pytest.mark.parametrize("with_bias", [True, False])
+@pytest.mark.parametrize("base_axis", [1, -3])
+def test_depthwise_deconvolution_2d_forward_backward_with_reset(inshape, kernel, reset_inshape,
+                                                                reset_kernel, pad, stride, dilation,
+                                                                divisor, with_bias, base_axis,
+                                                                seed, ctx, func_name):
+    rng = np.random.RandomState(seed)
+    # inputs
+    sample_channels = inshape[base_axis]
+    outmap_channels = sample_channels // divisor
+    x = rng.randn(*inshape).astype(np.float32)
+    w = rng.randn(*((sample_channels,) + kernel)).astype(np.float32)
+    b = rng.randn(outmap_channels).astype(np.float32) if with_bias else None
+    inputs = [x, w, b]
+    # reset inputs
+    reset_sample_channels = reset_inshape[base_axis]
+    reset_outmap_channels = reset_sample_channels // divisor
+    reset_x = rng.randn(*reset_inshape).astype(np.float32)
+    reset_w = rng.randn(*((reset_sample_channels,) +
+                        reset_kernel)).astype(np.float32)
+    reset_b = rng.randn(reset_outmap_channels).astype(
+        np.float32) if with_bias else None
+    reset_inputs = [reset_x, reset_w, reset_b]
+    func_args = [base_axis, pad, stride, dilation, divisor]
+    reference = ref_depthwise_deconvolution_2d
+    function_tester(rng, F.depthwise_deconvolution, reference, inputs,
+                    func_args, atol_f=1e-4, atol_b=4e-3, dstep=1e-2,
+                    ctx=ctx, func_name=func_name, reset_inputs=reset_inputs)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape, kernel, reset_inshape, reset_kernel,pad, stride, dilation, divisor", [
+    ((2, 4, 10), (3,), (3, 2, 10), (4,), (3,), (1,), (2,), 2),
+    ((2, 6, 10), (3,), (2, 3, 10), (4,), (3,), (1,), (2,), 3),
+])
+@pytest.mark.parametrize("with_bias", [True, False])
+def test_depthwise_deconvolution_1d_forward_backward_with_reset(inshape, kernel, reset_inshape,
+                                                                reset_kernel, pad, stride,
+                                                                dilation, divisor, with_bias,
+                                                                seed, ctx, func_name):
+    rng = np.random.RandomState(seed)
+    base_axis = len(inshape) - 2
+    # input
+    sample_channels = inshape[base_axis]
+    outmap_channels = sample_channels // divisor
+    x = rng.randn(*inshape).astype(np.float32)
+    w = rng.randn(*((sample_channels,) + kernel)).astype(np.float32)
+    b = rng.randn(outmap_channels).astype(np.float32) if with_bias else None
+    inputs = [x, w, b]
+    # reset input
+    reset_sample_channels = reset_inshape[base_axis]
+    reset_outmap_channels = reset_sample_channels // divisor
+    reset_x = rng.randn(*reset_inshape).astype(np.float32)
+    reset_w = rng.randn(*((reset_sample_channels,) +
+                        reset_kernel)).astype(np.float32)
+    reset_b = rng.randn(reset_outmap_channels).astype(
+        np.float32) if with_bias else None
+    reset_inputs = [reset_x, reset_w, reset_b]
+    func_args = [base_axis, pad, stride, dilation, divisor]
+    reference = ref_depthwise_deconvolution_1d
+    function_tester(rng, F.depthwise_deconvolution, reference, inputs,
+                    func_args, atol_f=1e-4, atol_b=3e-3, dstep=1e-2,
+                    ctx=ctx, func_name=func_name, reset_inputs=reset_inputs)

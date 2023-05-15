@@ -34,7 +34,8 @@ def test_assign_forward_backward(seed, ctx, func_name):
     dst = nn.Variable((2, 3, 4), need_grad=True)
     src = nn.Variable((2, 3, 4), need_grad=True)
 
-    assign = F.assign(dst, src)
+    with nn.context_scope(ctx):
+        assign = F.assign(dst, src)
 
     src.d = rng.rand(2, 3, 4)
     assign.forward()
@@ -75,3 +76,42 @@ def test_assign_recomputation(seed, ctx, func_name):
 
     recomputation_test(rng=rng, func=F.assign, vinputs=[dst, src],
                        func_args=[], func_kwargs={}, ctx=ctx)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [314])
+@pytest.mark.parametrize("inshape, reset_inshape",
+                         [((2, 3, 4), (3, 2, 4))])
+def test_assign_forward_backward_with_reset(seed, inshape, reset_inshape, ctx, func_name):
+    rng = np.random.RandomState(seed)
+    dst = nn.Variable(inshape, need_grad=True)
+    src = nn.Variable(inshape, need_grad=True)
+
+    with nn.context_scope(ctx):
+        assign = F.assign(dst, src)
+
+    src.d = rng.rand(*inshape)
+    assign.forward()
+    assert_allclose(dst.d, src.d)
+    assert_allclose(assign.d, src.d)
+    dummy = assign + rng.rand()
+
+    # reset inshape and value
+    src.reset_shape(reset_inshape, True)
+    dst.reset_shape(reset_inshape, True)
+    src.d = rng.rand(*reset_inshape)
+
+    # check forward
+    assign.forward()
+    assert_allclose(dst.d, src.d)
+    assert_allclose(assign.d, src.d)
+
+    # check backward
+    dst.grad.zero()
+    src.grad.zero()
+    dummy.forward()
+    dummy.backward()
+
+    assert not np.all(dst.g == np.zeros(reset_inshape))
+    assert np.all(dst.g == assign.g)
+    assert np.all(src.g == np.zeros(reset_inshape))

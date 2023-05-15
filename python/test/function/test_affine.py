@@ -92,3 +92,30 @@ def test_affine_double_backward(seed, base_axis, weight_shape, bias,
     ginputs = [rng.randn(*y.shape), inputs[0]]
     backward_function_tester(rng, df, ginputs, func_args=[],
                              dstep=1e-3, ctx=ctx, non_accum_check=True)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("base_axis, weight_shape, reset_weight_shape",
+                         [(1, (12, 2, 3), (20, 2, 3)), (2, (4, 4), (5, 4)), (-1, (4, 4), (5, 4)),
+                          (-2, (12, 3, 4), (20, 3, 4))])
+@pytest.mark.parametrize("bias", [True, False])
+def test_affine_forward_backward_with_reset(seed, base_axis, weight_shape, reset_weight_shape, bias,
+                                            ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    # Input
+    inputs = [rng.randn(2, 3, 4).astype(np.float32)]
+    reset_inputs = [rng.randn(3, 4, 5).astype(np.float32)]
+    # Weight
+    inputs += [rng.randn(*weight_shape).astype(np.float32)]
+    reset_inputs += [rng.randn(*reset_weight_shape).astype(np.float32)]
+    # Bias
+    if bias:
+        inputs += [rng.randn(*weight_shape[1:]).astype(np.float32)]
+        reset_inputs += [rng.randn(*reset_weight_shape[1:]).astype(np.float32)]
+    else:
+        inputs += [None]
+        reset_inputs += [None]
+    function_tester(rng, F.affine, ref_affine, inputs, func_args=[base_axis],
+                    atol_b=1e-2, dstep=1e-3, ctx=ctx, func_name=func_name, reset_inputs=reset_inputs)

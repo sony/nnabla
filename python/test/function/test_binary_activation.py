@@ -62,3 +62,17 @@ def test_activation_double_backward(act_name, seed, ctx, func_name):
     inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2]
 
     backward_function_tester(rng, act, inputs, ctx=ctx)
+
+
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("act_name, ctx, func_name", list_ctx_and_func_name(['binary_tanh', 'binary_sigmoid']))
+def test_activation_forward_backward_with_reset(act_name, seed, ctx, func_name):
+    act = getattr(F, act_name)
+    ref_func = eval('ref_func_' + act_name)
+    ref_grad = eval('ref_grad_' + act_name)
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2]
+    reset_inputs = [rng.randn(3, 4, 5).astype(np.float32) * 2]
+    function_tester(rng, act, ref_func, inputs,
+                    atol_b=1e-2, dstep=1e-3, ref_grad=ref_grad,
+                    ctx=ctx, func_name=func_name, reset_inputs=reset_inputs)

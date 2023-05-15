@@ -94,3 +94,65 @@ def test_random_crop_recomputation(seed, inshape, shape, base_axis, ctx, func_na
     func_args = [shape, base_axis, seed]
     recomputation_test(rng=rng, func=F.random_crop, vinputs=vinputs,
                        func_args=func_args, func_kwargs={}, ctx=ctx)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape,reset_inshape", [((3, 4, 5), (3, 5, 5))])
+@pytest.mark.parametrize("shape", [(3, 2, 2,), (1, 3, 3)])
+def test_random_crop_forward_backward_with_reset(seed, inshape, reset_inshape, shape, ctx, func_name):
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*inshape).astype(np.float32)]
+    i = nn.Variable(inputs[0].shape, need_grad=True)
+    i.d = inputs[0]
+    # NNabla forward
+    with nn.context_scope(ctx):
+        o = F.random_crop(i, shape, 0, seed)
+    o.forward()
+    # reset input
+    reset_inputs = [rng.randn(*reset_inshape).astype(np.float32)]
+    i.reset_shape(reset_inputs[0].shape, True)
+    i.d = reset_inputs[0]
+    o.forward()
+
+    max_correl = 0
+    possible_crop_range = [
+        input - output for output, input in zip(shape, reset_inshape)]
+    for crop_pos in itertools.product(
+            *map(tuple, map(lambda x: range(*x), [(0, r + 1) for r in possible_crop_range]))):
+        r = reset_inputs[0][crop_pos[0]:crop_pos[0] + shape[0], crop_pos[1]:crop_pos[1] + shape[1],
+                            crop_pos[2]:crop_pos[2] + shape[2]]
+        assert (o.d.shape == r.shape)
+        correl_and_p = pearsonr(o.d.flatten(), r.flatten())
+        if correl_and_p[0] > max_correl:
+            max_correl = correl_and_p[0]
+
+    np.testing.assert_almost_equal(max_correl, 1.0)
+
+    assert o.parent.name == func_name
+
+    # Skipping Backward check
+    g = np.random.randn(*i.shape)
+    i.g = g
+    o_grad = np.random.randn(*o.shape)
+    o.g = o_grad
+    o.parent.backward([i], [o])
+    ref_grad = i.g.copy() - g
+
+    # Check accum=False with NaN gradient
+    i.g = np.float32('nan')
+    o.parent.backward([i], [o], [False])
+    assert not np.any(np.isnan(i.g))
+
+    # Check if accum option works
+    i.g[...] = 1
+    o.g = o_grad
+    o.parent.backward([i], [o], [False])
+    assert_allclose(i.g, ref_grad, atol=1e-6)
+
+    # Check if need_grad works
+    i.g[...] = 0
+    i.need_grad = False
+    o_diff = rng.randn(*o.shape).astype(i.d.dtype)
+    o.backward(o_diff)
+    assert np.all(i.g == 0)

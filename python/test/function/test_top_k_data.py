@@ -145,3 +145,45 @@ def test_float_input_large_k_forward(seed, ishape, k, base_axis, ctx, fname):
 
     assert topk_data2.d[0][-1] != 0.0
     assert topk_index2.d[0][-1] != 0.0
+
+
+@pytest.mark.parametrize("ctx, fname", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("abs", [False, True])
+@pytest.mark.parametrize("largest", [False, True])
+@pytest.mark.parametrize("reduce, with_index", [
+    (False, False), (True, False), (True, True)
+])
+@pytest.mark.parametrize("ishape, reset_inshape , k, base_axis", [
+    ((4, 5, 6), (4, 6, 5), 1, 0), ((4, 5, 6),
+                                   (4, 6, 5), 1, 1), ((4, 5, 6), (4, 6, 5), 1, 2),
+    ((4, 5, 6), (4, 6, 5), 1, -2),
+    ((4, 5, 6), (4, 6, 5), 5, 0), ((4, 5, 6),
+                                   (4, 6, 5), 5, 1), ((4, 5, 6), (4, 6, 5), 5, 2),
+    ((4, 5, 6), (4, 6, 5), 5, -1),
+    ((1, 1000), (1, 500), 10, 1), ((1, 100000), (1, 50000),
+                                   1024, 1), ((1, 100000), (1, 50000), 1025, 1),
+    ((1, 100000), (1, 50000), 1025, -2)
+])
+def test_forward_backward_with_reset(seed, ishape, reset_inshape, k, abs, reduce, base_axis, largest,
+                                     with_index, ctx, fname):
+    # Use unique random numbers because sorting algorithm for top-k
+    # is not stable.
+    rng = np.random.RandomState(seed)
+    n = np.prod(ishape)
+    x = np.arange(n)
+    x[np.arange(n, step=2)] *= -1  # Negate even number
+    rng.shuffle(x)
+    x = x.reshape(ishape).astype(np.float32)
+
+    reset_n = np.prod(reset_inshape)
+    reset_x = np.arange(reset_n)
+    reset_x[np.arange(reset_n, step=2)] *= -1  # Negate even number
+    rng.shuffle(reset_x)
+    reset_inputs = [reset_x.reshape(reset_inshape).astype(np.float32)]
+
+    ref_grad = ref_top_k_data_bw_with_index if with_index else ref_top_k_data_bw
+    function_tester(rng, F.top_k_data, ref_top_k_data_fw, [x], ctx=ctx,
+                    func_name=fname, ref_grad=ref_grad,
+                    func_args=[k, abs, reduce, base_axis, largest, with_index],
+                    disable_half_test=k > 10, reset_inputs=reset_inputs)

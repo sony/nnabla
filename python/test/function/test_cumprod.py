@@ -88,3 +88,30 @@ def test_cumprod_forward_backward_large(seed, shape, axis, exclusive, reverse, w
     # Half test is disabled since CumProd for fp16 is not implemented currently.
     function_tester(rng, F.cumprod, ref_cumprod, [input], ref_grad=ref_grad_cumprod, func_args=[axis, exclusive, reverse],
                     ctx=ctx, func_name=func_name, disable_half_test=True)
+
+
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("shape,reset_shape", [((5, 7, 8), (3, 4, 5))])
+@pytest.mark.parametrize("axis", [0, 1, -1])
+@pytest.mark.parametrize("exclusive", [True, False])
+@pytest.mark.parametrize("reverse", [True, False])
+# A flag whether input has zero or not.
+@pytest.mark.parametrize("with_mask, with_random_zero_pos, zero_pos",
+                         [(False, False, 0),
+                          (True, False, 0),  # First element
+                          (True, False, 2),  # Middle element
+                          (True, False, -1),  # Last element
+                          (True, True, 0),
+                          ])
+@pytest.mark.parametrize("ctx, func_name", list_context('CumProd'))
+def test_cumprod_forward_backward_with_reset(seed, shape, reset_shape, axis, exclusive, reverse, with_mask,
+                                             with_random_zero_pos, zero_pos, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    input = create_cumprod_input(
+        rng, shape, axis, with_mask, with_random_zero_pos, zero_pos)
+    reset_input = create_cumprod_input(
+        rng, reset_shape, axis, with_mask, with_random_zero_pos, zero_pos)
+    # Half test is disabled since CumProd for fp16 is not implemented currently.
+    function_tester(rng, F.cumprod, ref_cumprod, [input], func_args=[axis, exclusive, reverse],
+                    ctx=ctx, func_name=func_name, atol_b=6e-3, disable_half_test=True, reset_inputs=[reset_input])

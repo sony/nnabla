@@ -50,3 +50,31 @@ def test_mod2_forward(seed, x0_shape, x1_shape, fmod, dtype, ctx, func_name):
     function_tester(rng, F.mod2, ref_mod2, inputs,
                     func_name=func_name, func_args=func_args,
                     atol_f=0, ctx=ctx, backward=backward)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("x0_shape, x1_shape,reset_x0_shape, reset_x1_shape", [
+    ((2, 3, 4), (2, 3, 4), (2, 4, 4), (2, 4, 4)),
+    ((1, 1, 1), (2, 3, 4), (1, 2, 2), (2, 2, 2)),
+])
+@pytest.mark.parametrize('fmod', [False, True])
+@pytest.mark.parametrize('dtype', [np.float32, np.int32])
+@pytest.mark.parametrize("seed", [313])
+def test_mod2_forward(seed, x0_shape, x1_shape, reset_x0_shape, reset_x1_shape, fmod, dtype, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    if dtype == np.float32:
+        inputs = [rng.randn(*x0_shape).astype(dtype),
+                  rng.randn(*x1_shape).astype(dtype)]
+        reset_inputs = [rng.randn(*reset_x0_shape).astype(dtype),
+                        rng.randn(*reset_x1_shape).astype(dtype)]
+    else:
+        inputs = [rng.randint(np.iinfo(dtype).min, np.iinfo(dtype).max, x0_shape).astype(dtype),
+                  rng.randint(np.iinfo(dtype).min, np.iinfo(dtype).max, x1_shape).astype(dtype)]
+        reset_inputs = [rng.randint(np.iinfo(dtype).min, np.iinfo(dtype).max, reset_x0_shape).astype(dtype),
+                        rng.randint(np.iinfo(dtype).min, np.iinfo(dtype).max, reset_x1_shape).astype(dtype)]
+    backward = [False, False]
+    func_args = [fmod]
+    function_tester(rng, F.mod2, ref_mod2, inputs,
+                    func_name=func_name, func_args=func_args,
+                    atol_f=0, ctx=ctx, backward=backward, reset_inputs=reset_inputs)

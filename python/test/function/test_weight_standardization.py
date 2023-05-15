@@ -138,3 +138,32 @@ def test_apply_weight_standardization(rng, function, channel_axis, kwargs, param
 
     assert_allclose(w_standardized, ref_w_standardized,
                     atol=1e-02, rtol=1e-5)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("w_shape , reset_w_shape, channel_axis", [((8, 4, 3, 3), (8, 4, 4, 3), 0),  # convolution
+                                                                   # convolution
+                                                                   ((32, 16, 3, 3),
+                                                                    (32, 8, 3, 3), -2),
+                                                                   # affine
+                                                                   ((16, 1),
+                                                                    (9, 1), 1),
+                                                                   # affine
+                                                                   ((8, 4, 16),
+                                                                    (8, 4, 8), -1),
+                                                                   # affine
+                                                                   ((4, 2, 8),
+                                                                    (4, 4, 8), 2),
+                                                                   ])
+@pytest.mark.parametrize("eps", [1e-05])
+@pytest.mark.parametrize("output_stat", [False, True])
+def test_weight_standardization_forward_backward_with_reset(rng, ctx, func_name, w_shape, reset_w_shape, channel_axis,
+                                                            eps,
+                                                            output_stat):
+    from nbla_test_utils import function_tester
+
+    w = np.array(rng.randn(*w_shape).astype(np.float32))
+    reset_w = np.array(rng.randn(*reset_w_shape).astype(np.float32))
+    function_tester(rng, F.weight_standardization, ref_weight_standardization, [w], [channel_axis, eps, output_stat],
+                    ctx=ctx,
+                    func_name=func_name, dstep=1e-2, atol_b=1e-2, reset_inputs=[reset_w])

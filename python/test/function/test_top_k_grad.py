@@ -68,3 +68,35 @@ def test_forward_backward(seed, ishape, k, abs, base_axis, ctx, fname):
     # Note: FP16 has too many duplicate value for larger K to get the
     # same sort order as FP32 and this makes the function tester fail
     # when comparing FP16 to FP32 results of gradient computation.
+
+
+@pytest.mark.parametrize("ctx, fname", ctxs)
+@pytest.mark.parametrize("seed", [314])
+@pytest.mark.parametrize("abs", [False, True])
+@pytest.mark.parametrize("ishape, reset_inshape , k, base_axis", [
+    ((4, 5, 6), (4, 6, 5), 1, 0), ((4, 5, 6),
+                                   (4, 6, 5), 1, 1), ((4, 5, 6), (4, 6, 5), 1, 2),
+    ((4, 5, 6), (4, 6, 5), 1, -2),
+    ((4, 5, 6), (4, 6, 5), 5, 0), ((4, 5, 6),
+                                   (4, 6, 5), 5, 1), ((4, 5, 6), (4, 6, 5), 5, 2),
+    ((4, 5, 6), (4, 6, 5), 5, -1),
+    ((1, 1000), (1, 500), 10, 1), ((1, 100000), (1, 50000),
+                                   1024, 1), ((1, 100000), (1, 50000), 1025, 1),
+    ((1, 100000), (1, 50000), 1025, -2)
+])
+def test_forward_backward_with_reset(seed, ishape, reset_inshape, k, abs, base_axis, ctx, fname):
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*ishape).astype(np.float32)]
+    reset_inputs = [rng.randn(*reset_inshape).astype(np.float32)]
+    grad_unstable = False
+    if fname.endswith('Cuda'):
+        # TopKGradCuda backward use unstable sort, so the result will change each run.
+        grad_unstable = True
+
+    function_tester(rng, F.top_k_grad, ref_top_k_grad_fw, inputs, ctx=ctx,
+                    func_name=fname, ref_grad=ref_top_k_grad_bw,
+                    func_args=[k, abs, base_axis],
+                    disable_half_test=k > 10,
+                    disable_clear_no_need_grad_test=grad_unstable,
+                    disable_auto_forward_backward_tester=grad_unstable,
+                    reset_inputs=reset_inputs)

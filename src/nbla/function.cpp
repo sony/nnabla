@@ -71,7 +71,7 @@ void Function::setup(const Variables &inputs, const Variables &outputs) {
   }
 }
 
-static void check_shapes(Function *function, const Variables &inputs,
+static bool check_shapes(Function *function, const Variables &inputs,
                          const Variables &outputs,
                          const vector<shared_ptr<Shape_t>> &in_shapes,
                          const vector<shared_ptr<Shape_t>> &out_shapes) {
@@ -84,12 +84,14 @@ static void check_shapes(Function *function, const Variables &inputs,
              "Given: %d != previously: %d. ",
              function->name().c_str(), outputs.size(), out_shapes.size());
   for (Variables::size_type i = 0; i < inputs.size(); ++i) {
-    NBLA_CHECK(*in_shapes[i] == inputs[i]->shape(), error_code::value,
-               "Inconsistent shape in input %d of %s. "
-               "Setup: (%s) != Given: (%s).",
-               i, function->name().c_str(),
-               string_join(*(in_shapes[i]), string(", ")).c_str(),
-               string_join(inputs[i]->shape(), string(", ")).c_str());
+    if (*in_shapes[i] != inputs[i]->shape()) {
+      std::printf("Inconsistent shape in input %d of %s. "
+                  "Setup: (%s) != Given: (%s). Re-setup will be done.\n",
+                  i, function->name().c_str(),
+                  string_join(*(in_shapes[i]), string(", ")).c_str(),
+                  string_join(inputs[i]->shape(), string(", ")).c_str());
+      return false;
+    }
   }
   for (Variables::size_type i = 0; i < outputs.size(); ++i) {
     NBLA_CHECK(*out_shapes[i] == outputs[i]->shape(), error_code::value,
@@ -99,6 +101,7 @@ static void check_shapes(Function *function, const Variables &inputs,
                string_join(*(out_shapes[i]), string(", ")).c_str(),
                string_join(outputs[i]->shape(), string(", ")).c_str());
   }
+  return true;
 }
 
 void Function::forward(const Variables &inputs, const Variables &outputs) {
@@ -107,7 +110,15 @@ void Function::forward(const Variables &inputs, const Variables &outputs) {
     fall_back_func_->forward(inputs, outputs);
     return;
   }
-  check_shapes(this, inputs, outputs, in_shapes, out_shapes);
+  // TODO: This change loose the condition to allow different shape of inputs,
+  // TODO: it introduced by the outputs of some functions might have variable
+  // shapes.
+  // TODO: Due to such cases, we need to redo setup.
+  // TODO: it also introduced problems because original function implementation
+  // TODO: does normally not support such re-setup-able cases.
+  if (!check_shapes(this, inputs, outputs, in_shapes, out_shapes)) {
+    this->setup(inputs, outputs);
+  }
   this->forward_impl(inputs, outputs);
 }
 
@@ -119,7 +130,11 @@ void Function::backward(const Variables &inputs, const Variables &outputs,
     fall_back_func_->backward(inputs, outputs, propagate_down, accum);
     return;
   }
-  check_shapes(this, inputs, outputs, in_shapes, out_shapes);
+
+  // TODO: As above.
+  if (!check_shapes(this, inputs, outputs, in_shapes, out_shapes)) {
+    this->setup(inputs, outputs);
+  };
   // Always zero-ing gradient buffer when accum is false.
   // NNabla's backward implementation takes an accum flag for each input
   // variable. An accum flag is automatically determined by our graph engine.

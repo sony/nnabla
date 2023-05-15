@@ -97,13 +97,13 @@ def ref_grad_fused_batch_normalization(x, beta, gamma, rmean, rvar, z, dy, axes,
         return np.concatenate(concat)
 
 
-def create_inputs(rng, axis, add):
-    x = rng.randn(2, 3, 5, 4).astype(np.float32) * 2
+def create_inputs(rng, axis, add, shape=(2, 3, 5, 4)):
+    x = rng.randn(*shape).astype(np.float32) * 2
     shape_stat = [1 for _ in range(x.ndim)]
     if add:
         # Note: The last dimension must be a multiple of 4
         # if we want to test cudnn BN persistent mode.
-        z = rng.randn(2, 3, 5, 4).astype(np.float32) * 2
+        z = rng.randn(*shape).astype(np.float32) * 2
     else:
         z = None
 
@@ -263,3 +263,44 @@ def test_fused_batch_normalization_double_backward(seed, axis, decay_rate, eps,
                              backward=[True, True, False, True,
                                        False, False, False, add],
                              ctx=ctx, atol_accum=5e-2, dstep=1e-3, non_accum_check=True)
+
+
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("axis", [0, 3])
+@pytest.mark.parametrize("decay_rate", [0.9])
+@pytest.mark.parametrize("eps", [1e-5])
+@pytest.mark.parametrize("nonlinearity", ['relu'])
+@pytest.mark.parametrize("output_stat", [False])  # [True, False])
+@pytest.mark.parametrize("add", [True, False])
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("no_scale, no_bias", [[False, False], [True, True]])
+@pytest.mark.parametrize("no_mean", [True, False])
+@pytest.mark.parametrize("no_variance", [True, False])
+def test_fused_batch_normalization_forward_backward_with_reset(seed, axis, decay_rate, eps,
+                                                               nonlinearity,
+                                                               output_stat, add,
+                                                               ctx, func_name,
+                                                               no_scale, no_bias, no_mean, no_variance):
+    import platform
+    if platform.system() == 'Windows' and len(ctx.backend) > 1:
+        pytest.skip(
+            "Currently not worked with CUDA/cuDNN on Windows platform.")  # TODO
+
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    inputs = list(create_inputs(rng, axis, add))
+    reset_inputs = list(create_inputs(rng, axis, add, (1, 2, 3, 4)))
+    axes = [axis]
+    batch_stat = True
+    inputs = mask_inputs(inputs, no_scale, no_bias, no_mean, no_variance)
+    reset_inputs = mask_inputs(
+        reset_inputs, no_scale, no_bias, no_mean, no_variance)
+    insert_identity = [True, True, True, False, False, False]
+    function_tester(rng, F.fused_batch_normalization, ref_fused_batch_normalization,
+                    inputs,
+                    ref_grad=ref_grad_fused_batch_normalization,
+                    func_args=[axes, decay_rate, eps,
+                               batch_stat, nonlinearity, output_stat],
+                    backward=[True, True, True, False, False, add],
+                    ctx=ctx, func_name=func_name, dstep=1e-2,
+                    atol_b=1e-2, insert_identity=insert_identity, reset_inputs=reset_inputs)

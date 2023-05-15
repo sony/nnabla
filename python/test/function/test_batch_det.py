@@ -50,3 +50,16 @@ def test_batch_det_double_backward(seed, ctx, func_name):
     inputs = [np.clip(rng.randn(2, 3, 3).astype(np.float32), -0.9, 0.9)]
     backward_function_tester(rng, F.batch_det, inputs, ctx=ctx, atol_accum=1e-1,
                              skip_backward_check=True)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [314])
+def test_batch_det_forward_backward_with_reset(seed, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    # input must be batched square matrix
+    inputs = [np.clip(rng.randn(2, 3, 3).astype(np.float32), -0.9, 0.9)]
+    reset_inputs = [np.clip(rng.randn(3, 5, 5).astype(np.float32), -0.9, 0.9)]
+    function_tester(rng, F.batch_det, ref_det, inputs, ctx=ctx,
+                    func_name=func_name, atol_b=2e-2, dstep=1e-4,
+                    disable_half_test=True, reset_inputs=reset_inputs)

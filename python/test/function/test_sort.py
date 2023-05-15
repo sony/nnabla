@@ -80,3 +80,25 @@ def test_equal_values(ctx, fname, reverse):
         y, i = F.sort(x, reverse=reverse, with_index=True)
         assert all(y.d == ([4, 3, 3, 2, 2] if reverse else [2, 2, 3, 3, 4]))
         assert all(i.d == ([3, 1, 2, 0, 4] if reverse else [0, 4, 1, 2, 3]))
+
+
+@pytest.mark.parametrize("ctx, fname", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("reverse", [False, True])
+@pytest.mark.parametrize("with_index", [False, True])
+@pytest.mark.parametrize("only_index", [False, True])
+@pytest.mark.parametrize("ishape,reset_ishape, axis", [
+    ((2, 3, 4), (3, 2, 4), -1), ((2, 3, 4), (3, 2, 4), -
+                                 2), ((2, 3, 4), (3, 2, 4), 0), ((2, 3, 4), (3, 2, 4), 1),
+    ((2, 3, 4), (3, 2, 4), 2), ((100,), (110,), 0), ((
+        1, 100), (1, 110), -1), ((1, 100), (1, 110), 0),
+    ((2, 3, 4, 3, 2), (3, 2, 4, 2, 3), 2),
+])
+def test_forward_backward_with_reset(seed, ishape, reset_ishape, axis, reverse, with_index, only_index,
+                                     ctx, fname):
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*ishape).astype(np.float32)]
+    reset_inputs = [rng.randn(*reset_ishape).astype(np.float32)]
+    function_tester(rng, F.sort, ref_sort_fw, inputs, ctx=ctx, func_name=fname,
+                    func_args=[axis, reverse, with_index, only_index],
+                    ref_grad=ref_sort_bw, reset_inputs=reset_inputs)

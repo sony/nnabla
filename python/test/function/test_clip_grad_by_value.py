@@ -56,3 +56,37 @@ def test_clip_grad_by_value_forward_backward(seed, ctx, func_name):
                     func_args=func_args, backward=[True, False, False],
                     ctx=ctx, func_name=func_name,
                     ref_grad=ref_grad_clip_grad_by_value)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+def test_clip_grad_by_value_forward_backward_with_reset(seed, ctx, func_name):
+    from nbla_test_utils import cap_ignore_region, function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [
+        cap_ignore_region(
+            rng.randn(2, 3, 4).astype(np.float32) * 2,
+            (-1e-3, 1e-3)),
+        cap_ignore_region(
+            rng.randn(2, 3, 4).astype(np.float32) * 2,
+            (-1e-3, 1e-3)),
+        cap_ignore_region(
+            rng.randn(2, 3, 4).astype(np.float32) * 2,
+            (-1e-3, 1e-3))
+    ]
+    reset_inputs = [
+        cap_ignore_region(
+            rng.randn(2, 4, 4).astype(np.float32) * 2,
+            (-1e-3, 1e-3)),
+        cap_ignore_region(
+            rng.randn(2, 4, 4).astype(np.float32) * 2,
+            (-1e-3, 1e-3)),
+        cap_ignore_region(
+            rng.randn(2, 4, 4).astype(np.float32) * 2,
+            (-1e-3, 1e-3))
+    ]
+    func_args = []
+    function_tester(rng, F.clip_grad_by_value, ref_clip_grad_by_value, inputs,
+                    func_args=func_args, backward=[True, False, False],
+                    ctx=ctx, func_name=func_name,
+                    ref_grad=ref_grad_clip_grad_by_value, reset_inputs=reset_inputs)

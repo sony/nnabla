@@ -113,3 +113,55 @@ def test_batch_matmul_double_backward(seed, reduce_dim, row_a, col_b, transpose_
     ]
     backward_function_tester(rng, F.batch_matmul, inputs, func_args=[transpose_a, transpose_b],
                              atol_accum=1e-1, dstep=1e-3, ctx=ctx)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("reduce_dim", [1, 5])
+@pytest.mark.parametrize("row_a, reset_row_a", [(1, 2), (3, 5)])
+@pytest.mark.parametrize("col_b, reset_col_b", [(1, 2), (3, 5)])
+@pytest.mark.parametrize("transpose_a", [False, True])
+@pytest.mark.parametrize("transpose_b", [False, True])
+@pytest.mark.parametrize("batch_dims_a, batch_dims_b", ([
+    # ((2, 2, 4), (2, 4)),  # this pattern is no longer supported since the batch dimensions have a meaning.
+    # ((1,), tuple())      # this pattern is no longer supported since we expect > 3dims
+    ((2, 3), (2, 3)),
+    ((2, 3), (2, 1)),
+    ((1, 3), (2, 3)),
+    ((1, 3), (2, 1)),
+    ((1, 1), (1, 1)),
+]))
+def test_batch_matmul_forward_backward_with_reset(seed, reduce_dim, row_a, reset_row_a, col_b, reset_col_b, transpose_a,
+                                                  transpose_b,
+                                                  batch_dims_a, batch_dims_b, ctx, func_name):
+    from nbla_test_utils import function_tester
+    if transpose_a:
+        shape_a = (reduce_dim, row_a)
+        reset_shape_a = (reduce_dim, reset_row_a)
+    else:
+        shape_a = (row_a, reduce_dim)
+        reset_shape_a = (reset_row_a, reduce_dim)
+    if transpose_b:
+        shape_b = (col_b, reduce_dim)
+        reset_shape_b = (reset_col_b, reduce_dim)
+    else:
+        shape_b = (reduce_dim, col_b)
+        reset_shape_b = (reduce_dim, reset_col_b)
+    shape_a = batch_dims_a + shape_a
+    reset_shape_a = batch_dims_a + reset_shape_a
+    shape_b = batch_dims_b + shape_b
+    reset_shape_b = batch_dims_b + reset_shape_b
+
+    rng = np.random.RandomState(seed)
+    # Input
+    inputs = [
+        rng.randn(*shape_a).astype(np.float32),
+        rng.randn(*shape_b).astype(np.float32),
+    ]
+    # Reset Input
+    reset_inputs = [
+        rng.randn(*reset_shape_a).astype(np.float32),
+        rng.randn(*reset_shape_b).astype(np.float32),
+    ]
+    function_tester(rng, F.batch_matmul, ref_batch_matmul, inputs, func_args=[transpose_a, transpose_b],
+                    atol_b=2e-2, dstep=1e-3, ctx=ctx, func_name=func_name, reset_inputs=reset_inputs)

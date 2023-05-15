@@ -103,3 +103,35 @@ def test_categorical_cross_entropy_backward_with_negative_label(seed, axis, ctx,
         out, [inp0, inp1], recompute_graph=True)
     numerical_grad[inp0.size:] = 0
     assert_allclose(analytical_grad, numerical_grad, rtol=0.01, atol=0.01)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("axis", [0, 1, 2, -1, -2, -3])
+def test_categorical_cross_entropy_forward_backward_with_reset(seed, axis, ctx, func_name):
+    from nbla_test_utils import function_tester
+    ishape = [2, 3, 4]
+    reset_ishape = [2, 3, 5]
+    rng = np.random.RandomState(seed)
+
+    l_shape = list(ishape)
+    reset_l_shape = list(reset_ishape)
+
+    l_shape[axis] = 1
+    reset_l_shape[axis] = 1
+
+    n_class = ishape[axis]
+    reset_n_class = reset_ishape[axis]
+
+    inputs = [
+        rng.rand(2, 3, 4).astype(np.float32) * 0.9 + 0.05,
+        rng.randint(-1, n_class, size=l_shape).astype(int)]
+
+    reset_inputs = [
+        rng.rand(2, 3, 5).astype(np.float32) * 0.9 + 0.05,
+        rng.randint(-1, reset_n_class, size=reset_l_shape).astype(int)]
+
+    function_tester(rng, F.categorical_cross_entropy,
+                    ref_categorical_cross_entropy, inputs,
+                    atol_b=5e-2, func_args=[axis], backward=[True, False], ctx=ctx, func_name=func_name,
+                    reset_inputs=reset_inputs)

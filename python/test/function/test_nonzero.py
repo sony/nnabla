@@ -52,3 +52,33 @@ def test_nonzero_forward(seed, inshape, zero_rate, ctx, func_name):
     r = ref_nonzero(input)
     assert_allclose(o.d, r)
     assert func_name == o.parent.name
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape,reset_inshape", [
+    ((2, 3), (2, 3, 4))
+
+])
+@pytest.mark.parametrize("zero_rate", [0.0, 0.5, 1.0])
+def test_nonzero_forward_with_reset(seed, inshape, reset_inshape, zero_rate, ctx, func_name):
+    rng = np.random.RandomState(seed)
+    input = rng.randn(*inshape).astype(dtype=np.float32)
+    cond = (rng.rand(*inshape) <= zero_rate)
+    input = np.where(cond, np.zeros_like(input), input)
+    vinput = nn.Variable.from_numpy_array(input)
+    with nn.context_scope(ctx):
+        o = F.nonzero(vinput)
+    o.forward()
+
+    # reset input
+    vinput.reset_shape(reset_inshape, True)
+    reset_input = rng.randn(*reset_inshape).astype(dtype=np.float32)
+    reset_cond = (rng.rand(*reset_inshape) <= zero_rate)
+    reset_input = np.where(reset_cond, np.zeros_like(reset_input), reset_input)
+    vinput.d = reset_input
+    # reset forward
+    o.forward()
+    r = ref_nonzero(reset_input)
+    assert_allclose(o.d, r)
+    assert func_name == o.parent.name

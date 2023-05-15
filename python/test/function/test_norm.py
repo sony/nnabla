@@ -63,3 +63,22 @@ def test_norm_double_backward(seed, p, axis, keepdims, inshape, ctx, func_name):
                              inputs=inputs,
                              func_args=[p, axis, keepdims],
                              ctx=ctx)
+
+
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("p", [None, 1.0, 1.3])  # None -> 2.0
+@pytest.mark.parametrize("axis", [None, 0, 1, 2, 3, -1, -2, (0, 2), (1, 2, 3), (-1, -2)])
+@pytest.mark.parametrize("keepdims", [False, True])
+@pytest.mark.parametrize("inshape,reset_inshape", [((2, 1, 4, 5), (3, 1, 4, 5))])
+@pytest.mark.parametrize("ctx, func_name", list_context('Norm'))
+def test_norm_forward_backward_with_reset(seed, p, axis, keepdims, inshape, reset_inshape, ctx, func_name):
+    func = F.norm
+    ref_func = ref_norm
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*inshape).astype(np.float32)]
+    reset_inputs = [rng.randn(*reset_inshape).astype(np.float32)]
+    function_tester(rng, func, ref_func, inputs,
+                    func_args=[p, axis],
+                    func_kwargs=dict(keepdims=keepdims),
+                    ctx=ctx, func_name=func_name,
+                    atol_b=6e-3, reset_inputs=reset_inputs)

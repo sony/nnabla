@@ -52,3 +52,18 @@ def test_epsilon_insensitive_loss_double_backward(seed, ctx, func_name, epsilon)
                              inputs,
                              func_args=[epsilon],
                              atol_accum=5e-3, ctx=ctx)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("epsilon", [0.001, 1])
+def test_epsilon_insensitive_loss_forward_backward_with_reset(seed, ctx, func_name, epsilon):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2 for _ in range(2)]
+    reset_inputs = [rng.randn(1, 2, 3).astype(
+        np.float32) * 2 for _ in range(2)]
+    function_tester(rng, F.epsilon_insensitive_loss,
+                    ref_epsilon_insensitive_loss_forward, inputs,
+                    func_args=[epsilon],
+                    atol_b=1e-2, ctx=ctx, func_name=func_name, reset_inputs=reset_inputs)

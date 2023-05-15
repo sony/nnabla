@@ -19,6 +19,8 @@ import nnabla.functions as F
 from nbla_test_utils import list_context
 from nnabla.testing import assert_allclose
 
+ctxs = list_context('ClipByNorm')
+
 
 def ref_clip_by_norm(x, clip_norm, axis):
     x_norm = np.sqrt(np.sum(x ** 2.0, axis=axis, keepdims=True))
@@ -78,3 +80,75 @@ def test_clip_by_norm_forward(seed, shape, clip_norm_type, clip_norm_value, x_va
         x_data = np.zeros(x.shape)
 
     execute_clip_by_norm(x, x_data, clip_norm, clip_norm_value, axis)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("clip_norm_type", ["float", "int", "Variable"])
+@pytest.mark.parametrize("x_value", ["non_zero", "all_zero"])
+@pytest.mark.parametrize("clip_norm_value", [1.5, 0.5, 1e+5, -3.0, 0.0])
+@pytest.mark.parametrize("shape,reset_shape, axis", [((2, 8, 8, 8), (2, 6, 6, 6), (2, 3)),
+                                                     ((2, 8, 8, 8),
+                                                      (2, 6, 6, 6), (1,)),
+                                                     ((2, 8, 8, 8),
+                                                      (2, 6, 6, 6), (-1, -2)),
+                                                     ((2, 8, 8, 8), (2, 6,
+                                                      6, 6), (-1, -2, -3)),
+                                                     ((2, 8, 8, 8),
+                                                      (2, 6, 6, 6), (-2, -3)),
+                                                     ((2, 8, 8, 8),
+                                                      (2, 6, 6, 6), (-1,)),
+                                                     ((2, 4), (2, 6), (1,)),
+                                                     ((2, 4), (2, 6), (-2,)),
+                                                     ((2, 4, 4), (2, 6, 6), None)
+                                                     ])
+def test_clip_by_norm_forward_with_reset(ctx, func_name, seed, shape, reset_shape, clip_norm_type, clip_norm_value,
+                                         x_value, axis):
+    rng = np.random.RandomState(seed)
+    x_data = rng.randn(*shape)
+    x = nn.Variable.from_numpy_array(x_data)
+    # reset data
+    reset_x_data = rng.randn(*reset_shape)
+    reset_x = nn.Variable.from_numpy_array(reset_x_data)
+
+    if clip_norm_type == "float":
+        clip_norm = clip_norm_value
+    elif clip_norm_type == "int":
+        clip_norm_value = int(clip_norm_value)
+        clip_norm = clip_norm_value
+    else:
+        clip_norm = nn.Variable(x.ndim * (1,))
+        clip_norm.d = clip_norm_value
+
+    if x_value == "all_zero":
+        x.d = 0
+        reset_x.d = 0
+        reset_x_data = np.zeros(reset_shape)
+
+    if isinstance(clip_norm, (nn.Variable, nn.NdArray)):
+        if clip_norm_value <= 0:
+            pytest.skip()
+        else:
+            with nn.context_scope(ctx):
+                y = F.clip_by_norm(x, clip_norm, axis)
+            y.forward()
+            # reset and forward
+            x.reset_shape(reset_shape, True)
+            x.d = reset_x_data
+            y.forward()
+            y_ref = ref_clip_by_norm(reset_x_data, clip_norm_value, axis=axis)
+            assert_allclose(y.d, y_ref)
+    else:
+        if clip_norm_value > 0:
+            with nn.context_scope(ctx):
+                y = F.clip_by_norm(x, clip_norm, axis)
+            # forward and reset
+            y.forward()
+            x.reset_shape(reset_shape, True)
+            x.d = reset_x_data
+            y.forward()
+            y_ref = ref_clip_by_norm(reset_x_data, clip_norm_value, axis=axis)
+            assert_allclose(y.d, y_ref)
+        else:
+            with pytest.raises(ValueError):
+                y = F.clip_by_norm(x, clip_norm, axis)

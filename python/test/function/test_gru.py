@@ -169,8 +169,8 @@ def test_gru_double_backward(seed, num_layers, dropout, bidirectional, training,
         inputs += [rng.randn(num_directions, 3, hidden_size,
                              input_size + hidden_size)]
         if num_layers > 1:
-            inputs += [rng.randn(max(1, num_layers-1), num_directions, 3, hidden_size,
-                                 num_directions*hidden_size + hidden_size).astype(np.float32)]
+            inputs += [rng.randn(max(1, num_layers - 1), num_directions, 3, hidden_size,
+                                 num_directions * hidden_size + hidden_size).astype(np.float32)]
         else:
             inputs += [None]
         if with_bias:
@@ -207,11 +207,70 @@ def test_inference_backward(num_layers, bidirectional, seq_len, batch_size, inpu
                          batch_size, hidden_size), need_grad=True)
         w0 = nn.Variable((num_directions, 3, hidden_size,
                           input_size + hidden_size), need_grad=True)
-        w = nn.Variable((max(1, num_layers-1), num_directions, 3, hidden_size,
-                         num_directions*hidden_size + hidden_size), need_grad=True)
+        w = nn.Variable((max(1, num_layers - 1), num_directions, 3, hidden_size,
+                         num_directions * hidden_size + hidden_size), need_grad=True)
         b = nn.Variable((num_layers, num_directions, 4,
                          hidden_size), need_grad=True)
         y, hn = F.gru(x, h, w0, w, b, num_layers=num_layers, training=False)
         y.forward()
     with pytest.raises(RuntimeError) as e_info:
         y.backward()
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [100])
+@pytest.mark.parametrize("num_layers", [1, 2])
+@pytest.mark.parametrize("dropout", [0.0])
+@pytest.mark.parametrize("bidirectional", [True, False])
+@pytest.mark.parametrize("training", [True, False])
+@pytest.mark.parametrize(
+    "seq_len,reset_seq_len,batch_size,reset_batch_size,input_size,reset_input_size,hidden_size,reset_hidden_size",
+    [(2, 5, 3, 2, 2, 4, 3, 4)])
+@pytest.mark.parametrize("with_bias", [True, False])
+def test_gru_with_reset(seed, num_layers, dropout, bidirectional, training, seq_len, reset_seq_len, batch_size,
+                        reset_batch_size, input_size, reset_input_size, hidden_size, reset_hidden_size, with_bias,
+                        ctx, func_name):
+    from nbla_test_utils import function_tester
+
+    with nn.context_scope(ctx):
+        rng = np.random.RandomState(seed)
+        num_directions = 1
+        if bidirectional:
+            num_directions = 2
+        inputs = [rng.randn(seq_len, batch_size,
+                            input_size).astype(np.float32)]
+        inputs += [rng.randn(num_layers, num_directions,
+                             batch_size, hidden_size).astype(np.float32)]
+        inputs += [rng.randn(num_directions, 3, hidden_size,
+                             input_size + hidden_size)]
+        reset_inputs = [rng.randn(reset_seq_len, reset_batch_size,
+                                  reset_input_size).astype(np.float32)]
+        reset_inputs += [rng.randn(num_layers, num_directions,
+                                   reset_batch_size, reset_hidden_size).astype(np.float32)]
+        reset_inputs += [rng.randn(num_directions, 3, reset_hidden_size,
+                                   reset_input_size + reset_hidden_size)]
+        if num_layers > 1:
+            inputs += [rng.randn(max(1, num_layers - 1), num_directions, 3, hidden_size,
+                                 num_directions * hidden_size + hidden_size).astype(np.float32)]
+            reset_inputs += [rng.randn(max(1, num_layers - 1), num_directions, 3, reset_hidden_size,
+                                       num_directions * reset_hidden_size + reset_hidden_size).astype(np.float32)]
+        else:
+            inputs += [None]
+            reset_inputs += [None]
+        if with_bias:
+            inputs += [rng.randn(num_layers, num_directions,
+                                 4, hidden_size).astype(np.float32)]
+            reset_inputs += [rng.randn(num_layers, num_directions,
+                                       4, reset_hidden_size).astype(np.float32)]
+        else:
+            inputs += [None]
+            reset_inputs += [None]
+
+        backward = [False for _ in inputs]
+        if training:
+            backward = [True for _ in inputs]
+
+        function_tester(rng, F.gru, execute_fixed_length_gru, inputs, func_kwargs=dict(
+            num_layers=num_layers, dropout=dropout, bidirectional=bidirectional, training=training), atol_f=2e-1,
+                        atol_b=2e-2, dstep=1e-3, backward=backward, ctx=ctx, func_name=func_name, ref_grad=get_gru_grad,
+                        disable_half_test=True, reset_inputs=reset_inputs)

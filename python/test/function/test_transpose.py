@@ -84,3 +84,21 @@ def test_transpose_double_backward(seed, inshape, axes, ctx, func_name):
     backward_function_tester(rng, df,
                              ginputs, func_args=[],
                              ctx=ctx, non_accum_check=True)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape,reset_inshape, axes", [
+    ((10,), (11,), (0,)),
+    ((10, 11), (11, 13), (0, 1)),
+    ((11, 13, 7), (3, 7, 4), (0, 2, 1)),
+    ((3, 7, 4, 5), (4, 2, 5, 2), (3, 0, 1, 2)),
+])
+def test_transpose_forward_backward_with_reset(seed, inshape, reset_inshape, axes, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*inshape).astype(np.float32)]
+    reset_inputs = [rng.randn(*reset_inshape).astype(np.float32)]
+    function_tester(rng, F.transpose, ref_transpose, inputs,
+                    func_args=[axes], ctx=ctx, func_name=func_name,
+                    atol_f=1e-6, atol_b=1e-2, reset_inputs=reset_inputs)

@@ -43,7 +43,7 @@ def ref_bool_scatter_inplace(sdata, mask, gdata):
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
 def test_bool_scatter_forward_backward(seed, ctx, func_name, gshape, mask_shape):
-    from nbla_test_utils import cap_ignore_region, function_tester
+    from nbla_test_utils import function_tester
 
     rng = np.random.RandomState(seed)
     gdata0 = rng.randn(*gshape).astype(np.float32)
@@ -132,3 +132,30 @@ def test_bool_scatter_inplace(seed, ctx, func_name, gshape, mask_shape):
         d_gdata1 = nn.grad([v_gdata2], [v_gdata1], grad_outputs=[egrad])
     np.testing.assert_allclose(d_gdata1[0].d, ref_grad, atol=1e-6,
                                err_msg="nn.grad (F.bool_scatter(inplace)) wrt inplace data fails.")
+
+
+@pytest.mark.parametrize("gshape, mask_shape,reset_gshape, reset_mask_shape",
+                         [((2, 3, 2), (2, 3), (1, 2, 2), (1, 2)),
+                          ((3, 4), (3, 4), (1, 2), (1, 2)),
+                          ])
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+def test_bool_scatter_forward_backward_with_reset(seed, ctx, func_name, gshape, mask_shape, reset_gshape,
+                                                  reset_mask_shape):
+    from nbla_test_utils import function_tester
+
+    rng = np.random.RandomState(seed)
+    gdata0 = rng.randn(*gshape).astype(np.float32)
+    reset_gdata0 = rng.randn(*reset_gshape).astype(np.float32)
+    mask = rng.randint(0, 2, size=mask_shape)
+    reset_mask = rng.randint(0, 2, size=reset_mask_shape)
+    sdata = gdata0[mask.astype(bool)]
+    reset_sdata = reset_gdata0[reset_mask.astype(bool)]
+
+    inputs = [sdata, mask]
+    reset_inputs = [reset_sdata, reset_mask]
+    backward = [True, False]
+
+    function_tester(rng, F.bool_scatter, ref_bool_scatter, inputs,
+                    ctx=ctx, func_name=func_name, func_args=[],
+                    backward=backward, reset_inputs=reset_inputs)

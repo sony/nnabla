@@ -100,3 +100,54 @@ def test_fixed_point_quantize_forward_backward(seed,
             o.backward()
             np.allclose(v.d, o.d)
             np.allclose(v.g, o.g)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("sign", [False, True])
+@pytest.mark.parametrize("n", [3, 8])
+@pytest.mark.parametrize("delta", [2 ** -7, 0.005])
+@pytest.mark.parametrize("quantize", [False, True])
+@pytest.mark.parametrize("ste_fine_grained", [False, True])
+def test_fixed_point_quantize_forward_backward_with_reset(seed,
+                                                          sign, n, delta, quantize,
+                                                          ste_fine_grained,
+                                                          ctx, func_name):
+    from nbla_test_utils import cap_ignore_region, \
+        function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [
+        cap_ignore_region(
+            rng.randn(2, 3, 4).astype(np.float32) * 2,
+            (-1e-3, 1e-3))]
+    reset_inputs = [
+        cap_ignore_region(
+            rng.randn(1, 2, 3).astype(np.float32) * 2,
+            (-1e-3, 1e-3))]
+    if quantize:
+        func_args = [sign, n, delta, quantize, ste_fine_grained]
+        function_tester(rng,
+                        F.fixed_point_quantize,
+                        ref_fixed_point_quantize,
+                        inputs,
+                        func_args=func_args,
+                        atol_b=1e-3, backward=[True],
+                        ctx=ctx, func_name=func_name,
+                        ref_grad=ref_grad_fixed_point_quantize,
+                        reset_inputs=reset_inputs)
+    else:  # No quantize, reset
+        for input, reset_input in zip(inputs, reset_inputs):
+            v = nn.Variable(input.shape)
+            v.d = input
+            v.g = np.random.randn(*input.shape)
+            with nn.context_scope(ctx):
+                o = F.fixed_point_quantize(v)
+            o.forward()
+            o.backward()
+            # reset input
+            v.reset_shape(reset_input.shape, True)
+            v.d = reset_input
+            o.forward()
+            o.backward()
+            np.allclose(v.d, o.d)
+            np.allclose(v.g, o.g)

@@ -43,3 +43,17 @@ def test_binary_cross_entropy_double_backward(seed, ctx, func_name):
                              inputs,
                              backward=[True, False],
                              ctx=ctx, skip_backward_check=True)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+def test_binary_cross_entropy_forward_backward_with_reset(seed, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.rand(2, 3, 4).astype(np.float32) for _ in range(2)]
+    inputs[1] = np.round(inputs[1])
+    reset_inputs = [rng.rand(1, 2, 3).astype(np.float32) for _ in range(2)]
+    reset_inputs[1] = np.round(reset_inputs[1])
+    function_tester(rng, F.binary_cross_entropy,
+                    lambda x, y: -(y * np.log(x) + (1 - y) * np.log(1 - x)),
+                    inputs, atol_b=5e-2, ctx=ctx, func_name=func_name, reset_inputs=reset_inputs)

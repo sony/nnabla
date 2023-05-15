@@ -70,3 +70,27 @@ def test_add2_double_backward(seed, ctx, func_name):
                              atol_accum=1e-3,
                              dstep=1e-3,
                              ctx=ctx)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [42])
+@pytest.mark.parametrize("broadcast_dims", [
+    (None, None),
+    (None, (0,)),
+    ((1,), None),
+    (None, (2,)),
+    ((0, 2), None),
+    ((0,), (2,))])
+def test_add2_forward_backward_with_reset(broadcast_dims, seed, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2 for _ in range(2)]
+    reset_inputs = [rng.randn(3, 4, 5).astype(
+        np.float32) * 2 for _ in range(2)]
+    for i in range(2):
+        if broadcast_dims[i] is not None:
+            for d in broadcast_dims[i]:
+                inputs[i] = inputs[i].mean(d, keepdims=True)
+                reset_inputs[i] = reset_inputs[i].mean(d, keepdims=True)
+    function_tester(rng, F.add2, lambda x, y: x + y, inputs,
+                    ctx=ctx, func_name=func_name, atol_b=2e-3, reset_inputs=reset_inputs)

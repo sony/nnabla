@@ -32,8 +32,7 @@ def ref_grad_floor(x, dy, **kw):
 @pytest.mark.parametrize("seed", [313])
 def test_floor_forward_backward(seed,
                                 ctx, func_name):
-    from nbla_test_utils import cap_ignore_region, \
-        function_tester
+    from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2]
 
@@ -49,7 +48,7 @@ def test_floor_forward_backward(seed,
 @pytest.mark.parametrize("seed", [313])
 def test_floor_double_backward(seed,
                                ctx, func_name):
-    from nbla_test_utils import cap_ignore_region, backward_function_tester
+    from nbla_test_utils import backward_function_tester
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2]
 
@@ -58,3 +57,20 @@ def test_floor_double_backward(seed,
                              atol_accum=1e-2,
                              backward=[True],
                              ctx=ctx)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+def test_floor_forward_backward_with_reset(seed,
+                                           ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2]
+    reset_inputs = [rng.randn(1, 2, 3).astype(np.float32) * 2]
+    function_tester(rng, F.floor,
+                    ref_floor,
+                    inputs,
+                    atol_b=1e-3, backward=[True],
+                    ctx=ctx, func_name=func_name,
+                    ref_grad=ref_grad_floor,
+                    reset_inputs=reset_inputs)

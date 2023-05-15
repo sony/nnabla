@@ -38,3 +38,15 @@ def test_squared_error_double_backward(seed, ctx, func_name):
     inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2 for _ in range(2)]
     backward_function_tester(rng, F.squared_error, inputs,
                              atol_accum=2e-1, ctx=ctx)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+def test_squared_error_forward_backward_with_reset(seed, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2 for _ in range(2)]
+    reset_inputs = [rng.randn(3, 2, 4).astype(
+        np.float32) * 2 for _ in range(2)]
+    function_tester(rng, F.squared_error, lambda x, y: (x - y)**2, inputs,
+                    atol_b=2e-2, ctx=ctx, func_name=func_name, reset_inputs=reset_inputs)
