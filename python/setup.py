@@ -46,7 +46,7 @@ install_requires = setup_requires + [
     'six',
     'tqdm',
     'imageio',
-    'pillow',
+    'pillow>=9.1.0',
     'ply'
 ]
 
