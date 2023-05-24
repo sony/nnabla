@@ -45,7 +45,8 @@ def _import_file(args, ifiles):
             args.import_format == "TF_CKPT_V2" or \
             args.import_format == "SAVED_MODEL":
         from .tensorflow import TensorflowImporter
-        return TensorflowImporter(*ifiles, tf_format=args.import_format, outputs=args.outputs, inputs=args.inputs).execute()
+        return TensorflowImporter(*ifiles, tf_format=args.import_format, outputs=args.outputs,
+                                  inputs=args.inputs).execute()
     elif args.import_format == 'TFLITE':
         from .tflite import TFLiteImporter
         return TFLiteImporter(*ifiles).execute()
@@ -61,6 +62,7 @@ def _shrink_nnp(nnp, pos_start, pos_end):
 
     class _nnp:
         pass
+
     _nnp.protobuf = nnabla_pb2.NNablaProtoBuf()
     _nnp.other_files = nnp.other_files
     net = nnabla_pb2.NNablaProtoBuf().network.add()
@@ -69,7 +71,7 @@ def _shrink_nnp(nnp, pos_start, pos_end):
     # Shrink network
     variables = {}
     net.ClearField('function')
-    for i in range(pos_start, pos_end+1):
+    for i in range(pos_start, pos_end + 1):
         f = nnp.protobuf.network[0].function[i]
         func = net.function.add()
         func.CopyFrom(f)
@@ -146,9 +148,10 @@ def _export_from_nnp(args, nnp, output):
 
     elif args.export_format == 'NNB':
         if args.batch_size < 0:
-            print('NNB: Batch size adjust to 1.')
-            print('NNB: If you want to use with other size use `-b` option.')
-            args.batch_size = 1
+            print('NNB: Using batch size from input file.')
+            print(
+                'NNB: If you want to use with other size use `-b` option and provide a positive value.')
+            args.batch_size = nnp.protobuf.network[0].batch_size
         if args.define_version and args.define_version.startswith('nnb_'):
             nnb_version = int(args.define_version.split("_")[1])
             NnbExporter(nnp, args.batch_size, nnb_version=nnb_version, api_level=args.api).execute(
@@ -159,13 +162,19 @@ def _export_from_nnp(args, nnp, output):
 
     elif args.export_format == 'CSRC':
         if args.batch_size < 0:
-            print('CSRC: Batch size adjust to 1.')
-            print('CSRC: If you want to use with other size use `-b` option.')
-            args.batch_size = 1
+            print('CSRC: Using batch size from input file.')
+            print(
+                'CSRC: If you want to use with other size use `-b` option and provide a positive value.')
+            args.batch_size = nnp.protobuf.network[0].batch_size
         CsrcExporter(nnp, args.batch_size).execute(output)
 
     elif args.export_format == 'ONNX':
         from .onnx import OnnxExporter
+        if args.batch_size < 0:
+            print('ONNX: Using batch size from input file.')
+            print(
+                'ONNX: If you want to use with other size use `-b` option and provide a positive value.')
+            args.batch_size = nnp.protobuf.network[0].batch_size
         if args.define_version and args.define_version.startswith('opset_'):
             opset = args.define_version.split("_")[1]
             OnnxExporter(nnp, args.batch_size, opset=opset).execute(output)
@@ -173,9 +182,19 @@ def _export_from_nnp(args, nnp, output):
             OnnxExporter(nnp, args.batch_size).execute(output)
     elif args.export_format == 'SAVED_MODEL' or args.export_format == 'TF_PB':
         from .tensorflow import TensorflowExporter
+        if args.batch_size < 0:
+            print(f'{args.export_format}: Using batch size from input file.')
+            print(
+                f'{args.export_format}: If you want to use with other size use `-b` option and provide a positive value.')
+            args.batch_size = nnp.protobuf.network[0].batch_size
         TensorflowExporter(nnp, args.batch_size,
                            model_format=args.export_format).execute(output)
     elif args.export_format == 'TFLITE':
+        if args.batch_size < 0:
+            print('TFLITE: Using batch size from input file.')
+            print(
+                'TFLITE: If you want to use with other size use `-b` option and provide a positive value.')
+            args.batch_size = nnp.protobuf.network[0].batch_size
         from .tflite import TFLiteExporter
         TFLiteExporter(nnp, args.batch_size,
                        channel_last=args.channel_last, quantization=args.quantization,
@@ -350,7 +369,7 @@ def _dump_protobuf(args, proto, prefix, depth):
                         print('{}:{}[{}]: {}'.format(
                             ':'.join(prefix), desc.name, n, f))
                     else:
-                        if depth < 0 or depth > len(prefix)+1:
+                        if depth < 0 or depth > len(prefix) + 1:
                             _dump_protobuf(
                                 args, f, prefix + ['{}[{}]'.format(desc.name, n)], depth)
             else:
