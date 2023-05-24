@@ -50,7 +50,7 @@ def _spectral_norm_backward(dw_sn, w, u, dim=0, itr=1, eps=1e-12):
     wv = F.affine(w, v)
     sigma = F.affine(u, wv)
     w_sn = w / sigma
-    # The fowllowing process is not necessary for gradient calculation
+    # The following process is not necessary for gradient calculation
     # w_sn = F.reshape(w_sn, w_shape)
     # # Transpose again if the output dimension is not the most-left dimension.
     # if dim != 0:
@@ -114,7 +114,7 @@ def _spectral_norm_outer_most_dim_backward(dw_sn, w, u, itr=1, eps=1e-12):
     vw = F.affine(v, w)
     sigma = F.affine(vw, u)
     w_sn = w / sigma
-    # The fowllowing process is not necessary for gradient calculation
+    # The following process is not necessary for gradient calculation
     # w_sn = F.reshape(w_sn, w_shape)
 
     # Backward for spectral norm

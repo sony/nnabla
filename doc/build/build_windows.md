@@ -18,7 +18,7 @@ Install python3.7.9 or 3.8.10 or 3.9.13 or 3.10.8. You can refer to the followin
     choco install -y python3 --version=3.7.9
 ```
 
-We use choclatey to make the configuration as easy as possible（recommended).
+We use chocolatey to make the configuration as easy as possible（recommended).
 If you can't or don't want to use chocolatey, please do so yourself.
 
 - [CMake](https://cmake.org/download/)

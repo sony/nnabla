@@ -4,7 +4,7 @@ Quantization-Aware-Training Tutorial
 
 What is model Quantization-Aware-Training
 --------------------------
-In general, the weights and the activations of artificial neural networks are represented by float32; on the other hand, model quantization means use lower precision to represent numbers, such as float16, int8 and uint8.
+In general, the weights and the activation of artificial neural networks are represented by float32; on the other hand, model quantization means use lower precision to represent numbers, such as float16, int8 and uint8.
 
 By reducing the precision we can reduce model size and memory occupancy. What's more, on some devices we can also shorten the inference time.
 
@@ -108,5 +108,5 @@ YES       YES             4.673e-07              3.465e-07             0.00069  
 ========= =============== ====================== ===================== ====================== =====================
 
 You can also deploy the NNabla QAT model with other framework by using our :ref:`File_Format_Converter` to convert .nnp to other format.
-Above is the comparision between the output of NNabla and the output of TensorRT. The model we used to compare is mobilenetv1.
+Above is the comparison between the output of NNabla and the output of TensorRT. The model we used to compare is mobilenetv1.
 If you want to deploy the model with TensorRT, we recommend that you enable these options in QATConfig: 'bn_folding', 'bn_self_folding', 'pow2', otherwise, the error between NNabla and TensorRT may become large. See also QATTensorRTConfig (lined).

@@ -529,7 +529,7 @@ class TFLiteExporter:
 
     def check_resolve_input_semantic_divergence(self, inputs, outputs, is_transpose_conv=False):
         # Check for semantic divergence. if it exists:
-        # 1. resove the input tensor by adding transpose.
+        # 1. resolve the input tensor by adding transpose.
         # 2. parameter will be directly transposed and saved.
         # 3. modify outputs shape and set data_format to outputs variables
         resolve_inputs = []

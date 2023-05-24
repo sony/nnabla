@@ -25,7 +25,7 @@ USE_ONNX_REF = False
 # Force to use ONNX reference to execute all test cases.
 # NOTICE: ONNX reference and ONNX Runtime produce different results in some
 # test cases. nnabla ONNXResize mimics the behavior of ONNX Runtime because
-# it seems that the differences are due to ambiguousness of ONNX specification
+# it seems that the differences are due to ambiguity of ONNX specification
 # or a bug of ONNX reference.
 FORCE_ONNX_REF = False
 

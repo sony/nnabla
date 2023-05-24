@@ -286,7 +286,7 @@ class NnbExporter:
                     arg_type_id = nnabla.utils.converter.type_to_pack_format(
                         arg['type'])
                     if argcode_pos >= len(argcode):
-                        # ommit the parameter that is not supported
+                        # omit the parameter that is not supported
                         # we only down-version by omitting the tail-appended parameters.
                         print("{}.{} is omitted for lower API Level:{}".format(f.type, an,
                                                                                self._api_level_info.get_current_level()))

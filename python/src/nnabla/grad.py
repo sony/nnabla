@@ -127,8 +127,8 @@ class Grad(object):
     def _get_corresponding_vars_on_graph(self, inputs, outputs):
         """
         This methods binds the inputs which may be disconnected from a computation graph 
-        (e.g., trainable parameters obtrained by nn.get_parmaeters()) to actual inputs connected 
-        to a given computation graph traversabled from outputs
+        (e.g., trainable parameters obtained by nn.get_parmaeters()) to actual inputs connected 
+        to a given computation graph traversable from outputs
         """
         ret = [None for _ in range(len(inputs))]
         inp2id = {x: i for i, x in enumerate(inputs)}

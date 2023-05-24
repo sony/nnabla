@@ -1416,7 +1416,7 @@ def depthwise_deconvolution(inp, kernel, pad=None, stride=None, dilation=None,
 def rnn(x, h, w0_init=None, w_init=None, b_init=None, num_layers=1, nonlinearity='tanh', dropout=0.0, bidirectional=False, training=True, rng=None, with_bias=True, fix_parameters=False):
     """N-Step RNN (recurrent neural networks).
 
-    N-Step RNN function implements Elman RNN with nonlineraity to input sequence.
+    N-Step RNN function implements Elman RNN with nonlinearity to input sequence.
     N-Step RNN function is defined as following:
 
     .. math::
@@ -2040,7 +2040,7 @@ def layer_normalization(inp, batch_axis=0, eps=1e-05, output_stat=False, fix_par
     and :math:`\alpha` and :math:`\beta` are trainable parameter.
 
     .. note::
-        Unlike other normalizations,
+        Unlike other normalization,
         which applies scalar scale and bias for each entire channel/plane,
         Layer Normalization applies per-element scale and bias.
 
@@ -2829,7 +2829,7 @@ def pruned_affine(inp, n_outmaps,
         "W", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
         w_init, True, not fix_parameters)
 
-    # sparsed Weight
+    # sparse Weight
     if prune_w:
         w_q = get_parameter_or_create(
             "W_q", [int(np.prod(inp.shape[base_axis:]))] + n_outmaps,
@@ -3635,7 +3635,7 @@ def _spectral_norm_v1(w, dim=0, itr=1, eps=1e-12, test=False, u_init=None, fix_p
 
 
 def _spectral_norm(w, dim=0, itr=1, eps=1e-12, test=False, u_init=None, fix_parameters=True):
-    # Use the orignal shape for W_sn
+    # Use the original shape for W_sn
     w_shape = w.shape
     W_sn = get_parameter_or_create(
         "W_sn", w_shape, ConstantInitializer(0), False)

@@ -81,7 +81,7 @@ class YoloV2(ObjectDetection):
         # Output dimension of reshape, arange, slice etc functions are taken from .nnp file.
         # These dimensions depend on the input image size with which the nnp file was created.
         # When different input image size is given to the model, these dimensions will change and therefore
-        # shape of output from these functions need to be generalized whenevr they are generated.
+        # shape of output from these functions need to be generalized whenever they are generated.
         # The same has been done in below callbacks.
 
         # Reshape operation for simulating darknet reorg bug

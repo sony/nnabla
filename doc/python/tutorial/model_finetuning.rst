@@ -406,7 +406,7 @@ Next, untar the archive and then you will see a directory named
 each subdirectory stores images which belong to 1 category. For example,
 a directory ``n02099712-Labrador_retriever`` contains labrador
 retriever's images only. So if you want to use your own dataset, you
-need to organize your images and directiories in the same way like the
+need to organize your images and directories in the same way like the
 following;
 
 ::

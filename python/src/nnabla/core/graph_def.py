@@ -725,7 +725,7 @@ class ProtoNetwork:
 
         Args:
             execute (callable):
-                A callback function (or callable object), which is called when each ProtoFunction is met in travelling
+                A callback function (or callable object), which is called when each ProtoFunction is met in traveling
                 graph.
 
                 ``execute`` should look like:
@@ -802,7 +802,7 @@ class ProtoNetwork:
                     stack.append(self.functions[pv.parent])
 
     def forward_sequence(self):
-        """ This function creates an iteratable for iterating functions in
+        """ This function creates an iterator for iterating functions in
         network with the sequence of actually forward.
 
         For example,

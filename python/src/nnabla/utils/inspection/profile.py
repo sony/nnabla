@@ -107,7 +107,7 @@ class TimeProfiler(FunctionHookCallbackBase):
         Change a scope to aggregate results.
         This function is used as context (`with` statement),
          and all results under the context are labeled by ``scope_name``.
-        In adttion to the execution time of each function,
+        In addition to the execution time of each function,
         the elapsed times between entering and exiting the each context are also recorded
          and they are aggregated as "summary" scope.
 

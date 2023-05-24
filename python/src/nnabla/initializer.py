@@ -272,7 +272,7 @@ class WeightNormalizationScaleInitializer(BaseInitializer):
 
     r"""Compute the L2-norm for each weight kernel.
 
-    This initializer is specific to the weight normalization scale to keep the same magnitude of the originally initialized weights even after the applicaiton of the weight normalization at only initialization.
+    This initializer is specific to the weight normalization scale to keep the same magnitude of the originally initialized weights even after the application of the weight normalization at only initialization.
 
     Args:
         w (:obj:`Variable`): Weight the weight normalization is applied.

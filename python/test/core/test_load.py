@@ -534,7 +534,7 @@ def test_load_and_infer_improvement(nntxt_idx, parameter_format, dataset_sample_
         info = load.load(nnp_file)
         result = partial(common_forward, forward_func=_forward)(info)
 
-    # Since legacy implementaion cannot handle this case correctly,
+    # Since legacy implementation cannot handle this case correctly,
     # comparing result is impossible.
     # assert_tensor_equal(result, ref_result)
 

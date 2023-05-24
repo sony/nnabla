@@ -182,7 +182,7 @@ def deformable_convolution_2d(x, w, offset, mask, b, pad, stride,
                               dilation, group, deformable_group,
                               channel_last, dtype=np.float32):
     """
-    Deformable convlution 2D for a single batch data
+    Deformable convolution 2D for a single batch data
     """
     C, H, W = x.shape  # without batch dimension
     K, Cg, M, N = w.shape

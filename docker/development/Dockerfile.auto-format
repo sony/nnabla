@@ -25,6 +25,8 @@ ARG APT_OPTS
 
 RUN eval ${APT_OPTS} \
     && apt-get update && apt-get install -y --no-install-recommends \
+    enchant \
+    libenchant-dev \
     clang-format-3.9 \
     make \
     git \
@@ -34,6 +36,7 @@ RUN eval ${APT_OPTS} \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install ${PIP_INS_OPTS} -U \
+    pyenchant \
     autopep8 \
     future \
     pyyaml \

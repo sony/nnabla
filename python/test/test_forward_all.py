@@ -45,7 +45,7 @@ def test_graph_logreg(seed):
 
     nn.set_default_context(nn.Context())
 
-    # Forwardprop by definintion
+    # Forwardprop by definition
     z1 = F.affine(x, w1, b1, 1)
     z2 = F.affine(x, w2, b2, 1)
     l1 = F.softmax_cross_entropy(z1, t, 1)
@@ -95,7 +95,7 @@ def test_graph_model(model, seed):
 
     nn.set_default_context(nn.Context())
 
-    # Forwardprop by definintion
+    # Forwardprop by definition
     nn.clear_parameters()
     if model == "mlp":
         with nn.parameter_scope('fc1'):
@@ -380,7 +380,7 @@ def test_graph_rewire(seed, clear_buffer):
 def test_intermediate_outputs(clear_buffer, clear_no_need_grad):
     rng = np.random.RandomState(311)
 
-    # unuse cached array to clear buffers immediately
+    # unused cached array to clear buffers immediately
     nn.prefer_cached_array(False)
 
     x = nn.Variable.from_numpy_array(rng.randn(2, 10))
@@ -400,5 +400,5 @@ def test_intermediate_outputs(clear_buffer, clear_no_need_grad):
     assert_allclose(h1.d, h2.d)
     assert_allclose(y1.d, y2.d)
 
-    # revert perference (this is also done in conftest.py, but just in case)
+    # revert preference (this is also done in conftest.py, but just in case)
     nn.prefer_cached_array(True)

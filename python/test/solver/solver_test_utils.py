@@ -131,7 +131,7 @@ def solver_tester(rng, solver, ref_solver, solver_args=[], solver_kwargs={},
     for p, ref_p in zip(params.values(), grad_copy.values()):
         assert np.allclose(ref_p, p.g, atol=atol, rtol=rtol)
 
-    # Check solver udpate.
+    # Check solver update.
     for i in range(num_itr):
         grads = OrderedDict([(k, np.asarray(rng.randn(*p.shape), dtype=np.float32))
                              for k, p in iteritems(params)])
@@ -148,7 +148,7 @@ def solver_tester(rng, solver, ref_solver, solver_args=[], solver_kwargs={},
         for (k, p), (ref_k, ref_p) in zip(params.items(), ref_s.params.items()):
             assert_allclose(ref_p, p.d, atol=atol, rtol=rtol,
                             err_msg=f'i={i}, p="{k}" decay_value={decay_value}')
-        # iteration state incrementaion check
+        # iteration state incrementation check
         for state in s.get_states().values():
             assert state.t == (i + 1)
 

@@ -345,7 +345,7 @@ def test_clear_buffers_in_auto_forward_with_narrow():
     with nn.auto_forward():
         y = model(x, fix_parameters=True)
         # Remove all Python references of narrowed arrays
-        # Even if all references are deletec, we expect the values are not
+        # Even if all references are deleted, we expect the values are not
         # cleared
         nn.clear_parameters()
         del weights
@@ -1050,7 +1050,7 @@ class TestRecomputation():
 
         clear_called_flag_recorder.deactivate_clear_called_flag_recorder()
 
-    # Check claering output which needs `setup_recompute` for recomputation.
+    # Check clearing output which needs `setup_recompute` for recomputation.
     def test_clearing_without_recompute_flag(self):
         x0 = nn.Variable((1, 128, 128), need_grad=True)
         x1 = F.sin(x0).apply(recompute=True)
@@ -1634,7 +1634,7 @@ class TestRecomputation():
     @pytest.mark.parametrize("recompute_flag", [False, True])
     def test_recompute_fn_decorator_multiple_inputs_outputs(self, recompute_flag):
         """
-        Test for the use of `nn.recompute_fn()` with a function which have multiple inputs, outpus, args and kwargs.
+        Test for the use of `nn.recompute_fn()` with a function which have multiple inputs, outputs, args and kwargs.
         """
 
         # Define sample function with multiple inputs and outputs

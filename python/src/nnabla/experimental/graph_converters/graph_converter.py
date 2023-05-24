@@ -128,7 +128,7 @@ class FunctionModifier(object):
 
         This examples is a simple case since the network topological order does not change.
         In GraphConverter, we expect the modify method is called along
-        the original network tolopogical order not the modified order.
+        the original network topological order not the modified order.
         In such a complex case, see themodify method of :obj:`BatchNormalizationFoldingModifierInner`
         as a reference.
 

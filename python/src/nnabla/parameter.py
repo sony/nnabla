@@ -251,7 +251,7 @@ def _create_parameter_by_initializer(initializer, shape, need_grad):
         return nn.Variable.from_numpy_array(
             initializer(shape=list(map(int, shape))), need_grad=need_grad)
 
-    # Invalid initialzier argument.
+    # Invalid initializer argument.
     raise ValueError(
         "`initializer` must be either the :obj:`numpy.ndarray`"
         " or an instance inherited from `nnabla.initializer.BaseInitializer`.")
@@ -295,7 +295,7 @@ def get_parameter_or_create(name, shape=None, initializer=None, need_grad=True,
 
     Note:
         It returns a `Variable` which is unlinked from the
-        registered one in the current parmeter scope
+        registered one in the current parameter scope
         (using :py:meth:`nnabla.Variable.get_unlinked_variable`).
         That means changing a `need_grad` attribute doesn't affect
         the variable existing in the current parameter scope.

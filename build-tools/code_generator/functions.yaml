@@ -39,7 +39,7 @@ Neural Network Layer:
     snake_name: rnn
     doc: |2
 
-      RNN function implements Elman RNN with nonlineraity to input sequence.
+      RNN function implements Elman RNN with nonlinearity to input sequence.
       RNN function is defined as following:
 
       .. math::
@@ -4521,7 +4521,7 @@ Array Manipulation:
       Sorts the elements of `x` along a given `axis` in ascending
       order by value. A negative `axis` counts from the last dimension
       of `x`, so the default of -1 sorts along the last dimension. If
-      `reverse` is True, then the elements are soreted in descending
+      `reverse` is True, then the elements are sorted in descending
       order.
 
       If `with_index` is True, result is a tuple ``(sorted, indices)``
@@ -4800,7 +4800,7 @@ Array Manipulation:
         && Y[d_{0}, \ldots, d_{axis - 1}, i_{0}, \ldots, i_{M-1}, d_{axis + 1}, \ldots, d_{N-1}] = \\
         && X[d_{0}, \ldots, d_{axis - 1}, IDX[i_{0}, \ldots, i_{M-1}], d_{axis + 1}, \ldots, d_{N-1}].
 
-      Generally, the gather ouptuts
+      Generally, the gather outputs
 
       .. math::
         && Y[d_{0}, \ldots, d_{axis - 1}, i_{B}, \ldots, i_{M-1}, d_{axis + 1}, \ldots, d_{N-1}] = \\
@@ -8067,7 +8067,7 @@ Unsupported, Special Use:
       padding:
         doc: A tuple of top, bottom, left and right padding extent. A tuple of two
           values yields identical top/bottom and left/right padding from the first
-          and second tuple value. A single integer expands to indential padding extent
+          and second tuple value. A single integer expands to identical padding extent
           for all sides.
         type: Shape
         default: (0, 0, 0, 0)
@@ -8083,7 +8083,7 @@ Unsupported, Special Use:
 
             H_o = \frac{H + (top\_pad + bottom\_pad) - patch_v }{patch\_step_v} + 1.
 
-          A channel size of the ouptut is calculated as
+          A channel size of the output is calculated as
 
           .. math::
 

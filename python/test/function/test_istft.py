@@ -75,7 +75,7 @@ def ref_istft(y_r, y_i, window_size, stride, fft_size, window_type, center, pad_
 def check_nola_violation(y_r, y_i, window_size, stride, fft_size, window_type, center, pad_mode, as_stft_backward):
     # Check reference raise
     try:
-        # Use PyTorch to check NOLA condition becasue librosa does not raise.
+        # Use PyTorch to check NOLA condition because librosa does not raise.
         # If PyTorch is not installed, NOLA condition test for reference is skipped.
         import torch
 

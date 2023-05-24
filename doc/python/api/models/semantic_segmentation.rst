@@ -12,7 +12,7 @@ The pre-trained models can be used for inference as following:
 
 .. code-block:: python
 
-    #Import reauired modules
+    #Import required modules
     import numpy as np
     import nnabla as nn
     from nnabla.utils.image_utils import imread

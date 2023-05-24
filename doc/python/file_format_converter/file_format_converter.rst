@@ -546,8 +546,8 @@ This command rename output to `XXX_S_E.nnp`, XXX is original name, S is start fu
         Output to [splitted_3_70.nnp]
 
 
-Finally you got `splitted_3_70.nnp` as splitted output.
-You can check splitted NNP with `nnabla_cli dump`
+Finally you got `splitted_3_70.nnp` as split output.
+You can check split NNP with `nnabla_cli dump`
 
 NOTE: Input shape is changed from original network. New input shape is same as start function's input.
 

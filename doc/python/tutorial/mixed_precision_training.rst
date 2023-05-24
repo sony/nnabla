@@ -204,7 +204,7 @@ training loop, thus we can write a wrapper class like the following.
                 self.scale /= self.scaling_factor
                 self._counter = 0
     
-                # Recursively call udpate function until no inf nor nan.
+                # Recursively call update function until no inf nor nan.
                 self._recursive_count += 1
                 if self._recursive_count > self._max_recursive_count:
                     self._recursive_count = 0
