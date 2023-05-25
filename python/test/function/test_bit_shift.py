@@ -41,7 +41,8 @@ def ref_bit_shift(x, shift, direction):
 def test_bit_shift_forward(seed, x_shape, shift_shape, direction, dtype, ctx, func_name):
     from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
-    inputs = [rng.randint(0, np.iinfo(dtype).max, x_shape).astype(dtype),
+    # np.iinfo(dtype).max is divided by 2 to aviod out of bounds err
+    inputs = [rng.randint(0, np.iinfo(dtype).max//2, x_shape).astype(dtype),
               rng.randint(0, 128, shift_shape).astype(dtype)]
     backward = [False, False]
     func_args = [direction]
