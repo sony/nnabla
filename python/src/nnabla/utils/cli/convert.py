@@ -214,6 +214,9 @@ def add_convert_command(subparsers):
                            help='[export][TFLite] export to INT8 quantized tflite model.')
     subparser.add_argument('--dataset', type=str, default=None,
                            help='[export][TFLite] Specify the path of represent dataset which will be passed to INT8 quantized tflite converter.')
+    subparser.add_argument('--ir_version', type=int, default=-1,
+                           help='[export] Set ONNX IR version to convert to, \
+                           default is the latest supported IR version corresponding to the current ONNX version.')
 
     # For config function list
     subparser.add_argument('-c', '--config', type=str, default=None,
