@@ -4612,6 +4612,8 @@ class OnnxImporter:
                 if not self._onnx_optype_to_nnabla_function_type:
                     raise ValueError("ONNX opset version is currently not supported: {}".format(
                         opset.version))
+            elif opset.domain == "ai.onnx.ml":
+                continue
             else:
                 raise ValueError(
                     "Unsupported opset from domain {}".format(opset.domain))
