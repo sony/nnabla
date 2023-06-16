@@ -21,6 +21,7 @@ typedef int ssize_t;
 #include <unistd.h>
 #endif
 
+#include "hdf5_wrapper.hpp"
 #include "nnp_impl.hpp"
 #include "parameters_impl.hpp"
 #if defined(NBLA_UTILS_WITH_NPY)
@@ -155,13 +156,20 @@ NetworkImpl::get_cgvariable_or_create(const string &name) {
   const ::Variable *var = var_it->second;
   // Create a new on and register to variables_.
   // Create shape
-  nbla::Shape_t shape(var->shape().dim().begin(), var->shape().dim().end());
-  if (shape[0] == -1) {
-    shape[0] = batch_size();
+  nbla::Shape_t shape_local;
+  if (var->shape().dim_size() > 0) {
+    nbla::Shape_t shape(var->shape().dim().begin(), var->shape().dim().end());
+    if (shape[0] == -1) {
+      shape[0] = batch_size();
+    }
+    shape_local = std::move(shape);
+  } else {
+    nbla::Shape_t shape{1};
+    shape_local = std::move(shape);
   }
   // TODO: set need_grad
   // std::cout << "(c)";
-  auto cg_v = make_shared<nbla::CgVariable>(shape);
+  auto cg_v = make_shared<nbla::CgVariable>(shape_local);
   // Register variable
   variables_.insert({name, cg_v});
   return cg_v;
