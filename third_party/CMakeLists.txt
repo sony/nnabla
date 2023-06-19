@@ -33,6 +33,7 @@ function(download_and_extract_library NAME EXT URL TYPE)
 endfunction()
 
 if(NNABLA_UTILS_WITH_HDF5)
+  set(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT OFF)
   download_and_extract_library(hdf5-master .zip https://github.com/HDFGroup/hdf5/archive/refs/tags/hdf5-1_12_2.zip DIRECTORY)
   set(HDF5_EXTERNALLY_CONFIGURED, 1)
   set(HDF5_EXPORTED_TARGETS "nbla_utils-hdf5-targets")
