@@ -1621,8 +1621,8 @@ class TFLiteExporter:
             inputs = [scalar_name, pf.inputs[0]]
         else:
             inputs = [pf.inputs[0], scalar_name]
-        self.convert_generic_tflite_op(inputs, pf.outputs, tflite_operator)
         self.propagate_variable_semantic(pf)
+        self.convert_generic_tflite_op(inputs, pf.outputs, tflite_operator)
 
     def BatchNormalization(self, pf):
         inputs = pf.inputs[:]
