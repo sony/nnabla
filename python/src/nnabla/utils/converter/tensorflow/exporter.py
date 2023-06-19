@@ -23,9 +23,10 @@ from ..onnx import OnnxExporter
 
 
 class TensorflowExporter:
-    def __init__(self, nnp, batch_size, model_format='TF_PB'):
+    def __init__(self, nnp, batch_size, ir_version, model_format='TF_PB'):
         self._nnp = nnp
         self._batch_size = batch_size
+        self._ir_version = ir_version
         self._model_format = model_format
         self.check_nnp_variable_name()
 
@@ -67,7 +68,7 @@ class TensorflowExporter:
 
     def execute(self, output):
         onnx_model = OnnxExporter(
-            self._nnp, self._batch_size, opset="11").export_model_proto()
+            self._nnp, self._batch_size, self._ir_version, opset="11").export_model_proto()
         tf_rep = prepare(onnx_model)
         if self._model_format == 'TF_PB':
             output_path = os.path.dirname(output)

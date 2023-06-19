@@ -12,9 +12,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import onnx
+
 NNABLA_DOMAIN = "org.nnabla"
 NNABLA_OPSET_VERSION = 1
-ONNX_IR_VERSION = 7
+# Loop up to ONNX version table to find the supported IR version
+ONNX_VERSION = onnx.__version__
+ONNX_IR_VERSION = next(
+    (version_info[1] for version_info in onnx.helper.VERSION_TABLE if version_info[0] == ONNX_VERSION), None)
 ONNX_OPSET_VERSION = 6
 PRODUCER_NAME = "nnabla-onnx"
 PRODUCER_VERSION = "0.1"

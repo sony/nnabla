@@ -38,8 +38,8 @@ TENSOR_TYPE_TO_DTYPE = {
     TensorProto.INT64: np.int64,
 }
 
-
 random_seed = 0
+
 
 # Helper functions
 
@@ -119,7 +119,7 @@ def generate_pad(input_name, output_name, pad_mode, pads, value, opset):
             mode=pad_mode,
             pads=pads,
             value=value,
-            )
+        )
         nl.append(n)
 
     return nl
@@ -163,7 +163,7 @@ def get_matrix_variance(opset, graph, func_input, func_name, mean_out, axes, inp
     # ReduceSum
     sum_out = fork_name(func_input + "_sum")
     if opset == '13':
-        axes_shape = (len(axes), )
+        axes_shape = (len(axes),)
         axes_param_name = fork_name("ReduceSumAxes")
         add_param(graph, axes_param_name,
                   TensorProto.INT64, axes_shape,
@@ -327,9 +327,11 @@ class ParameterState:
 
 # OnnxExporter class
 class OnnxExporter:
-    def __init__(self, nnp, batch_size, opset="11"):
+    def __init__(self, nnp, batch_size, ir_version, opset="11"):
         self._nnp = nnp.protobuf
         self._batch_size = batch_size
+        # If ir_version is negative, it defaults to ONNX_IR_VERSION for the current ONNX version.
+        self._ir_version = ir_version if ir_version > 0 else ONNX_IR_VERSION
         self._model_proto = None
         self._net = None
         self._onehot_table = {}
@@ -680,9 +682,9 @@ class OnnxExporter:
                 input1_shape_len = len(self._var_dict[second_input].dim)
                 unsqueeze_output = fork_name("broadcast_unsqueeze")
                 trailing = list(
-                    range(input1_shape_len+1, input0_shape_len))
+                    range(input1_shape_len + 1, input0_shape_len))
                 axes = list(range(axis)) + trailing
-                axes_shape = (len(axes), )
+                axes_shape = (len(axes),)
                 if opset == '13':
                     axes_param_name = fork_name("UnsqueezeAxes")
                     add_param(self._model_proto.graph, axes_param_name,
@@ -950,7 +952,7 @@ class OnnxExporter:
         # Conv
         output_conv = fork_name('output_conv')
         conv_output_shape = np.array(np.concatenate(
-                ([np.prod(output_y_shape[:cp.base_axis])], output_y_shape[cp.base_axis:])))
+            ([np.prod(output_y_shape[:cp.base_axis])], output_y_shape[cp.base_axis:])))
         n = onnx.helper.make_node(
             'Conv',
             inputs[:2],
@@ -966,7 +968,8 @@ class OnnxExporter:
         input_alpha_shape = np.array(
             [d for d in self._var_dict[inputs[2]].dim])
         input_alpha_shape = np.array([input_alpha_shape[0] if input_alpha_shape[0]
-                                      == conv_output_shape[i] else 1 for i in range(len(conv_output_shape))])
+                                      == conv_output_shape[i] else 1 for i in
+                                      range(len(conv_output_shape))])
         proto_alpha_shape = self._var_dict[inputs[2]]
         del proto_alpha_shape.dim[:]
         proto_alpha_shape.dim.extend(input_alpha_shape)
@@ -988,7 +991,8 @@ class OnnxExporter:
             input_bias_shape = np.array(
                 [d for d in self._var_dict[inputs[3]].dim])
             input_bias_shape = np.array([input_bias_shape[0] if input_bias_shape[0]
-                                         == conv_output_shape[i] else 1 for i in range(len(conv_output_shape))])
+                                         == conv_output_shape[i] else 1 for i in
+                                         range(len(conv_output_shape))])
             proto_bias_shape = self._var_dict[inputs[3]]
             del proto_bias_shape.dim[:]
             proto_bias_shape.dim.extend(input_bias_shape)
@@ -1175,10 +1179,10 @@ class OnnxExporter:
         input_shape_reshape = input_shape[:]
         if axes > 1:
             input_shape_reshape = [
-                np.prod(input_shape_reshape[:axes])] + input_shape_reshape[axes:]
+                                      np.prod(input_shape_reshape[:axes])] + input_shape_reshape[axes:]
         if len(input_shape_reshape) < 4:
             input_shape_reshape = input_shape_reshape + \
-                [1] * (4 - len(input_shape_reshape))
+                                  [1] * (4 - len(input_shape_reshape))
         if input_shape_reshape != input_shape:
             output_x_reshape = fork_name("output_x_reshape")
             n = generate_reshape(self._model_proto.graph, inputs[0], output_x_reshape,
@@ -1204,7 +1208,7 @@ class OnnxExporter:
             # Squeeze
             squeeze_out = fork_name(func.input[3]) + "_squeeze"
             if opset == '13':
-                reduc_axes_shape = (len(reduc_axes), )
+                reduc_axes_shape = (len(reduc_axes),)
                 reduc_axes_param_name = fork_name("BnSqueezeAxes")
                 add_param(self._model_proto.graph, reduc_axes_param_name,
                           TensorProto.INT64, reduc_axes_shape,
@@ -1245,7 +1249,7 @@ class OnnxExporter:
             # ReduceSum
             sum_out = fork_name(func.input[4]) + "_sum"
             if opset == '13':
-                reduc_axes_shape = (len(reduc_axes), )
+                reduc_axes_shape = (len(reduc_axes),)
                 reduc_axes_param_name = fork_name("BnReduceSumAxes")
                 add_param(self._model_proto.graph, reduc_axes_param_name,
                           TensorProto.INT64, reduc_axes_shape,
@@ -1414,7 +1418,7 @@ class OnnxExporter:
             input = rout
             output = fork_name(func.output[0]) + "_reshape"
         scales = np.array([1.0, 1.0] + func.unpooling_param.kernel.dim[:])
-        scale_shape = (len(scales), )
+        scale_shape = (len(scales),)
         scale_param_name = fork_name("UpsampleScales")
         add_param(self._model_proto.graph, scale_param_name,
                   TensorProto.FLOAT, scale_shape,
@@ -1553,7 +1557,7 @@ class OnnxExporter:
             index_name = fork_name('GatherFlip')
             gather_name = fork_name('GatherFlipOutput')
             raw_data = np.arange(input_shape[axis])[
-                ::-1].astype(np.int32).tostring()
+                       ::-1].astype(np.int32).tostring()
             index_shape = [input_shape[axis]]
             add_param(self._model_proto.graph, index_name,
                       TensorProto.INT32, index_shape, raw_data)
@@ -1760,7 +1764,7 @@ class OnnxExporter:
         outputs = []
         if opset == '13':
             axes = [func.stack_param.axis]
-            axes_shape = (len(axes), )
+            axes_shape = (len(axes),)
             for i, x in enumerate(func.input):
                 axes_param_name = fork_name("StackAxes")
                 add_param(self._model_proto.graph, axes_param_name,
@@ -1812,7 +1816,7 @@ class OnnxExporter:
 
         if opset == '13':
             axes = [func.split_param.axis]
-            axes_shape = (len(axes), )
+            axes_shape = (len(axes),)
             for i, x in enumerate(outputs):
                 axes_param_name = fork_name("SplitAxes")
                 add_param(self._model_proto.graph, axes_param_name,
@@ -2321,7 +2325,7 @@ class OnnxExporter:
         # ReduceSum
         sumout = fork_name(func.input[0]) + "_reducesum"
         if opset == '13':
-            axis_shape = (len([axis]), )
+            axis_shape = (len([axis]),)
             axis_param_name = fork_name("SoftmaxAxis")
             add_param(self._model_proto.graph, axis_param_name,
                       TensorProto.INT64, axis_shape,
@@ -2468,7 +2472,7 @@ class OnnxExporter:
         # ReduceSum
         sumout = fork_name(func.input[0]) + "_reducesum"
         if opset == '13':
-            axis_shape = (len([axis]), )
+            axis_shape = (len([axis]),)
             axis_param_name = fork_name("LogSoftmaxAxis")
             add_param(self._model_proto.graph, axis_param_name,
                       TensorProto.INT64, axis_shape,
@@ -2726,7 +2730,7 @@ class OnnxExporter:
         constant4 = fork_name("constant")
         c = generate_constant(constant4, func.name + "_constant4",
                               TensorProto.FLOAT, [1],
-                              [2/np.pi])
+                              [2 / np.pi])
         nl.append(c)
 
         # Pow
@@ -3200,7 +3204,7 @@ class OnnxExporter:
         axes = func.sum_param.axes
         k = func.sum_param.keep_dims
 
-        axes_shape = (len(axes), )
+        axes_shape = (len(axes),)
         axes_param_name = fork_name("SumAxes")
         add_param(self._model_proto.graph, axes_param_name,
                   TensorProto.INT64, axes_shape,
@@ -3307,7 +3311,7 @@ class OnnxExporter:
             if diff > 0:
                 diff += 1
                 new_input_shape = [
-                    np.prod(input_shape[:diff])] + input_shape[diff:]
+                                      np.prod(input_shape[:diff])] + input_shape[diff:]
                 new_output_shape = [new_input_shape[0]] + output_shape[diff:]
             else:
                 new_input_shape = [1] * -diff + input_shape
@@ -3369,7 +3373,7 @@ class OnnxExporter:
             if diff > 0:
                 diff += 1
                 new_input_shape = [
-                    np.prod(input_shape[:diff])] + input_shape[diff:]
+                                      np.prod(input_shape[:diff])] + input_shape[diff:]
                 new_output_shape = [new_input_shape[0]] + output_shape[diff:]
             else:
                 new_input_shape = [1] * -diff + input_shape
@@ -3500,7 +3504,7 @@ class OnnxExporter:
 
         if self._scale_cnt[func.input[1]] > 1:
             scale_name = fork_name(func.input[1])
-            scale = [1/d for d in self._parameters[func.input[1]].data]
+            scale = [1 / d for d in self._parameters[func.input[1]].data]
             p = self._nnp.parameter.add()
             p.variable_name = scale_name
             p.shape.dim.extend([len(scale)])
@@ -3508,7 +3512,7 @@ class OnnxExporter:
             self._var_dict[scale_name] = self._var_dict[func.input[1]]
             func.input[1] = scale_name
         else:
-            scale = [1/d for d in self._parameters[func.input[1]].data]
+            scale = [1 / d for d in self._parameters[func.input[1]].data]
             for p in self._nnp.parameter[:]:
                 if p.variable_name == func.input[1]:
                     self._nnp.parameter.remove(p)
@@ -3843,7 +3847,7 @@ class OnnxExporter:
         # ReduceSum, np.sum(w ** 2, axes, keepdims=True)
         sum_out = fork_name(func.input[0]) + "_sum"
         if opset == '13':
-            axes_shape = (len(axes), )
+            axes_shape = (len(axes),)
             axes_param_name = fork_name("WnReduceSumAxes")
             add_param(self._model_proto.graph, axes_param_name,
                       TensorProto.INT64, axes_shape,
@@ -4111,7 +4115,7 @@ class OnnxExporter:
 
         if dim != 0:
             dims_transpose = [dim] + \
-                [i for i in range(len(w_shape)) if i != dim]
+                             [i for i in range(len(w_shape)) if i != dim]
             transpose_out = fork_name(func.input[0]) + "_transpose"
             n = onnx.helper.make_node(
                 'Transpose',
@@ -4498,7 +4502,7 @@ class OnnxExporter:
         elif func.type == "Constant":
             cp = func.constant_param
             shape = list(self._var_dict[func.output[0]].dim[:])
-            val = [cp.val]*np.prod(shape)
+            val = [cp.val] * np.prod(shape)
             t = onnx.helper.make_tensor("Constant",
                                         data_type=TensorProto.FLOAT,
                                         dims=shape, vals=val)
@@ -4536,7 +4540,7 @@ class OnnxExporter:
 
     def create_model(self):
         mp = ModelProto()
-        mp.ir_version = ONNX_IR_VERSION
+        mp.ir_version = self._ir_version
         op = mp.opset_import.add()
         op.domain = ""  # empty string indicates ONNX domain
         op.version = self._opset

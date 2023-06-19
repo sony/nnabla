@@ -177,9 +177,10 @@ def _export_from_nnp(args, nnp, output):
             args.batch_size = nnp.protobuf.network[0].batch_size
         if args.define_version and args.define_version.startswith('opset_'):
             opset = args.define_version.split("_")[1]
-            OnnxExporter(nnp, args.batch_size, opset=opset).execute(output)
+            OnnxExporter(nnp, args.batch_size, args.ir_version,
+                         opset=opset).execute(output)
         else:
-            OnnxExporter(nnp, args.batch_size).execute(output)
+            OnnxExporter(nnp, args.batch_size, args.ir_version).execute(output)
     elif args.export_format == 'SAVED_MODEL' or args.export_format == 'TF_PB':
         from .tensorflow import TensorflowExporter
         if args.batch_size < 0:
@@ -187,7 +188,7 @@ def _export_from_nnp(args, nnp, output):
             print(
                 f'{args.export_format}: If you want to use with other size use `-b` option and provide a positive value.')
             args.batch_size = nnp.protobuf.network[0].batch_size
-        TensorflowExporter(nnp, args.batch_size,
+        TensorflowExporter(nnp, args.batch_size, args.ir_version,
                            model_format=args.export_format).execute(output)
     elif args.export_format == 'TFLITE':
         if args.batch_size < 0:
