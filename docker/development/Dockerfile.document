@@ -15,7 +15,7 @@
 
 # for nnabla>=1.5.0
 
-FROM ubuntu:18.04
+FROM ubuntu:22.04
 
 ARG PIP_INS_OPTS
 ARG PYTHONWARNINGS
@@ -31,7 +31,7 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN eval ${APT_OPTS} \
     && apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
-    clang-format-3.9 \
+    clang-format-14 \
     cmake \
     curl \
     g++ \
@@ -79,7 +79,7 @@ ADD python/setup_requirements.txt /tmp/deps/
 ADD python/requirements.txt /tmp/deps/
 ADD doc/requirements.txt /tmp/deps_doc/
 
-ENV PYVERNAME=3.8
+ENV PYVERNAME=3.10
 RUN eval ${APT_OPTS} \
     && apt update \
     && apt install -y --no-install-recommends \

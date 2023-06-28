@@ -48,8 +48,8 @@ docker_image_auto_format:
 .PHONY: docker_image_doc
 docker_image_doc:
 	if ! docker image inspect $(DOCKER_IMAGE_DOC) >/dev/null 2>/dev/null; then \
-		docker pull ubuntu:18.04 && \
-		( cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_DOC) -f docker/development/Dockerfile.document . ) \
+		docker pull $(shell cat $(NNABLA_DIRECTORY)/docker/development/Dockerfile.document |grep ^FROM |awk '{print $$2}') && \
+		(cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_DOC) -f docker/development/Dockerfile.document .) \
 	fi
 
 .PHONY: docker_image_build
