@@ -128,5 +128,5 @@ private:
                                   shared_ptr<CgVariable> w,
                                   shared_ptr<CgVariable> b);
 };
-}
+} // namespace nbla
 #endif

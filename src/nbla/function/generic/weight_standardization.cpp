@@ -57,4 +57,4 @@ void WeightStandardization<T>::backward_impl(const Variables &inputs,
 
   nbla::backward(f_tensor_norm_, inputs, outputs, propagate_down, accum);
 }
-}
+} // namespace nbla

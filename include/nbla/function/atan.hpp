@@ -38,5 +38,5 @@ Outputs:
 \ingroup FunctionImplGrp
  */
 NBLA_DEFINE_TRANSFORM_UNARY(ATan, std::atan(x), dy / (1 + x * x), false, true);
-}
+} // namespace nbla
 #endif

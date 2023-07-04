@@ -145,17 +145,18 @@ GRU<T>::gru_cell(shared_ptr<CgVariable> x, shared_ptr<CgVariable> h,
   auto sigmoid1 = make_shared<CgFunction>(create_Sigmoid(this->ctx_));
   vector<CgVariablePtr> r_t;
   if (bias_exists_) {
-    r_t =
-        connect(sigmoid1,
-                {connect(affine1, {xh[0], connect(transpose1, {w_vec[0]}, 1)[0],
-                                   b_vec[0]},
-                         1)[0]},
-                1);
+    r_t = connect(
+        sigmoid1,
+        {connect(affine1,
+                 {xh[0], connect(transpose1, {w_vec[0]}, 1)[0], b_vec[0]},
+                 1)[0]},
+        1);
   } else {
     r_t = connect(sigmoid1,
                   {connect(affine1,
                            {
-                               xh[0], connect(transpose1, {w_vec[0]}, 1)[0],
+                               xh[0],
+                               connect(transpose1, {w_vec[0]}, 1)[0],
                            },
                            1)[0]},
                   1);
@@ -167,17 +168,18 @@ GRU<T>::gru_cell(shared_ptr<CgVariable> x, shared_ptr<CgVariable> h,
   auto sigmoid2 = make_shared<CgFunction>(create_Sigmoid(this->ctx_));
   vector<CgVariablePtr> z_t;
   if (bias_exists_) {
-    z_t =
-        connect(sigmoid2,
-                {connect(affine2, {xh[0], connect(transpose2, {w_vec[1]}, 1)[0],
-                                   b_vec[1]},
-                         1)[0]},
-                1);
+    z_t = connect(
+        sigmoid2,
+        {connect(affine2,
+                 {xh[0], connect(transpose2, {w_vec[1]}, 1)[0], b_vec[1]},
+                 1)[0]},
+        1);
   } else {
     z_t = connect(sigmoid2,
                   {connect(affine2,
                            {
-                               xh[0], connect(transpose2, {w_vec[1]}, 1)[0],
+                               xh[0],
+                               connect(transpose2, {w_vec[1]}, 1)[0],
                            },
                            1)[0]},
                   1);
@@ -226,7 +228,8 @@ GRU<T>::gru_cell(shared_ptr<CgVariable> x, shared_ptr<CgVariable> h,
   } else {
     param1 = connect(affine3,
                      {
-                         x, connect(transpose3, w2_0, 1)[0],
+                         x,
+                         connect(transpose3, w2_0, 1)[0],
                      },
                      1);
   }
@@ -238,7 +241,8 @@ GRU<T>::gru_cell(shared_ptr<CgVariable> x, shared_ptr<CgVariable> h,
   } else {
     param2 = connect(affine4,
                      {
-                         h, connect(transpose4, w2_1, 1)[0],
+                         h,
+                         connect(transpose4, w2_1, 1)[0],
                      },
                      1);
   }
@@ -527,4 +531,4 @@ void GRU<T>::backward_impl(const Variables &inputs, const Variables &outputs,
 
   dummy[0]->backward(nullptr, true);
 }
-}
+} // namespace nbla

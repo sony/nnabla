@@ -41,5 +41,5 @@ Outputs:
  */
 NBLA_DEFINE_TRANSFORM_UNARY(Sigmoid, (T)1 / ((T)1 + std::exp(-x)),
                             dy *y *((T)1 - y), true, false);
-}
+} // namespace nbla
 #endif

@@ -31,7 +31,7 @@ has an idea, please let me know or PR is welcome.
 */
 #ifdef _MSC_VER
 /**
-*/
+ */
 #define NBLA_REGISTER_SOLVER_HEADER(NAME, ...)                                 \
   NBLA_API FunctionRegistry<Solver NBLA_VA_ARGS(__VA_ARGS__)>                  \
       &get_##NAME##SolverRegistry();                                           \
@@ -70,7 +70,7 @@ This will be used inside init method.
   }
 #else
 /**
-*/
+ */
 #define NBLA_REGISTER_SOLVER_HEADER(NAME, ...)                                 \
   NBLA_API FunctionRegistry<Solver, ##__VA_ARGS__>                             \
       &get_##NAME##SolverRegistry();                                           \
@@ -106,5 +106,5 @@ This will be used inside init method.
     get_##BASE##SolverRegistry().add(make_shared<item_t>(BACKEND, func));      \
   }
 #endif
-}
+} // namespace nbla
 #endif

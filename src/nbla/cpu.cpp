@@ -50,4 +50,4 @@ void Cpu::device_synchronize(const string &device) {
 void Cpu::default_stream_synchronize(const string &device) {}
 
 NBLA_INSTANTIATE_SINGLETON(NBLA_API, Cpu);
-}
+} // namespace nbla

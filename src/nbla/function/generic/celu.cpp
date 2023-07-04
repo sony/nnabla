@@ -13,7 +13,7 @@
 // limitations under the License.
 
 /** CELU
-*/
+ */
 #include <nbla/array.hpp>
 #include <nbla/function/celu.hpp>
 #include <nbla/utils/axis_utils.hpp>

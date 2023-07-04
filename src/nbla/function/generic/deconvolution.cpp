@@ -313,4 +313,4 @@ void Deconvolution<T>::backward_impl(const Variables &inputs,
   }
   col_.data()->array()->clear();
 }
-}
+} // namespace nbla

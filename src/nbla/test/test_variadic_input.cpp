@@ -86,4 +86,4 @@ TEST_F(FunctionVariadicInputTest, concatenate_3_param) {
   auto shape = v[0]->variable()->shape();
   EXPECT_EQ(shape[0], 4);
 }
-}
+} // namespace nbla

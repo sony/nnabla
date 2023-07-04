@@ -26,8 +26,8 @@
 
 namespace nbla {
 
-using std::vector;
 using std::make_shared;
+using std::vector;
 
 auto ignore1 = [](void *obj, const Variables &, const Variables &) {};
 auto ignore2 = [](void *obj) {};
@@ -225,4 +225,4 @@ TEST_F(CgVariableDeepCopyTest, ChangeCopyValues) {
   auto *g = x_->variable()->cast_grad_and_get_pointer<float>(ctx_, false);
   REP(i, size_) { EXPECT_FLOAT_EQ(2.0f, g[i]); }
 }
-}
+} // namespace nbla

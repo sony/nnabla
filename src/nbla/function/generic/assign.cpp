@@ -62,4 +62,4 @@ void Assign<T>::backward_impl(const Variables &inputs, const Variables &outputs,
     f_add->forward(Variables{&gx, &gy}, Variables{&gx});
   }
 }
-}
+} // namespace nbla

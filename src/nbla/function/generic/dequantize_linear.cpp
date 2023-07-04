@@ -104,4 +104,4 @@ void DequantizeLinear<T>::backward_impl(const Variables &inputs,
                "Backward w.r.t. the zero point is not supported now.");
   }
 }
-}
+} // namespace nbla

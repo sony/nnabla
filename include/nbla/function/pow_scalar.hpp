@@ -46,5 +46,5 @@ NBLA_DEFINE_TRANSFORM_UNARY_1_INPLACE(PowScalar,
                                                  : std::pow(x, (T)a0),
                                       dy *(T)a0 *std::pow(x, (T)a0 - (T)1),
                                       false, true, double, true);
-}
+} // namespace nbla
 #endif

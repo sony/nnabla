@@ -124,5 +124,5 @@ NBLA_API shared_ptr<Function> create_Callback(
     Callback::backward_callback_type b, Callback::cleanup_callback_type c,
     Callback::grad_depends_output_data_callback_type go,
     Callback::grad_depends_input_data_callback_type gi);
-}
+} // namespace nbla
 #endif

@@ -262,6 +262,6 @@ vector<Shape_t> DatasetHDF5Impl::get_shapes() { return shapes_; }
 vector<vector<NdArrayPtr>> DatasetHDF5Impl::get_cache_blocks() {
   return cache_blocks_;
 }
-}
-}
-}
+} // namespace nnp
+} // namespace utils
+} // namespace nbla

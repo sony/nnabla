@@ -14,7 +14,7 @@
 // Include nnabla header files
 
 /** Parametric Functions
-*/
+ */
 
 #ifndef __NBLA_PARAMETRIC_FUNCTIONS_HPP__
 #define __NBLA_PARAMETRIC_FUNCTIONS_HPP__
@@ -223,7 +223,7 @@ NBLA_API CgVariablePtr
 deconvolution(CgVariablePtr x, int base_axis, int n_map_out,
               const vector<int> &kernel, ParameterDirectory parameters,
               DeconvolutionOpts conv_opts = DeconvolutionOpts());
-}
-}
+} // namespace parametric_functions
+} // namespace nbla
 
 #endif

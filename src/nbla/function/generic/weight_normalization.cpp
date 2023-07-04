@@ -158,4 +158,4 @@ void WeightNormalization<T>::backward_impl(const Variables &inputs,
                  {true});
   g->reshape(gshape, false);
 }
-}
+} // namespace nbla

@@ -25,11 +25,11 @@
 #include <nbla/computation_graph/variable.hpp>
 #include <nbla/context.hpp>
 
-using std::vector;
-using std::string;
-using std::make_shared;
-using nbla::Context;
 using nbla::CgVariablePtr;
+using nbla::Context;
+using std::make_shared;
+using std::string;
+using std::vector;
 
 /******************************************/
 // Example of data provider

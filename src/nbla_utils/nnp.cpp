@@ -209,6 +209,6 @@ shared_ptr<Monitor> Nnp::get_monitor(const string &name) {
 shared_ptr<TrainingConfig> Nnp::get_training_config() {
   return impl_->get_training_config();
 }
-}
-}
-}
+} // namespace nnp
+} // namespace utils
+} // namespace nbla

@@ -177,4 +177,4 @@ MultiProcessDataParallelCommunicator<T>::allowed_array_classes() {
 template class MultiProcessDataParallelCommunicator<float>;
 
 template class MultiProcessDataParallelCommunicator<Half>;
-}
+} // namespace nbla

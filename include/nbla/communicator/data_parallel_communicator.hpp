@@ -69,7 +69,7 @@ public:
   /** Initall or initrank, depending multi-threads or multi-processes.
    * This function MUST be called after all parameters communicated
    * are added by `add_context_and_parameters` method.
-  */
+   */
   virtual void init();
 
   virtual void reduce(const vector<NdArrayPtr> &ndarray_list, int dst,
@@ -101,7 +101,7 @@ public:
   virtual void allgather_async();
 
   /** Get array classes that are allowed to be specified by Context
-  */
+   */
   vector<string> allowed_array_classes();
 
 protected:
@@ -112,5 +112,5 @@ protected:
 /** \defgroup DataParallelCommunicatorImplGrp DataParallelCommunicator list */
 /*@{*/
 /*@}*/
-}
+} // namespace nbla
 #endif

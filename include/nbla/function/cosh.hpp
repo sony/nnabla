@@ -38,5 +38,5 @@ Outputs:
 \ingroup FunctionImplGrp
  */
 NBLA_DEFINE_TRANSFORM_UNARY(Cosh, std::cosh(x), dy *std::sinh(x), false, true);
-}
+} // namespace nbla
 #endif

@@ -111,4 +111,4 @@ const void *NNabla::zeros(Size_t size, dtypes dtype, const Context &ctx) {
 }
 
 NBLA_INSTANTIATE_SINGLETON(NBLA_API, NNabla);
-}
+} // namespace nbla

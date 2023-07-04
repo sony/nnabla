@@ -13,7 +13,7 @@
 // limitations under the License.
 
 /** Context
-*/
+ */
 #ifndef __NBLA_CONTEXT_HPP__
 #define __NBLA_CONTEXT_HPP__
 
@@ -60,10 +60,10 @@ public:
 };
 
 /**
-*/
+ */
 inline string get_array_key_from_context(const Context &ctx) {
   return ctx.device_id + ":" + ctx.array_class;
 }
-}
+} // namespace nbla
 
 #endif

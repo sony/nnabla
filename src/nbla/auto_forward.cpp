@@ -27,4 +27,4 @@ void AutoForward::set_auto_forward(bool auto_forward) {
 }
 
 NBLA_INSTANTIATE_SINGLETON(NBLA_API, AutoForward);
-}
+} // namespace nbla

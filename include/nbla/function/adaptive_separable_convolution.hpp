@@ -67,5 +67,5 @@ protected:
     return (i != j);
   }
 };
-}
+} // namespace nbla
 #endif

@@ -45,9 +45,10 @@ void BroadcastTo<T>::setup_impl(const Variables &inputs,
                  xofs + i, xds, yds);
     }
   } else {
-    NBLA_CHECK(axis_ < xdim, error_code::value, "Specified axis index %d must "
-                                                "be within the size of the "
-                                                "actual input dimension %d",
+    NBLA_CHECK(axis_ < xdim, error_code::value,
+               "Specified axis index %d must "
+               "be within the size of the "
+               "actual input dimension %d",
                axis_, xdim);
     // Check if y shape can fit x shape from the axis index
     for (Size_t i = 0; i < ydim; i++) {
@@ -305,4 +306,4 @@ void BroadcastTo<T>::backward_impl(const Variables &inputs,
   NBLA_ERROR(error_code::not_implemented,
              "BroadcastTo backward function is not implemented");
 }
-}
+} // namespace nbla

@@ -51,7 +51,9 @@ Outputs:
 \ingroup FunctionImplGrp
  */
 
-typedef struct { int first, second; } PadItem;
+typedef struct {
+  int first, second;
+} PadItem;
 typedef vector<PadItem> PadList;
 
 template <typename T>
@@ -100,5 +102,5 @@ protected:
     return false;
   }
 };
-}
+} // namespace nbla
 #endif

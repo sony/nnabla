@@ -234,8 +234,8 @@ inline void unpack_batch_first(const U *packed_sequence, const int *batch_sizes,
   }
 }
 
-} // rnn
-} // utils
-} // nbla
+} // namespace rnn
+} // namespace utils
+} // namespace nbla
 
 #endif

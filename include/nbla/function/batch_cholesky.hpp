@@ -67,5 +67,5 @@ protected:
   }
   NBLA_API virtual void phi(Variable &var);
 };
-}
+} // namespace nbla
 #endif

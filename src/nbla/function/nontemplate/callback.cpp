@@ -42,4 +42,4 @@ NBLA_API shared_ptr<Function> create_Callback(
     Callback::grad_depends_input_data_callback_type gi) {
   return make_shared<Callback>(ctx, obj, min_outputs, s, f, b, c, go, gi);
 }
-}
+} // namespace nbla

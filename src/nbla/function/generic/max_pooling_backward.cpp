@@ -24,9 +24,9 @@
 
 namespace nbla {
 
-using std::min;
-using std::max;
 using std::ceil;
+using std::max;
+using std::min;
 
 NBLA_REGISTER_FUNCTION_SOURCE(MaxPoolingBackward, const vector<int> &,
                               const vector<int> &, bool, const vector<int> &,
@@ -215,7 +215,7 @@ void max_pooling_3d_backward(T *gdy, const T *gdx, const T *x, int Cx, int Dx,
     }
   }
 }
-}
+} // namespace max_pooling_backward
 
 template <typename T>
 void MaxPoolingBackward<T>::setup_impl(const Variables &inputs,
@@ -376,4 +376,4 @@ void MaxPoolingBackward<T>::backward_impl(const Variables &inputs,
              dpad);
   }
 }
-}
+} // namespace nbla

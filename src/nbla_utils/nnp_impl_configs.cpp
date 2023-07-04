@@ -63,6 +63,6 @@ const long long int TrainingConfigImpl::iter_per_epoch() const {
 const bool TrainingConfigImpl::save_best() const {
   return training_config_proto_.save_best();
 }
-}
-}
-}
+} // namespace nnp
+} // namespace utils
+} // namespace nbla

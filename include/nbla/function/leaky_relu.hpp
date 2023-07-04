@@ -86,5 +86,5 @@ protected:
     return alpha_ < 0;
   }
 };
-}
+} // namespace nbla
 #endif

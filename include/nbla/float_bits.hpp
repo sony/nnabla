@@ -200,10 +200,11 @@ template <typename T> struct float_bits : public nbits<T> {
     }
 
     // 3. Normalized.
-    return tsign_bit | ((tbit_t)(signed_exp + float_bits<U>::exp_bias)
-                        << float_bits<U>::nsig) |
+    return tsign_bit |
+           ((tbit_t)(signed_exp + float_bits<U>::exp_bias)
+            << float_bits<U>::nsig) |
            ((tbit_t)(sig_bits) << dsig);
   }
 };
-}
+} // namespace nbla
 #endif // NBLA_FLOAT_BITS_HPP_

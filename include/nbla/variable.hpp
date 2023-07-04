@@ -206,5 +206,5 @@ private:
 
 ///< Shared pointer of Variable.
 typedef Variable::Ptr VariablePtr;
-}
+} // namespace nbla
 #endif

@@ -64,5 +64,5 @@ void scale_grad_impl_cpu(const Context &ctx, const shared_ptr<Variable> param,
   std::transform(data, data + size, grad, grad,
                  [scale](T x, T g) { return g * scale; });
 }
-}
+} // namespace nbla
 #endif

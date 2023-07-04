@@ -351,14 +351,12 @@ void BatchNormalization<T>::backward_impl_batch(
   }
 
   if (pd_beta || pd_gamma) { // beta and gamma
-    T *db = pd_beta
-                ? inputs[b_idx_]->template cast_grad_and_get_pointer<T>(
-                      this->ctx_, !accum[b_idx_])
-                : nullptr;
-    T *dg = pd_gamma
-                ? inputs[g_idx_]->template cast_grad_and_get_pointer<T>(
-                      this->ctx_, !accum[g_idx_])
-                : nullptr;
+    T *db = pd_beta ? inputs[b_idx_]->template cast_grad_and_get_pointer<T>(
+                          this->ctx_, !accum[b_idx_])
+                    : nullptr;
+    T *dg = pd_gamma ? inputs[g_idx_]->template cast_grad_and_get_pointer<T>(
+                           this->ctx_, !accum[g_idx_])
+                     : nullptr;
     const bool b_accum = pd_beta ? accum[b_idx_] : false;
     const bool g_accum = pd_gamma ? accum[g_idx_] : false;
     for (int i1 = 0; i1 < size1_; ++i1) {
@@ -488,4 +486,4 @@ void BatchNormalization<T>::backward_impl_global(
     }
   }
 }
-}
+} // namespace nbla

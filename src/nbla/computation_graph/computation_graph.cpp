@@ -225,4 +225,4 @@ GlobalClearBufferState::ScopedState::~ScopedState() {
 }
 
 NBLA_INSTANTIATE_SINGLETON(NBLA_API, GlobalClearBufferState);
-}
+} // namespace nbla

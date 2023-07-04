@@ -114,4 +114,4 @@ void unset_function_pre_hook(const string &key) {
 void unset_function_post_hook(const string &key) {
   SingletonManager::get<GlobalFunctionCallback>()->unset_post_hook(key);
 }
-}
+} // namespace nbla

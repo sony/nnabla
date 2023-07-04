@@ -37,5 +37,5 @@ void clip_grad_by_norm_cpu(const Context &ctx, const shared_ptr<Variable> param,
       grad[i] = clip_norm * grad[i] / norm;
   }
 }
-}
+} // namespace nbla
 #endif

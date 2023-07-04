@@ -46,5 +46,5 @@ NBLA_API bool get_global_recompute();
 NBLA_API void c_set_global_recompute(const bool recompute);
 
 NBLA_API bool c_get_global_recompute();
-}
+} // namespace nbla
 #endif

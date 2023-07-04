@@ -75,6 +75,6 @@ template <typename T> using ConstColVectorMap = Eigen::Map<const ColVector<T>>;
       }                                                                        \
     }                                                                          \
   }
-}
-}
+} // namespace eigen
+} // namespace nbla
 #endif

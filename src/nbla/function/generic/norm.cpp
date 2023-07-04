@@ -86,4 +86,4 @@ void Norm<T>::backward_impl(const Variables &inputs, const Variables &outputs,
   nbla::backward(abs_, Variables{x}, Variables{&out_abs}, {prop_down},
                  {accum[0]});
 }
-}
+} // namespace nbla

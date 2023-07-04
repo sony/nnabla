@@ -14,7 +14,7 @@
 // limitations under the License.
 
 /** SumPooling
-*/
+ */
 #ifndef __NBLA_FUNCTION_SUMPOOLING_HPP__
 #define __NBLA_FUNCTION_SUMPOOLING_HPP__
 
@@ -68,5 +68,5 @@ protected:
     return false;
   }
 };
-}
+} // namespace nbla
 #endif

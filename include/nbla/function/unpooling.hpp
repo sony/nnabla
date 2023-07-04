@@ -14,7 +14,7 @@
 // limitations under the License.
 
 /** Unpooling
-*/
+ */
 #ifndef __NBLA_FUNCTION_UNPOOLING_HPP__
 #define __NBLA_FUNCTION_UNPOOLING_HPP__
 
@@ -92,5 +92,5 @@ private:
                                     const T *dy, int x_offset, int y_offset,
                                     int dim);
 };
-}
+} // namespace nbla
 #endif

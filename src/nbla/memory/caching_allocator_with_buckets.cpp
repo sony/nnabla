@@ -316,4 +316,4 @@ vector<int> CachingAllocatorWithBucketsBase::get_used_memory_counts(
 
   return {small_cnt, large_cnt};
 }
-}
+} // namespace nbla

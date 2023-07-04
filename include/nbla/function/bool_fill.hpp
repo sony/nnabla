@@ -78,5 +78,5 @@ protected:
 
   virtual bool grad_depends_output_data(int i, int o) const { return false; }
 };
-}
+} // namespace nbla
 #endif

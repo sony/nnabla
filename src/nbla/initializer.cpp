@@ -121,4 +121,4 @@ void UniformIntInitializer::initialize(NdArrayPtr param) {
       param_d[i] = uniform_int(rgen) % range + lower_;
     }
 }
-}
+} // namespace nbla

@@ -114,4 +114,4 @@ void BoolGather<T>::backward_impl(const Variables &inputs,
     kernel(D, B, nnz, g_gdata, g_sdata, mask);
   }
 }
-}
+} // namespace nbla

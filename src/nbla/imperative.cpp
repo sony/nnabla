@@ -81,4 +81,4 @@ void backward(FunctionPtr f, const Variables &inputs, const Variables &outputs,
   }
   f->backward(inputs, outputs, propagate_down, accum);
 }
-}
+} // namespace nbla

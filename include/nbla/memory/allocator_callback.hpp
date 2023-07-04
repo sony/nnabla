@@ -38,4 +38,4 @@ public:
                                     size_t freed_bytes) override;
   void on_allocation_failure() override;
 };
-}
+} // namespace nbla

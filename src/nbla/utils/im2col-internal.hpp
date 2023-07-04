@@ -93,4 +93,4 @@ void col2im_nd(const T *col, const int c, const int spatial_dims,
                const int *stride, const int *dilation, T *img) {
   NBLA_ERROR(error_code::not_implemented, "Col2Im_ND is not implemented.");
 }
-}
+} // namespace nbla

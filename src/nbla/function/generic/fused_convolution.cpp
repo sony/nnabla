@@ -103,7 +103,7 @@ bool reset_cgvariable(CgVariablePtr cg_var, Variable *var) {
   }
   return ret;
 }
-}
+} // namespace
 
 template <typename T>
 bool FusedConvolution<T>::reset_cg_variables(const Variables &inputs,
@@ -147,8 +147,9 @@ void FusedConvolution<T>::setup_impl(const Variables &inputs,
   // ----------------------------------------------------------------
   size_t spatial_dims = input_variables_[X].second->ndim() - base_axis_ - 1;
   NBLA_CHECK(pad_.size() == spatial_dims || pad_.size() == 2 * spatial_dims,
-             error_code::value, "pad size mismatch. pad size (%d) must be "
-                                "spatial dims (%d) or 2 * spatial dims (%d).",
+             error_code::value,
+             "pad size mismatch. pad size (%d) must be "
+             "spatial dims (%d) or 2 * spatial dims (%d).",
              pad_.size(), spatial_dims, 2 * spatial_dims);
   const auto skip_pad_func = pad_.size() == spatial_dims &&
                              pad_mode_ == "constant" && constant_value_ == 0.0f;
@@ -322,4 +323,4 @@ void FusedConvolution<T>::backward_impl(const Variables &inputs,
 
   last_output_cg_variable_->backward(outputs[0]->grad(), true);
 }
-}
+} // namespace nbla

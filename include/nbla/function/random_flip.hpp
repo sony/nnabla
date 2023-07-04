@@ -104,5 +104,5 @@ private:
   void random_flip(const Variables &inputs, const Variables &outputs,
                    std::mt19937 &rgen);
 };
-}
+} // namespace nbla
 #endif

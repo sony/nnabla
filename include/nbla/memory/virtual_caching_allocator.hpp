@@ -181,4 +181,4 @@ class VirtualCachingAllocator : public VirtualCachingAllocatorBase {
 public:
   VirtualCachingAllocator() : VirtualCachingAllocatorBase() {}
 };
-}
+} // namespace nbla

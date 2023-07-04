@@ -415,4 +415,4 @@ void RNN<T>::backward_impl(const Variables &inputs, const Variables &outputs,
 
   dummy[0]->backward(nullptr, true);
 }
-}
+} // namespace nbla

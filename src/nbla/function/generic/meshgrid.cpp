@@ -119,4 +119,4 @@ void Meshgrid<T>::backward_impl(const Variables &inputs,
     inputs[i]->reshape(shape_, true);
   }
 }
-}
+} // namespace nbla

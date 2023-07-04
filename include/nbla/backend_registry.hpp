@@ -53,7 +53,7 @@ public:
   static void _set_array_classes(const Context ctx, const vector<string> &a);
 
   /** Call register_array_class of the backend in a context.
-  */
+   */
   static void register_array_class(const Context ctx, const string &name);
 
   /** Call caching_allocator of the backend in a context.
@@ -89,11 +89,11 @@ private:
   static Registry_t &get_registry();
 
   /** Get backend getter.
-  */
+   */
   static BackendGetter get_backend_getter(const Context ctx);
 };
 
 #define NBLA_REGISTER_BACKEND(BACKEND_NAME, BACKEND_GETTER)                    \
   { BackendUtils::add_backend(BACKEND_NAME, BACKEND_GETTER); }
-}
+} // namespace nbla
 #endif

@@ -1154,4 +1154,4 @@ SwapInOutScheduler::convert_tag(const SyncedArrayCallbackTag sa_tag,
 
   NBLA_ERROR(error_code::type, "Unsupported SyncedArrayCallbackTag");
 }
-}
+} // namespace nbla

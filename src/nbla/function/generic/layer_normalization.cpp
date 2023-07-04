@@ -203,4 +203,4 @@ void LayerNormalization<T>::backward_impl(const Variables &inputs,
     f_tensor_norm_->backward(tn_inputs, tn_outputs, {true}, {accum[0]});
   }
 }
-}
+} // namespace nbla

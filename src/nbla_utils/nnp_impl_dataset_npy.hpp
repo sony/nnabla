@@ -33,7 +33,7 @@ namespace nnp {
 // FileResource
 // ----------------------------------------------------------------------
 /** Helper class FileResource which RAII to avoid using exception as fstream.
-*/
+ */
 struct FileResource {
   FILE *fp_;
   FileResource(const string &filename);
@@ -58,7 +58,7 @@ struct VariableDesc {
 // CacheFile
 // ----------------------------------------------------------------------
 /** Corresponding to each *.npy cache file.
-*/
+ */
 class CacheFile {
 public:
   CacheFile(const string &filename, vector<string> v_names);
@@ -89,7 +89,7 @@ private:
 // RingBuffer
 // ----------------------------------------------------------------------
 /** Make the balance between memory usage and performance
-*/
+ */
 class RingBuffer {
 public:
   RingBuffer(const vector<shared_ptr<CacheFile>> &cache_files, int batch_size,
@@ -130,7 +130,7 @@ private:
 // DatasetNpyCache
 // ----------------------------------------------------------------------
 /** Implementation of DatasetNpyCache
-*/
+ */
 class DatasetNpyCache : public DatasetImpl {
   friend class NnpImpl;
 

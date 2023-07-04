@@ -35,5 +35,5 @@ public:
 
 /// Shared pointer of Event.
 typedef shared_ptr<Event> EventPtr;
-}
+} // namespace nbla
 #endif

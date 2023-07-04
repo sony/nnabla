@@ -83,4 +83,4 @@ void NormNormalization<T>::backward_impl(const Variables &inputs,
   nbla::backward(norm_, Variables{x}, Variables{&out_norm}, {prop_down},
                  {true});
 }
-}
+} // namespace nbla

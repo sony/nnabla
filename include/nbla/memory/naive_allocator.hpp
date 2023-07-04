@@ -58,4 +58,4 @@ private:
     return 0;
   }
 };
-}
+} // namespace nbla

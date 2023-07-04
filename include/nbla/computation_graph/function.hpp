@@ -70,7 +70,7 @@ public:
   NBLA_API CgFunction(FunctionPtr func);
 
   /** Dtor. Erase all function_reference_ of inputs.
-  */
+   */
   NBLA_API ~CgFunction();
 
   /** Set inputs. Note user shouldn't call this directly.
@@ -155,5 +155,5 @@ public:
 /**
  */
 typedef CgFunction::Ptr CgFunctionPtr;
-}
+} // namespace nbla
 #endif

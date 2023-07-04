@@ -42,5 +42,5 @@ Outputs:
 */
 NBLA_DEFINE_TRANSFORM_UNARY_1_INPLACE(MulScalar, x *(T)a0, dy *(T)a0, false,
                                       false, double, true);
-}
+} // namespace nbla
 #endif

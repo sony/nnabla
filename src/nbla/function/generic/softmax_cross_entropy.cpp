@@ -125,4 +125,4 @@ void SoftmaxCrossEntropy<T, Tl>::backward_impl(
     }
   }
 }
-}
+} // namespace nbla

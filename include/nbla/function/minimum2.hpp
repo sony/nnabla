@@ -40,5 +40,5 @@ Outputs:
  */
 NBLA_DEFINE_TRANSFORM_BINARY(Minimum2, (x0 < x1) ? x0 : x1, (x0 < x1) * dy,
                              (x0 >= x1) * dy, false, false, true, true);
-}
+} // namespace nbla
 #endif

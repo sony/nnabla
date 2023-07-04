@@ -63,7 +63,7 @@ void copy_original_u_to_output(Context &ctx, NdArrayPtr input_u,
   Array *output_u_array = output_u->data()->cast(get_dtype<T>(), ctx, true);
   output_u_array->copy_from(input_u_array);
 }
-}
+} // namespace
 
 template <typename T>
 CgVariablePtr SpectralNorm<T>::spectral_norm(const Variables &inputs,
@@ -314,4 +314,4 @@ void SpectralNorm<T>::backward_impl(const Variables &inputs,
 
   last_output_cg_variable_->backward(outputs[0]->grad(), true);
 }
-}
+} // namespace nbla

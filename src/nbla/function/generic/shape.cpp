@@ -71,4 +71,4 @@ void Shape<T>::backward_impl(const Variables &inputs, const Variables &outputs,
                              const vector<bool> &accum) {
   // Do nothing!
 }
-}
+} // namespace nbla

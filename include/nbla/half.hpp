@@ -203,7 +203,7 @@ template <typename T> struct force_float { typedef T type; };
 template <> struct force_float<Half> { typedef float type; };
 
 /*@}*/
-}
+} // namespace nbla
 // cmath functions
 
 namespace std {
@@ -248,5 +248,5 @@ public:
   static constexpr bool is_integer = false;
   static constexpr bool is_signed = true;
 };
-}
+} // namespace std
 #endif

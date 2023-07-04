@@ -60,14 +60,13 @@ void DeformableConvolution<T>::setup_impl(const Variables &inputs,
                                 : shape_offset[3] == shape_data[3]),
              error_code::value,
              "Offset tensor must have the shape as input feature map");
-  NBLA_CHECK(
-      channel_last_
-          ? shape_offset[3] ==
-                2 * shape_weights[1] * shape_weights[2] * deformable_group_
-          : shape_offset[1] ==
-                2 * shape_weights[2] * shape_weights[3] * deformable_group_,
-      error_code::value,
-      "Offset channels must have size 2*kernel*kernel*deformable_group");
+  NBLA_CHECK(channel_last_
+                 ? shape_offset[3] == 2 * shape_weights[1] * shape_weights[2] *
+                                          deformable_group_
+                 : shape_offset[1] == 2 * shape_weights[2] * shape_weights[3] *
+                                          deformable_group_,
+             error_code::value,
+             "Offset channels must have size 2*kernel*kernel*deformable_group");
 
   // Check mask shape and fill inner mask size
   if (inputs.size() == 5 || (inputs.size() == 4 && inputs[3]->ndim() != 1)) {
@@ -83,9 +82,8 @@ void DeformableConvolution<T>::setup_impl(const Variables &inputs,
     NBLA_CHECK(channel_last_
                    ? shape_mask[3] ==
                          shape_weights[1] * shape_weights[2] * deformable_group_
-                   : shape_mask[1] ==
-                         shape_weights[2] * shape_weights[3] *
-                             deformable_group_,
+                   : shape_mask[1] == shape_weights[2] * shape_weights[3] *
+                                          deformable_group_,
                error_code::value,
                "Mask channels must have size kernel*kernel*deformable_group");
     NBLA_CHECK(channel_last_
@@ -430,4 +428,4 @@ void DeformableConvolution<T>::backward_impl(const Variables &inputs,
   }
   col_.data()->array()->clear();
 }
-}
+} // namespace nbla

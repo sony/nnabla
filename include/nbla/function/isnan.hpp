@@ -31,5 +31,5 @@ Outputs:
 \ingroup FunctionImplGrp
  */
 NBLA_DEFINE_TRANSFORM_UNARY_NO_GRAD(IsNaN, std::isnan(x) ? (T)1 : (T)0);
-}
+} // namespace nbla
 #endif

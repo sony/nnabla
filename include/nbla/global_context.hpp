@@ -42,5 +42,5 @@ private:
   GlobalContext();
   DISABLE_COPY_AND_ASSIGN(GlobalContext);
 };
-}
+} // namespace nbla
 #endif

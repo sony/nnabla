@@ -62,4 +62,4 @@ CpuCachedArray::~CpuCachedArray() {}
 Context CpuCachedArray::filter_context(const Context &ctx) {
   return Context({}, "CpuCachedArray", "");
 }
-}
+} // namespace nbla

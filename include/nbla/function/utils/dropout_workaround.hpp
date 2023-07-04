@@ -33,5 +33,5 @@ NBLA_API VariablePtr get_dropout_mask(VariablePtr dropout_inputs);
 */
 NBLA_API void set_dropout_mask(Variable *dropout_input,
                                VariablePtr dropout_mask);
-}
+} // namespace nbla
 #endif

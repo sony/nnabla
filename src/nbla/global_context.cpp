@@ -29,4 +29,4 @@ void GlobalContext::set_current_context(const Context ctx) {
 }
 
 NBLA_INSTANTIATE_SINGLETON(NBLA_API, GlobalContext);
-}
+} // namespace nbla

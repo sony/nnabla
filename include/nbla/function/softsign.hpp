@@ -43,5 +43,5 @@ Outputs:
  */
 NBLA_DEFINE_TRANSFORM_UNARY(SoftSign, x / (1 + std::abs(x)),
                             dy / std::pow((1 + std::abs(x)), 2), false, true);
-}
+} // namespace nbla
 #endif

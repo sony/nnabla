@@ -40,5 +40,5 @@ Outputs:
  */
 
 NBLA_DEFINE_TRANSFORM_UNARY(Floor, std::floor(x), dy, false, false);
-}
+} // namespace nbla
 #endif

@@ -14,7 +14,7 @@
 // Include nnabla header files
 
 /** Initializer
-*/
+ */
 #ifndef __NBLA_INITIALIZER_HPP__
 #define __NBLA_INITIALIZER_HPP__
 
@@ -83,5 +83,5 @@ private:
   int lower_;
   int upper_;
 };
-}
+} // namespace nbla
 #endif

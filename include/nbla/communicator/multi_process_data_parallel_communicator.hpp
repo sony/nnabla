@@ -72,7 +72,7 @@ public:
   /** Initall or initrank, depending multi-threads or multi-processes.
    * This function MUST be called after all parameters communicated
    * are added by `add_context_and_parameters` method.
-  */
+   */
   virtual void init();
 
   virtual string new_group(pair<string, vector<int>> name_ranks_pair);
@@ -109,7 +109,7 @@ public:
   virtual void allgather_async();
 
   /** Get array classes that are allowed to be specified by Context
-  */
+   */
   vector<string> allowed_array_classes();
 
 protected:
@@ -123,5 +123,5 @@ protected:
  * MultiProcessDataParallelCommunicator list */
 /*@{*/
 /*@}*/
-}
+} // namespace nbla
 #endif

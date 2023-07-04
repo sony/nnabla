@@ -65,5 +65,5 @@ template <typename SINGLETON> void SingletonManager::erase() {
   template API SINGLETON_CLASS *SingletonManager::get<SINGLETON_CLASS>();      \
   template API int SingletonManager::get_id<SINGLETON_CLASS>();                \
   template API void SingletonManager::erase<SINGLETON_CLASS>()
-}
+} // namespace nbla
 #endif

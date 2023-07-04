@@ -47,4 +47,4 @@ string Context::to_string() const {
   return format_string("Context(%s, %s, %s)", b.c_str(), array_class.c_str(),
                        device_id.c_str());
 }
-}
+} // namespace nbla

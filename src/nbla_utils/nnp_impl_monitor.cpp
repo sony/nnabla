@@ -132,6 +132,6 @@ const float MonitorImpl::monitor_epoch() {
   monitor_acc /= max_iter;
   return monitor_acc;
 }
-}
-}
-}
+} // namespace nnp
+} // namespace utils
+} // namespace nbla

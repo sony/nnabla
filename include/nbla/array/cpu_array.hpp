@@ -45,5 +45,5 @@ public:
   virtual ~CpuCachedArray();
   static Context filter_context(const Context &ctx);
 };
-}
+} // namespace nbla
 #endif

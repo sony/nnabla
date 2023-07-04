@@ -38,5 +38,5 @@ Outputs:
 \ingroup FunctionImplGrp
  */
 NBLA_DEFINE_TRANSFORM_UNARY(Cos, std::cos(x), -dy *std::sin(x), false, true);
-}
+} // namespace nbla
 #endif

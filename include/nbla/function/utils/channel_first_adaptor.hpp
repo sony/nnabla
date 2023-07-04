@@ -150,6 +150,6 @@ public:
 };
 
 using ChannelFirstAdaptorPtr = shared_ptr<ChannelFirstAdaptor>;
-}
+} // namespace nbla
 
 #endif

@@ -44,8 +44,9 @@ inline uint8_t convert_dtype_to_dlpack_code(const dtypes dtype) {
     SET_CODE(LONGDOUBLE, kDLFloat);
     SET_CODE(HALF, kDLBfloat);
   default:
-    NBLA_ERROR(error_code::type, "dtype %s cannot be converted to "
-                                 "DLDataTypeCode.",
+    NBLA_ERROR(error_code::type,
+               "dtype %s cannot be converted to "
+               "DLDataTypeCode.",
                dtype_to_string(dtype).c_str());
     break;
   }
@@ -124,8 +125,9 @@ dtypes convert_dlpack_type_to_dtype(const DLDataType &dlp_type) {
     }
   }
 
-  NBLA_ERROR(error_code::type, "No matching types between NNabla dtypes and "
-                               "DLPack DLDataType. code: %d, bits: %d",
+  NBLA_ERROR(error_code::type,
+             "No matching types between NNabla dtypes and "
+             "DLPack DLDataType. code: %d, bits: %d",
              code, bits);
 }
 
@@ -183,8 +185,9 @@ DLManagedTensor *to_dlpack_impl(const shared_ptr<Array> &arr_ptr,
     try {
       dl_tensor.ctx.device_id = std::stoi(ctx.device_id);
     } catch (...) {
-      NBLA_ERROR(error_code::value, "device_id %s cannot be converted to "
-                                    "integer.",
+      NBLA_ERROR(error_code::value,
+                 "device_id %s cannot be converted to "
+                 "integer.",
                  ctx.device_id.c_str());
     }
   }
@@ -248,4 +251,4 @@ DLManagedTensor *to_dlpack(NdArray *array, const dtypes dtype,
 }
 
 void call_deleter(DLManagedTensor *dlp) { dlp->deleter(dlp); }
-}
+} // namespace nbla

@@ -42,11 +42,11 @@ NBLA_API void clear_cpu_memory_cache();
 NBLA_API void print_cpu_memory_cache_map();
 
 /** Get CPU array classes.
-*/
+ */
 NBLA_API vector<string> cpu_array_classes();
 
 /** Set CPU array classes
-*/
+ */
 NBLA_API void _cpu_set_array_classes(const vector<string> &a);
 
 NBLA_API void cpu_device_synchronize(const string &device);
@@ -54,5 +54,5 @@ NBLA_API void cpu_device_synchronize(const string &device);
 NBLA_API int cpu_get_device_count();
 
 NBLA_API vector<string> cpu_get_devices();
-}
+} // namespace nbla
 #endif

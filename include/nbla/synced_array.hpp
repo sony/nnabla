@@ -116,11 +116,11 @@ public:
                                  const int async_flags = AsyncFlag::NONE);
 
   /** Get the head array.
-  */
+   */
   Array *head_array();
 
   /** Get the head array as a shared pointer.
-  */
+   */
   shared_ptr<Array> head_array_sp();
 
   /** Get array's ptr.
@@ -143,7 +143,7 @@ public:
                        const int async_flags = AsyncFlag::NONE);
 
   /** Get dtype
-  */
+   */
   inline dtypes dtype() const {
     NBLA_CHECK(!head_.key.empty(), error_code::unclassified,
                "Array is not initialized.");
@@ -160,7 +160,7 @@ public:
   inline string head_array_class() { return head_.array_class; }
 
   /** Get the number of arrays
-  */
+   */
   inline Size_t get_num_arrays() const { return array_.size(); }
 
   /** Size. */
@@ -173,7 +173,7 @@ public:
   void zero();
 
   /** Fill all element with given float value.
-  */
+   */
   void fill(float value);
 
   /** Get number of modification count.
@@ -343,5 +343,5 @@ private:
   SyncedArrayCallback();
   DISABLE_COPY_AND_ASSIGN(SyncedArrayCallback);
 };
-}
+} // namespace nbla
 #endif

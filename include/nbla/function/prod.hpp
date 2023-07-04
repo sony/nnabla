@@ -59,5 +59,5 @@ protected:
                             int outer_size, int reduction_size, bool accum);
   virtual bool grad_depends_input_data_impl(int i, int j) const { return true; }
 };
-}
+} // namespace nbla
 #endif

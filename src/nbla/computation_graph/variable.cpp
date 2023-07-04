@@ -39,9 +39,9 @@
 
 namespace nbla {
 
-using std::tuple;
-using std::make_tuple;
 using std::get;
+using std::make_tuple;
+using std::tuple;
 
 /** FunctionHookWithObject Implementation **/
 FunctionHookWithObject::FunctionHookWithObject() {}
@@ -64,8 +64,8 @@ FunctionHookWithObject::FunctionHookWithObject(void *obj, callback_type cb,
 
 FunctionHookWithObject::~FunctionHookWithObject() { cleanup_callback_(obj_); }
 
-FunctionHookWithObject &FunctionHookWithObject::
-operator=(const FunctionHookWithObject &rhs) {
+FunctionHookWithObject &
+FunctionHookWithObject::operator=(const FunctionHookWithObject &rhs) {
   // check self-assignment
   if (&rhs == this)
     return *this;
@@ -1248,4 +1248,4 @@ vector<vector<pair<bool, bool>>> c_get_output_clear_called_flags() {
   return SingletonManager::get<ClearCalledFlagRecorder>()
       ->get_recorded_output_clear_flags();
 }
-}
+} // namespace nbla

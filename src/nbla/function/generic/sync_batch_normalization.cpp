@@ -209,4 +209,4 @@ void SyncBatchNormalization<T>::backward_impl_batch(
     }
   }
 }
-}
+} // namespace nbla

@@ -37,4 +37,4 @@ void CpuDlpackArray::zero() {
 
 NBLA_DEFINE_FUNC_COPY_FROM(CpuDlpackArray, cpu_array_copy, cpu);
 NBLA_DEFINE_FUNC_FILL(CpuDlpackArray, cpu_fill, cpu);
-}
+} // namespace nbla

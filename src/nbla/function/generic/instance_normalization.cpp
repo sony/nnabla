@@ -259,4 +259,4 @@ void InstanceNormalization<T>::backward_impl(const Variables &inputs,
                    {true}, {accum[gamma_idx_]});
   }
 }
-}
+} // namespace nbla

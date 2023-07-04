@@ -38,8 +38,9 @@ void PReLU<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
 
   NBLA_CHECK(inputs[1]->size() == 1 ||
                  (shape_w.size() == 1 && shape_w[0] == shape_x[base_axis]),
-             error_code::value, "The negative slope must be a 1d "
-                                "tensor or a scalar.");
+             error_code::value,
+             "The negative slope must be a 1d "
+             "tensor or a scalar.");
   Shape_t stride_x = get_c_contiguous_strides(shape_x);
   base_shape_ = shape_x[base_axis];
   base_stride_ = stride_x[base_axis];

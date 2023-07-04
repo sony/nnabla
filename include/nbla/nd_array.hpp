@@ -193,5 +193,5 @@ public:
 
 ///< Shared pointer of NdArray
 typedef NdArray::Ptr NdArrayPtr;
-}
+} // namespace nbla
 #endif

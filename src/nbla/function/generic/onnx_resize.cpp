@@ -690,4 +690,4 @@ void ONNXResize<T>::backward_impl(const Variables &inputs,
   NBLA_ERROR(error_code::not_implemented,
              "ONNXResize<T>::backward is currently not implemented.");
 }
-}
+} // namespace nbla

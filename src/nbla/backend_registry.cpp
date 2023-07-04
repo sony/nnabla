@@ -92,4 +92,4 @@ void BackendUtils::create_lms_streams(const Context ctx) {
   return get_backend_getter(ctx)()->create_lms_streams(
       std::stoi(ctx.device_id));
 }
-}
+} // namespace nbla

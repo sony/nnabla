@@ -123,7 +123,7 @@ class CgVariable : public BaseCgVariable {
       function_references_;
   size_t function_reference_count_{0}; ///< Number of function references
   bool allow_modify_data_{true};       ///< Whether the data can be in-placed.
-  bool persistent_{false};             ///<Persistency flag against clearing.
+  bool persistent_{false};             ///< Persistency flag against clearing.
   bool prohibit_clear_data_{false};
   string name_{""};
 
@@ -305,7 +305,7 @@ public:
            const bool clear_initial_grad = false);
 
   /**
-  */
+   */
   NBLA_API vector<CgFunctionPtr> function_references();
 
   /**
@@ -397,7 +397,7 @@ class SingletonManager; // Forward declaration for friend
 
 /** ClearCalledFlagRecorder is a singleton class to record and collect
  * the SyncedArray::clear_called flags during forward propagation.
-*/
+ */
 class ClearCalledFlagRecorder {
 
   bool is_activated_{false};
@@ -445,5 +445,5 @@ NBLA_API vector<vector<std::pair<bool, bool>>> c_get_input_clear_called_flags();
 
 NBLA_API vector<vector<std::pair<bool, bool>>>
 c_get_output_clear_called_flags();
-}
+} // namespace nbla
 #endif

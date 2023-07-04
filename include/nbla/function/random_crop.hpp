@@ -106,5 +106,5 @@ private:
   void random_crop(const Variables &inputs, const Variables &outputs,
                    std::mt19937 &rgen);
 };
-}
+} // namespace nbla
 #endif

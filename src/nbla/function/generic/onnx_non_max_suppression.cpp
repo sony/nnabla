@@ -89,7 +89,7 @@ static void non_max_suppression_impl(
     int center_point_box, size_t max_output_boxes, float iou_threshold,
     float score_threshold,
     vector<std::array<Size_t, 3>> &selected_indices // (num_selected_indices, 3)
-    ) {
+) {
   // This implementation is based on NmsDetection2d<T>::forward_impl_per_class.
   // Differences from NmsDetection2d:
   // - The input/output format
@@ -250,4 +250,4 @@ void ONNXNonMaxSuppression<T>::backward_impl(const Variables &inputs,
                                              const vector<bool> &accum) {
   // not supported.
 }
-}
+} // namespace nbla

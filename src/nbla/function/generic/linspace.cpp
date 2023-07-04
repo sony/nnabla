@@ -27,10 +27,9 @@ void Linspace<T>::setup_impl(const Variables &inputs,
                              const Variables &outputs) {
   NBLA_CHECK(this->num_ >= 0, error_code::value,
              "num argument must not be negative");
-  step_ =
-      this->num_ > 1
-          ? static_cast<double>(this->stop_ - this->start_) / (this->num_ - 1)
-          : 0.0;
+  step_ = this->num_ > 1 ? static_cast<double>(this->stop_ - this->start_) /
+                               (this->num_ - 1)
+                         : 0.0;
   outputs[0]->reshape(Shape_t{num_}, true);
 }
 
@@ -50,4 +49,4 @@ void Linspace<T>::backward_impl(const Variables &inputs,
                                 const vector<bool> &accum) {
   // pass
 }
-}
+} // namespace nbla

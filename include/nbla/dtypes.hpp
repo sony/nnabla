@@ -158,5 +158,5 @@ inline size_t sizeof_dtype(dtypes dtype) {
 }
 
 /*@}*/
-}
+} // namespace nbla
 #endif

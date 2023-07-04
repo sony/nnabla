@@ -89,5 +89,5 @@ protected:
     return false;
   }
 };
-}
+} // namespace nbla
 #endif

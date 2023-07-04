@@ -17,9 +17,9 @@
 
 namespace nbla {
 
+using std::cerr;
 using std::cout;
 using std::endl;
-using std::cerr;
 
 inline VirtualCachingAllocatorBase::PhysicalMemoryCache &get_device_cache_map(
     unordered_map<string, VirtualCachingAllocatorBase::PhysicalMemoryCache> &m,
@@ -370,4 +370,4 @@ vector<int>
 VirtualCachingAllocatorBase::get_used_memory_counts(const string &device_id) {
   return {memory_counter_[device_id]};
 }
-}
+} // namespace nbla

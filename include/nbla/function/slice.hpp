@@ -106,5 +106,5 @@ private:
                                          int y_offset, int dim,
                                          int &slice_index);
 };
-}
+} // namespace nbla
 #endif

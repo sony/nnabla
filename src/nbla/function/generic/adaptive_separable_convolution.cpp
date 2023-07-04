@@ -250,4 +250,4 @@ void AdaptiveSeparableConvolution<T>::backward_impl(
     }
   }
 }
-}
+} // namespace nbla

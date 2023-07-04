@@ -28,8 +28,8 @@ NBLA_REGISTER_FUNCTION_SOURCE(AveragePooling, const vector<int> &,
                               const vector<int> &, bool, const vector<int> &,
                               bool, bool);
 
-using std::min;
 using std::max;
+using std::min;
 
 namespace avg_pooling_impl {
 
@@ -203,11 +203,11 @@ inline void backward_map(T *dx, const T *dy, bool including_pad,
 }
 } // namespace avg_pooling_impl
 
-using avg_pooling_impl::v2a;
 using avg_pooling_impl::Array2D;
 using avg_pooling_impl::Array3D;
-using avg_pooling_impl::forward_map;
 using avg_pooling_impl::backward_map;
+using avg_pooling_impl::forward_map;
+using avg_pooling_impl::v2a;
 
 template <typename T>
 void AveragePooling<T>::forward_impl(const Variables &inputs,
@@ -320,4 +320,4 @@ void AveragePooling<T>::backward_impl(const Variables &inputs,
     }
   }
 }
-}
+} // namespace nbla

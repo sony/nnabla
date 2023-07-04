@@ -30,8 +30,8 @@
 using namespace nbla;
 using namespace utils;
 using namespace nnp;
-using std::vector;
 using std::string;
+using std::vector;
 
 /******************************************/
 // Example of data provider

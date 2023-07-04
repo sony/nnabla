@@ -93,4 +93,4 @@ void TopKGrad<T>::backward_impl(const Variables &inputs,
     x_grad += inner_size;
   }
 }
-}
+} // namespace nbla

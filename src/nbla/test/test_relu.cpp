@@ -64,4 +64,4 @@ TEST_F(ReLUTest, ForwardBackward) {
   relu->forward(Variables{in_.get()}, Variables{out_.get()});
   relu->backward(Variables{in_.get()}, Variables{out_.get()}, {true}, {false});
 }
-}
+} // namespace nbla

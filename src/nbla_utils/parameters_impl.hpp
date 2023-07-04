@@ -23,7 +23,7 @@
 
 namespace nbla {
 /** Utils. NNabla utilities.
-*/
+ */
 namespace utils {
 
 /** \defgroup utilities for load and save parameters.  */
@@ -65,7 +65,7 @@ bool save_parameters_pb(const ParameterVector &pv, string filename);
 /** save parameters by filename, judge file format by extension name.
  */
 bool save_parameters(const ParameterVector &pv, string filename);
-};
+}; // namespace utils
 /*@}*/
-}
+} // namespace nbla
 #endif // NBLA_UTILS_PARAMETERS_HPP_

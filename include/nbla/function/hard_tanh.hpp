@@ -45,5 +45,5 @@ Outputs:
  */
 NBLA_DEFINE_TRANSFORM_UNARY(HardTanh, x > (T)1 ? (T)1 : x < (T)-1 ? (T)-1 : x,
                             (T)-1 <= x && x <= (T)1 ? dy : (T)0, false, true);
-}
+} // namespace nbla
 #endif

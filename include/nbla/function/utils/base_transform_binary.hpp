@@ -524,5 +524,5 @@ public:                                                                        \
   NBLA_DEFINE_BINARY_OP_1(NAME, OP, GOP0, GOP1, A0);                           \
   NBLA_DEFINE_TRANSFORM_BINARY_CLASS_1(NAME, DEP_Y_0, DEP_Y_1, DEP_X_0,        \
                                        DEP_X_1, A0)
-}
+} // namespace nbla
 #endif

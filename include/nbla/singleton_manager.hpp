@@ -85,7 +85,7 @@ private:
 };
 
 /** Reusable resources for ones and zeros for any devices.
-*/
+ */
 class NBLA_API NNabla {
   std::mutex mtx_zeros_;
   std::mutex mtx_ones_;
@@ -111,6 +111,6 @@ private:
   NNabla();
   DISABLE_COPY_AND_ASSIGN(NNabla);
 };
-}
+} // namespace nbla
 
 #endif

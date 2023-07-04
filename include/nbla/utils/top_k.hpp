@@ -99,5 +99,5 @@ inline void top_k_abs(const T *x, const size_t n, const size_t k, size_t *out) {
     out[i] = heap[i].second;
   }
 }
-}
+} // namespace nbla
 #endif

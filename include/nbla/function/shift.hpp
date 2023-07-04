@@ -88,5 +88,5 @@ private:
   void shift_recursive(Variable *inp, const T *src, T *dst, int x_offset,
                        int y_offset, int dim);
 };
-}
+} // namespace nbla
 #endif

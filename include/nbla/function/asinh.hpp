@@ -39,5 +39,5 @@ Outputs:
  */
 NBLA_DEFINE_TRANSFORM_UNARY(ASinh, std::asinh(x), dy / std::sqrt(x * x + 1),
                             false, true);
-}
+} // namespace nbla
 #endif

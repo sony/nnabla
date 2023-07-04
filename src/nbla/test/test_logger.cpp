@@ -30,4 +30,4 @@ TEST(LoggerTest, Logging) {
   NBLA_LOG_ERROR("ERROR LOG {}", num++);
   NBLA_LOG_CRITICAL("CRITICAL LOG {}", num++);
 }
-}
+} // namespace nbla

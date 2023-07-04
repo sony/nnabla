@@ -39,5 +39,5 @@ Outputs:
  */
 NBLA_DEFINE_TRANSFORM_UNARY(ATanh, std::atanh(x), dy / (1 - x * x), false,
                             true);
-}
+} // namespace nbla
 #endif

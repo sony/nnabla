@@ -74,9 +74,10 @@ void NdArray::reshape(const Shape_t &shape, bool force) {
     update_shape_info();
     return;
   }
-  NBLA_CHECK(force, error_code::value, "Total dimensions not match. Set "
-                                       "force=true if you want to resize array "
-                                       "(clearing data).");
+  NBLA_CHECK(force, error_code::value,
+             "Total dimensions not match. Set "
+             "force=true if you want to resize array "
+             "(clearing data).");
   NBLA_CHECK(!array()->is_narrowed(), error_code::value,
              "Narrowed NdArray does not allow reshape to change size.");
 
@@ -151,4 +152,4 @@ NdArrayPtr NdArray::narrow(const Size_t dim, const Size_t start,
 
   return make_shared<NdArray>(narrowed_array, narrowed_shape);
 }
-}
+} // namespace nbla

@@ -22,7 +22,7 @@
 
 namespace nbla {
 /** Utils. NNabla utilities.
-*/
+ */
 namespace utils {
 
 /** \defgroup utilities for load and save parameters.  */
@@ -58,8 +58,8 @@ NBLA_API bool save_parameters_pb(ParameterDirectory &pd, char *buf,
  */
 NBLA_API bool save_parameters_h5(ParameterDirectory &pd, char *buf,
                                  unsigned int &size);
-};
+}; // namespace utils
 /*@}*/
-}
+} // namespace nbla
 
 #endif // NBLA_UTILS_PARAMETERS_HPP_

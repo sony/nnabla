@@ -43,5 +43,5 @@ Outputs:
 NBLA_DEFINE_TRANSFORM_UNARY_1(RPowScalar, std::pow((T)a0, x),
                               dy *std::pow((T)a0, x) * std::log((T)a0), false,
                               true, double);
-}
+} // namespace nbla
 #endif

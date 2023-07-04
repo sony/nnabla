@@ -113,4 +113,4 @@ void Tile<T>::backward_impl(const Variables &inputs, const Variables &outputs,
     g_x[idx[i]] += g_y[i];
   }
 }
-}
+} // namespace nbla

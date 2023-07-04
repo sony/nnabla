@@ -49,4 +49,4 @@ void Array::wait_event(const Context ctx, const int async_flags) {
 bool Array::have_event() { return event_ != nullptr; }
 
 Array::Ptr Array::getptr() { return shared_from_this(); }
-}
+} // namespace nbla

@@ -41,5 +41,5 @@ Outputs:
  */
 NBLA_DEFINE_TRANSFORM_UNARY(Tanh, std::tanh(x), dy *((T)1 - y * y), true,
                             false);
-}
+} // namespace nbla
 #endif

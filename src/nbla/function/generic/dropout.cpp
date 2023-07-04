@@ -115,4 +115,4 @@ void Dropout<T>::backward_impl(const Variables &inputs,
 
   clear_buffer();
 }
-}
+} // namespace nbla

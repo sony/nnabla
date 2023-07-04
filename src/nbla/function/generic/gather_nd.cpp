@@ -132,4 +132,4 @@ void GatherNd<T>::backward_impl(const Variables &inputs,
     }
   }
 }
-}
+} // namespace nbla

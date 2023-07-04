@@ -250,7 +250,7 @@ void load_parameters_from_proto(NNablaProtoBuf &param, ParameterVector &pv) {
   }
 }
 
-} // private functions and variables
+} // namespace
 
 // ----------------------------------------------------------------------
 // load parameters from .h5 file buffer
@@ -637,5 +637,5 @@ bool save_parameters_pb(ParameterDirectory &pd, char *buf, unsigned int &size) {
 
   return save_parameters_pb(pv, buf, size);
 }
-}
-}
+} // namespace utils
+} // namespace nbla

@@ -44,5 +44,5 @@ Outputs:
 NBLA_DEFINE_TRANSFORM_BINARY_INPLACE(Div2, x0 / x1, dy / x1,
                                      -dy *x0 / (x1 * x1), false, false, true,
                                      true, true);
-}
+} // namespace nbla
 #endif

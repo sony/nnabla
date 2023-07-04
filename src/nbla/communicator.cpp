@@ -95,13 +95,13 @@ void Communicator::check_array_class(Context ctx, VariablePtr vp) {
   }
 }
 
-string Communicator::new_group(pair<string, vector<int>> name_ranks_pair) {
-  NBLA_ERROR(error_code::not_implemented, "CPU new_group is not implemented.")
-}
+string Communicator::new_group(pair<string, vector<int>> name_ranks_pair){
+    NBLA_ERROR(error_code::not_implemented,
+               "CPU new_group is not implemented.")}
 
-unordered_map<string, vector<int>> Communicator::list_groups() {
-  NBLA_ERROR(error_code::not_implemented, "CPU list_group is not implemented.")
-}
+unordered_map<string, vector<int>> Communicator::list_groups(){
+    NBLA_ERROR(error_code::not_implemented,
+               "CPU list_group is not implemented.")}
 
 vector<int> Communicator::find_group(const string &group) {
   NBLA_ERROR(error_code::not_implemented, "CPU list_group is not implemented.")
@@ -128,20 +128,19 @@ void Communicator::all_reduce(const vector<NdArrayPtr> &ndarray_list,
 }
 
 void Communicator::all_reduce(NdArrayPtr ndarray, bool division, bool inplace,
-                              const string &group) {
-  NBLA_ERROR(error_code::not_implemented, "CPU all_reduce is not implemented.")
-}
+                              const string &group){
+    NBLA_ERROR(error_code::not_implemented,
+               "CPU all_reduce is not implemented.")}
 
 CommunicatorBackwardCallbackPtr Communicator::all_reduce_callback(
     const vector<NdArrayPtr> &ndarray_list, size_t pack_size, bool division,
-    const string &group, float scale_grad, bool keep_dtype) {
-  NBLA_ERROR(error_code::not_implemented,
-             "CPU all_reduce_callback is not implemented")
-}
-CommunicatorBackwardCallbackPtr
-Communicator::all_reduce_callback(NdArrayPtr ndarray, size_t pack_size,
-                                  bool division, const string &group,
-                                  float scale_grad, bool keep_dtype) {
+    const string &group, float scale_grad,
+    bool keep_dtype){NBLA_ERROR(error_code::not_implemented,
+                                "CPU all_reduce_callback is not "
+                                "implemented")} CommunicatorBackwardCallbackPtr
+    Communicator::all_reduce_callback(NdArrayPtr ndarray, size_t pack_size,
+                                      bool division, const string &group,
+                                      float scale_grad, bool keep_dtype) {
   return this->all_reduce_callback(vector<NdArrayPtr>{ndarray}, pack_size,
                                    division, group);
 }
@@ -188,14 +187,13 @@ void Communicator::bcast_async() {
   NBLA_ERROR(error_code::not_implemented, "CPU bcast_async is not implemented.")
 }
 
-void Communicator::allgather_async() {
-  NBLA_ERROR(error_code::not_implemented,
-             "CPU allgather_async is not implemented.")
-}
+void Communicator::allgather_async(){
+    NBLA_ERROR(error_code::not_implemented,
+               "CPU allgather_async is not implemented.")}
 
 vector<string> Communicator::allowed_array_classes() {
   NBLA_ERROR(
       error_code::not_implemented,
       "Derived class of Communicator must implement allowed_array_classes().")
 }
-}
+} // namespace nbla

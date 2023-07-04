@@ -69,5 +69,5 @@ protected:
   NBLA_DECL_CHECK_INF_OR_NAN_GRAD();
   NBLA_DECL_SCALE_GRAD();
 };
-}
+} // namespace nbla
 #endif

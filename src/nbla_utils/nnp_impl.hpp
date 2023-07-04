@@ -141,7 +141,7 @@ public:
 // DatasetImpl
 // ----------------------------------------------------------------------
 /** Implementation of Dataset
-*/
+ */
 class DatasetImpl {
 public:
   DatasetImpl(const ::Dataset &dataset) : dataset_proto_(dataset){};
@@ -172,7 +172,7 @@ protected:
 // DatasetHDF5Impl
 // ----------------------------------------------------------------------
 /** Implementation of DatasetHDF5Impl
-*/
+ */
 class DatasetHDF5Impl : public DatasetImpl {
   friend class NnpImpl;
 
@@ -233,7 +233,7 @@ public:
 // VariableBuffer
 // ----------------------------------------------------------------------
 /** Hold memory of a batch data
-*/
+ */
 class VariableBuffer {
 
 public:
@@ -314,7 +314,7 @@ private:
 // OptimizerImpl
 // ----------------------------------------------------------------------
 /** Implementation of Optimizer
-*/
+ */
 class OptimizerImpl {
   friend class NnpImpl;
 
@@ -377,7 +377,7 @@ public:
 // MonitorImpl
 // ----------------------------------------------------------------------
 /** Implementation of Monitor
-*/
+ */
 class MonitorImpl {
   friend class NnpImpl;
 
@@ -418,7 +418,7 @@ public:
 // GlobalConfig
 // ----------------------------------------------------------------------
 /** Implementation of GlobalConfig
-*/
+ */
 class GlobalConfigImpl {
   friend class NnpImpl;
 
@@ -461,7 +461,7 @@ public:
 // ----------------------------------------------------------------------
 
 /** Implementation of Nnp.
-*/
+ */
 class NnpImpl {
   friend class Nnp;
   const nbla::Context kCpuCtx{{"cpu:float"}, "CpuCachedArray", "0"};
@@ -506,8 +506,8 @@ public:
   shared_ptr<Monitor> get_monitor(const string &name);
   shared_ptr<TrainingConfig> get_training_config();
 };
-}
-}
-}
+} // namespace nnp
+} // namespace utils
+} // namespace nbla
 
 #endif // __NBLA_UTILS_NNP_IMPL_HPP__

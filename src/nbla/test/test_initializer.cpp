@@ -28,11 +28,11 @@
 #include <nbla/exception.hpp>
 #include <nbla/initializer.hpp>
 
-using std::shared_ptr;
 using std::make_shared;
-using std::vector;
 using std::pair;
+using std::shared_ptr;
 using std::tuple;
+using std::vector;
 using namespace nbla;
 
 class InitializerTest : public ::testing::Test {

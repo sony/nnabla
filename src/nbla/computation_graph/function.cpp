@@ -135,4 +135,4 @@ pair<vector<CgVariablePtr>, vector<Variable *>> CgFunction::function_outputs() {
       [](CgVariablePtr v) -> Variable * { return v->variable().get(); });
   return {outputs, voutputs};
 }
-}
+} // namespace nbla

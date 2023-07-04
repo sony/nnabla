@@ -64,4 +64,4 @@ NBLA_DEF_CHECK_INF_GRAD(RMSprop, check_inf_grad_cpu);
 NBLA_DEF_CHECK_NAN_GRAD(RMSprop, check_nan_grad_cpu);
 NBLA_DEF_CHECK_INF_OR_NAN_GRAD(RMSprop, check_inf_or_nan_grad_cpu);
 NBLA_DEF_SCALE_GRAD(RMSprop, scale_grad_impl_cpu);
-}
+} // namespace nbla

@@ -88,4 +88,4 @@ TEST_F(VariableManipTest, DataDiff) {
     }
   }
 }
-}
+} // namespace nbla

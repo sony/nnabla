@@ -45,5 +45,5 @@ Outputs:
 NBLA_DEFINE_TRANSFORM_UNARY(Erf, std::erf(x),
                             2.0 / std::sqrt(M_PI) * std::exp(-(x * x)) * dy,
                             false, true);
-}
+} // namespace nbla
 #endif

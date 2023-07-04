@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <nbla/array.hpp>
-#include <nbla/array.hpp>
 #include <nbla/common.hpp>
 #include <nbla/function/prune.hpp>
 #include <nbla/variable.hpp>
@@ -87,4 +86,4 @@ void Prune<T>::backward_impl(const Variables &inputs, const Variables &outputs,
       dx[s] = dy[s];
   }
 }
-}
+} // namespace nbla

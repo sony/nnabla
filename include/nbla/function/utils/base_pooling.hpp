@@ -13,7 +13,7 @@
 // limitations under the License.
 
 /** Pooling
-*/
+ */
 #ifndef __NBLA_FUNCTION_POOLING_HPP__
 #define __NBLA_FUNCTION_POOLING_HPP__
 
@@ -116,5 +116,5 @@ protected:
     outputs[0]->reshape(outshape, true);
   }
 };
-}
+} // namespace nbla
 #endif
