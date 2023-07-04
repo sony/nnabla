@@ -25,12 +25,8 @@ ARG PYTHON_VERSION_MINOR
 ENV PYVERNAME=${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}
 
 RUN eval ${APT_OPTS} && apt-get update \
-    && apt-get install -y software-properties-common \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* \
-    && add-apt-repository -y ppa:deadsnakes/ppa \
-    && apt-get update \
     && apt-get install -y --no-install-recommends \
+       software-properties-common \
        bzip2 \
        ca-certificates \
        curl \
