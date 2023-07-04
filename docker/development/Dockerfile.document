@@ -31,7 +31,7 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN eval ${APT_OPTS} \
     && apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
-    clang-format-14 \
+    clang-format \
     cmake \
     curl \
     g++ \

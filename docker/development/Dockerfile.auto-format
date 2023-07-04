@@ -27,7 +27,7 @@ RUN eval ${APT_OPTS} \
     && apt-get update && apt-get install -y --no-install-recommends \
     enchant \
     libenchant-dev \
-    clang-format-3.9 \
+    clang-format \
     make \
     git \
     python3-pip \

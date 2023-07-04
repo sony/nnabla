@@ -39,7 +39,7 @@ RUN eval ${APT_OPTS} && apt-get update \
        bzip2 \
        ca-certificates \
        ccache \
-       clang-format-5.0 \
+       clang-format \
        cmake \
        curl \
        g++ \
