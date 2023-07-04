@@ -41,7 +41,7 @@ DOCKER_IMAGE_NNABLA_TEST ?= $(DOCKER_IMAGE_NAME_BASE)-nnabla-test$(ARCH_SUFFIX):
 .PHONY: docker_image_auto_format
 docker_image_auto_format:
 	if ! docker image inspect $(DOCKER_IMAGE_AUTO_FORMAT) >/dev/null 2>/dev/null; then \
-		docker pull ubuntu:18.04 && \
+		docker pull ubuntu:20.04 && \
 		(cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_AUTO_FORMAT) -f docker/development/Dockerfile.auto-format .) \
 	fi
 
@@ -83,7 +83,7 @@ DOCKER_IMAGE_BUILD_ANDROID ?= $(DOCKER_IMAGE_NAME_BASE)-build-android-$(ANDROID_
 
 .PHONY: docker_image_build_android
 docker_image_build_android:
-	docker pull ubuntu:18.04 && \
+	docker pull ubuntu:20.04 && \
 	(cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_BUILD_ANDROID) \
 		--build-arg ANDROID_NDKNAME=$(ANDROID_NDKNAME) \
 		--build-arg ANDROID_PLATFORM=$(ANDROID_PLATFORM) \
@@ -167,7 +167,7 @@ bwd-nnabla-shell: docker_image_build
 # Docker image with current nnabla
 .PHONY: docker_image_nnabla
 docker_image_nnabla:
-	docker pull ubuntu:18.04
+	docker pull ubuntu:20.04
 	cd $(NNABLA_DIRECTORY) \
 	&& docker build $(DOCKER_BUILD_ARGS) \
 		--build-arg WHL_PATH=$$(echo build_wheel_py$(PYTHON_VERSION_MAJOR)$(PYTHON_VERSION_MINOR)/dist) \

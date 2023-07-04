@@ -15,7 +15,7 @@
 
 # for nnabla>=1.5.0
 
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 
 ARG PIP_INS_OPTS
 ARG PYTHONWARNINGS
