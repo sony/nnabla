@@ -1,5 +1,5 @@
 nnabla==1.37.0.dev1
-Sphinx
+Sphinx<7
 sphinx-rtd-theme
 mock
 pillow<10.0
