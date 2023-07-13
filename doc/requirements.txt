@@ -1,4 +1,4 @@
-nnabla==1.36.0
+nnabla==1.37.0.dev1
 Sphinx<7
 sphinx-rtd-theme
 mock
@@ -7,7 +7,7 @@ alabaster
 commonmark
 recommonmark
 readthedocs-sphinx-ext
-jinja2
+jinja2>3.1.0
 sphinxcontrib-actdiag
 sphinxcontrib-blockdiag
 sphinxcontrib-nwdiag
