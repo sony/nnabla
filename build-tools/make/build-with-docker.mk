@@ -29,11 +29,20 @@ include $(NNABLA_DIRECTORY)/build-tools/make/options.mk
 
 DOCKER_IMAGE_NAME_BASE ?= nnabla-py$(PYTHON_VERSION_MAJOR)$(PYTHON_VERSION_MINOR)
 
-DOCKER_IMAGE_AUTO_FORMAT ?= $(DOCKER_IMAGE_NAME_BASE)-auto-format$(ARCH_SUFFIX):$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.auto-format |cut -d \  -f 1)
-DOCKER_IMAGE_DOC ?= $(DOCKER_IMAGE_NAME_BASE)-doc$(ARCH_SUFFIX):$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.document |cut -d \  -f 1)
-DOCKER_IMAGE_BUILD ?= $(DOCKER_IMAGE_NAME_BASE)-build$(ARCH_SUFFIX):$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.build$(ARCH_SUFFIX) |cut -d \  -f 1)
-DOCKER_IMAGE_NNABLA ?= $(DOCKER_IMAGE_NAME_BASE)-nnabla$(ARCH_SUFFIX):$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.build |cut -d \  -f 1)
-DOCKER_IMAGE_NNABLA_TEST ?= $(DOCKER_IMAGE_NAME_BASE)-nnabla-test$(ARCH_SUFFIX):$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.nnabla-test$(ARCH_SUFFIX) |cut -d \  -f 1)
+SETUP_REQUIREMENT_PATH ?= $(NNABLA_DIRECTORY)/python/setup_requirements.txt
+REQUIREMENT_PATH ?= $(NNABLA_DIRECTORY)/python/requirements.txt
+TEST_REQUIREMENT_PATH ?= $(NNABLA_DIRECTORY)/python/test_requirements.txt
+DOC_REQUIREMENT_PATH ?= $(NNABLA_DIRECTORY)/doc/requirements.txt
+DOCKER_IMAGE_DOC_ID ?= $(shell $(NNABLA_DIRECTORY)/build-tools/make/image_id_checksum.sh $(NNABLA_DIRECTORY)/docker/development/Dockerfile.document $(SETUP_REQUIREMENT_PATH) $(REQUIREMENT_PATH) $(DOC_REQUIREMENT_PATH))
+DOCKER_IMAGE_BUILD_ID ?= $(shell $(NNABLA_DIRECTORY)/build-tools/make/image_id_checksum.sh $(NNABLA_DIRECTORY)/docker/development/Dockerfile.build$(ARCH_SUFFIX) $(SETUP_REQUIREMENT_PATH) $(REQUIREMENT_PATH) $(TEST_REQUIREMENT_PATH))
+DOCKER_IMAGE_NNABLA_ID ?= $(shell $(NNABLA_DIRECTORY)/build-tools/make/image_id_checksum.sh $(NNABLA_DIRECTORY)/docker/development/Dockerfile.build $(SETUP_REQUIREMENT_PATH) $(REQUIREMENT_PATH) $(TEST_REQUIREMENT_PATH))
+DOCKER_IMAGE_NNABLA_TEST_ID ?= $(shell $(NNABLA_DIRECTORY)/build-tools/make/image_id_checksum.sh $(NNABLA_DIRECTORY)/docker/development/Dockerfile.nnabla-test$(ARCH_SUFFIX) $(SETUP_REQUIREMENT_PATH) $(REQUIREMENT_PATH) $(TEST_REQUIREMENT_PATH))
+
+DOCKER_IMAGE_AUTO_FORMAT ?= $(DOCKER_IMAGE_NAME_BASE)-auto-format$(ARCH_SUFFIX):$(shell $(NNABLA_DIRECTORY)/build-tools/make/image_id_checksum.sh $(NNABLA_DIRECTORY)/docker/development/Dockerfile.auto-format)
+DOCKER_IMAGE_DOC ?= $(DOCKER_IMAGE_NAME_BASE)-doc$(ARCH_SUFFIX):$(DOCKER_IMAGE_DOC_ID)
+DOCKER_IMAGE_BUILD ?= $(DOCKER_IMAGE_NAME_BASE)-build$(ARCH_SUFFIX):$(DOCKER_IMAGE_BUILD_ID)
+DOCKER_IMAGE_NNABLA ?= $(DOCKER_IMAGE_NAME_BASE)-nnabla$(ARCH_SUFFIX):$(DOCKER_IMAGE_NNABLA_ID)
+DOCKER_IMAGE_NNABLA_TEST ?= $(DOCKER_IMAGE_NAME_BASE)-nnabla-test$(ARCH_SUFFIX):$(DOCKER_IMAGE_NNABLA_TEST_ID)
 
 ########################################################################################################################
 # Docker images
