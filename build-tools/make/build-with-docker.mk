@@ -29,51 +29,30 @@ include $(NNABLA_DIRECTORY)/build-tools/make/options.mk
 
 DOCKER_IMAGE_NAME_BASE ?= nnabla-py$(PYTHON_VERSION_MAJOR)$(PYTHON_VERSION_MINOR)
 
-SETUP_REQUIREMENT_PATH ?= $(NNABLA_DIRECTORY)/python/setup_requirements.txt
-REQUIREMENT_PATH ?= $(NNABLA_DIRECTORY)/python/requirements.txt
-TEST_REQUIREMENT_PATH ?= $(NNABLA_DIRECTORY)/python/test_requirements.txt
-DOC_REQUIREMENT_PATH ?= $(NNABLA_DIRECTORY)/doc/requirements.txt
-DOCKER_IMAGE_DOC_ID ?= $(shell $(NNABLA_DIRECTORY)/build-tools/make/image_id_checksum.sh $(NNABLA_DIRECTORY)/docker/development/Dockerfile.document $(SETUP_REQUIREMENT_PATH) $(REQUIREMENT_PATH) $(DOC_REQUIREMENT_PATH))
-DOCKER_IMAGE_BUILD_ID ?= $(shell $(NNABLA_DIRECTORY)/build-tools/make/image_id_checksum.sh $(NNABLA_DIRECTORY)/docker/development/Dockerfile.build$(ARCH_SUFFIX) $(SETUP_REQUIREMENT_PATH) $(REQUIREMENT_PATH) $(TEST_REQUIREMENT_PATH))
-DOCKER_IMAGE_NNABLA_ID ?= $(shell $(NNABLA_DIRECTORY)/build-tools/make/image_id_checksum.sh $(NNABLA_DIRECTORY)/docker/development/Dockerfile.build $(SETUP_REQUIREMENT_PATH) $(REQUIREMENT_PATH) $(TEST_REQUIREMENT_PATH))
-DOCKER_IMAGE_NNABLA_TEST_ID ?= $(shell $(NNABLA_DIRECTORY)/build-tools/make/image_id_checksum.sh $(NNABLA_DIRECTORY)/docker/development/Dockerfile.nnabla-test$(ARCH_SUFFIX) $(SETUP_REQUIREMENT_PATH) $(REQUIREMENT_PATH) $(TEST_REQUIREMENT_PATH))
-
-DOCKER_IMAGE_AUTO_FORMAT ?= $(DOCKER_IMAGE_NAME_BASE)-auto-format$(ARCH_SUFFIX):$(shell $(NNABLA_DIRECTORY)/build-tools/make/image_id_checksum.sh $(NNABLA_DIRECTORY)/docker/development/Dockerfile.auto-format)
-DOCKER_IMAGE_DOC ?= $(DOCKER_IMAGE_NAME_BASE)-doc$(ARCH_SUFFIX):$(DOCKER_IMAGE_DOC_ID)
-DOCKER_IMAGE_BUILD ?= $(DOCKER_IMAGE_NAME_BASE)-build$(ARCH_SUFFIX):$(DOCKER_IMAGE_BUILD_ID)
-DOCKER_IMAGE_NNABLA ?= $(DOCKER_IMAGE_NAME_BASE)-nnabla$(ARCH_SUFFIX):$(DOCKER_IMAGE_NNABLA_ID)
-DOCKER_IMAGE_NNABLA_TEST ?= $(DOCKER_IMAGE_NAME_BASE)-nnabla-test$(ARCH_SUFFIX):$(DOCKER_IMAGE_NNABLA_TEST_ID)
+DOCKER_IMAGE_AUTO_FORMAT ?= $(DOCKER_IMAGE_NAME_BASE)-auto-format$(ARCH_SUFFIX):$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.auto-format |cut -d \  -f 1)
+DOCKER_IMAGE_DOC ?= $(DOCKER_IMAGE_NAME_BASE)-doc$(ARCH_SUFFIX):$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.document |cut -d \  -f 1)
+DOCKER_IMAGE_BUILD ?= $(DOCKER_IMAGE_NAME_BASE)-build$(ARCH_SUFFIX):$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.build$(ARCH_SUFFIX) |cut -d \  -f 1)
+DOCKER_IMAGE_NNABLA ?= $(DOCKER_IMAGE_NAME_BASE)-nnabla$(ARCH_SUFFIX):$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.build |cut -d \  -f 1)
+DOCKER_IMAGE_NNABLA_TEST ?= $(DOCKER_IMAGE_NAME_BASE)-nnabla-test$(ARCH_SUFFIX):$(shell md5sum $(NNABLA_DIRECTORY)/docker/development/Dockerfile.nnabla-test$(ARCH_SUFFIX) |cut -d \  -f 1)
 
 ########################################################################################################################
 # Docker images
 
 .PHONY: docker_image_auto_format
 docker_image_auto_format:
-	if ! docker image inspect $(DOCKER_IMAGE_AUTO_FORMAT) >/dev/null 2>/dev/null; then \
-		docker pull ubuntu:20.04 && \
-		(cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_AUTO_FORMAT) -f docker/development/Dockerfile.auto-format .) \
-	fi
+	cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_AUTO_FORMAT) -f docker/development/Dockerfile.auto-format .
 
 .PHONY: docker_image_doc
 docker_image_doc:
-	if ! docker image inspect $(DOCKER_IMAGE_DOC) >/dev/null 2>/dev/null; then \
-		docker pull $(shell cat $(NNABLA_DIRECTORY)/docker/development/Dockerfile.document |grep ^FROM |awk '{print $$2}') && \
-		(cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_DOC) -f docker/development/Dockerfile.document .) \
-	fi
+	cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_DOC) -f docker/development/Dockerfile.document .
 
 .PHONY: docker_image_build
 docker_image_build:
-	if ! docker image inspect $(DOCKER_IMAGE_BUILD) >/dev/null 2>/dev/null; then \
-		docker pull $(shell cat $(NNABLA_DIRECTORY)/docker/development/Dockerfile.build$(ARCH_SUFFIX) |grep ^FROM |awk '{print $$2}') && \
-		(cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_BUILD) -f docker/development/Dockerfile.build$(ARCH_SUFFIX) .) \
-	fi
+	cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_BUILD) -f docker/development/Dockerfile.build$(ARCH_SUFFIX) .
 
 .PHONY: docker_image_nnabla_test
 docker_image_nnabla_test:
-	if ! docker image inspect $(DOCKER_IMAGE_NNABLA_TEST) >/dev/null 2>/dev/null; then \
-		docker pull $(shell cat $(NNABLA_DIRECTORY)/docker/development/Dockerfile.nnabla-test$(ARCH_SUFFIX) |grep ^FROM |awk '{print $$2}') && \
-		(cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_NNABLA_TEST) -f docker/development/Dockerfile.nnabla-test$(ARCH_SUFFIX) .) \
-	fi
+	cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_NNABLA_TEST) -f docker/development/Dockerfile.nnabla-test$(ARCH_SUFFIX) .
 
 # for Android
 # Compiler for diffrent ARCHITECTURE and ABI:
