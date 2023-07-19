@@ -110,4 +110,4 @@ void BatchDet<T>::backward_impl(const Variables &inputs,
     f_add->forward(Variables{&gx, &mul2_out}, Variables{&gx});
   }
 }
-}
+} // namespace nbla

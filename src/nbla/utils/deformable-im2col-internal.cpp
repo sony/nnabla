@@ -235,9 +235,9 @@ void modulated_deformable_col2im_cpu_kernel(
     const int deformable_group_index = c / channel_per_deformable_group;
 
     // Set offset pointer to base coordinate based on n
-    const T *data_offset_ptr =
-        data_offset +
-        deformable_group_index * 2 * kernel_h * kernel_w * height * width;
+    const T *data_offset_ptr = data_offset + deformable_group_index * 2 *
+                                                 kernel_h * kernel_w * height *
+                                                 width;
     // Adjust offsets pointer to correct value
     const int data_offset_h_ptr =
         ((2 * (i * kernel_w + j)) * height + h_in) * width + w_in;
@@ -258,9 +258,8 @@ void modulated_deformable_col2im_cpu_kernel(
 
     if (MODULATED) {
       // Same as offset
-      const T *data_mask_ptr =
-          data_mask +
-          deformable_group_index * kernel_h * kernel_w * height * width;
+      const T *data_mask_ptr = data_mask + deformable_group_index * kernel_h *
+                                               kernel_w * height * width;
       const int data_mask_hw_ptr =
           ((i * kernel_w + j) * height + h_in) * width + w_in;
       const T mask = data_mask_ptr[data_mask_hw_ptr];
@@ -304,20 +303,17 @@ void modulated_deformable_col2im_coord_cpu_kernel(
     const int deformable_group_index = c / (2 * kernel_h * kernel_w);
     const int col_step = kernel_h * kernel_w;
     int cnt = 0;
-    const T *data_col_ptr = data_col +
-                            deformable_group_index *
-                                channel_per_deformable_group * width_col *
-                                height_col;
-    const T *data_im_ptr = data_im +
-                           deformable_group_index *
-                               channel_per_deformable_group / kernel_h /
-                               kernel_w * height * width;
-    const T *data_offset_ptr =
-        data_offset +
-        deformable_group_index * 2 * kernel_h * kernel_w * height * width;
-    T *grad_offset_ptr =
-        grad_offset +
-        deformable_group_index * 2 * kernel_h * kernel_w * width * height;
+    const T *data_col_ptr = data_col + deformable_group_index *
+                                           channel_per_deformable_group *
+                                           width_col * height_col;
+    const T *data_im_ptr = data_im + deformable_group_index *
+                                         channel_per_deformable_group /
+                                         kernel_h / kernel_w * height * width;
+    const T *data_offset_ptr = data_offset + deformable_group_index * 2 *
+                                                 kernel_h * kernel_w * height *
+                                                 width;
+    T *grad_offset_ptr = grad_offset + deformable_group_index * 2 * kernel_h *
+                                           kernel_w * width * height;
     const T *data_mask_ptr = data_mask;
     T *grad_mask_ptr = grad_mask;
     if (MODULATED) {
@@ -465,4 +461,4 @@ NBLA_SPEC_MODULATED_COL2IM_CPU(float, false);
 NBLA_SPEC_MODULATED_COL2IM_CPU(Half, false);
 NBLA_SPEC_MODULATED_COL2IM_COORD_CPU(float, false);
 NBLA_SPEC_MODULATED_COL2IM_COORD_CPU(Half, false);
-}
+} // namespace nbla

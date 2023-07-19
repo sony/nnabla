@@ -144,4 +144,4 @@ public:
 #endif
   }
 };
-}
+} // namespace nbla

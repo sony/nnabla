@@ -43,5 +43,5 @@ Outputs:
  */
 NBLA_DEFINE_TRANSFORM_UNARY(ReLU6, std::min(std::max(x, (T)0), (T)6),
                             (T)0 < x && x < (T)6 ? dy : (T)0, false, true);
-}
+} // namespace nbla
 #endif

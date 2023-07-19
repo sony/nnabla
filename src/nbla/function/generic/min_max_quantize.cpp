@@ -64,8 +64,9 @@ void MinMaxQuantize<T>::setup_impl(const Variables &inputs,
   auto shapes = {ql_min->shape(), ql_max->shape(), qr_min->shape(),
                  qr_max->shape()};
   NBLA_CHECK(std::equal(shapes.begin(), shapes.end() - 1, shapes.begin() + 1),
-             error_code::value, "All shapes among ql_min, ql_max, qr_min, and "
-                                "qr_max must be same.");
+             error_code::value,
+             "All shapes among ql_min, ql_max, qr_min, and "
+             "qr_max must be same.");
   // non-broadcast dimension check
   vector<int> none_axes;
   for (int i = 0; i < ql_min->ndim(); i++) {
@@ -76,9 +77,10 @@ void MinMaxQuantize<T>::setup_impl(const Variables &inputs,
                          [x, ql_min](int a) {
                            return x->shape()[a] == ql_min->shape()[a];
                          }),
-             error_code::value, "x.shape and ql_min.shape must be same except "
-                                "for i-th dimension where ql_min.shape[i] == "
-                                "1.");
+             error_code::value,
+             "x.shape and ql_min.shape must be same except "
+             "for i-th dimension where ql_min.shape[i] == "
+             "1.");
 
   // Copy and cast reduction axes for Min and Max
   vector<int> axes;
@@ -386,4 +388,4 @@ void MinMaxQuantize<T>::nudge_qr_min_max(Variable *qr_min, Variable *qr_max,
         (ql_max_data[i] - zero_point_nudged) * scale_data[i];
   }
 }
-}
+} // namespace nbla

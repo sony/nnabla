@@ -188,4 +188,4 @@ void WarpByFlow<T>::backward_impl(const Variables &inputs,
     }
   }
 }
-}
+} // namespace nbla

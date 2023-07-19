@@ -42,5 +42,5 @@ void modulated_deformable_col2im_coord_cpu(
     const vector<int> &shape, const vector<int> &k, const vector<int> &p,
     const vector<int> &s, const vector<int> &d, const int deformable_group,
     T *grad_offset, T *grad_mask);
-}
+} // namespace nbla
 #endif

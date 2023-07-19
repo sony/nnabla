@@ -27,8 +27,8 @@
 
 namespace nbla {
 
-using std::tuple;
 using std::get;
+using std::tuple;
 
 /** \defgroup NNablaCoreGrp Core components of NNabla */
 /*@{*/
@@ -149,7 +149,7 @@ public:
   void recompute(const Variables &inputs, const Variables &outputs);
 
   /** Activate or deactivate inputs.
-  */
+   */
   void set_active_input_mask(const vector<bool> &mask);
 
   /* A flag to indicate if an input shall be considerd as active by the graph
@@ -158,7 +158,7 @@ public:
   bool is_active_input(int i) const;
 
   /** Get Context used in this function.
-  */
+   */
   Context context() const;
 
   /** Get input dtypes.
@@ -190,11 +190,11 @@ public:
   virtual int min_outputs() = 0;
 
   /** Get function name in string
-  */
+   */
   virtual string name() = 0;
 
   /** Get array classes that are allowed to be specified by Context
-  */
+   */
   virtual vector<string> allowed_array_classes() = 0;
 
   /** Dependency flag for checking if in-grad depends on out-data.
@@ -334,7 +334,7 @@ public:
   virtual bool need_setup_recompute(int o) const { return false; }
 
   /** Copy another instance of Function with the same context.
-  */
+   */
   virtual shared_ptr<Function> copy() const = 0;
 
   /** Check whether this was already used, and turn it used.
@@ -482,5 +482,5 @@ typedef Function::Ptr FunctionPtr;
 /** \defgroup FunctionImplGrp Function list */
 /*@{*/
 /*@}*/
-}
+} // namespace nbla
 #endif

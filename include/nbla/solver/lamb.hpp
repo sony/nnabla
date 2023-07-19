@@ -23,7 +23,7 @@ NBLA_REGISTER_SOLVER_HEADER(Lamb, float /* eta */, float /* beta1 */,
                             float /* beta2 */, float /* gamma_l */,
                             float /* gamma_u */, float /* eps */,
                             bool /* bias_correction */
-                            );
+);
 
 /** LAMB.
 
@@ -96,5 +96,5 @@ protected:
   NBLA_DECL_CHECK_INF_OR_NAN_GRAD();
   NBLA_DECL_SCALE_GRAD();
 };
-}
+} // namespace nbla
 #endif

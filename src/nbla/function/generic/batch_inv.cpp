@@ -101,4 +101,4 @@ void BatchInv<T>::backward_impl(const Variables &inputs,
     f_add->forward(Variables{&gx, &matmul2_out}, Variables{&gx});
   }
 }
-}
+} // namespace nbla

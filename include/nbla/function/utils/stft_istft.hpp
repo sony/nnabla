@@ -45,6 +45,6 @@ void create_window(Variable *window, const string &window_type,
     }
   }
 }
-}
+} // namespace nbla
 
 #endif

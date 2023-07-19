@@ -28,8 +28,8 @@
 #include <nbla/exception.hpp>
 #include <nbla/parametric_functions.hpp>
 
-using std::shared_ptr;
 using std::make_shared;
+using std::shared_ptr;
 using std::tuple;
 using std::vector;
 

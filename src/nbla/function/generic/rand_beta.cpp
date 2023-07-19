@@ -14,7 +14,7 @@
 // limitations under the License.
 
 /** RandBeta
-*/
+ */
 #include <nbla/array.hpp>
 #include <nbla/common.hpp>
 #include <nbla/function/rand_beta.hpp>

@@ -259,5 +259,5 @@ Note : If DEP_Y is true, the gradient computation depends on output data.
   NBLA_REGISTER_FUNCTION_HEADER(NAME, A0);                                     \
   NBLA_DEFINE_UNARY_OP_1_NO_GRAD(NAME, OP, A0);                                \
   NBLA_DEFINE_TRANSFORM_UNARY_CLASS_1(NAME, false, false, A0)
-}
+} // namespace nbla
 #endif

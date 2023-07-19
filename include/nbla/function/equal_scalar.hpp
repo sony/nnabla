@@ -37,5 +37,5 @@ Outputs:
 \ingroup FunctionImplGrp
  */
 NBLA_DEFINE_TRANSFORM_UNARY_1_NO_GRAD(EqualScalar, x == (T)a0, double);
-}
+} // namespace nbla
 #endif

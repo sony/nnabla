@@ -89,6 +89,6 @@ private:
   friend SingletonManager;
   DISABLE_COPY_AND_ASSIGN(BackendBase);
 };
-}
+} // namespace nbla
 
 #endif

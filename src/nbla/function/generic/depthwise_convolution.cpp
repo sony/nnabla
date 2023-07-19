@@ -46,7 +46,7 @@ inline long int multiply_dimensions(const Shape_t &s) {
   return std::accumulate(s.begin(), s.end(), 1, std::multiplies<long int>());
 }
 
-} // namespace nbla::depthwise_convolution
+} // namespace depthwise_convolution
 
 using namespace depthwise_convolution;
 

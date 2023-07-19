@@ -21,7 +21,7 @@
 
 namespace nbla {
 /** Utils. NNabla utilities.
-*/
+ */
 namespace utils {
 
 /** \defgroup NNablaUtilsNnpGrp Utilities for NNabla format files.  */
@@ -230,15 +230,15 @@ class Optimizer {
 
 public:
   /** Optimizer name.
-  */
+   */
   NBLA_API string name() const;
 
   /** Network name.
-  */
+   */
   NBLA_API string network_name() const;
 
   /** Update interval.
-  */
+   */
   NBLA_API const int update_interval() const;
 
   /** Data variable container.
@@ -282,7 +282,7 @@ public:
   };
 
   /** Get the reference (shared_ptr) of Network object held in this.
-  */
+   */
   NBLA_API shared_ptr<Network> get_network();
 
   /** Execute update operations including forward, backward and update.
@@ -302,11 +302,11 @@ class Monitor {
 
 public:
   /** Monitor name.
-  */
+   */
   NBLA_API string name() const;
 
   /** Network name.
-  */
+   */
   NBLA_API string network_name() const;
 
   /** Data variable container.
@@ -332,7 +332,7 @@ public:
   };
 
   /** Get the reference (shared_ptr) of Network object held in this.
-  */
+   */
   shared_ptr<Network> get_network();
 
   /** Execute monitor operations including forward process.
@@ -351,15 +351,15 @@ class TrainingConfig {
 
 public:
   /** Max epoch
-  */
+   */
   NBLA_API const long long int max_epoch() const;
 
   /** Iteration per epoch
-  */
+   */
   NBLA_API const long long int iter_per_epoch() const;
 
   /** Save best
-  */
+   */
   NBLA_API const bool save_best() const;
 };
 
@@ -496,9 +496,9 @@ public:
   */
   NBLA_API bool save_parameters(const string &filename);
 };
-}
+} // namespace nnp
 /*@}*/
-}
-}
+} // namespace utils
+} // namespace nbla
 
 #endif // NBLA_UTILS_NNP_HPP_

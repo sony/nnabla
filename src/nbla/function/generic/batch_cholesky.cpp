@@ -148,4 +148,4 @@ template <typename T> void BatchCholesky<T>::phi(Variable &var) {
     }
   }
 }
-}
+} // namespace nbla

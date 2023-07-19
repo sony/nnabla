@@ -14,7 +14,7 @@
 // limitations under the License.
 
 /** AveragePooling
-*/
+ */
 #ifndef __NBLA_FUNCTION_AVERAGEPOOLING_HPP__
 #define __NBLA_FUNCTION_AVERAGEPOOLING_HPP__
 
@@ -74,5 +74,5 @@ protected:
     return false;
   }
 };
-}
+} // namespace nbla
 #endif

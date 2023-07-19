@@ -86,5 +86,5 @@ private:
   void flip_recursive(Variable *inp, const T *x, T *y, const vector<bool> &flip,
                       bool add, int x_offset, int y_offset, int dim);
 };
-}
+} // namespace nbla
 #endif

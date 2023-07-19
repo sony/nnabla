@@ -38,7 +38,7 @@ Auto formatting  is an inbuilt command to automatically format Python code to co
 It is highly recommended to format your changed code before opening pull requests, which will save your and the reviewers' time.
 
 To apply auto formatting, move to your branch, choose one of the below options of applying auto formatting.
- 
+
 ### Auto Formatting Using Dockers
 
 Run following command to apply auto formatting for code.
@@ -60,15 +60,15 @@ make bwd-nnabla-ext-cuda-auto-format
 
 Please install following packages.
 1. Python3 and packages [refer here](https://nnabla.readthedocs.io/en/latest/python/install_on_linux.html#prerequisites)
-2. clang-format-3.8
+2. clang-format-12
 3. autopep8 package
 
-For Ubuntu 16.04 platform:
+For Ubuntu 20.04 platform:
 
 To install clang-format use following command,
 ```shell
 sudo apt-get update
-sudo apt-get install clang-format-3.8
+sudo apt-get install clang-format
 ```
 To install autopep8 use following command,
 ```shell

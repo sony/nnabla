@@ -26,5 +26,5 @@ void weight_decay_cpu(const Context &ctx, const shared_ptr<Variable> param,
   std::transform(data, data + size, grad, grad,
                  [decay_rate](T x, T g) { return g + decay_rate * x; });
 }
-}
+} // namespace nbla
 #endif

@@ -140,4 +140,4 @@ TEST(CpuCachedArrayTest, CacheTest) {
   ASSERT_EQ(7, SingletonManager::get<Cpu>()->memcache().count(""));
 }
 #endif
-}
+} // namespace nbla

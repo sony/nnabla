@@ -36,4 +36,4 @@ void RandomManager::set_seed(unsigned int seed) {
 int RandomManager::get_count() const { return count_; }
 
 NBLA_INSTANTIATE_SINGLETON(NBLA_API, RandomManager);
-}
+} // namespace nbla

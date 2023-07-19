@@ -41,6 +41,6 @@ NBLA_API void backward(FunctionPtr f, const Variables &inputs,
                        const Variables &outputs,
                        const vector<bool> &propagate_down,
                        const vector<bool> &accum, bool with_setup = false);
-}
+} // namespace nbla
 
 #endif

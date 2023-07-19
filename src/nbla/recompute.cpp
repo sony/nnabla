@@ -37,4 +37,4 @@ void c_set_global_recompute(const bool recompute) {
 }
 
 bool c_get_global_recompute() { return get_global_recompute(); }
-}
+} // namespace nbla

@@ -53,5 +53,5 @@ private:
   RandomManager();
   DISABLE_COPY_AND_ASSIGN(RandomManager);
 };
-}
+} // namespace nbla
 #endif

@@ -88,6 +88,6 @@ private:
   Cpu();
   DISABLE_COPY_AND_ASSIGN(Cpu);
 };
-}
+} // namespace nbla
 
 #endif

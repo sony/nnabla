@@ -15,7 +15,7 @@
 
 # for nnabla>=1.5.0
 
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 
 ARG PIP_INS_OPTS
 ARG PYTHONWARNINGS
@@ -32,17 +32,13 @@ ARG PYTHON_VERSION_MINOR
 ENV PYVERNAME=${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}
 
 RUN eval ${APT_OPTS} && apt-get update \
-    && apt-get install -y software-properties-common \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* \
-    && add-apt-repository -y ppa:deadsnakes/ppa \
-    && apt-get update \
     && apt-get install -y --no-install-recommends \
+       software-properties-common \
        build-essential \
        bzip2 \
        ca-certificates \
        ccache \
-       clang-format-5.0 \
+       clang-format \
        cmake \
        curl \
        g++ \

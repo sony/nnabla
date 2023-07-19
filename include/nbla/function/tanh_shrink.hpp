@@ -43,5 +43,5 @@ Outputs:
  */
 NBLA_DEFINE_TRANSFORM_UNARY(TanhShrink, x - std::tanh(x),
                             dy *std::pow(std::tanh(x), (T)2), false, true);
-}
+} // namespace nbla
 #endif

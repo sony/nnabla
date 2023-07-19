@@ -65,7 +65,7 @@ public:
                        const Size_t offset = 0);
 
   /** Filter an context into minimal info that describes the context.
-  */
+   */
   static Context filter_context(const Context &ctx);
 
   /** Register new creator */
@@ -83,20 +83,20 @@ private:
 };
 
 /** ArraySynchronizer
-*/
+ */
 class NBLA_API ArraySynchronizer {
 public:
   typedef function<void(Array *, Array *, const int)> Synchronizer;
   typedef map<pair<string, string>, Synchronizer> Registry_t;
 
   /** Synchronize array
-  */
+   */
   static void synchronize(const string &src_class, Array *src_array,
                           const string &dst_class, Array *dst_array,
                           const int async_flags = AsyncFlag::NONE);
 
   /** Register new synchronizer
-  */
+   */
   static void add_synchronizer(const string &src_class, const string &dst_class,
                                Synchronizer synchronizer);
 
@@ -135,5 +135,5 @@ NBLA_API void synchronizer_default(Array *src, Array *dst,
 
 #define NBLA_REGISTER_ARRAY_SYNCHRONIZER(SRC_CLASS, DST_CLASS, SYNCHRONIZER)   \
   { ArraySynchronizer::add_synchronizer(#SRC_CLASS, #DST_CLASS, SYNCHRONIZER); }
-}
+} // namespace nbla
 #endif

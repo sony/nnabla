@@ -50,5 +50,5 @@ private:
   vector<collector_type> collectors_;
   GarbageCollector();
 };
-}
+} // namespace nbla
 #endif

@@ -58,5 +58,5 @@ TEST(test_load_nnp_on_memory, test_load_nnp_on_memory) {
         << std::endl;
   }
 }
-}
-}
+} // namespace utils
+} // namespace nbla

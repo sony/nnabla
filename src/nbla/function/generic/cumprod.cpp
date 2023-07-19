@@ -208,4 +208,4 @@ void CumProd<T>::backward_impl(const Variables &inputs,
     }
   }
 }
-}
+} // namespace nbla

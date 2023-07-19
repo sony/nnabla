@@ -123,4 +123,4 @@ AllocatorMemory &AllocatorMemory::operator=(AllocatorMemory &&rhs) {
   rhs.memory_ = nullptr; // Avoid freeing.
   return *this;
 }
-}
+} // namespace nbla

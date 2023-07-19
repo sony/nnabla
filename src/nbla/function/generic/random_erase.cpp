@@ -351,8 +351,9 @@ void RandomErase<T>::backward_impl(const Variables &inputs,
             xe_start = random_coords[idx + 2];
             ye_end = random_coords[idx + 3];
             xe_end = random_coords[idx + 4];
-            if ((eprob <= prob_) && (ye_start <= static_cast<size_t>(h) &&
-                                     static_cast<size_t>(h) <= ye_end) &&
+            if ((eprob <= prob_) &&
+                (ye_start <= static_cast<size_t>(h) &&
+                 static_cast<size_t>(h) <= ye_end) &&
                 (xe_start <= static_cast<size_t>(w) &&
                  static_cast<size_t>(w) <= xe_end)) {
               fall = true;
@@ -374,4 +375,4 @@ void RandomErase<T>::backward_impl(const Variables &inputs,
   // Release memory
   this->random_coordinates_ = nullptr;
 }
-}
+} // namespace nbla

@@ -21,15 +21,15 @@
 #include <nbla/solver/weight_decay.hpp>
 
 namespace nbla {
-using std::shared_ptr;
 using std::make_shared;
 using std::pow;
+using std::shared_ptr;
 
 NBLA_REGISTER_SOLVER_SOURCE(Lamb, float /* eta */, float /* beta1 */,
                             float /* beta2 */, float /* gamma_l */,
                             float /* gamma_u */, float /* eps */,
                             bool /* bias_correction */
-                            );
+);
 
 template <typename T>
 Lamb<T>::Lamb(const Context &ctx, float eta, float beta1, float beta2,
@@ -114,4 +114,4 @@ NBLA_DEF_CHECK_INF_GRAD(Lamb, check_inf_grad_cpu);
 NBLA_DEF_CHECK_NAN_GRAD(Lamb, check_nan_grad_cpu);
 NBLA_DEF_CHECK_INF_OR_NAN_GRAD(Lamb, check_inf_or_nan_grad_cpu);
 NBLA_DEF_SCALE_GRAD(Lamb, scale_grad_impl_cpu);
-}
+} // namespace nbla

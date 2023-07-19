@@ -58,4 +58,4 @@ const char *Exception::what() const throw() { return full_msg_.c_str(); }
 // -------------------------------------------------------------------------
 // END: Define Exception class impl
 // -------------------------------------------------------------------------
-}
+} // namespace nbla

@@ -395,4 +395,4 @@ void ISTFT<T>::backward_impl(const Variables &inputs, const Variables &outputs,
   conv_sin_.data()->array()->clear();
   deconv_out_.grad()->array()->clear();
 }
-}
+} // namespace nbla

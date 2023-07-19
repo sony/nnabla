@@ -41,5 +41,5 @@ NBLA_DEFINE_TRANSFORM_UNARY(
       std::exp(x) * ((T)4 * x + (T)6))) /
         std::pow((T)2 * std::exp(x) + std::exp((T)2 * x) + (T)2, (T)2),
     false, true);
-}
+} // namespace nbla
 #endif

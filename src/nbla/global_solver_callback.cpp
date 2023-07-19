@@ -109,4 +109,4 @@ void unset_solver_pre_hook(const string &key) {
 void unset_solver_post_hook(const string &key) {
   SingletonManager::get<GlobalSolverCallback>()->unset_post_hook(key);
 }
-}
+} // namespace nbla

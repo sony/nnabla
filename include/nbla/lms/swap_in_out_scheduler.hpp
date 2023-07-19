@@ -37,13 +37,13 @@ template <> struct hash<nbla::dtypes> {
     return hash<type>{}(static_cast<type>(x));
   }
 };
-}
+} // namespace std
 
 namespace nbla {
 
 using std::accumulate;
-using std::reference_wrapper;
 using std::pair;
+using std::reference_wrapper;
 
 /** A class which manages GPU memory usage and schedules swap in/out
     throughout network computation.
@@ -399,5 +399,5 @@ private:
 
   string to_str(const ScheduleTag &);
 };
-}
+} // namespace nbla
 #endif

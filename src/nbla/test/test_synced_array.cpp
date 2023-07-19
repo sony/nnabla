@@ -72,4 +72,4 @@ TEST_F(SyncedArrayManipTest, SyncDtypesByCastDataGetData) {
     }
   }
 }
-}
+} // namespace nbla

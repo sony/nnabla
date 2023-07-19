@@ -105,4 +105,4 @@ void Softmax<T>::backward_impl(const Variables &inputs,
     }
   }
 }
-}
+} // namespace nbla

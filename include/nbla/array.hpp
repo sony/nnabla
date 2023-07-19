@@ -116,11 +116,11 @@ public:
   inline dtypes dtype() const { return dtype_; }
 
   /** Return size of descendant dimensions of specified axis.
-  */
+   */
   inline Size_t size() const { return size_; }
 
   /** Return context.
-  */
+   */
   inline Context context() const { return ctx_; }
 
   /** Copy from Array.
@@ -128,19 +128,19 @@ public:
   virtual void copy_from(const Array *src_array) = 0;
 
   /** Fill all element with zero.
-  */
+   */
   virtual NBLA_API void zero() = 0;
 
   /** Fill all element with given value.
-  */
+   */
   virtual NBLA_API void fill(float value) = 0;
 
   /** Filter a Context into a minimal information to describe an Array.
-  */
+   */
   static Context filter_context(const Context &ctx);
 
   /** Set an event
-  */
+   */
   virtual NBLA_API void set_event(EventPtr eptr);
 
   /** Wait for the end of an event
@@ -152,11 +152,11 @@ public:
                                    const int async_flags = AsyncFlag::NONE);
 
   /** Check an event exist
-  */
+   */
   virtual NBLA_API bool have_event();
 
   /** Get shared_ptr of this object
-  */
+   */
   virtual NBLA_API Ptr getptr();
 
 protected:
@@ -270,7 +270,7 @@ typedef shared_ptr<ConstArray> ConstArrayPtr;
                  dtype_to_string(this->dtype()).c_str());                      \
     }                                                                          \
   }
-}
+} // namespace nbla
 #define NBLA_DEFINE_COPY_WRAPPER(copy_func)                                    \
   template <typename Ta, typename Tb, typename Enabled = void>                 \
   struct copy_func##_wrapper {                                                 \
@@ -296,8 +296,9 @@ typedef shared_ptr<ConstArray> ConstArrayPtr;
   };                                                                           \
   template <typename Ta, typename Tb>                                          \
   struct copy_func##_wrapper<                                                  \
-      Ta, Tb, typename std::enable_if<!copy_func##_is_disabled<Ta>::value &&   \
-                                      std::is_same<Tb, TYPE>::value>::type> {  \
+      Ta, Tb,                                                                  \
+      typename std::enable_if<!copy_func##_is_disabled<Ta>::value &&           \
+                              std::is_same<Tb, TYPE>::value>::type> {          \
     static void copy(const Array *src, Array *dst) {                           \
       NBLA_ERROR(error_code::not_implemented,                                  \
                  "`" #TYPE "` is disabled in `" #copy_func "`.");              \

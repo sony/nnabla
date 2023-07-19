@@ -37,4 +37,4 @@ protected:
   void merge_next_impl(Memory *from) override;
   void merge_prev_impl(Memory *from) override;
 };
-}
+} // namespace nbla

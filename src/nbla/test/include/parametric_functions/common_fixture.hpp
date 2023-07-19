@@ -22,8 +22,8 @@
 #include <nbla/computation_graph/computation_graph.hpp>
 #include <nbla/initializer.hpp>
 
-using std::shared_ptr;
 using std::make_shared;
+using std::shared_ptr;
 using std::vector;
 using namespace nbla;
 

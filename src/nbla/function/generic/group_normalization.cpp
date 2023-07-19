@@ -257,4 +257,4 @@ void GroupNormalization<T>::backward_impl(const Variables &inputs,
   }
   x->reshape(gn_x_shape_, false); // restore input shape
 }
-}
+} // namespace nbla

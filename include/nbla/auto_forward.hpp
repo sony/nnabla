@@ -40,5 +40,5 @@ private:
   AutoForward();
   DISABLE_COPY_AND_ASSIGN(AutoForward);
 };
-}
+} // namespace nbla
 #endif

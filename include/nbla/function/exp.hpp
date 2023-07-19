@@ -28,5 +28,5 @@ namespace nbla {
     @brief Take elementwise \f$\exp(x)\f$.
  */
 NBLA_DEFINE_TRANSFORM_UNARY(Exp, std::exp(x), y *dy, true, false);
-}
+} // namespace nbla
 #endif

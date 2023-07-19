@@ -49,4 +49,4 @@ void PrintingAllocatorCallback::on_allocation_failure() {
                    name_.c_str())
             << std::endl;
 }
-}
+} // namespace nbla

@@ -127,4 +127,4 @@ void ChannelFirstAdaptor::convert_from_channel_first_backward(
     const bool accum) {
   post_transpose_->backward({input}, {output}, {propagate_down}, {accum});
 }
-}
+} // namespace nbla

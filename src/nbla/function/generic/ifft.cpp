@@ -39,4 +39,4 @@ void IFFT<T>::backward_impl(const Variables &inputs, const Variables &outputs,
   NBLA_ERROR(error_code::not_implemented,
              "IFFT backward not implemented in CPU yet.");
 }
-}
+} // namespace nbla

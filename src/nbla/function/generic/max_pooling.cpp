@@ -24,9 +24,9 @@
 
 namespace nbla {
 
-using std::min;
-using std::max;
 using std::ceil;
+using std::max;
+using std::min;
 
 NBLA_REGISTER_FUNCTION_SOURCE(MaxPooling, const vector<int> &,
                               const vector<int> &, bool, const vector<int> &,
@@ -122,11 +122,11 @@ inline void backward_map(T *dx, const T *dy, const int *m, const int size) {
 }
 } // namespace max_pooling_impl
 
-using max_pooling_impl::v2a;
 using max_pooling_impl::Array2D;
 using max_pooling_impl::Array3D;
-using max_pooling_impl::forward_map;
 using max_pooling_impl::backward_map;
+using max_pooling_impl::forward_map;
+using max_pooling_impl::v2a;
 
 template <typename T>
 void MaxPooling<T>::setup_impl(const Variables &inputs,
@@ -226,4 +226,4 @@ void MaxPooling<T>::backward_impl(const Variables &inputs,
     m += y_map_size;
   }
 }
-}
+} // namespace nbla

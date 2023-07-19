@@ -269,4 +269,4 @@ void STFT<T>::backward_impl(const Variables &inputs, const Variables &outputs,
   conv_r_.data()->array()->clear();
   conv_i_.data()->array()->clear();
 }
-}
+} // namespace nbla

@@ -118,4 +118,4 @@ void Transpose<T>::backward_impl(const Variables &inputs,
   auto dx = inputs[0]->cast_grad_and_get_pointer<T>(this->ctx_, !accum[0]);
   transpose(dy, dx, this->x_shape_, this->y_strides_transposed_, accum[0]);
 }
-}
+} // namespace nbla

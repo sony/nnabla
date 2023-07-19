@@ -30,5 +30,5 @@ Outputs:
 \ingroup FunctionImplGrp
  */
 NBLA_DEFINE_TRANSFORM_UNARY_NO_GRAD(IsInf, std::isinf(x) ? (T)1 : (T)0);
-}
+} // namespace nbla
 #endif

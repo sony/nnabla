@@ -244,6 +244,6 @@ const float OptimizerImpl::update(const int iter) {
   }
   return cost;
 }
-}
-}
-}
+} // namespace nnp
+} // namespace utils
+} // namespace nbla

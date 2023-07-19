@@ -202,4 +202,4 @@ void unfold_to_patches(const T *sample_data, T *column_data, const int channels,
       const vector<int> &dilation)
 NBLA_SPEC_UNFOLD_TO_PATCHS(float);
 NBLA_SPEC_UNFOLD_TO_PATCHS(Half);
-}
+} // namespace nbla

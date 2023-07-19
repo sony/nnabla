@@ -150,7 +150,8 @@ LSTM<T>::lstm_cell(shared_ptr<CgVariable> x, shared_ptr<CgVariable> h,
   } else {
     i_t = connect(affine1,
                   {
-                      xh[0], connect(transpose1, {w_vec[0]}, 1)[0],
+                      xh[0],
+                      connect(transpose1, {w_vec[0]}, 1)[0],
                   },
                   1);
   }
@@ -165,7 +166,8 @@ LSTM<T>::lstm_cell(shared_ptr<CgVariable> x, shared_ptr<CgVariable> h,
   } else {
     f_t = connect(affine2,
                   {
-                      xh[0], connect(transpose2, {w_vec[1]}, 1)[0],
+                      xh[0],
+                      connect(transpose2, {w_vec[1]}, 1)[0],
                   },
                   1);
   }
@@ -180,7 +182,8 @@ LSTM<T>::lstm_cell(shared_ptr<CgVariable> x, shared_ptr<CgVariable> h,
   } else {
     g_t = connect(affine3,
                   {
-                      xh[0], connect(transpose3, {w_vec[2]}, 1)[0],
+                      xh[0],
+                      connect(transpose3, {w_vec[2]}, 1)[0],
                   },
                   1);
   }
@@ -195,7 +198,8 @@ LSTM<T>::lstm_cell(shared_ptr<CgVariable> x, shared_ptr<CgVariable> h,
   } else {
     o_t = connect(affine4,
                   {
-                      xh[0], connect(transpose4, {w_vec[3]}, 1)[0],
+                      xh[0],
+                      connect(transpose4, {w_vec[3]}, 1)[0],
                   },
                   1);
   }
@@ -527,4 +531,4 @@ void LSTM<T>::backward_impl(const Variables &inputs, const Variables &outputs,
 
   dummy[0]->backward(nullptr, true);
 }
-}
+} // namespace nbla

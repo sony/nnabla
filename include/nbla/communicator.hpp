@@ -83,15 +83,15 @@ public:
   /** Initall or initrank, depending multi-threads or multi-processes.
    * This function \b MUST be called after all parameters communicated
    * are added by \e add_context_and_parameters method.
-  */
+   */
   virtual void init();
 
   /** Synchronize all processes in the specified group.
-  */
+   */
   virtual void barrier();
 
   /** Abort all processes in the specified group.
-  */
+   */
   virtual void abort();
 
   /** Create group
@@ -266,7 +266,7 @@ public:
   virtual void allgather_async();
 
   /** Get array classes that are allowed to be specified by Context.
-  */
+   */
   vector<string> allowed_array_classes();
 
 protected:
@@ -277,5 +277,5 @@ protected:
 /** \defgroup CommunicatorImplGrp Communicator list */
 /*@{*/
 /*@}*/
-}
+} // namespace nbla
 #endif

@@ -28,8 +28,8 @@ NBLA_REGISTER_FUNCTION_SOURCE(SumPooling, const vector<int> &,
                               const vector<int> &, bool, const vector<int> &,
                               bool);
 
-using std::min;
 using std::max;
+using std::min;
 
 namespace sum_pooling_impl {
 
@@ -163,11 +163,11 @@ inline void backward_map(T *dx, const T *dy, const Array3D &x_stride,
 }
 } // namespace sum_pooling_impl
 
-using sum_pooling_impl::v2a;
 using sum_pooling_impl::Array2D;
 using sum_pooling_impl::Array3D;
-using sum_pooling_impl::forward_map;
 using sum_pooling_impl::backward_map;
+using sum_pooling_impl::forward_map;
+using sum_pooling_impl::v2a;
 
 template <typename T>
 void SumPooling<T>::forward_impl(const Variables &inputs,
@@ -280,4 +280,4 @@ void SumPooling<T>::backward_impl(const Variables &inputs,
     }
   }
 }
-}
+} // namespace nbla

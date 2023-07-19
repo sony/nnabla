@@ -109,4 +109,4 @@ void DlpackArrayRegistry::add_map(const string &array_class,
 }
 
 NBLA_INSTANTIATE_SINGLETON(NBLA_API, DlpackArrayRegistryMaps);
-}
+} // namespace nbla

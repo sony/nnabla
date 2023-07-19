@@ -120,5 +120,5 @@ private:
   GlobalClearBufferState();
   DISABLE_COPY_AND_ASSIGN(GlobalClearBufferState);
 };
-}
+} // namespace nbla
 #endif

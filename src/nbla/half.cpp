@@ -195,7 +195,7 @@ ROP_TYPE(!=, Half) { return !(lhs == rhs); }
 //   from_float(to_float() - 1);
 //   return *this;
 // }
-}
+} // namespace nbla
 
 namespace std {
 using namespace nbla;
@@ -234,4 +234,4 @@ Half ldexp(const Half &a, const int &b) { return std::ldexp((float)a, b); }
 MATHF(floor);
 MATHF(ceil);
 #undef MATHF
-}
+} // namespace std

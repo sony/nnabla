@@ -38,9 +38,10 @@ void Pow2Quantize<T>::setup_impl(const Variables &inputs,
   p_min_ = pow(2., m_ - ((1 << n) - 1));
   pruning_threshold_ = p_min_ * pow(2., -0.5);
 
-  NBLA_CHECK(n > 0, error_code::value, "bit width should be positive when "
-                                       "considering zero (1bit) and sign "
-                                       "(1bit).");
+  NBLA_CHECK(n > 0, error_code::value,
+             "bit width should be positive when "
+             "considering zero (1bit) and sign "
+             "(1bit).");
 }
 
 template <typename T>

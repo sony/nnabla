@@ -82,4 +82,4 @@ void BinaryCrossEntropy<T>::backward_impl(const Variables &inputs,
     }
   }
 }
-}
+} // namespace nbla

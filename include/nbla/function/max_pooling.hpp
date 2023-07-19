@@ -14,7 +14,7 @@
 // limitations under the License.
 
 /** MaxPooling
-*/
+ */
 #ifndef __NBLA_FUNCTION_MAXPOOLING_HPP__
 #define __NBLA_FUNCTION_MAXPOOLING_HPP__
 
@@ -80,5 +80,5 @@ protected:
     return true;
   }
 };
-}
+} // namespace nbla
 #endif

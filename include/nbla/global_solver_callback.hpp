@@ -42,7 +42,7 @@ public:
   void call_post_hooks();
 
   /** Set a pre_hook.
- */
+   */
   void set_pre_hook(const string &key, const update_hook_type &cb);
 
   /** Set a post_hook.
@@ -71,5 +71,5 @@ NBLA_API void set_solver_post_hook(const string &key,
                                    const update_hook_type &cb);
 NBLA_API void unset_solver_pre_hook(const string &key);
 NBLA_API void unset_solver_post_hook(const string &key);
-}
+} // namespace nbla
 #endif

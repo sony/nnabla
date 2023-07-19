@@ -156,5 +156,5 @@ private:
   CgVariablePtr last_output_cg_variable_;
   bool reset_cg_variables(const Variables &inputs, const Variables &outputs);
 };
-}
+} // namespace nbla
 #endif

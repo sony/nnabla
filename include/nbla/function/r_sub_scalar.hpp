@@ -39,5 +39,5 @@ Outputs:
 \ingroup FunctionImplGrp
  */
 NBLA_DEFINE_TRANSFORM_UNARY_1(RSubScalar, (T)a0 - x, -dy, false, false, double);
-}
+} // namespace nbla
 #endif

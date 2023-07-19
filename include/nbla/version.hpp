@@ -21,6 +21,6 @@ const string nbla_version(void);
 const string nbla_author(void);
 const string nbla_author_email(void);
 const string nbla_build_number(void);
-}
+} // namespace nbla
 
 #endif //_NBLA_VERSION_HPP_

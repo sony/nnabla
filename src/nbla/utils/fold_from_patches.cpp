@@ -164,4 +164,4 @@ void fold_from_patches(const T *column_data, T *outmap_data, const int channels,
 
 NBLA_SPEC_FOLD_FROM_PATCHS(float);
 NBLA_SPEC_FOLD_FROM_PATCHS(Half);
-}
+} // namespace nbla

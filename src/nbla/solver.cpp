@@ -59,8 +59,8 @@ UpdateHookWithObject::UpdateHookWithObject(void *obj, callback_type cb,
 
 UpdateHookWithObject::~UpdateHookWithObject() { cleanup_callback_(obj_); }
 
-UpdateHookWithObject &UpdateHookWithObject::
-operator=(const UpdateHookWithObject &rhs) {
+UpdateHookWithObject &
+UpdateHookWithObject::operator=(const UpdateHookWithObject &rhs) {
   // check self-assignment
   if (&rhs == this)
     return *this;
@@ -208,7 +208,7 @@ struct ScopedCallback {
     SingletonManager::get<GlobalSolverCallback>()->call_post_hooks();
   }
 };
-}
+} // namespace
 
 void Solver::update(update_hook_type pre_callback,
                     update_hook_type post_callback) {
@@ -344,4 +344,4 @@ void Solver::scale_grad(float scale, update_hook_type pre_callback,
 vector<string> Solver::allowed_array_classes() {
   return SingletonManager::get<Cpu>()->array_classes();
 }
-}
+} // namespace nbla

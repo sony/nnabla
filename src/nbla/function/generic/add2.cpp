@@ -75,4 +75,4 @@ void Add2<T>::backward_impl(const Variables &inputs, const Variables &outputs,
     }
   }
 }
-}
+} // namespace nbla

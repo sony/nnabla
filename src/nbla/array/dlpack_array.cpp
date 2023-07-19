@@ -59,4 +59,4 @@ Context DlpackArray::filter_context(const Context &ctx) {
   NBLA_ERROR(error_code::not_implemented,
              "Array must implement filter_context(const Context&).");
 }
-}
+} // namespace nbla

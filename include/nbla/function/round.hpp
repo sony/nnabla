@@ -40,5 +40,5 @@ Outputs:
 \ingroup FunctionImplGrp
  */
 NBLA_DEFINE_TRANSFORM_UNARY(Round, std::round(x), dy, false, false);
-}
+} // namespace nbla
 #endif

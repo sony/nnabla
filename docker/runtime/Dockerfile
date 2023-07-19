@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 
 ARG PIP_INS_OPTS
 ARG PYTHONWARNINGS
@@ -25,12 +25,8 @@ ARG PYTHON_VERSION_MINOR
 ENV PYVERNAME=${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}
 
 RUN eval ${APT_OPTS} && apt-get update \
-    && apt-get install -y software-properties-common \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* \
-    && add-apt-repository -y ppa:deadsnakes/ppa \
-    && apt-get update \
     && apt-get install -y --no-install-recommends \
+       software-properties-common \
        bzip2 \
        ca-certificates \
        curl \

@@ -18,7 +18,7 @@
 
 namespace nbla {
 /** Helper template to copy data from CpuArray with other data type.
-*/
+ */
 template <typename Ta, typename Tb>
 void cpu_array_copy(const Array *src, Array *dst) {
   const Ta *p_src = src->const_pointer<Ta>();

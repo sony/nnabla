@@ -133,4 +133,4 @@ void BoolScatter<T>::backward_impl(const Variables &inputs,
     kernel(B, D, g_gdata_inp, g_gdata, mask);
   }
 }
-}
+} // namespace nbla

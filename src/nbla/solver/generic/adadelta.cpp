@@ -73,4 +73,4 @@ NBLA_DEF_CHECK_INF_GRAD(Adadelta, check_inf_grad_cpu);
 NBLA_DEF_CHECK_NAN_GRAD(Adadelta, check_nan_grad_cpu);
 NBLA_DEF_CHECK_INF_OR_NAN_GRAD(Adadelta, check_inf_or_nan_grad_cpu);
 NBLA_DEF_SCALE_GRAD(Adadelta, scale_grad_impl_cpu);
-}
+} // namespace nbla

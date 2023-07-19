@@ -91,4 +91,4 @@ void NonZero<T>::backward_impl(const Variables &inputs,
                "NonZero backward is currently not implemented.");
   }
 }
-}
+} // namespace nbla

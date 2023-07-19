@@ -29,7 +29,7 @@ has an idea, please let me know or PR is welcome.
 */
 #ifdef _MSC_VER
 /**
-*/
+ */
 #define NBLA_REGISTER_COMMUNICATOR_HEADER(NAME, ...)                           \
   NBLA_API FunctionRegistry<Communicator NBLA_VA_ARGS(__VA_ARGS__)>            \
       &get_##NAME##CommunicatorRegistry();                                     \
@@ -68,7 +68,7 @@ This will be used inside init method.
   }
 #else
 /**
-*/
+ */
 #define NBLA_REGISTER_COMMUNICATOR_HEADER(NAME, ...)                           \
   NBLA_API FunctionRegistry<Communicator, ##__VA_ARGS__>                       \
       &get_##NAME##CommunicatorRegistry();                                     \
@@ -104,5 +104,5 @@ This will be used inside init method.
         make_shared<item_t>(BACKEND, func));                                   \
   }
 #endif
-}
+} // namespace nbla
 #endif

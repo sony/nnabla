@@ -137,4 +137,4 @@ void PackPaddedSequence<U>::backward_impl(const Variables &inputs,
     }
   }
 }
-}
+} // namespace nbla

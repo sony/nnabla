@@ -47,7 +47,7 @@ public:
   void call_post_hooks(const CgFunctionPtr &);
 
   /** Set a pre_hook.
- */
+   */
   void set_pre_hook(const string &key, const function_hook_type &cb);
 
   /** Set a post_hook.
@@ -76,5 +76,5 @@ NBLA_API void set_function_post_hook(const string &key,
                                      const function_hook_type &cb);
 NBLA_API void unset_function_pre_hook(const string &key);
 NBLA_API void unset_function_post_hook(const string &key);
-}
+} // namespace nbla
 #endif

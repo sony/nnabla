@@ -20,7 +20,7 @@
 namespace nbla {
 
 /** CPU array with a borrwed memory pointer from other frameworks via DLPack.
-*/
+ */
 class NBLA_API CpuDlpackArray : public DlpackArray {
 public:
   explicit CpuDlpackArray(const Size_t size, dtypes dtype, const Context &ctx,
@@ -32,5 +32,5 @@ public:
   virtual void fill(float value);
   static Context filter_context(const Context &ctx);
 };
-}
+} // namespace nbla
 #endif

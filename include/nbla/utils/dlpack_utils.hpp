@@ -34,7 +34,7 @@ NBLA_API NdArrayPtr from_dlpack(DLManagedTensor *from);
 NBLA_API void from_dlpack(DLManagedTensor *from, NdArray *to);
 
 /** NNabla lends the head array in a NdArray as a DLPack Tensor.
-*/
+ */
 NBLA_API DLManagedTensor *to_dlpack(NdArray *array);
 
 /** NNabla lends a array in NdArray as a DLPack Tensor
@@ -48,7 +48,7 @@ NBLA_API DLManagedTensor *to_dlpack(NdArray *array, const dtypes dtype,
 NBLA_API void call_deleter(DLManagedTensor *dlp);
 
 /** Convert DLDataType to Nnabla dtype
-*/
+ */
 dtypes convert_dlpack_type_to_dtype(const DLDataType &dlp_type);
-}
+} // namespace nbla
 #endif

@@ -586,4 +586,4 @@ void SyncedArrayCallback::call_callback(SyncedArrayPtr saptr,
 }
 
 NBLA_INSTANTIATE_SINGLETON(NBLA_API, SyncedArrayCallback);
-}
+} // namespace nbla

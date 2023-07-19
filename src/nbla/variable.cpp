@@ -117,4 +117,4 @@ Size_t Variable::size(Size_t axis) const {
   }
   return compute_size_by_shape(shape_, axis);
 }
-}
+} // namespace nbla

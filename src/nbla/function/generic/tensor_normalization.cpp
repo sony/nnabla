@@ -380,4 +380,4 @@ void TensorNormalization<T>::backward_impl(const Variables &inputs,
     backward_without_adapter(inputs, outputs, propagate_down, accum);
   }
 }
-}
+} // namespace nbla

@@ -218,4 +218,4 @@ bool Function::is_active_input(int i) const {
 }
 
 Context Function::context() const { return ctx_; }
-}
+} // namespace nbla

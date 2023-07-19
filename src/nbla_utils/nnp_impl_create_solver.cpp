@@ -78,6 +78,6 @@ shared_ptr<nbla::Solver> OptimizerImpl::create_solver(const ::Solver &solver) {
   }
   return nullptr;
 }
-}
-}
-}
+} // namespace nnp
+} // namespace utils
+} // namespace nbla

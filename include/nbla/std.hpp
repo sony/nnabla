@@ -52,8 +52,8 @@ using std::unordered_set;
 using std::vector;
 
 using std::shared_ptr;
-using std::weak_ptr;
 using std::unique_ptr;
+using std::weak_ptr;
 
 using std::enable_shared_from_this;
 using std::make_shared;
@@ -105,6 +105,6 @@ template <typename T> void delete_array(T *p) {
   static_assert(std::is_destructible<T>::value, "Unable to call destructor.");
   delete[] p;
 }
-}
+} // namespace nbla
 
 #endif

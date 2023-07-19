@@ -58,7 +58,7 @@ inline Size_t compute_size_by_shape(const Shape_t &shape, Size_t axis = 0) {
 }
 
 /** Helper for getting strides of C contiguous memory arrangement.
-*/
+ */
 inline Shape_t get_c_contiguous_strides(const Shape_t &shape) {
   if (!shape.size()) {
     return Shape_t(); // empty strides for 0-shaped array
@@ -71,7 +71,7 @@ inline Shape_t get_c_contiguous_strides(const Shape_t &shape) {
 }
 
 /** Join string with delimiter.
-*/
+ */
 template <typename T>
 inline string string_join(const vector<T> &vec, const string &delim) {
   ostringstream oss;
@@ -111,7 +111,7 @@ inline string byte_to_human_readable(long double byte) {
 }
 
 /** Scoped callback
-*/
+ */
 class DestructorCallback {
   function<void(void)> callback_;
 
@@ -165,5 +165,5 @@ inline int nbla_setenv(const char *var_name, const char *new_value) {
 #endif
   return return_val;
 }
-}
+} // namespace nbla
 #endif

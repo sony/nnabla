@@ -77,4 +77,4 @@ void CpuMemory::merge_prev_impl(Memory *from) {
    */
   ptr_ = from->pointer();
 }
-}
+} // namespace nbla

@@ -56,5 +56,5 @@ private:
 
 #define NBLA_REGISTER_ARRAY_TO_DLPACK_DEVICE_TYPE(CLS, DEVICE_TYPE)            \
   { DlpackArrayRegistry::add_map(#CLS, DEVICE_TYPE); }
-}
+} // namespace nbla
 #endif

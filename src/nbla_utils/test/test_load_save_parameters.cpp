@@ -306,5 +306,5 @@ TEST(test_save_and_load_parameters, test_nnp_save_h5_buffer) {
 }
 
 #endif
-}
-}
+} // namespace utils
+} // namespace nbla

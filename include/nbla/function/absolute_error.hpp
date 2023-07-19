@@ -47,5 +47,5 @@ NBLA_DEFINE_TRANSFORM_BINARY(AbsoluteError, std::abs((x0 - x1)),
                              ((x0 - x1) > (T)0) ? dy : -dy,
                              ((x0 - x1) > (T)0) ? -dy : dy, false, false, true,
                              true);
-}
+} // namespace nbla
 #endif

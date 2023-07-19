@@ -45,7 +45,7 @@ inline long int multiply_dimensions(const Shape_t &s) {
   return std::accumulate(s.begin(), s.end(), 1, std::multiplies<long int>());
 }
 
-} // namespace nbla::depthwise_deconvolution
+} // namespace depthwise_deconvolution
 
 using namespace depthwise_deconvolution;
 

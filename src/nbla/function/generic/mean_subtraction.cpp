@@ -34,8 +34,9 @@ void MeanSubtraction<T>::setup_impl(const Variables &inputs,
   // Check num of inputs and outputs.
   NBLA_CHECK(inputs.size() == 3 ||
                  (inputs.size() == 2 && !update_running_mean_),
-             error_code::value, "The Number of inputs must be 3 [x, "
-                                "running_mean, t] or 2 [x, running_mean].");
+             error_code::value,
+             "The Number of inputs must be 3 [x, "
+             "running_mean, t] or 2 [x, running_mean].");
   NBLA_CHECK(outputs.size() == 1, error_code::value,
              "The Number of outputs must be 1.");
 

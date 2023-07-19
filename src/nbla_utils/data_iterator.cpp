@@ -170,6 +170,6 @@ unordered_map<string, NdArrayPtr> DataIteratorFromCacheFiles::next() {
 
   return data_batch;
 }
-}
-}
-}
+} // namespace nnp
+} // namespace utils
+} // namespace nbla

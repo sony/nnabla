@@ -63,7 +63,7 @@ static void register_protobuf_shutdown() {
   // SingletonManager::clear().
   SingletonManager::get<ShutdownProtobuf>();
 }
-}
+} // namespace nbla
 
 namespace nbla {
 namespace utils {
@@ -617,6 +617,6 @@ shared_ptr<TrainingConfig> NnpImpl::get_training_config() {
   auto *impl = NBLA_NEW_OBJECT(TrainingConfigImpl, proto_->training_config());
   return shared_ptr<TrainingConfig>(NBLA_NEW_OBJECT(TrainingConfig, impl));
 }
-}
-}
-}
+} // namespace nnp
+} // namespace utils
+} // namespace nbla

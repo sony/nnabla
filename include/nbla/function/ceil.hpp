@@ -42,5 +42,5 @@ Outputs:
  */
 
 NBLA_DEFINE_TRANSFORM_UNARY(Ceil, std::ceil(x), dy, false, false);
-}
+} // namespace nbla
 #endif

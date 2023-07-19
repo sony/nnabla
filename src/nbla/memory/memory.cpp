@@ -145,4 +145,4 @@ bool Memory::grow(VecPhysicalMemoryPtr &p_mems) {
 
   return this->grow_impl(p_mems);
 }
-}
+} // namespace nbla

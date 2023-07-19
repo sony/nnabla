@@ -63,5 +63,5 @@ inline void kernel_bool_scatter(int D, int B, int nnz, T *gdata, const T *sdata,
     }
   }
 }
-}
+} // namespace nbla
 #endif

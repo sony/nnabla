@@ -586,5 +586,5 @@ CgVariablePtr batch_normalization(CgVariablePtr x, bool batch_stat,
       global_ctx, x, batch_opts.axes(), batch_opts.decay_rate(),
       batch_opts.eps(), batch_stat, parameters, batch_opts.fix_parameters())[0];
 }
-}
-}
+} // namespace parametric_functions
+} // namespace nbla

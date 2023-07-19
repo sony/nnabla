@@ -25,4 +25,4 @@ VariablePtr get_dropout_mask(VariablePtr dropout_input) {
 void set_dropout_mask(Variable *dropout_input, VariablePtr dropout_mask) {
   dropout_input->dropout_mask_ = dropout_mask;
 }
-}
+} // namespace nbla

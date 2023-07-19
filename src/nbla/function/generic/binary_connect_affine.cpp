@@ -92,4 +92,4 @@ void BinaryConnectAffine<T>::backward_impl(const Variables &inputs,
   sign_->backward(Variables{inputs[1]}, Variables{inputs[2]}, {prop_down[1]},
                   {accum[1]});
 }
-}
+} // namespace nbla

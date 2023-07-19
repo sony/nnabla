@@ -37,5 +37,5 @@ Outputs:
 \ingroup FunctionImplGrp
  */
 NBLA_DEFINE_TRANSFORM_UNARY_1_NO_GRAD(LogicalXorScalar, bool(x) ^ a0, bool);
-}
+} // namespace nbla
 #endif

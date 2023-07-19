@@ -59,5 +59,5 @@ NBLA_DEFINE_TRANSFORM_BINARY_1(
     (x0 - x1) > (T)a0 ? dy : ((x0 - x1) < (T)-a0) ? -dy : (T)0,
     (x0 - x1) > (T)a0 ? -dy : ((x0 - x1) < (T)-a0) ? dy : (T)0, false, false,
     true, true, float);
-}
+} // namespace nbla
 #endif

@@ -265,4 +265,4 @@ protected:
 };
 /*@}*/
 /** \defgroup AllocatorImplGrp Allocator list */
-}
+} // namespace nbla

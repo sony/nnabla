@@ -80,7 +80,7 @@ private:
 
 protected:
   /** Type of Memory Flags.
-  */
+   */
   enum MemoryType {
     Normal = 0,  ///< Default memory type.
     Virtual = 1, ///< Virtual memory having physical memories internally.
@@ -347,4 +347,4 @@ protected:
 };
 /*@}*/
 /** \defgroup MemoryImplGrp Memory list */
-}
+} // namespace nbla

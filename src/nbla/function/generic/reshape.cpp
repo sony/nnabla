@@ -104,4 +104,4 @@ void Reshape<T>::backward_impl(const Variables &inputs,
   else
     reshape_backward_cpu<T, false>(inputs[0]->size(), dx, dy);
 }
-}
+} // namespace nbla

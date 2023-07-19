@@ -70,7 +70,7 @@ get_pooling_output_shape(const vector<int> &inshape, const vector<int> &kernel,
 
   return outshape;
 }
-} // namespace anonymous
+} // namespace
 
 PoolingConfiguration::PoolingConfiguration(const vector<int> &i,
                                            const vector<int> &k,

@@ -41,5 +41,5 @@ inline void refine_axes(vector<int> &axes, int ndim) {
     a = (a < 0) ? ndim + a : a;
   }
 }
-}
+} // namespace nbla
 #endif

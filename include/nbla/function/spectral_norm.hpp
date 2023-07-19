@@ -120,5 +120,5 @@ private:
   NdArrayPtr u_orig_, u_;
   CgVariablePtr last_output_cg_variable_;
 };
-}
+} // namespace nbla
 #endif

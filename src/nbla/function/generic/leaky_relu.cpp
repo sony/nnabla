@@ -80,4 +80,4 @@ void LeakyReLU<T>::backward_impl(const Variables &inputs,
   else
     leaky_relu_backward_cpu<T, false>(inputs[0]->size(), alpha_, dx, dy, sign);
 }
-}
+} // namespace nbla

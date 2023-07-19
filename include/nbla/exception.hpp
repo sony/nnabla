@@ -13,7 +13,7 @@
 // limitations under the License.
 
 /** Exception throwing utilities.
-*/
+ */
 #ifndef __NBLA_EXCEPTION_HPP__
 #define __NBLA_EXCEPTION_HPP__
 
@@ -108,7 +108,7 @@ public:
 };
 
 /** String formatter.
-*/
+ */
 template <typename T, typename... Args>
 string format_string(const string &format, T first, Args... rest) {
   int size = snprintf(nullptr, 0, format.c_str(), first, rest...);
@@ -122,7 +122,7 @@ string format_string(const string &format, T first, Args... rest) {
 }
 
 /** String formatter without format.
-*/
+ */
 inline string format_string(const string &format) {
   for (auto itr = format.begin(); itr != format.end(); itr++) {
     if (*itr == '%') {
@@ -136,6 +136,6 @@ inline string format_string(const string &format) {
   }
   return format;
 }
-}
+} // namespace nbla
 
 #endif

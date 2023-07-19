@@ -36,5 +36,5 @@ Outputs:
  */
 NBLA_DEFINE_TRANSFORM_UNARY_1(ResetInf, std::isinf(x) ? (T)a0 : x,
                               std::isinf(x) ? (T)0 : dy, false, true, double);
-}
+} // namespace nbla
 #endif

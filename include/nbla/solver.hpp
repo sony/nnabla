@@ -135,7 +135,7 @@ protected:
   float weight_decay_rate_;
 
   /** Constructor takes a context
-  */
+   */
   Solver(const Context &ctx);
 
   /** Constructor to set a weight_decay_is_fused_ flag to the class instance.
@@ -271,7 +271,7 @@ public:
                   update_hook_type post_callback = nullptr);
 
   /** Get array classes that are allowed to be specified by Context
-  */
+   */
   virtual vector<string> allowed_array_classes();
 
 protected:
@@ -293,7 +293,7 @@ protected:
   virtual void remove_state_impl(const string &key) = 0;
 
   /**
-  */
+   */
   // virtual void get_state_impl() = 0;
 
   /** Update implementation.
@@ -409,5 +409,5 @@ protected:
 /** \defgroup SolverImplGrp Solver list */
 /*@{*/
 /*@}*/
-}
+} // namespace nbla
 #endif

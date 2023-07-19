@@ -68,9 +68,9 @@ template <typename T>
 void RandomChoice<T>::random_choice(const Variables &inputs,
                                     const Variables &outputs,
                                     std::mt19937 &rgen) {
-  using std::uniform_real_distribution;
-  using std::partial_sum;
   using std::count_if;
+  using std::partial_sum;
+  using std::uniform_real_distribution;
 
   auto x_data = inputs[0]->get_data_pointer<T>(this->ctx_);
   auto w_data = inputs[1]->get_data_pointer<T>(this->ctx_);
@@ -199,4 +199,4 @@ void RandomChoice<T>::backward_impl(const Variables &inputs,
     }
   }
 }
-}
+} // namespace nbla

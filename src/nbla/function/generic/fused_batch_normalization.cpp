@@ -45,7 +45,7 @@ void add2_backward(int size, T *dx1, const T *dx, bool accum) {
     dx1[i] = accum ? dx1[i] + dx[i] : dx[i];
   }
 }
-}
+} // namespace fused_batch_normalization
 
 template <class T>
 void FusedBatchNormalization<T>::setup_impl(const Variables &inputs,

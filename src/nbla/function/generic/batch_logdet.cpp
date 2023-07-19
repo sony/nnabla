@@ -86,4 +86,4 @@ void BatchLogdet<T>::backward_impl(const Variables &inputs,
   nbla::backward(f_batch_det_, Variables{x}, Variables{&out_batch_det},
                  {prop_down}, {accum[0]});
 }
-}
+} // namespace nbla
