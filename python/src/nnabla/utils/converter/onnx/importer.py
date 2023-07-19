@@ -4436,6 +4436,7 @@ class OnnxImporter:
             np.ceil((func_param.stop - func_param.start) / func_param.step), 0))
         self._shape_output[n.output[0]] = [number_of_elements]
         func_list.append(func)
+        del func.input[:]
 
     def Det(self, func_list, n):
         assert len(n.input) == 1
