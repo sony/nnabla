@@ -2378,7 +2378,7 @@ class OnnxImporter:
             if starts[i] < 0:
                 starts[i] = input_shape[i] + ends[i]
             if starts[i] < ends[i]:
-                output_shape.append(starts[i] - ends[i])
+                output_shape.append(ends[i] - starts[i])
             else:
                 output_shape.append(0)
         sp.start.extend(starts)
