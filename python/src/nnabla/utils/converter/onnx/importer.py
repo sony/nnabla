@@ -3035,17 +3035,23 @@ class OnnxImporter:
             [weight_shape[1]] + output_shape
 
     def ConstantOfShape(self, func_list, n):
+        def get_value(tensor, typed_data):
+            if tensor.raw_data:
+                return np.fromstring(tensor.raw_data, dtype=np.float32)[0]
+            else:
+                return typed_data[0]
+
         func = self.generate_default_function("Constant", n)
         cp = func.constant_param
         cp.val = 0.0
         for attr in n.attribute:
             if attr.name == "value":
                 if attr.t.data_type == TensorProto.FLOAT:
-                    cp.val = attr.t.float_data[0]
+                    cp.val = get_value(attr.t, attr.t.float_data)
                 elif attr.t.data_type == TensorProto.INT32:
-                    cp.val = attr.t.int32_data[0]
+                    cp.val = get_value(attr.t, attr.t.int32_data)
                 elif attr.t.data_type == TensorProto.INT64:
-                    cp.val = attr.t.int64_data[0]
+                    cp.val = get_value(attr.t, attr.t.int64_data)
                 else:
                     raise ValueError(
                         "Unsupported tensor data type: {}".format(attr.t.data_type))
