@@ -47,9 +47,11 @@ def normalize_shape(shape):
     if isinstance(shape, TensorShapeProto):
         if len(shape.dim) == 0:
             shape.dim.extend([TensorShapeProto.Dimension(dim_value=1)])
-    if isinstance(shape, list):
-        if len(shape) == 0:
-            shape = [1]
+        return shape
+
+    shape = list(shape)
+    if len(shape) == 0:
+        shape = [1]
     return shape
 
 
