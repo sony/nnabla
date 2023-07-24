@@ -883,58 +883,120 @@ class OnnxImporter:
         return func
 
     def generate_expand_batchmatmul(self, node_name, inputs, output, transpose):
-        def batchmatmul(in_names, out_name):
+        def reshape(x, output_name, output_shape):
+            f = generate_reshape(node_name, x, output_name, output_shape,
+                                 self._graph.name, self._func_counter)
+            self._shape_output[output_name] = output_shape
+            return f
+
+        def batchmatmul(in_names, out_name, output_shape):
             bm = nnabla_pb2.Function()
             bm.type = "BatchMatmul"
             set_function_name(bm, node_name, self._graph.name,
                               self._func_counter)
             bm.input.extend(in_names)
-            bm.output.extend(out_name)
+            bm.output.append(out_name)
             bmp = bm.batch_matmul_param
             bmp.transpose_a = transpose[0]
             bmp.transpose_b = transpose[1]
+            self._shape_output[out_name] = output_shape
             return bm
 
+        a_shape = self.get_func_input_shape(inputs[0])
+        b_shape = self.get_func_input_shape(inputs[1])
+        if transpose[0] or transpose[1]:
+            assert len(a_shape) >= 2 and len(b_shape) >= 2
+        else:
+            assert len(a_shape) >= 1 and len(b_shape) >= 1
+
+        # Handle 1-D inputs
+        # - if A is 1-D, its shape is regarded as (M=1, K).
+        # - if B is 1-D, its shape is regarded as (K, N=1).
+        internal_a_shape = a_shape
+        internal_b_shape = b_shape
+        if len(a_shape) == 1:
+            internal_a_shape = a_shape + [1] if transpose[0] else [1] + a_shape
+        if len(b_shape) == 1:
+            internal_b_shape = [1] + b_shape if transpose[1] else b_shape + [1]
+
+        # Matrix size
+        m = internal_a_shape[-1 if transpose[0] else -2]
+        n = internal_b_shape[-2 if transpose[1] else -1]
+        k = internal_a_shape[-2 if transpose[0] else -1]
+        assert k == internal_b_shape[-1 if transpose[1] else -2]
+
+        # Calculate batch dimensions after broadcasting
+        num_a_dims = len(internal_a_shape)
+        num_b_dims = len(internal_b_shape)
+        num_dims = max(num_a_dims, num_b_dims)
+        num_matmul_dims = 2
+        num_batch_dims = num_dims - num_matmul_dims
+
+        # The number of omitted batch dimensions
+        a_omit_dims = num_dims - num_a_dims
+        b_omit_dims = num_dims - num_b_dims
+
+        a_batch_dims = []
+        b_batch_dims = []
+        y_batch_dims = []
+        for i in range(num_batch_dims):
+            a_size = 1 if i < a_omit_dims else internal_a_shape[i - a_omit_dims]
+            b_size = 1 if i < b_omit_dims else internal_b_shape[i - b_omit_dims]
+            a_batch_dims.append(a_size)
+            b_batch_dims.append(b_size)
+            y_batch_dims.append(max(a_size, b_size))
+            assert (a_size == b_size) \
+                or (a_size == 1 and b_size != 1) \
+                or (a_size != 1 and b_size == 1)
+
+        # nnabla BatchMatmul only supports three or more dimensions
+        if len(y_batch_dims) == 0:
+            a_batch_dims.append(1)
+            b_batch_dims.append(1)
+            y_batch_dims.append(1)
+
+        # Update internal input/output shape
+        internal_a_shape = a_batch_dims + internal_a_shape[-2:]
+        internal_b_shape = b_batch_dims + internal_b_shape[-2:]
+        internal_y_shape = y_batch_dims + [m, n]
+
+        # Calculate output shape
+        y_shape = internal_y_shape
+        if num_batch_dims == 0:
+            assert len(y_shape) == 3 and y_shape[0] == 1
+            y_shape = y_shape[1:]  # Remove y_batch_dims = [1]
+        if len(a_shape) == 1:
+            assert y_shape[-2] == 1
+            del y_shape[-2]  # Remove M=1
+        if len(b_shape) == 1:
+            assert y_shape[-1] == 1
+            del y_shape[-1]  # Remove N=1
+
+        # Start generating nnabla functions
         f_list = []
-        transA_shape = self.get_func_input_shape(inputs[0])
-        transB_shape = self.get_func_input_shape(inputs[1])
-        output_shape = []
-        output_shape.append(
-            transA_shape[-1] if transpose[0] else transA_shape[-2])
-        output_shape.append(
-            transB_shape[-2] if transpose[1] else transB_shape[-1])
-        assert len(transA_shape) == len(
-            transB_shape), "ndim of inputs[0] must be ndim of inputs[1]."
-        if len(transA_shape) < 3:
-            # Expand input[0]
-            transA_rp_out = fork_name(inputs[0]) + "_reshape"
-            rp = generate_reshape(node_name, inputs[0], transA_rp_out,
-                                  [1] + transA_shape, self._graph.name, self._func_counter)
-            self._shape_output[transA_rp_out] = [1] + transA_shape
-            f_list.append(rp)
 
-            # Expand input[1]
-            transB_rp_out = fork_name(inputs[1]) + "_reshape"
-            rp = generate_reshape(node_name, inputs[1], transB_rp_out,
-                                  [1] + transB_shape, self._graph.name, self._func_counter)
-            self._shape_output[transB_rp_out] = [1] + transB_shape
-            f_list.append(rp)
+        # Reshape inputs
+        a_reshape_out = inputs[0]
+        b_reshape_out = inputs[1]
+        if a_shape != internal_a_shape:
+            a_reshape_out = fork_name(inputs[0]) + "_reshape"
+            f_list.append(reshape(inputs[0], a_reshape_out, internal_a_shape))
+        if b_shape != internal_b_shape:
+            b_reshape_out = fork_name(inputs[1]) + "_reshape"
+            f_list.append(reshape(inputs[1], b_reshape_out, internal_b_shape))
 
+        if y_shape != internal_y_shape:
             # BatchMatmul
             matmul_out = fork_name(output[0]) + "_batchmatmul"
-            bm = batchmatmul([transA_rp_out, transB_rp_out], [matmul_out])
-            self._shape_output[matmul_out] = [1] + output_shape
-            f_list.append(bm)
-
-            # Reshape
-            rp = generate_reshape(node_name, matmul_out, output[0],
-                                  output_shape, self._graph.name, self._func_counter)
-            f_list.append(rp)
-            self._shape_output[output[0]] = output_shape
+            f_list.append(batchmatmul([a_reshape_out, b_reshape_out],
+                                      matmul_out, internal_y_shape))
+            # Reshape outputs
+            f_list.append(reshape(matmul_out, output[0], y_shape))
         else:
-            bm = batchmatmul(inputs, output)
-            self._shape_output[output[0]] = output_shape
-            f_list.append(bm)
+            # BatchMatmul
+            matmul_out = output[0]
+            f_list.append(batchmatmul([a_reshape_out, b_reshape_out],
+                                      matmul_out, internal_y_shape))
 
         return f_list
 
