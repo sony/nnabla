@@ -1,4 +1,5 @@
 // Copyright 2018,2019,2020,2021 Sony Corporation.
+// Copyright 2022,2023 Sony Group Corporation.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -239,6 +240,7 @@ NBLA_API Half pow(const Half &a, const int &b);
 NBLA_API Half max(const Half &a, const int &b);
 NBLA_API Half atan2(const Half &a, const Half &b);
 NBLA_API Half ldexp(const Half &a, const int &b);
+NBLA_API Half fmod(const Half &a, const Half &b);
 #undef MATHF
 
 template <> class numeric_limits<Half> {

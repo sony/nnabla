@@ -1,4 +1,5 @@
 // Copyright 2018,2019,2020,2021 Sony Corporation.
+// Copyright 2022,2023 Sony Group Corporation.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -231,6 +232,9 @@ Half atan2(const Half &a, const Half &b) {
   return std::atan2((float)a, (float)b);
 }
 Half ldexp(const Half &a, const int &b) { return std::ldexp((float)a, b); }
+Half fmod(const Half &a, const Half &b) {
+  return std::fmod((float)a, (float)b);
+}
 MATHF(floor);
 MATHF(ceil);
 #undef MATHF

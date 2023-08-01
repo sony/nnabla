@@ -1,5 +1,5 @@
 # Copyright 2018,2019,2020,2021 Sony Corporation.
-# Copyright 2021 Sony Group Corporation.
+# Copyright 2021,2022,2023 Sony Group Corporation.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -699,6 +699,7 @@ class OnnxImporter:
             "OneHot": self.OneHot,
             "Scatter": self.ScatterElements_13,
             "Erf": partial(self.GeneralOperator, 'Erf'),
+            "EyeLike": self.EyeLike,
         }
         self.table_op_set_9 = dict(self.table_op_set_7, **self.table_op_set_9)
 
@@ -711,6 +712,7 @@ class OnnxImporter:
             "DequantizeLinear": self.DequantizeLinear,
             "TopK": self.TopK,
             "NonMaxSuppression": self.NonMaxSuppression,
+            "Mod": self.Mod2,
         }
         self.table_op_set_10 = dict(
             self.table_op_set_9, **self.table_op_set_10)
@@ -723,6 +725,9 @@ class OnnxImporter:
             "CumSum": self.CumSum,
             "Range": self.Range,
             "Det": self.Det,
+            "ScatterND": self.ScatterND,
+            "Unique": self.Unique,
+            "BitShift": self.BitShift,
         }
         if USE_ONNX_RESIZE:
             self.table_op_set_11["Resize"] = self.Resize_ONNXResize
@@ -1436,8 +1441,10 @@ class OnnxImporter:
         self._shape_output[func.output[0]] = self._shape_output[bout]
         func_list.append(func)
 
-    def BroadcastOperator_9(self, func_name, func_list, n):
+    def BroadcastOperator_9(self, func_name, func_list, n, attr_callback=None):
         func = self.generate_default_function(func_name, n)
+        if attr_callback is not None:
+            attr_callback(func, n)
         # NNabla can only process two inputs for max/min.
         # Check if this is fulfilled.
         if len(n.input) != 2:
@@ -4474,6 +4481,195 @@ class OnnxImporter:
                                          det_y_shape, self._graph.name, self._func_counter)
         self._shape_output[n.output[0]] = det_y_shape
         func_list.append(reshape_func1)
+
+    def ScatterND(self, func_list, n):
+        assert len(n.input) == 3
+        assert len(n.output) == 1
+
+        data_shape = self.get_func_input_shape(n.input[0])
+        indices_shape = self.get_func_input_shape(n.input[1])
+        assert 0 not in indices_shape
+        updates_shape = self.get_func_input_shape(n.input[2])
+
+        reduction_values = ["none", "add", "mul"]
+        reduction = "none"
+        for attr in n.attribute:
+            if attr.name == "reduction":
+                check_attr_string_type(attr, n)
+                reduction = attr.s.decode("utf-8")
+                if reduction not in reduction_values:
+                    raise ValueError(
+                        "Invalid reduction value: {}".format(reduction))
+                if reduction == "mul":
+                    raise ValueError("Unsupported reduction type: mul")
+
+        # Reshape
+        if len(indices_shape) == 1:
+            # Convert 1D indices to 2D
+            # because nnabla ScatterNd does not support 1D indices.
+
+            # reshape indices: [*] -> [1, *]
+            indices_shape = [1] + indices_shape
+            indices = fork_name(n.input[1]) + "_reshape"
+            reshape_indices_func = generate_reshape(
+                n.name, n.input[1], indices, indices_shape, self._graph.name, self._func_counter)
+            self._shape_output[indices] = indices_shape
+            func_list.append(reshape_indices_func)
+
+            # reshape updates: [*] -> [1, *]
+            updates_shape = [1] + updates_shape
+            updates = fork_name(n.input[2]) + "_reshape"
+            reshape_updates_func = generate_reshape(
+                n.name, n.input[2], updates, updates_shape, self._graph.name, self._func_counter)
+            self._shape_output[updates] = updates_shape
+            func_list.append(reshape_updates_func)
+        else:
+            indices = n.input[1]
+            updates = n.input[2]
+
+        # Transpose indices: [D1, D2, ..., Dn, M] -> [M, D1, D2, ..., Dn]
+        transposed_indices = fork_name(indices) + "_transpose"
+        axes = np.roll(np.arange(len(indices_shape)), 1)
+        trans_func = generate_transpose(n.name, indices, transposed_indices,
+                                        axes, self._graph.name, self._func_counter)
+        self._shape_output[transposed_indices] = np.roll(indices_shape, 1)
+        func_list.append(trans_func)
+
+        # Identity
+        # nnabla ScatterNd updates a variable passed as parameter `out`,
+        # so this code passes a copy of the variable to preserve ONNX semantics.
+        identity_out = fork_name(n.input[0]) + "_identity"
+        identity_func = self.generate_default_function("Identity", n)
+        identity_func.input[0] = n.input[0]
+        identity_func.output[0] = identity_out
+        self._shape_output[identity_out] = data_shape
+        func_list.append(identity_func)
+
+        # ScatterND
+        scatter_func = self.generate_default_function("ScatterNd", n)
+        scatter_param = scatter_func.scatter_nd_param
+        del scatter_func.input[:]
+        scatter_func.input.extend([updates, transposed_indices, identity_out])
+        scatter_func.output[0] = n.output[0]
+        scatter_param.shape.extend(data_shape)
+        scatter_param.add = (reduction == "add")
+        self._shape_output[n.output[0]] = data_shape
+        func_list.append(scatter_func)
+
+    def Unique(self, func_list, n):
+        assert len(n.input) == 1
+        assert len(n.output) >= 1 and len(n.output) <= 4
+
+        # Check which outputs are needed
+        with_index = False
+        with_inverse = False
+        with_counts = False
+        for i in n.output:
+            if i == "indices":
+                with_index = True
+            elif i == "inverse_indices":
+                with_inverse = True
+            elif i == "counts":
+                with_counts = True
+
+        axis = None
+        sorted = True
+        for attr in n.attribute:
+            if attr.name == "axis":
+                check_attr_int_type(attr, n)
+                axis = attr.i
+            elif attr.name == "sorted":
+                check_attr_int_type(attr, n)
+                if attr.i == 0:
+                    sorted = False
+            else:
+                unsupported_attribute(attr.name, n)
+
+        x_shape = self.get_func_input_shape(n.input[0])
+        num_unique = 1  # dummy value: this value is computed at run-time
+        unique_output_shape = (num_unique,)
+        outputs_shape = []
+        # create y shape
+        if axis is None:
+            outputs_shape.append(unique_output_shape)
+        else:
+            outputs_shape.append(x_shape)
+            outputs_shape[0][axis] = num_unique
+        # create indices shape
+        if with_index:
+            outputs_shape.append(unique_output_shape)
+        # create inverse_indices shape
+        if with_inverse:
+            if axis is None:
+                outputs_shape.append((np.prod(x_shape),))
+            else:
+                outputs_shape.append((x_shape[axis],))
+        # create counts shape
+        if with_counts:
+            outputs_shape.append(unique_output_shape)
+
+        # Unique
+        func = self.generate_default_function("Unique", n)
+        func_param = func.unique_param
+        if axis is None:
+            func_param.flatten = True
+            func_param.axis = 0
+        else:
+            func_param.flatten = False
+            func_param.axis = axis
+        func_param.sorted = sorted
+        func_param.with_index = with_index
+        func_param.with_inverse = with_inverse
+        func_param.with_counts = with_counts
+        for o, s in zip(func.output, outputs_shape):
+            self._shape_output[o] = s
+        func_list.append(func)
+
+    def EyeLike(self, func_list, n):
+        # Get inputs
+        assert len(n.input) == 1 and len(n.output) == 1
+        input_shape = self.get_func_input_shape(n.input[0])
+        assert len(input_shape) == 2
+
+        # Get attributes
+        k = 0
+        for attr in n.attribute:
+            if attr.name == "k":
+                k = attr.i
+            elif attr.name == "dtype":
+                # ignore dtype attribute
+                pass
+            else:
+                unsupported_attribute(attr.name, n)
+
+        # EyeLike
+        func = self.generate_default_function("EyeLike", n)
+        func_param = func.eye_like_param
+        func_param.k = k
+        self._shape_output[n.output[0]] = input_shape
+        func_list.append(func)
+
+    def Mod2(self, func_list, n):
+        def mod2_attr_callback(func, n):
+            func_param = func.mod2_param
+            for attr in n.attribute:
+                if attr.name == "fmod":
+                    func_param.fmod = bool(attr.i)
+                else:
+                    unsupported_attribute(attr.name, n)
+        self.BroadcastOperator_9("Mod2", func_list, n, mod2_attr_callback)
+
+    def BitShift(self, func_list, n):
+        def bitshift_attr_callback(func, n):
+            func_param = func.bit_shift_param
+            for attr in n.attribute:
+                if attr.name == "direction":
+                    func_param.direction = attr.s.decode("utf-8")
+                else:
+                    unsupported_attribute(attr.name, n)
+            assert func_param.direction in ["RIGHT", "LEFT"]
+        self.BroadcastOperator_9(
+            "BitShift", func_list, n, bitshift_attr_callback)
 
     def convert_to_functions(self, n):
         ft = self._onnx_optype_to_nnabla_function_type.get(n.op_type)
