@@ -1,4 +1,4 @@
-Cython
+Cython~=0.29
 boto3
 h5py
 imageio
