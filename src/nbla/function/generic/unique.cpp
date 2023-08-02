@@ -268,4 +268,4 @@ void Unique<T>::backward_impl(const Variables &inputs, const Variables &outputs,
   NBLA_ERROR(error_code::not_implemented,
              "Unique<T>::backward is currently not implemented.");
 }
-}
+} // namespace nbla

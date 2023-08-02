@@ -57,4 +57,4 @@ void EyeLike<T>::backward_impl(const Variables &inputs,
                                const vector<bool> &accum) {
   // pass
 }
-}
+} // namespace nbla

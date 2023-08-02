@@ -138,4 +138,4 @@ void BitShift<T>::backward_impl(const Variables &inputs,
   NBLA_ERROR(error_code::not_implemented,
              "BitShift<T>::backward is currently not implemented.");
 }
-}
+} // namespace nbla

@@ -75,5 +75,5 @@ protected:
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
 };
-}
+} // namespace nbla
 #endif
