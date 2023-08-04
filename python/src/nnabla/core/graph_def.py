@@ -143,7 +143,7 @@ def load(filename, batch_size=None, exclude_parameter=False, parameter_only=Fals
     return g
 
 
-def save(filename, content, include_parameters=False, variable_batch_size=True, extension='.nnp'):
+def save(filename, content, include_parameters=False, variable_batch_size=True, extension='.nnp', executors=None):
     """Save network
 
     Args:
@@ -181,15 +181,24 @@ def save(filename, content, include_parameters=False, variable_batch_size=True, 
                 y1 = PF.affine(h2, 10, name='affiney_1')
                 return y0, y1
 
-            with nn.graph_def.graph() as g:
-                x0 = nn.ProtoVariable((64, 100))
-                x1 = nn.ProtoVariable((64, 100))
+            network_name = 'my_model'
+
+            with nn.graph_def.graph(name=network_name) as g:
+                x0 = nn.ProtoVariable((64, 100), name='x0')
+                x1 = nn.ProtoVariable((64, 100), name='x1')
                 y0, y1 = mlp_module(x0, x1)
 
-            nn.graph_def.save("mlp_net.nnp", [g])
+            executors = [
+                {'name': 'runtime',
+                 'network': network_name,
+                 'data': ['x0', 'x1'],
+                 'output': {"y0": y0, 'y1': y1}}]
+
+            nn.graph_def.save("mlp_net.nnp", [g], executors=executors)
 
     """
     from nnabla.logger import logger
+    from nnabla.utils import nnabla_pb2
     from nnabla.utils.get_file_handle import FileHandlerContext, get_default_file_savers, save_files
 
     def _create_proto(contents, include_params, variable_batch_size):
@@ -205,11 +214,78 @@ def save(filename, content, include_parameters=False, variable_batch_size=True, 
                     include_parameter=include_params, networks=[g], variable_batch_size=variable_batch_size)
                 params = g.owner().get_parameters()
                 break
-        return proto, params
+        return proto, params, g
+
+    def _create_executor(g, executor):
+        name, network, remap = \
+            executor['name'], g.networks[executor['network']], \
+            executor.get('remp', {})
+        generator_variables = executor.get('generator_variables', [])
+        no_image_normalization = executor.get('no_image_normalization')
+
+        proto_network = ProtoGraph().from_proto(
+            g.as_proto()).networks[network.name]
+
+        e = nnabla_pb2.Executor()
+        e.name = name
+        e.network_name = network.name
+        if no_image_normalization is not None:
+            e.no_image_normalization = no_image_normalization
+        for vname in executor.get('data', proto_network.inputs):
+            if vname not in proto_network.variables:
+                raise ValueError("{} is not found in networks!".format(vname))
+            dv = e.data_variable.add()
+            dv.variable_name = vname
+            dv.data_name = remap.get(vname, vname)
+        output_info = executor.get('output', proto_network.outputs)
+        if isinstance(output_info, dict):
+            # Updates variable references using new names and removes old references.
+            for vname in output_info:
+                if output_info[vname].proto.name not in proto_network.variables:
+                    raise ValueError("{} is not found in networks!".format(
+                        proto_network.variables[vname]))
+                default_proto_name = output_info[vname].proto.name
+                proto_network.variables[vname] = proto_network.variables[default_proto_name]
+                del proto_network.variables[default_proto_name]
+                proto_network.variables[vname].name = vname
+                proto_network.variables[vname].proto.name = vname
+                ov = e.output_variable.add()
+                ov.variable_name = vname
+                ov.data_name = remap.get(vname, vname)
+                # Rename the output name of parent's output
+                output_index = proto_network.functions[proto_network.variables[vname].parent].outputs.index(
+                    default_proto_name)
+                proto_network.functions[proto_network.variables[vname]
+                                        .parent].outputs[output_index] = vname
+            proto_network.outputs = list(output_info)
+            # assign a new proto.network to ctx
+            ctx.proto.network[0].CopyFrom(proto_network.as_proto())
+        elif isinstance(output_info, list):
+            for vname in output_info:
+                if vname not in proto_network.variables:
+                    raise ValueError(
+                        "{} is not found in networks!".format(vname))
+                ov = e.output_variable.add()
+                ov.variable_name = vname
+                ov.data_name = remap.get(vname, vname)
+        for param in proto_network.parameters.keys():
+            d = e.parameter_variable.add()
+            d.variable_name = param
+        for vname in generator_variables:
+            d = e.generator_variable.add()
+            d.type = 'Constant'
+            d.multiplier = 0
+            d.variable_name = vname
+        return e
 
     ctx = FileHandlerContext()
-    ctx.proto, ctx.parameters = _create_proto(
+    ctx.proto, ctx.parameters, g = _create_proto(
         content, include_parameters, variable_batch_size)
+    if executors:
+        proto_executors = []
+        for executor in executors:
+            proto_executors.append(_create_executor(g, executor))
+        ctx.proto.executor.extend(proto_executors)
     file_savers = get_default_file_savers()
     supported = save_files(ctx, file_savers, filename, extension)
     assert supported, "No supported format."
@@ -886,7 +962,7 @@ class ProtoNetwork:
                      if not v.required and v.parent]
         return g
 
-    def save(self, filename, include_parameter=False, variable_batch_size=True):
+    def save(self, filename, include_parameter=False, variable_batch_size=True, executors=None):
         """This function saves current proto network to a file, which is specified by
         filename, normally, e.g. a .nnp file.
 
@@ -900,9 +976,11 @@ class ProtoNetwork:
                 Whether replace current network's batch size dimension with an abstract
                 representation. If it is true, it is possible to use another batch size
                 when this network is reused.
+            executors (list, optional, default=None):
+                List of executors.
         """
         save(filename, [self], include_parameters=include_parameter,
-             variable_batch_size=variable_batch_size)
+             variable_batch_size=variable_batch_size, executors=executors)
 
     def clone(self):
         proto_network = ProtoNetwork(self.owner(), self.name, self.batch_size)
@@ -1398,10 +1476,10 @@ class ProtoGraph:
     def __call__(self, *args, **kwargs):
         return self.default_graph()(*args, **kwargs)
 
-    def save(self, filename, include_parameter=False, variable_batch_size=True):
+    def save(self, filename, include_parameter=False, variable_batch_size=True, executors=None):
         # TODO: Add commit_network() here.
         save(filename, [self], include_parameters=include_parameter,
-             variable_batch_size=variable_batch_size)
+             variable_batch_size=variable_batch_size, executors=executors)
 
     def expand_loop_control(self):
         """ This function expands loop control statements for all networks in
@@ -1750,11 +1828,29 @@ def create_graph_from_variable(name, variables, names=None, parameter_scope=None
         .. code-block:: python
 
             import nnabla as nn
+            import nnabla.functions as F
+            import nnabla.parametric_functions as PF
+
+            def my_model(x):
+                x_conv1 = PF.convolution(x, 16, (3, 3), pad=(1, 1), name='conv1')
+                x_relu1 = F.relu(x_conv1)
+                x_conv2 = PF.convolution(x_relu1, 32, (3, 3), pad=(1, 1), name='conv2')
+                x_pool = F.max_pooling(x_conv2, (2, 2))
+                x_fc1 = PF.affine(x_pool, 64, name='fc1')
+                y = PF.affine(x_fc1, 10, name='fc2')
+                return y
 
             x = nn.Variable((1, 3, 32, 32))
             y = my_model(x)
-            g = nn.graph_def.create_graph_from_variable("proto_network_name", y)
-            g.save("my_model.nnp")
+
+            network_name = 'my_model'
+            g = nn.graph_def.create_graph_from_variable(network_name, y, names={"x": x, "y": y})
+            executors = [
+                {'name': 'runtime',
+                 'network': network_name,
+                 'data': ['x'],
+                 'output': ['y']}]
+            g.save("my_model.nnp", executors=executors)
 
     """
     import nnabla.functions as F

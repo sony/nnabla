@@ -268,3 +268,33 @@ def test_save_load_executor_attributes(tmpdir):
     assert info.executors['runtime'].num_evaluations == 32, "Value error!"
     assert info.executors['runtime'].repeat_evaluation_type == 'Repeat', "Value error!"
     assert not info.executors['runtime'].need_back_propagation, "Value error!"
+
+
+def test_save_load_from_graph_with_file_object():
+    nn.clear_parameters()
+    network_name = 'my_model'
+
+    def mlp_module(x0, x1):
+        h1_0 = PF.affine(x0, 100, name='affine1_0')
+        h1_1 = PF.affine(x1, 100, name='affine1_0')
+        h1 = F.tanh(h1_0 + h1_1)
+        h2 = F.tanh(PF.affine(h1, 50, name='affine2'))
+        y0 = PF.affine(h2, 10, name='affiney_0')
+        y1 = PF.affine(h2, 10, name='affiney_1')
+        return y0, y1
+
+    with nn.graph_def.graph(name=network_name) as g:
+        x0 = nn.ProtoVariable((64, 100), name='x0')
+        x1 = nn.ProtoVariable((64, 100), name='x1')
+        y0, y1 = mlp_module(x0, x1)
+
+    executors = [
+        {'name': 'runtime',
+         'network': network_name,
+         'data': ['x0', 'x1'],
+         'output': {"y0": y0, 'y1': y1}}]
+
+    import io
+    nnpdata = io.BytesIO()
+    nn.graph_def.save(nnpdata, [g], executors=executors, extension='.nnp')
+    nnabla.utils.load.load(nnpdata, extension='.nnp')
