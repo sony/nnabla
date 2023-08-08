@@ -89,7 +89,7 @@ void integer_mod(const Variables &inputs, const Variables &outputs,
                                strides_x0, strides_x1, strides_y, shape_y);
   }
 }
-}
+} // namespace
 
 template <typename T>
 void Mod2<T>::forward_impl(const Variables &inputs, const Variables &outputs) {
@@ -182,4 +182,4 @@ void Mod2<T>::backward_impl(const Variables &inputs, const Variables &outputs,
   NBLA_ERROR(error_code::not_implemented,
              "Mod2<T>::backward is currently not implemented.");
 }
-}
+} // namespace nbla
