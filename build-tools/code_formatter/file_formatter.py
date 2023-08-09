@@ -57,7 +57,7 @@ def which(name):
         f = os.path.join(p, name)
         if os.path.isfile(f):
             return f
-        if os.name is 'nt':
+        if os.name == 'nt':
             p = p.replace('"', '')
             f = os.path.join(p, name)
             if os.path.isfile(f):
@@ -70,8 +70,8 @@ def which(name):
 
 def search_clang_format():
     base = 'clang-format'
-    versions = ['12']  # Use clang-format-12
-    for c in [base] + [base + '-{}'.format(v) for v in versions]:
+    versions = ['10', '12']  # Use clang-format-10 or 12 for ubuntu 20.04
+    for c in [base + '-{}'.format(v) for v in versions]:
         clang = which(c)
         if clang is not None:
             return clang
