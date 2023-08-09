@@ -56,7 +56,7 @@ class ObjectDetection(object):
         '''
         if hasattr(self, '_category_names'):
             return self._category_names
-        assert hasattr(self, '_dataset_name'),\
+        assert hasattr(self, '_dataset_name'), \
             'A class attribute _dataset_name must be set.'
         with open(
                 os.path.join(

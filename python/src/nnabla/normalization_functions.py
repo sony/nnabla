@@ -771,7 +771,7 @@ def _instance_normalization_v1(x, beta, gamma, channel_axis=1, batch_axis=0, eps
     adapt_shape = tuple(adapt_shape)
 
     if beta is not None and beta.shape != adapt_shape:
-        assert beta.shape[channel_axis] == adapt_shape[channel_axis],\
+        assert beta.shape[channel_axis] == adapt_shape[channel_axis], \
             "channel size of beta: {} != channel size of x ({}).".format(beta.shape[channel_axis],
                                                                          adapt_shape[channel_axis])
         beta = broadcast(beta, shape=adapt_shape)

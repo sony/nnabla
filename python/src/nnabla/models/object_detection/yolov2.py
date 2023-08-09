@@ -47,7 +47,7 @@ class YoloV2(ObjectDetection):
     def __init__(self, dataset='voc'):
 
         # Check validity of num_layers
-        assert dataset in ['voc', 'coco'],\
+        assert dataset in ['voc', 'coco'], \
             'dataset must be chosen from ["voc", "coco"].'
         # Load nnp
         self._dataset_name = dataset
