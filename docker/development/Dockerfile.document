@@ -26,30 +26,29 @@ ARG APT_OPTS
 ENV LC_ALL C
 ENV LANG C
 ENV LANGUAGE C
-ENV DEBIAN_FRONTEND noninteractive
 
-RUN eval ${APT_OPTS} \
-    && apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates \
-    clang-format \
-    cmake \
-    curl \
-    g++ \
-    git \
-    make \
-    unzip \
-    zip \
-    zlib1g-dev \
-    libhdf5-dev \
-    libarchive-dev \
+RUN eval ${APT_OPTS} && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+       ca-certificates \
+       clang-format \
+       cmake \
+       curl \
+       g++ \
+       git \
+       make \
+       unzip \
+       zip \
+       zlib1g-dev \
+       libhdf5-dev \
+       libarchive-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get -yqq update \
-    && apt-get -yqq install --no-install-recommends \
-        build-essential \
-        dh-autoreconf \
-        pkg-config \
+RUN eval ${APT_OPTS} && apt-get -yqq update \
+    && DEBIAN_FRONTEND=noninteractive apt-get -yqq install --no-install-recommends \
+       build-essential \
+       dh-autoreconf \
+       pkg-config \
     && git clone https://github.com/google/protobuf.git /protobuf \
     && cd /protobuf \
     && git checkout v3.10.1 \
@@ -64,14 +63,14 @@ RUN apt-get -yqq update \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /protobuf /protoc-gen-doc
 
-RUN apt-get -yqq update \
-    && apt-get -yqq install --no-install-recommends \
-        doxygen \
-        libclang-dev \
-        fonts-freefont-ttf \
-        graphviz \
-        pandoc \
-        plantuml \
+RUN eval ${APT_OPTS} && apt-get -yqq update \
+    && DEBIAN_FRONTEND=noninteractive apt-get -yqq install --no-install-recommends \
+       doxygen \
+       libclang-dev \
+       fonts-freefont-ttf \
+       graphviz \
+       pandoc \
+       plantuml \
     && apt-get -yqq clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -80,9 +79,8 @@ ADD python/requirements.txt /tmp/deps/
 ADD doc/requirements.txt /tmp/deps_doc/
 
 ENV PYVERNAME=3.10
-RUN eval ${APT_OPTS} \
-    && apt update \
-    && apt install -y --no-install-recommends \
+RUN eval ${APT_OPTS} && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
        git \
        libssl-dev \
        libbz2-dev \
@@ -107,7 +105,7 @@ RUN eval ${APT_OPTS} \
     && python-build `pyenv latest -k ${PYVERNAME}` /usr/local \
     && pyenv global system \
     && rm -rf ~/.pyenv \
-    && apt autoremove --purge -y \
+    && apt-get autoremove --purge -y \
        git \
        libssl-dev \
        libbz2-dev \

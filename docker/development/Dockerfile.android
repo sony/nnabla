@@ -26,23 +26,22 @@ ARG APT_OPTS
 
 ARG PYVERNAME=3.8
 
-RUN eval ${APT_OPTS} \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends \
-        libssl-dev \
-        bzip2 \
-        ca-certificates \
-        ccache \
-        clang-format \
-        curl \
-        g++ \
-        libarchive-dev \
-        libhdf5-dev \
-        make \
-        unzip \
-        zip \
-        python3-pip \
-        python${PYVERNAME} \
+RUN eval ${APT_OPTS} && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+       libssl-dev \
+       bzip2 \
+       ca-certificates \
+       ccache \
+       clang-format \
+       curl \
+       g++ \
+       libarchive-dev \
+       libhdf5-dev \
+       make \
+       unzip \
+       zip \
+       python3-pip \
+       python${PYVERNAME} \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && cd / \

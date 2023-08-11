@@ -21,10 +21,8 @@ ARG CURL_OPTS
 ARG WGET_OPTS
 ARG PYTHON_VER
 
-ENV DEBIAN_FRONTEND noninteractive
-
 RUN eval ${APT_OPTS} && apt-get update \
-    && apt-get install -y --no-install-recommends \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
        software-properties-common \
        bzip2 \
        ca-certificates \
@@ -36,9 +34,8 @@ RUN eval ${APT_OPTS} && apt-get update \
 
 
 ARG NNABLA_VER
-RUN eval ${APT_OPTS} \
-    && apt update \
-    && apt install -y --no-install-recommends \
+RUN eval ${APT_OPTS} && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
        git \
        make \
        build-essential \
@@ -68,7 +65,7 @@ RUN eval ${APT_OPTS} \
     && python-build `pyenv latest -k ${PYTHON_VER}` /usr/local \
     && pyenv global system \
     && rm -rf ~/.pyenv /tmp/* \
-    && apt autoremove --purge -y \
+    && apt-get autoremove --purge -y \
        git \
        make \
        build-essential \

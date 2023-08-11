@@ -12,16 +12,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-FROM ubuntu:16.04
+
+FROM ubuntu:20.04
 
 ARG PIP_INS_OPTS
 ARG PYTHONWARNINGS
 ARG CURL_OPTS
 ARG WGET_OPTS
-ENV DEBIAN_FRONTEND noninteractive
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3-pip python3-setuptools python3-wheel git\
+RUN eval ${APT_OPTS} && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+       python3-pip
+       python3-setuptools
+       python3-wheel
+       git\
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install ${PIP_INS_OPTS} nnabla
