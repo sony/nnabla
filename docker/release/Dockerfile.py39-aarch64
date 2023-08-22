@@ -18,14 +18,14 @@ ARG PIP_INS_OPTS
 ARG PYTHONWARNINGS
 ARG CURL_OPTS
 ARG WGET_OPTS
-
-ENV DEBIAN_FRONTEND noninteractive
+ARG APT_OPTS
 
 ENV LC_ALL C
 ENV LANG C
 ENV LANGUAGE C
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN eval ${APT_OPTS} && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     bzip2 \
     ca-certificates \
     libarchive-dev \
@@ -43,9 +43,8 @@ ARG PYTHON_VERSION_MAJOR=3
 ARG PYTHON_VERSION_MINOR=9
 ENV PYVERNAME=${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}
 
-RUN eval ${APT_OPTS} \
-    && apt update \
-    && apt install -y --no-install-recommends \
+RUN eval ${APT_OPTS} && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
        build-essential \
        git \
        make \
@@ -73,7 +72,7 @@ RUN eval ${APT_OPTS} \
     && python-build `pyenv latest -k ${PYVERNAME}` /usr/local \
     && pyenv global system \
     && rm -rf ~/.pyenv /tmp/* \
-    && apt autoremove --purge -y \
+    && apt-get autoremove --purge -y \
        git \
        build-essential \
        git \

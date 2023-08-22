@@ -31,10 +31,8 @@ ARG PYTHON_VERSION_MAJOR
 ARG PYTHON_VERSION_MINOR
 ENV PYVERNAME=${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}
 
-ENV DEBIAN_FRONTEND noninteractive
-
 RUN eval ${APT_OPTS} && apt-get update \
-    && apt-get install -y --no-install-recommends \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
        software-properties-common \
        bzip2 \
        ca-certificates \

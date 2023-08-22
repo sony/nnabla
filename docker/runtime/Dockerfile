@@ -18,14 +18,13 @@ ARG PYTHONWARNINGS
 ARG CURL_OPTS
 ARG WGET_OPTS
 ARG APT_OPTS
-ENV DEBIAN_FRONTEND noninteractive
 
 ARG PYTHON_VERSION_MAJOR
 ARG PYTHON_VERSION_MINOR
 ENV PYVERNAME=${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}
 
 RUN eval ${APT_OPTS} && apt-get update \
-    && apt-get install -y --no-install-recommends \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
        software-properties-common \
        bzip2 \
        ca-certificates \
@@ -40,8 +39,8 @@ ARG WHL_PATH
 ADD $WHL_PATH/*.whl /tmp/
 
 RUN eval ${APT_OPTS} \
-    && apt update \
-    && apt install -y --no-install-recommends \
+    && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
        git \
        make \
        build-essential \
@@ -70,7 +69,7 @@ RUN eval ${APT_OPTS} \
     && python-build `pyenv latest -k ${PYVERNAME}` /usr/local \
     && pyenv global system \
     && rm -rf ~/.pyenv \
-    && apt autoremove --purge -y \
+    && apt-get autoremove --purge -y \
        git \
        make \
        build-essential \

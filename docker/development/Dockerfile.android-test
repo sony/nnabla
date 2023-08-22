@@ -30,7 +30,9 @@ ENV SDK_URL="https://dl.google.com/android/repository/sdk-tools-linux-3859397.zi
     ANDROID_VERSION=28 \
     ANDROID_BUILD_TOOLS_VERSION=27.0.3
 
-RUN eval ${APT_OPTS} && apt-get install curl
+RUN eval ${APT_OPTS} && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+       curl
 
 # Download Android SDK
 RUN mkdir "$ANDROID_HOME" .android \
@@ -49,6 +51,10 @@ RUN $ANDROID_HOME/tools/bin/sdkmanager "build-tools;${ANDROID_BUILD_TOOLS_VERSIO
 
 # Install Build Essentials
 
-RUN apt-get update && apt-get install build-essential -y && apt-get install file -y && apt-get install apt-utils -y
+RUN eval ${APT_OPTS} && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+       build-essential \
+       file \
+       apt-utils
 
 

@@ -24,38 +24,36 @@ ENV LC_ALL C
 ENV LANG C
 ENV LANGUAGE C
 
-ENV DEBIAN_FRONTEND noninteractive
-
-RUN eval ${APT_OPTS} \
-    && apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates \
-    build-essential \
-    ccache \
-    cmake \
-    curl \
-    g++ \
-    git \
-    make \
-    unzip \
-    wget \
-    bzip2 \
-    zip \
-    llvm \
-    xz-utils \
-    tk-dev \
-    libarchive-dev \
-    libatlas-base-dev \
-    libhdf5-dev \
-    libopenblas-dev \
-    liblapack-dev \
-    libsndfile1 \
-    liblzma-dev \
-    libbz2-dev \
-    libreadline-dev \
-    libncursesw5-dev \
-    libsqlite3-dev \
-    libffi-dev \
-    libssl-dev
+RUN eval ${APT_OPTS} && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+       ca-certificates \
+       build-essential \
+       ccache \
+       cmake \
+       curl \
+       g++ \
+       git \
+       make \
+       unzip \
+       wget \
+       bzip2 \
+       zip \
+       llvm \
+       xz-utils \
+       tk-dev \
+       libarchive-dev \
+       libatlas-base-dev \
+       libhdf5-dev \
+       libopenblas-dev \
+       liblapack-dev \
+       libsndfile1 \
+       liblzma-dev \
+       libbz2-dev \
+       libreadline-dev \
+       libncursesw5-dev \
+       libsqlite3-dev \
+       libffi-dev \
+       libssl-dev
 
 ############################################################ protobuf
 ENV PROTOVER=3.19.6
