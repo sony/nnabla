@@ -40,31 +40,19 @@ DOCKER_IMAGE_NNABLA_TEST ?= $(DOCKER_IMAGE_NAME_BASE)-nnabla-test$(ARCH_SUFFIX):
 
 .PHONY: docker_image_auto_format
 docker_image_auto_format:
-	if ! docker image inspect $(DOCKER_IMAGE_AUTO_FORMAT) >/dev/null 2>/dev/null; then \
-		docker pull ubuntu:20.04 && \
-		(cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_AUTO_FORMAT) -f docker/development/Dockerfile.auto-format .) \
-	fi
+	cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_AUTO_FORMAT) -f docker/development/Dockerfile.auto-format .
 
 .PHONY: docker_image_doc
 docker_image_doc:
-	if ! docker image inspect $(DOCKER_IMAGE_DOC) >/dev/null 2>/dev/null; then \
-		docker pull $(shell cat $(NNABLA_DIRECTORY)/docker/development/Dockerfile.document |grep ^FROM |awk '{print $$2}') && \
-		(cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_DOC) -f docker/development/Dockerfile.document .) \
-	fi
+	cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_DOC) -f docker/development/Dockerfile.document .
 
 .PHONY: docker_image_build
 docker_image_build:
-	if ! docker image inspect $(DOCKER_IMAGE_BUILD) >/dev/null 2>/dev/null; then \
-		docker pull $(shell cat $(NNABLA_DIRECTORY)/docker/development/Dockerfile.build$(ARCH_SUFFIX) |grep ^FROM |awk '{print $$2}') && \
-		(cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_BUILD) -f docker/development/Dockerfile.build$(ARCH_SUFFIX) .) \
-	fi
+	cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_BUILD) -f docker/development/Dockerfile.build$(ARCH_SUFFIX) .
 
 .PHONY: docker_image_nnabla_test
 docker_image_nnabla_test:
-	if ! docker image inspect $(DOCKER_IMAGE_NNABLA_TEST) >/dev/null 2>/dev/null; then \
-		docker pull $(shell cat $(NNABLA_DIRECTORY)/docker/development/Dockerfile.nnabla-test$(ARCH_SUFFIX) |grep ^FROM |awk '{print $$2}') && \
-		(cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_NNABLA_TEST) -f docker/development/Dockerfile.nnabla-test$(ARCH_SUFFIX) .) \
-	fi
+	cd $(NNABLA_DIRECTORY) && docker build $(DOCKER_BUILD_ARGS) -t $(DOCKER_IMAGE_NNABLA_TEST) -f docker/development/Dockerfile.nnabla-test$(ARCH_SUFFIX) .
 
 # for Android
 # Compiler for diffrent ARCHITECTURE and ABI:
