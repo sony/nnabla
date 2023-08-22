@@ -24,6 +24,7 @@ IF NOT EXIST %zlib_folder%.zip (
 )
 
 IF EXIST %zlib_library% (
+   COPY %zlib_dll% %VENV%\Scripts || GOTO :error
    ECHO zlib already exists. Skipping...
    EXIT /b
 )
@@ -35,6 +36,8 @@ IF NOT EXIST %zlib_folder% (
 )
 CD %zlib_folder%
 cmake -E tar xvzf ..\zlib123dllx64.zip || GOTO :error
+
+COPY %zlib_dll% %VENV%\Scripts || GOTO :error
 
 IF NOT EXIST %third_party_folder%\zlib123.zip (
    powershell "[Net.ServicePointManager]::SecurityProtocol +='tls12'; iwr %nnabla_iwr_options% -Uri http://www.winimage.com/zLibDll/zlib123.zip -OutFile %third_party_folder%\zlib123.zip" || GOTO :error
