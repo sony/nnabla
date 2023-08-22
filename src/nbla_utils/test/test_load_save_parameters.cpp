@@ -16,6 +16,7 @@
 
 #include "gtest/gtest.h"
 #include <algorithm>
+#include <cstddef>
 #include <fstream>
 #include <iostream>
 #include <numeric>
@@ -118,6 +119,15 @@ CgVariablePtr simple_train(ParameterDirectory &params) {
   return h;
 }
 
+#define COMPARE_RESULT(dt, t)                                                  \
+  case dt: {                                                                   \
+    t *a_data = a_it->second->template cast_data_and_get_pointer<t>(kCpuCtx);  \
+    t *b_data = b_it->second->template cast_data_and_get_pointer<t>(kCpuCtx);  \
+    EXPECT_TRUE(memcmp(a_data, b_data, a_size) == 0);                          \
+    printf("dt=%d\n", (int)dt);                                                \
+    exist = true;                                                              \
+  } break;
+
 void expect_params_equal(vector<pair<string, VariablePtr>> &a,
                          vector<pair<string, VariablePtr>> &b) {
   for (auto a_it = a.begin(); a_it != a.end(); ++a_it) {
@@ -127,12 +137,25 @@ void expect_params_equal(vector<pair<string, VariablePtr>> &a,
         int a_size = a_it->second->size();
         int b_size = b_it->second->size();
         EXPECT_EQ(a_size, b_size);
-        float *a_data =
-            a_it->second->template cast_data_and_get_pointer<float>(kCpuCtx);
-        float *b_data =
-            b_it->second->template cast_data_and_get_pointer<float>(kCpuCtx);
-        EXPECT_TRUE(memcmp(a_data, b_data, a_size) == 0);
-        exist = true;
+        dtypes dtype = a_it->second->data()->array()->dtype();
+
+        switch (dtype) {
+          COMPARE_RESULT(dtypes::BYTE, char);
+          COMPARE_RESULT(dtypes::UBYTE, unsigned char);
+          COMPARE_RESULT(dtypes::SHORT, short);
+          COMPARE_RESULT(dtypes::USHORT, unsigned short);
+          COMPARE_RESULT(dtypes::INT, int);
+          COMPARE_RESULT(dtypes::UINT, unsigned int);
+          COMPARE_RESULT(dtypes::LONG, long);
+          COMPARE_RESULT(dtypes::ULONG, unsigned long);
+          COMPARE_RESULT(dtypes::LONGLONG, long long);
+          COMPARE_RESULT(dtypes::ULONGLONG, unsigned long long);
+          COMPARE_RESULT(dtypes::FLOAT, float);
+          COMPARE_RESULT(dtypes::DOUBLE, double);
+          COMPARE_RESULT(dtypes::LONGDOUBLE, long double);
+          COMPARE_RESULT(dtypes::HALF, Half);
+          COMPARE_RESULT(dtypes::BOOL, bool);
+        }
       }
     }
     EXPECT_TRUE(exist);
@@ -303,6 +326,51 @@ TEST(test_save_and_load_parameters, test_nnp_save_h5_buffer) {
 
   CgVariablePtr y = simple_infer(infer_params);
   check_result(x, y);
+}
+
+template <typename T> CgVariablePtr create_cgvariable(T value) {
+  auto cg_v = make_shared<CgVariable>(Shape_t({1}), true);
+  T *data = cg_v->variable()->template cast_data_and_get_pointer<T>(kCpuCtx);
+  *data = value;
+  return cg_v;
+}
+
+void prepare_parameters_with_different_type(ParameterDirectory &pd) {
+  pd.get_parameter_or_create("char", create_cgvariable<char>('c'));
+  pd.get_parameter_or_create("uint8_t", create_cgvariable<uint8_t>('u'));
+  pd.get_parameter_or_create("short", create_cgvariable<short>(1234));
+  pd.get_parameter_or_create("int", create_cgvariable<int>(1234));
+  pd.get_parameter_or_create("uint32_t", create_cgvariable<uint32_t>(1234));
+  pd.get_parameter_or_create("long", create_cgvariable<long>(1234));
+  pd.get_parameter_or_create("ulong", create_cgvariable<unsigned long>(1234));
+  pd.get_parameter_or_create("longlong", create_cgvariable<long long>(1234));
+  pd.get_parameter_or_create("ulonglong",
+                             create_cgvariable<unsigned long long>(1234));
+  pd.get_parameter_or_create("float16", create_cgvariable<Half>(1234.0));
+  pd.get_parameter_or_create("float32", create_cgvariable<float>(1234.0));
+  pd.get_parameter_or_create("double", create_cgvariable<double>(1234.0));
+  pd.get_parameter_or_create("bool", create_cgvariable<bool>(true));
+}
+
+TEST(test_save_and_load_parameters, test_different_data_type) {
+  ParameterDirectory params, loaded_params;
+
+  // Step 1: prepare parameter directory
+  prepare_parameters_with_different_type(params);
+
+  // step 2: Save parameters to file
+  unsigned int size = 0;
+  save_parameters_h5(params, nullptr, size);
+  nbla::vector<char> buffer(size);
+  save_parameters_h5(params, buffer.data(), size);
+
+  // step 3: load it back
+  load_parameters_h5(loaded_params, buffer.data(), buffer.size());
+
+  // step 4: compare result
+  auto p1 = params.get_parameters();
+  auto p2 = loaded_params.get_parameters();
+  expect_params_equal(p1, p2);
 }
 
 #endif

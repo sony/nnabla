@@ -34,17 +34,9 @@ namespace utils {
  */
 typedef vector<pair<string, CgVariablePtr>> ParameterVector;
 
-/** load .h5 parameters from buffer
- */
-bool load_parameters_h5(ParameterVector &pv, char *buffer, int size);
-
 /** load .protobuf parameters from buffer
  */
 bool load_parameters_pb(ParameterVector &pv, char *buffer, int size);
-
-/** load .h5 parameters by filename
- */
-bool load_parameters_h5(ParameterVector &pv, string filename);
 
 /** load .protobuf parameters by filename
  */
@@ -53,10 +45,6 @@ bool load_parameters_pb(ParameterVector &pv, string filename);
 /** load parameters by filename, judge file format by extension name.
  */
 bool load_parameters(ParameterVector &pv, string filename);
-
-/** save .h5 parameters to file
- */
-bool save_parameters_h5(const ParameterVector &pv, string filename);
 
 /** save .protobuf parameters to file
  */

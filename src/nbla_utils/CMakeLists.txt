@@ -68,6 +68,13 @@ endif()
 
 if (NNABLA_UTILS_WITH_HDF5)
   add_definitions(-DNBLA_UTILS_WITH_HDF5)
+  list(APPEND nbla_utils_SOURCES
+    hdf5_wrapper.cpp
+  )
+else()
+  list(APPEND nbla_utils_SOURCES
+    hdf5_dummpy.cpp
+  )
 endif()
 
 add_library(${LIB_NAME} SHARED
