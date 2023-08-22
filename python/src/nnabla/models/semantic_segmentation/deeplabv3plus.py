@@ -51,9 +51,9 @@ class DeepLabV3plus(SemanticSegmentation):
     def __init__(self, dataset='voc', output_stride=16):
 
         # Check validity of num_layers
-        assert dataset in ['voc', 'voc-coco'],\
+        assert dataset in ['voc', 'voc-coco'], \
             'dataset must be chosen from ["voc", "voc-coco"].'
-        assert output_stride in [16, 8],\
+        assert output_stride in [16, 8], \
             'dataset must be chosen from [16, 8].'
         # Load nnp
         self._dataset_name = dataset
