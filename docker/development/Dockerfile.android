@@ -92,7 +92,7 @@ ARG ANDROID_EABI=arm64-v8a
 
 
 ##### Install protobuf for host and target #####
-ARG PROTOVER=3.19.6
+ARG PROTOVER=3.20.3
 
 RUN mkdir /tmp/deps \
     && cd /tmp/deps \
