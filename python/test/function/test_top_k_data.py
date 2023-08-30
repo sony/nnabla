@@ -59,6 +59,7 @@ def ref_top_k_data_bw(x, g, k, abs, reduce, base_axis, largest, with_index,
     return ref_top_k_data(
         x, k, abs, reduce, base_axis, largest, with_index, g)[1].flatten()
 
+
 # reference function takes two grads of outputs when with_index = True
 
 
@@ -79,8 +80,8 @@ def ref_top_k_data_bw_with_index(x, gx, gi, k, abs, reduce, base_axis,
 @pytest.mark.parametrize("ishape, k, base_axis", [
     ((4, 5, 6), 1, 0), ((4, 5, 6), 1, 1), ((4, 5, 6), 1, 2), ((4, 5, 6), 1, -2),
     ((4, 5, 6), 5, 0), ((4, 5, 6), 5, 1), ((4, 5, 6), 5, 2), ((4, 5, 6), 5, -1),
-    ((1, 1000), 10, 1), ((1, 100000), 1024, 1), ((
-        1, 100000), 1025, 1), ((1, 100000), 1025, -2)
+    ((1, 1000), 10, 1), ((1, 100000), 1024, 1),
+    ((1, 100000), 1025, 1), ((1, 100000), 1025, -2)
 ])
 def test_forward_backward(seed, ishape, k, abs, reduce, base_axis, largest,
                           with_index, ctx, fname):
@@ -102,3 +103,45 @@ def test_forward_backward(seed, ishape, k, abs, reduce, base_axis, largest,
     # Note: FP16 has too many duplicate value for larger K to get the
     # same sort order as FP32 and this makes the function tester fail
     # when comparing FP16 to FP32 results of gradient computation.
+
+
+@pytest.mark.parametrize("ctx, fname", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("ishape, k, base_axis", [((1, 630, 840), 1024, 1),
+                                                  ((1, 630, 840), 1024, -2)])
+def test_float_input_large_k_forward(seed, ishape, k, base_axis, ctx, fname):
+    import nnabla as nn
+
+    def generate_sparse_float_input(rng, ishape):
+        total_elements = np.prod(ishape)
+        # Generate a sparse input array where k elements have positive float values,
+        # and make the result of elements 0
+        unique_indices = rng.choice(range(1, total_elements), k, replace=False)
+        values = np.linspace(0.1, 1.0, k)
+        np.random.shuffle(values)  # Shuffle the values
+        sparse_input = np.zeros(total_elements, dtype=np.float32)
+        sparse_input[unique_indices] = values
+        sparse_input = sparse_input.reshape(ishape)
+        return sparse_input
+
+    rng = np.random.RandomState(seed)
+    x = generate_sparse_float_input(rng, ishape)
+    in_data = nn.Variable(shape=ishape)
+    in_data.d = x
+    with nn.context_scope(ctx), nn.auto_forward():
+        topk_data, topk_index = F.top_k_data(
+            in_data, k, reduce=True, with_index=True, base_axis=base_axis)
+
+    assert topk_data.d[0][-1] != 0.0
+    assert topk_index.d[0][-1] != 0.0
+
+    # forward again with a new Variable of the same value
+    in_data2 = nn.Variable(shape=ishape)
+    in_data2.d = x
+
+    with nn.context_scope(ctx), nn.auto_forward():
+        topk_data2, topk_index2 = F.top_k_data(
+            in_data2, k, reduce=True, with_index=True, base_axis=base_axis)
+
+    assert topk_data2.d[0][-1] != 0.0
+    assert topk_index2.d[0][-1] != 0.0
