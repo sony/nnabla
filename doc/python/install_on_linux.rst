@@ -12,7 +12,7 @@ Prerequisites
 This installation instruction describes how to install NNabla using pip
 on almost any Linux 64-bit systems.
 
-The supported Python versions for provided binary packages are 3.7, 3.8, 3.9, 3.10.
+The supported Python versions for provided binary packages are 3.8, 3.9, 3.10.
 
 Python are installed by:
 

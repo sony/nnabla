@@ -66,5 +66,5 @@ pip install pywin32 Cython boto3 protobuf h5py ipython numpy pip pytest scikit-i
 ```
 > call build-tools\msvc\build_wheel.bat PYTHON_VERSION
 ```
-The PYTHON_VERSION we tested is 3.7, 3.8 3.9 and 3.10.
+The PYTHON_VERSION we tested is 3.8 3.9 and 3.10.
 
