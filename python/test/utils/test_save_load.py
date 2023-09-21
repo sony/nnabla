@@ -229,3 +229,42 @@ def test_save_load_with_file_object():
     nnpdata = io.BytesIO()
     nnabla.utils.save.save(nnpdata, contents, extension='.nnp')
     nnabla.utils.load.load(nnpdata, extension='.nnp')
+
+
+def test_save_load_executor_attributes(tmpdir):
+    nn.clear_parameters()
+    batch_size = 16
+    x0 = nn.Variable([batch_size, 100])
+    x1 = nn.Variable([batch_size, 100])
+    h1_0 = PF.affine(x0, 100, name='affine1_0')
+    h1_1 = PF.affine(x1, 100, name='affine1_0')
+    h1 = F.tanh(h1_0 + h1_1)
+    h2 = F.tanh(PF.affine(h1, 50, name='affine2'))
+    y0 = PF.affine(h2, 10, name='affiney_0')
+    y1 = PF.affine(h2, 10, name='affiney_1')
+
+    contents = {
+        'networks': [
+            {'name': 'net1',
+             'batch_size': batch_size,
+             'outputs': {'y0': y0, 'y1': y1},
+             'names': {'x0': x0, 'x1': x1}}],
+        'executors': [
+            {'name': 'runtime',
+             'no_image_normalization': True,
+             'num_evaluations': 32,
+             'repeat_evaluation_type': 'Repeat',
+             'need_back_propagation': False,
+             'network': 'net1',
+             'data': ['x0', 'x1'],
+             'output': ['y0', 'y1']}]}
+
+    tmpdir.ensure(dir=True)
+    tmppath = tmpdir.join('testsave.nnp')
+    nnp_file = tmppath.strpath
+    nnabla.utils.save.save(nnp_file, contents, extension='.nnp')
+    info = nnabla.utils.load.load(nnp_file, extension='.nnp')
+    assert info.executors['runtime'].no_image_normalization, "value error!"
+    assert info.executors['runtime'].num_evaluations == 32, "Value error!"
+    assert info.executors['runtime'].repeat_evaluation_type == 'Repeat', "Value error!"
+    assert not info.executors['runtime'].need_back_propagation, "Value error!"

@@ -239,22 +239,27 @@ def _create_monitor(ctx, monitor):
 
 
 def _create_executor(ctx, executor):
-    '''
-    '''
+    def save_argument(e, arg_name):
+        arg = executor.get(arg_name, None)
+        if arg is not None:
+            setattr(e, arg_name, arg)
+
     name, network, remap = \
         executor['name'], ctx.networks[executor['network']], \
         executor.get('remp', {})
 
     generator_variables = executor.get('generator_variables', [])
-    no_image_normalization = executor.get('no_image_normalization')
-
     proto_network = ctx.proto_graphs[executor['network']].default_graph()
 
     e = nnabla_pb2.Executor()
     e.name = name
     e.network_name = network.name
-    if no_image_normalization is not None:
-        e.no_image_normalization = no_image_normalization
+
+    save_argument(e, "no_image_normalization")
+    save_argument(e, "num_evaluations")
+    save_argument(e, "repeat_evaluation_type")
+    save_argument(e, "need_back_propagation")
+
     for vname in executor.get('data', proto_network.inputs):
         if vname not in proto_network.variables:
             raise ValueError("{} is not found in networks!".format(vname))
