@@ -14,10 +14,18 @@
 
 import pytest
 import numpy as np
+import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context
+from nnabla.testing import assert_allclose
 
 ctxs = list_context('Unique')
+
+
+def force_tuple(x):
+    if isinstance(x, nn.Variable):
+        return (x,)
+    return x
 
 
 def ref_unique(x, flatten, axis, sorted, with_index, with_inverse, with_counts):
@@ -65,10 +73,15 @@ def ref_unique(x, flatten, axis, sorted, with_index, with_inverse, with_counts):
 ])
 @pytest.mark.parametrize("seed", [313])
 def test_unique_forward(seed, x_shape, flatten, axis, sorted, with_index, with_inverse, with_counts, ctx, func_name):
-    from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
-    inputs = [rng.randint(-10, 10, x_shape).astype(np.float32)]
+    input = rng.randint(-10, 10, x_shape).astype(np.float32)
+    vinput = nn.Variable.from_numpy_array(input)
     func_args = [flatten, axis, sorted, with_index, with_inverse, with_counts]
-    function_tester(rng, F.unique, ref_unique, inputs,
-                    func_name=func_name, func_args=func_args,
-                    atol_f=0, ctx=ctx, backward=[False])
+    with nn.context_scope(ctx), nn.auto_forward():
+        o = F.unique(vinput, *func_args)
+        o = force_tuple(o)
+    r = ref_unique(input, *func_args)
+    assert len(o) == len(r)
+    for act, ref in zip(o, r):
+        assert_allclose(act.d, ref)
+        assert func_name == act.parent.name

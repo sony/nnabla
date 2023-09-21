@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <nbla/array.hpp>
+#include <nbla/auto_forward.hpp>
 #include <nbla/common.hpp>
 #include <nbla/function/transpose.hpp>
 #include <nbla/function/unique.hpp>
@@ -230,6 +231,11 @@ void Unique<T>::unique(const Variables &inputs, const Variables &outputs,
 
 template <typename T>
 void Unique<T>::setup_impl(const Variables &inputs, const Variables &outputs) {
+  const auto auto_forward =
+      SingletonManager::get<AutoForward>()->get_auto_forward();
+  NBLA_CHECK(auto_forward, error_code::runtime,
+             "Unique can be used only if auto_forward is true");
+
   const auto x_ndim = inputs[0]->ndim();
   refine_axis(axis_, x_ndim);
 
@@ -246,6 +252,10 @@ void Unique<T>::forward_impl(const Variables &inputs,
                              const Variables &outputs) {
   // Forward is done at setup_impl() because the output shape is calculated
   // during forward computation.
+  const auto auto_forward =
+      SingletonManager::get<AutoForward>()->get_auto_forward();
+  NBLA_CHECK(auto_forward, error_code::runtime,
+             "Unique can be used only if auto_forward is true");
 }
 
 template <typename T>
