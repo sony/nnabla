@@ -47,7 +47,8 @@ install_requires = setup_requires + [
     'tqdm',
     'imageio',
     'pillow>=9.1.0',
-    'ply'
+    'ply',
+    'certifi'
 ]
 
 if sys.platform == 'win32':
