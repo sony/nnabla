@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import sys
 import pytest
 import numpy as np
 import nnabla as nn
@@ -60,6 +61,14 @@ def SmallResNet(x, test=False, act=F.relu, inplace=False, shared=False):
                                           (F.sin, False)])
 @pytest.mark.parametrize("shared", [False, True])
 def test_grad_resnet(seed, ctx, auto_forward, flag_grad_outputs, act, inplace, shared):
+    backend = ctx.backend[0].split(":")[0]
+    if backend == 'cuda':
+        pytest.skip('CUDA Convolution N-D is only supported in CUDNN extension')
+
+    if sys.version_info[1] >= 9 and auto_forward == True and backend == 'cudnn':
+        pytest.skip(
+            "Skip to avoid random KeyError with _ModuleLock. Referred to nnabla-ext-cuda issue #481.")
+
     nn.clear_parameters()
 
     # Settings
@@ -91,9 +100,6 @@ def test_grad_resnet(seed, ctx, auto_forward, flag_grad_outputs, act, inplace, s
         F.sink(*grads, one_input_grad=1).forward()
 
     # Check between results of var.backward and nn.grad
-    backend = ctx.backend[0].split(":")[0]
-    if backend == 'cuda':
-        pytest.skip('CUDA Convolution N-D is only supported in CUDNN extension')
     for inp, grad in zip(inputs, grads):
         assert_allclose(
             inp.g, grad.d, atol=1e-6)
@@ -105,6 +111,14 @@ def test_grad_resnet(seed, ctx, auto_forward, flag_grad_outputs, act, inplace, s
 @pytest.mark.parametrize("inplace", [False, True])
 @pytest.mark.parametrize("shared", [False, True])
 def test_grad_grad_resnet(seed, ctx, auto_forward, inplace, shared):
+    backend = ctx.backend[0].split(":")[0]
+    if backend == 'cuda':
+        pytest.skip('CUDA Convolution N-D is only supported in CUDNN extension')
+
+    if sys.version_info[1] >= 9 and auto_forward == True and shared == False:
+        pytest.skip(
+            "Skip to avoid random KeyError with _ModuleLock. Referred to nnabla-ext-cuda issue #481.")
+
     nn.clear_parameters()
 
     # Settings
@@ -129,9 +143,6 @@ def test_grad_grad_resnet(seed, ctx, auto_forward, inplace, shared):
     dx[0].backward()
 
     # Check between results of var.backward and nn.grad
-    backend = ctx.backend[0].split(":")[0]
-    if backend == 'cuda':
-        pytest.skip('CUDA Convolution N-D is only supported in CUDNN extension')
     assert_allclose(x.g, ddx[0].d, atol=1e-6)
 
 
