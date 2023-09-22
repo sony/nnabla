@@ -1200,7 +1200,7 @@ def gather_nd(data, indices):
           tmp_index = index.reshape(index.shape[0], -1)
           tmp_index = (idx + (Ellipsis,) for idx in zip(*new_index))
           out_shape = index.shape[1:] + data.shape[index.shape[0]:]
-          return np.vstack(data[idx] for idx in tmp_index).reshape(*out_shape)
+          return np.vstack([data[idx] for idx in tmp_index]).reshape(*out_shape)
 
     Examples:
 
