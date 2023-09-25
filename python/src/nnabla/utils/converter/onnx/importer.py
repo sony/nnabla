@@ -761,6 +761,11 @@ class OnnxImporter:
         self.table_op_set_13 = dict(
             self.table_op_set_11, **self.table_op_set_13)
 
+        # opset_14 table
+        self.table_op_set_14 = {
+            "HardSwish": self.HardSwish,
+        }
+
         self.opver_impl_map = {
             "6": self.table_op_set_6,
             "7": self.table_op_set_7,
@@ -769,6 +774,7 @@ class OnnxImporter:
             "11": self.table_op_set_11,
             "12": self.table_op_set_13,
             "13": self.table_op_set_13,
+            "14": self.table_op_set_14,
         }
 
     def get_onnx_graph_info(self):
@@ -4821,6 +4827,48 @@ class OnnxImporter:
         func_param.equation = equation
         self._shape_output[n.output[0]] = output_shape
         func_list.append(func)
+
+    def HardSwish(self, func_list, n):
+        # Get inputs
+        assert len(n.input) == 1 and len(n.output) == 1
+        input_shape = self.get_func_input_shape(n.input[0])
+        # HardSwish = x * ReLU6(x + 3) * (1/6); ReLU6(x)=min(max(0,x),6)
+        # ReLU6(x + 3):
+        # Add
+        adds_out = fork_name(n.input[0]) + "_adds"
+        adds = generate_add_scalar(n.name, n.input[0], adds_out,
+                                   3.0, self._graph.name, self._func_counter)
+        self._shape_output[adds_out] = input_shape
+        func_list.append(adds)
+
+        # Max
+        maxs_out = fork_name(adds_out) + "_maxs"
+        maxs = generate_maximum_scalar(n.name, adds_out, maxs_out,
+                                       0.0, self._graph.name, self._func_counter)
+        self._shape_output[maxs_out] = input_shape
+        func_list.append(maxs)
+
+        # Min
+        mins_out = fork_name(maxs_out) + "_mins"
+        mins = generate_minimum_scalar(n.name, maxs_out, mins_out,
+                                       6.0, self._graph.name, self._func_counter)
+        self._shape_output[mins_out] = input_shape
+        func_list.append(mins)
+
+        # x * ReLU6(x + 3) * (1/6):
+        # Mul2
+        mul2_out = fork_name(mins_out) + "_mul"
+        mul2 = generate_arithmetic("Mul2", n.name, [n.input[0], mins_out], mul2_out,
+                                   self._graph.name, self._func_counter)
+        self._shape_output[mul2_out] = input_shape
+        func_list.append(mul2)
+
+        # Mul_scaler
+        mul_scaler = generate_mul_scalar(n.name, mul2_out, n.output[0],
+                                         1/6.0,
+                                         self._graph.name, self._func_counter)
+        self._shape_output[n.output[0]] = input_shape
+        func_list.append(mul_scaler)
 
     def convert_to_functions(self, n):
         ft = self._onnx_optype_to_nnabla_function_type.get(n.op_type)
