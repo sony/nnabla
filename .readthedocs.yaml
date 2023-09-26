@@ -4,6 +4,20 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.10"
+  jobs:
+    post_checkout:
+      - git clone https://github.com/sony/nnabla-ext-cuda.git
+    pre_build:
+      - VERSION=$(cat VERSION.txt) && cd nnabla-ext-cuda && git checkout v${VERSION}
+      - mv nnabla-ext-cuda ../nnabla-ext-cuda
+      - mkdir -p build-doc/doc/doxygen
+      - cat build-tools/doxygen/config >Doxyfile && echo OUTPUT_DIRECTORY = build-doc/doc/doxygen >>Doxyfile && doxygen && rm -f Doxyfile
+      - mv build-doc/doc/doxygen/html build-doc/doc/html-Cpp && mv build-doc/doc/doxygen/xml build-doc/doc/xml-Cpp
+      - rm -rf build-doc/doc/doxygen && mkdir -p build-doc/doc/doxygen && cd ../nnabla-ext-cuda
+      - cd ../nnabla-ext-cuda && cat ../latest/build-tools/doxygen/config_ext_cuda >Doxyfile && echo OUTPUT_DIRECTORY = ../latest/build-doc/doc/doxygen >>Doxyfile && doxygen && rm -f Doxyfile
+      - mv build-doc/doc/doxygen/html build-doc/doc/html-Ext-Cuda-Cpp && mv build-doc/doc/doxygen/xml build-doc/doc/xml-Ext-Cuda-Cpp
+      - rm -rf build-doc/doc/doxygen && rm -rf doc/cpp/Cpp doc/cpp/Ext-Cuda-Cpp
+      - python doc/dox_to_rst.py 1
 
 python:
   install:
