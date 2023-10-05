@@ -38,7 +38,7 @@ DOCKER_BUILD_ARGS = --build-arg HTTP_PROXY=${http_proxy} --build-arg HTTPS_PROXY
 DOCKER_BUILD_ARGS += --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy}
 DOCKER_BUILD_ARGS += --build-arg PIP_INS_OPTS='${PIP_INS_OPTS}' --build-arg PYTHONWARNINGS='${PYTHONWARNINGS}'
 DOCKER_BUILD_ARGS += --build-arg CURL_OPTS='${CURL_OPTS}' --build-arg WGET_OPTS='${WGET_OPTS}'
-DOCKER_BUILD_ARGS += --build-arg YUM_OPTS='${YUM_OPTS}'
+DOCKER_BUILD_ARGS += --build-arg DNF_OPTS='${DNF_OPTS}'
 DOCKER_BUILD_ARGS += --build-arg APT_OPTS='${APT_OPTS}'
 
 # For --add-host while docker build/run
