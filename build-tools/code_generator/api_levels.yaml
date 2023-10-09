@@ -303,3 +303,5 @@
   Mod2_B: 355
   BitShift_i: 356
   Einsum_i: 359
+45:
+  Trilu_iB: 359

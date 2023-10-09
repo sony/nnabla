@@ -764,7 +764,11 @@ class OnnxImporter:
         # opset_14 table
         self.table_op_set_14 = {
             "HardSwish": self.HardSwish,
+            "Trilu": self.Trilu,
         }
+
+        self.table_op_set_14 = dict(
+            self.table_op_set_14, **self.table_op_set_13)
 
         self.opver_impl_map = {
             "6": self.table_op_set_6,
@@ -4869,6 +4873,33 @@ class OnnxImporter:
                                          self._graph.name, self._func_counter)
         self._shape_output[n.output[0]] = input_shape
         func_list.append(mul_scaler)
+
+    def Trilu(self, func_list, n):
+        # Get inputs
+        assert len(n.input) >= 1 and len(n.output) == 1
+        k = 0  # Default value for k
+        if len(n.input) == 2:
+            k_data = self.get_input_raw_data(n.input[1], TensorProto.INT64)
+            assert len(k_data) == 1
+            k = k_data[0]
+            del n.input[1]
+
+        input_shape = self.get_func_input_shape(n.input[0])
+        upper = 1
+        for attr in n.attribute:
+            if attr.name == "upper":
+                check_attr_int_type(attr, n)
+                upper = attr.i
+            else:
+                unsupported_attribute(attr.name, n)
+
+        # Trilu
+        func = self.generate_default_function("Trilu", n)
+        func_param = func.trilu_param
+        func_param.upper = upper
+        func_param.k = k
+        self._shape_output[n.output[0]] = input_shape
+        func_list.append(func)
 
     def convert_to_functions(self, n):
         ft = self._onnx_optype_to_nnabla_function_type.get(n.op_type)
