@@ -3,6 +3,7 @@ boto3
 h5py
 imageio
 numpy
+librosa
 pillow>=9.1.0
 protobuf<=3.19.6
 pyyaml

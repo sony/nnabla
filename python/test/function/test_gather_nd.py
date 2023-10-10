@@ -24,7 +24,7 @@ ctxs = list_context('GatherNd')
 def gather_nd(data, index):
     index_ = index.reshape(index.shape[0], -1)  # flatten inner dims
     index_ = (idx + (Ellipsis,) for idx in zip(*index_))
-    result = np.vstack(data[idx] for idx in index_)
+    result = np.vstack([data[idx] for idx in index_])
     result = result.reshape(*(index.shape[1:] + data.shape[index.shape[0]:]))
     return result
 
