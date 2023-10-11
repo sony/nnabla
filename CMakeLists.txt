@@ -423,73 +423,23 @@ if(BUILD_PYTHON_PACKAGE)
       if(NOT IS_ABSOLUTE ${NNABLA_EXT_CUDA_DIRECTORY})
         get_filename_component(NNABLA_EXT_CUDA_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${NNABLA_EXT_CUDA_DIRECTORY} ABSOLUTE)
       endif()
-      add_custom_target(doc
-        COMMAND pip3 install ${PIP_INSTALL_OPTS} ${CMAKE_BINARY_DIR}/dist/nnabla-*.whl
-        COMMAND rm -rf ${CMAKE_BINARY_DIR}/doc
-        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/doc/doxygen
-        COMMAND cd ${CMAKE_SOURCE_DIR} &&
-                cat build-tools/doxygen/config >Doxyfile &&
-                echo OUTPUT_DIRECTORY  = ${CMAKE_BINARY_DIR}/doc/doxygen >>Doxyfile &&
-                doxygen && rm -f Doxyfile
-        COMMAND mv ${CMAKE_BINARY_DIR}/doc/doxygen/html ${CMAKE_BINARY_DIR}/doc/html-Cpp
-        COMMAND mv ${CMAKE_BINARY_DIR}/doc/doxygen/xml ${CMAKE_BINARY_DIR}/doc/xml-Cpp
-        COMMAND rm -rf ${CMAKE_BINARY_DIR}/doc/doxygen
-        #ext-cuda
-        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/doc/doxygen
-        COMMAND cd ${NNABLA_EXT_CUDA_DIRECTORY} &&
-                cat ${CMAKE_SOURCE_DIR}/build-tools/doxygen/config_ext_cuda >Doxyfile &&
-                echo OUTPUT_DIRECTORY  = ${CMAKE_BINARY_DIR}/doc/doxygen >>Doxyfile &&
-                doxygen && rm -f Doxyfile
-        COMMAND mv ${CMAKE_BINARY_DIR}/doc/doxygen/html ${CMAKE_BINARY_DIR}/doc/html-Ext-Cuda-Cpp
-        COMMAND mv ${CMAKE_BINARY_DIR}/doc/doxygen/xml ${CMAKE_BINARY_DIR}/doc/xml-Ext-Cuda-Cpp
-        COMMAND rm -rf ${CMAKE_BINARY_DIR}/doc/doxygen
-        # Generate rst
-        COMMAND rm -rf ${CMAKE_SOURCE_DIR}/doc/cpp/Cpp ${CMAKE_SOURCE_DIR}/doc/cpp/Ext-Cuda-Cpp
-        COMMAND cd ${CMAKE_SOURCE_DIR} &&
-                python doc/dox_to_rst.py 1
-        # English
-        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/doc/sphinx
-        COMMAND cd ${CMAKE_SOURCE_DIR} &&
-                PYTHONPATH=${CMAKE_BINARY_DIR}/build/${NBLA_SETUP_LIB_DIR}:$ENV{PYTHONPATH}
-                sphinx-build -b html doc ${CMAKE_BINARY_DIR}/doc/sphinx -c doc
-        COMMAND mv ${CMAKE_BINARY_DIR}/doc/sphinx ${CMAKE_BINARY_DIR}/doc/html
-        # Japanese
-        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/doc/sphinx
-        COMMAND cd ${CMAKE_SOURCE_DIR} &&
-                PYTHONPATH=${CMAKE_BINARY_DIR}/build/${NBLA_SETUP_LIB_DIR}:$ENV{PYTHONPATH}
-                sphinx-build -b html -D language=ja doc ${CMAKE_BINARY_DIR}/doc/sphinx -c doc
-        COMMAND mv ${CMAKE_BINARY_DIR}/doc/sphinx ${CMAKE_BINARY_DIR}/doc/html-ja
-        )
-    else()
-      add_custom_target(doc
-        COMMAND pip3 install ${PIP_INSTALL_OPTS} ${CMAKE_BINARY_DIR}/dist/nnabla-*.whl
-        COMMAND rm -rf ${CMAKE_BINARY_DIR}/doc
-        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/doc/doxygen
-        COMMAND cd ${CMAKE_SOURCE_DIR} &&
-                cat build-tools/doxygen/config >Doxyfile &&
-                echo OUTPUT_DIRECTORY  = ${CMAKE_BINARY_DIR}/doc/doxygen >>Doxyfile &&
-                doxygen && rm -f Doxyfile
-        COMMAND mv ${CMAKE_BINARY_DIR}/doc/doxygen/html ${CMAKE_BINARY_DIR}/doc/html-Cpp
-        COMMAND mv ${CMAKE_BINARY_DIR}/doc/doxygen/xml ${CMAKE_BINARY_DIR}/doc/xml-Cpp
-        COMMAND rm -rf ${CMAKE_BINARY_DIR}/doc/doxygen
-        # Generate rst
-        COMMAND rm -rf ${CMAKE_SOURCE_DIR}/doc/cpp/Cpp ${CMAKE_SOURCE_DIR}/doc/cpp/Ext-Cuda-Cpp
-        COMMAND cd ${CMAKE_SOURCE_DIR} &&
-                python doc/dox_to_rst.py 0
-        # English
-        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/doc/sphinx
-        COMMAND cd ${CMAKE_SOURCE_DIR} &&
-                PYTHONPATH=${CMAKE_BINARY_DIR}/build/${NBLA_SETUP_LIB_DIR}:$ENV{PYTHONPATH}
-                sphinx-build -b html doc ${CMAKE_BINARY_DIR}/doc/sphinx -c doc
-        COMMAND mv ${CMAKE_BINARY_DIR}/doc/sphinx ${CMAKE_BINARY_DIR}/doc/html
-        # Japanese
-        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/doc/sphinx
-        COMMAND cd ${CMAKE_SOURCE_DIR} &&
-                PYTHONPATH=${CMAKE_BINARY_DIR}/build/${NBLA_SETUP_LIB_DIR}:$ENV{PYTHONPATH}
-                sphinx-build -b html -D language=ja doc ${CMAKE_BINARY_DIR}/doc/sphinx -c doc
-        COMMAND mv ${CMAKE_BINARY_DIR}/doc/sphinx ${CMAKE_BINARY_DIR}/doc/html-ja
-        )
     endif()
+    add_custom_target(doc
+      COMMAND pip3 install ${PIP_INSTALL_OPTS} ${CMAKE_BINARY_DIR}/dist/nnabla-*.whl
+      COMMAND bash ${CMAKE_SOURCE_DIR}/build-tools/make/rst_for_doc.sh ${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR} ${NNABLA_EXT_CUDA_DIRECTORY}
+      # English
+      COMMAND mkdir -p ${CMAKE_BINARY_DIR}/doc/sphinx
+      COMMAND cd ${CMAKE_SOURCE_DIR} &&
+              PYTHONPATH=${CMAKE_BINARY_DIR}/build/${NBLA_SETUP_LIB_DIR}:$ENV{PYTHONPATH}
+              sphinx-build -b html doc ${CMAKE_BINARY_DIR}/doc/sphinx -c doc
+      COMMAND mv ${CMAKE_BINARY_DIR}/doc/sphinx ${CMAKE_BINARY_DIR}/doc/html
+      # Japanese
+      COMMAND mkdir -p ${CMAKE_BINARY_DIR}/doc/sphinx
+      COMMAND cd ${CMAKE_SOURCE_DIR} &&
+              PYTHONPATH=${CMAKE_BINARY_DIR}/build/${NBLA_SETUP_LIB_DIR}:$ENV{PYTHONPATH}
+              sphinx-build -b html -D language=ja doc ${CMAKE_BINARY_DIR}/doc/sphinx -c doc
+      COMMAND mv ${CMAKE_BINARY_DIR}/doc/sphinx ${CMAKE_BINARY_DIR}/doc/html-ja
+      )
     add_dependencies(doc wheel)
     nbla_exclude_from_all(doc)
   endif()
