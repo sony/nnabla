@@ -76,6 +76,29 @@ def remove_function(pf, renamed):
     logger.info(f"proto_function:{pf.name} is deleted.")
 
 
+def rename_variable(proto_network, renames):
+    """
+    renames:
+        {'old_name': 'new_name', ...}
+
+    note:
+        caller must ensure there is no duplicated name in current network.
+    """
+    for old_name, new_name in renames:
+        if old_name not in proto_network.variables:
+            raise ValueError("{} is not found in networks!".format(
+                proto_network.variables[new_name]))
+        proto_network.variables[new_name] = proto_network.variables[old_name]
+        del proto_network.variables[old_name]
+        proto_network.variables[new_name].name = new_name
+        proto_network.variables[new_name].proto.name = new_name
+        output_index = proto_network.functions[proto_network.variables[new_name].parent].outputs.index(
+            old_name)
+        proto_network.functions[proto_network.variables[new_name].parent].outputs[output_index] = new_name
+
+    proto_network.outputs = [renames.get(n, n) for n in proto_network.outputs]
+
+
 class IdentityRemover:
     def __init__(self, renamed=None, is_required=None):
         self.renamed = renamed
