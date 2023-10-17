@@ -84,7 +84,7 @@ def rename_variable(proto_network, renames):
     note:
         caller must ensure there is no duplicated name in current network.
     """
-    for old_name, new_name in renames:
+    for old_name, new_name in renames.items():
         if old_name not in proto_network.variables:
             raise ValueError("{} is not found in networks!".format(
                 proto_network.variables[new_name]))
@@ -94,7 +94,8 @@ def rename_variable(proto_network, renames):
         proto_network.variables[new_name].proto.name = new_name
         output_index = proto_network.functions[proto_network.variables[new_name].parent].outputs.index(
             old_name)
-        proto_network.functions[proto_network.variables[new_name].parent].outputs[output_index] = new_name
+        proto_network.functions[proto_network.variables[new_name]
+                                .parent].outputs[output_index] = new_name
 
     proto_network.outputs = [renames.get(n, n) for n in proto_network.outputs]
 

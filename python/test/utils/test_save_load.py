@@ -289,12 +289,22 @@ def test_save_load_from_graph_with_file_object():
         y0, y1 = mlp_module(x0, x1)
 
     executors = [
-        {'name': 'runtime',
-         'network': network_name,
-         'data': ['x0', 'x1'],
-         'output': {"y0": y0, 'y1': y1}}]
+        {
+            'name': 'runtime',
+            'no_image_normalization': True,
+            'num_evaluations': 32,
+            'repeat_evaluation_type': 'Repeat',
+            'need_back_propagation': False,
+            'network': network_name,
+            'data': ['x0', 'x1'],
+            'output': {"y0": y0, "y1": y1}}]
 
     import io
     nnpdata = io.BytesIO()
     nn.graph_def.save(nnpdata, [g], executors=executors, extension='.nnp')
     nnabla.utils.load.load(nnpdata, extension='.nnp')
+    info = nnabla.utils.load.load(nnpdata, extension='.nnp')
+    assert info.executors['runtime'].no_image_normalization, "value error!"
+    assert info.executors['runtime'].num_evaluations == 32, "Value error!"
+    assert info.executors['runtime'].repeat_evaluation_type == 'Repeat', "Value error!"
+    assert not info.executors['runtime'].need_back_propagation, "Value error!"

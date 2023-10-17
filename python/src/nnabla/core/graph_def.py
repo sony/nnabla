@@ -202,89 +202,28 @@ def save(filename, content, include_parameters=False, variable_batch_size=True, 
 
     def _create_proto(contents, include_params, variable_batch_size, executors):
         params = None
-        if executors is not None:
-            network_name = executors.get('network')
-            if network_name is None:
-                raise ValueError(f"executor needs to specify network by its name. e.g. 'network': 'runtime'")
 
         for g in contents:
             if isinstance(g, ProtoGraph):
                 if executors is not None:
-                    g.executors = {e['name']: ProtoExecutor.create_from_dict(e) for e in executors}
+                    g.executors = {e['name']: ProtoExecutor.create_from_dict(e, g.networks[e['network']]) for e in
+                                   executors}
                 proto = g.as_proto(
                     include_parameter=include_params, variable_batch_size=variable_batch_size)
                 params = g.get_parameters()
                 break
             if isinstance(g, ProtoNetwork):
                 if executors is not None:
-                    g.owner().executors = {e['name']: ProtoExecutor.create_from_dict(e) for e in executors}
+                    assert g.name == executors[
+                        'network'], "Provided network name {} does not match the ProtoNetwork name ".format(
+                        executors['network'])
+                    g.owner().executors = {
+                            e['name']: ProtoExecutor.create_from_dict(e, g) for e in executors}
                 proto = g.owner().as_proto(
                     include_parameter=include_params, networks=[g], variable_batch_size=variable_batch_size)
                 params = g.owner().get_parameters()
                 break
         return proto, params
-
-    # def _create_executor(g, executor):
-    #     name, network, remap = \
-    #         executor['name'], g.networks[executor['network']], \
-    #         executor.get('remp', {})
-    #     generator_variables = executor.get('generator_variables', [])
-    #     no_image_normalization = executor.get('no_image_normalization')
-    #
-    #     proto_network = ProtoGraph().from_proto(
-    #         g.as_proto()).networks[network.name]
-    #
-    #     e = nnabla_pb2.Executor()
-    #     e.name = name
-    #     e.network_name = network.name
-    #     if no_image_normalization is not None:
-    #         e.no_image_normalization = no_image_normalization
-    #     for vname in executor.get('data', proto_network.inputs):
-    #         if vname not in proto_network.variables:
-    #             raise ValueError("{} is not found in networks!".format(vname))
-    #         dv = e.data_variable.add()
-    #         dv.variable_name = vname
-    #         dv.data_name = remap.get(vname, vname)
-    #     output_info = executor.get('output', proto_network.outputs)
-    #     if isinstance(output_info, dict):
-    #         # Updates variable references using new names and removes old references.
-    #         for vname in output_info:
-    #             if output_info[vname].proto.name not in proto_network.variables:
-    #                 raise ValueError("{} is not found in networks!".format(
-    #                     proto_network.variables[vname]))
-    #             default_proto_name = output_info[vname].proto.name
-    #             proto_network.variables[vname] = proto_network.variables[default_proto_name]
-    #             del proto_network.variables[default_proto_name]
-    #             proto_network.variables[vname].name = vname
-    #             proto_network.variables[vname].proto.name = vname
-    #             ov = e.output_variable.add()
-    #             ov.variable_name = vname
-    #             ov.data_name = remap.get(vname, vname)
-    #             # Rename the output name of parent's output
-    #             output_index = proto_network.functions[proto_network.variables[vname].parent].outputs.index(
-    #                 default_proto_name)
-    #             proto_network.functions[proto_network.variables[vname]
-    #                                     .parent].outputs[output_index] = vname
-    #         proto_network.outputs = list(output_info)
-    #         # assign a new proto.network to ctx
-    #         ctx.proto.network[0].CopyFrom(proto_network.as_proto())
-    #     elif isinstance(output_info, list):
-    #         for vname in output_info:
-    #             if vname not in proto_network.variables:
-    #                 raise ValueError(
-    #                     "{} is not found in networks!".format(vname))
-    #             ov = e.output_variable.add()
-    #             ov.variable_name = vname
-    #             ov.data_name = remap.get(vname, vname)
-    #     for param in proto_network.parameters.keys():
-    #         d = e.parameter_variable.add()
-    #         d.variable_name = param
-    #     for vname in generator_variables:
-    #         d = e.generator_variable.add()
-    #         d.type = 'Constant'
-    #         d.multiplier = 0
-    #         d.variable_name = vname
-    #     return e
 
     ctx = FileHandlerContext()
     ctx.proto, ctx.parameters = _create_proto(
@@ -376,7 +315,7 @@ class ProtoExecutor:
         return executor
 
     @staticmethod
-    def create_from_dict(executor):
+    def create_from_dict(executor, network):
         from nnabla.utils import nnabla_pb2
 
         remap = executor.get('remp', {})
@@ -388,7 +327,13 @@ class ProtoExecutor:
         e.proto = nnabla_pb2.Executor()
         e.proto.name = executor['name']
         e.proto.network_name = executor['network']
-        e.proto.no_image_normalization = executor.get('no_image_normalization', False)
+        e.proto.no_image_normalization = executor.get(
+            'no_image_normalization', False)
+        e.proto.num_evaluations = executor.get('num_evaluations', 0)
+        e.proto.repeat_evaluation_type = executor.get(
+            'repeat_evaluation_type', '')
+        e.proto.need_back_propagation = executor.get(
+            'need_back_propagation', False)
         for vname in executor.get('data', []):
             dv = e.proto.data_variable.add()
             dv.variable_name = vname
@@ -402,6 +347,9 @@ class ProtoExecutor:
             d.type = 'Constant'
             d.multiplier = 0
             d.variable_name = vname
+        for param in network.parameters.keys():
+            d = e.proto.parameter_variable.add()
+            d.variable_name = param
         return e
 
     def get_network_renaming(self):
@@ -1481,9 +1429,9 @@ class ProtoGraph:
 
         """
         def rename_variable(network, renames):
-            from nnabla.core.graph_optimizer import rename_variable
+            from nnabla.core.graph_optimizer import rename_variable as opti_rename_vairable
             n = network.clone()
-            rename_variable(n, renames)
+            opti_rename_vairable(n, renames)
             return n
 
         from nnabla.utils import nnabla_pb2
@@ -1492,8 +1440,9 @@ class ProtoGraph:
             if networks is None:
                 networks = self.networks.values()
             if self.executors:
-                backup = {name: network for name, network in self.networks.items()}
-                for executor in self.executors:
+                backup = {network.name: network for _,
+                          network in enumerate(networks)}
+                for executor in self.executors.values():
                     name, renames = executor.get_network_renaming()
                     if renames is not None:
                         backup[name] = rename_variable(backup[name], renames)
@@ -1501,9 +1450,8 @@ class ProtoGraph:
             networks = [m.as_proto(
                 variable_batch_size=variable_batch_size) for m in networks]
             proto.network.extend(networks)
-            if self.executors:
-                executors = [e.as_proto() for e in self.executors.values()]
-                proto.executor.extend(executors)
+            executors = [e.as_proto() for e in self.executors.values()]
+            proto.executor.extend(executors)
         if include_parameter:
             for k, v in self.get_parameters().items():
                 parameter = proto.parameter.add()
