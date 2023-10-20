@@ -1196,6 +1196,7 @@ class OnnxImporter:
         rp = func.reshape_param
         new_shape = []
         shape_found = False
+        allow_zero = False
         for attr in n.attribute:
             if attr.name == "shape":
                 # Shape comes as attribute for Reshape-1
@@ -1204,6 +1205,12 @@ class OnnxImporter:
                         "Only INTS is supported for shape in {} op_type".format(n.op_type))
                 new_shape.extend(attr.ints)
                 shape_found = True
+            elif attr.name == "allowzero":
+                if attr.type != AttributeProto.INT:
+                    raise ValueError(
+                        "Only INTS is supported for shape in {} op_type".format(n.op_type))
+                new_shape.extend(attr.ints)
+                allow_zero = attr.i
             else:
                 raise ValueError("Unsupported attribute {} was specified at {}"
                                  .format(attr.name, n.op_type))
@@ -1221,6 +1228,22 @@ class OnnxImporter:
         if not shape_found:
             raise ValueError(
                 "Shape information was not found in {} op_type".format(n.op_type))
+
+        if allow_zero:
+            # In opset>=14 version, If ‘allowzero’ is set Ture,
+            # dimensions in new_shape with a value of 0 will be set to 0.
+            # nnabla do not support variable_instance with dimensions containing zeros
+            raise ValueError(
+                "allowzero is currently not supported for Reshape")
+        else:
+            # dimensions in new_shape with a value of 0 will be unchanged
+            # (i.e. correspondingly taken from the input tensor).
+            for i in range(len(new_shape)):
+                if new_shape[i] == 0:
+                    assert i < len(
+                        input_shape), "Dimensions with a value of 0 in new_shape " \
+                                      "should correspond to valid dimensions in input_shape."
+                    new_shape[i] = input_shape[i]
 
         if -1 in new_shape:
             shape_infer_index = -1
