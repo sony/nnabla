@@ -1927,7 +1927,8 @@ class TFLiteExporter:
             if inp not in self.parameters:
                 self.inputs.append(inp)
 
-        self.outputs.extend(self.network.outputs)
+        self.outputs.extend(
+            [output_variable.variable_name for output_variable in self.executor.output_variable])
 
     def set_network(self):
         '''
