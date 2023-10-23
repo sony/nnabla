@@ -1144,6 +1144,10 @@ class OnnxImporter:
         for attr in n.attribute:
             if attr.name == "is_test":
                 pass
+            elif attr.name == "training_mode":
+                # Since training_mode is implied when n.output is more than 1
+                # no explicit handling is needed here
+                pass
             elif attr.name == "epsilon":
                 if attr.type != AttributeProto.FLOAT:
                     raise ValueError(
