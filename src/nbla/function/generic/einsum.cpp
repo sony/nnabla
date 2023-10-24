@@ -54,7 +54,7 @@ bool need_transpose(vector<int> axes) {
   }
   return false;
 }
-}
+} // namespace
 
 class EinsumGraph {
   // TermType indicates the dimensions of Variable corresponding to the label
@@ -248,9 +248,10 @@ private:
               NBLA_CHECK(ellipsis_dim_sizes[j] == input_shape[dims[j]] ||
                              ellipsis_dim_sizes[j] == 1 ||
                              input_shape[dim] == 1,
-                         error_code::value, "Ellipsis must have same "
-                                            "dimension size or either one is "
-                                            "1 for broadcast.");
+                         error_code::value,
+                         "Ellipsis must have same "
+                         "dimension size or either one is "
+                         "1 for broadcast.");
               ellipsis_dim_sizes[j] =
                   std::max(ellipsis_dim_sizes[j], input_shape[dim]);
             }
@@ -266,9 +267,10 @@ private:
     string output_label;
     std::tie(input_labels, output_label) = preprocess_equation(equation);
     NBLA_CHECK(input_cg_variables_.size() == input_labels.size(),
-               nbla::error_code::value, "The number of the input terms in "
-                                        "equation does not match the inputs "
-                                        "size.");
+               nbla::error_code::value,
+               "The number of the input terms in "
+               "equation does not match the inputs "
+               "size.");
 
     // Compute the sizes of dimensions of ellipsis
     size_t ellipsis_ndim =
@@ -692,4 +694,4 @@ void Einsum<T>::backward_impl(const Variables &inputs, const Variables &outputs,
       [](CgFunctionPtr fn) {});
   last_output_cg_variable_->backward(outputs[0]->grad(), true);
 }
-}
+} // namespace nbla

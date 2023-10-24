@@ -59,9 +59,7 @@ public:
     return SingletonManager::get<Cpu>()->array_classes();
   }
   virtual string name() { return "Einsum"; }
-  virtual bool grad_depends_output_data(int i, int o) const {
-    return false;
-  }
+  virtual bool grad_depends_output_data(int i, int o) const { return false; }
 
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,
@@ -73,5 +71,5 @@ protected:
                                       const vector<bool> &propagate_down,
                                       const vector<bool> &accum);
 };
-}
+} // namespace nbla
 #endif

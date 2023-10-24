@@ -8222,3 +8222,23 @@ Unsupported, Special Use:
     c_runtime: not support
     function_ids:
       i: 356
+  Einsum:
+    snake_name: einsum
+    doc: |
+      Evaluates the Einstein summation convention on the inputs.
+      See the numpy.einsum documentation for more information about equation.
+    inputs:
+      x:
+        doc: List of N-D array.
+        variadic: true
+    arguments:
+      equation:
+        doc: A string that folllows Einstein summation convention.
+        type: string
+        default: ''
+    outputs:
+      y:
+        doc: A N-D array.
+    c_runtime: not support
+    function_ids:
+      i: 359

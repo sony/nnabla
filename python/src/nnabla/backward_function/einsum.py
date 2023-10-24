@@ -22,6 +22,7 @@
 
 import nnabla.functions as F
 
+
 def einsum_backward(grad_inputs, inputs, input_shapes, outputs, output_shapes, equation=None):
     """
     Args:
