@@ -65,7 +65,7 @@ RUN eval ${APT_OPTS} && apt-get update \
 ################################################## protobuf
 RUN mkdir /tmp/deps \
     && cd /tmp/deps \
-    && PROTOVER=3.19.6 \
+    && PROTOVER=3.20.3 \
     && curl ${CURL_OPTS} -L https://github.com/google/protobuf/archive/v${PROTOVER}.tar.gz -o protobuf-v${PROTOVER}.tar.gz \
     && tar xvf protobuf-v${PROTOVER}.tar.gz \
     && cd protobuf-${PROTOVER} \

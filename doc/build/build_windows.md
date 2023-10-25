@@ -13,9 +13,9 @@ Then, install required tools with following command.
 
 Note: Please make sure `Microsoft Visual Studio` is installed in the path of `C:\program files (x86)` and the path exists in `C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvars64.bat` and `C:\Program Files "("x86")"\Microsoft Visual Studio\2019\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin`.
 
-Install python3.7.9 or 3.8.10 or 3.9.13 or 3.10.8. You can refer to the following command.
+Install python3.8.10 or 3.9.13 or 3.10.8. You can refer to the following command.
 ```bat
-    choco install -y python3 --version=3.7.9
+    choco install -y python3 --version=3.8.10
 ```
 
 We use chocolatey to make the configuration as easy as possible（recommended).
@@ -41,7 +41,7 @@ You can build windows binary with following command.
     build-tools\msvc\build_wheel.bat PYTHON_VERSION
 ```
 
-The PYTHON_VERSION we tested is 3.7, 3.8 3.9 and 3.10.
+The PYTHON_VERSION we tested is 3.8 3.9 and 3.10.
 
 
 Then you can run test with following.

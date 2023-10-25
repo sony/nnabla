@@ -80,7 +80,7 @@ and check if all works.
 Installation with Multi-GPU supported
 -------------------------------------
 
-Multi-GPU wheel package is only available on python3.7+.
+Multi-GPU wheel package is only available on python3.8+.
 
 .. _cuda-cudnn-compatibility-multi-gpu:
 

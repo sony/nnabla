@@ -42,14 +42,12 @@ if __name__ == '__main__':
     nnabla_version = f'nnabla{whl_suffix}==${version}'
 
     install_requires = [
-        'tensorboard>=2.6.0, <=2.9.0',
-        'tensorflow~=2.8.0;platform_system!="Windows"',
-        'tensorflow>=2.8.0, <=2.8.1;platform_system=="Windows"',
-        'tensorflow-probability==0.16.0',
+        'tensorflow~=2.12.0',
+        'tensorflow-probability~=0.20.0',
         'onnx_tf',
         'tf2onnx~=1.14.0',
         'tensorflow-addons',
-        'onnx~=1.12.0',
+        'onnx~=1.13.0',
         'tflite2onnx',
         'flatbuffers',
         'pyopenssl',
@@ -97,7 +95,6 @@ if __name__ == '__main__':
             'Topic :: Scientific/Engineering',
             'Topic :: Scientific/Engineering :: Artificial Intelligence',
             'License :: OSI Approved :: Apache Software License',
-            'Programming Language :: Python :: 3.7',
             'Programming Language :: Python :: 3.8',
             'Programming Language :: Python :: 3.9',
             'Programming Language :: Python :: 3.10'

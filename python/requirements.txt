@@ -5,7 +5,7 @@ imageio
 numpy
 librosa
 pillow>=9.1.0
-protobuf<=3.19.6
+protobuf~=3.20
 pyyaml
 scipy
 six

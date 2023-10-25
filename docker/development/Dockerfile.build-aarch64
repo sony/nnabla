@@ -55,7 +55,7 @@ RUN eval ${APT_OPTS} && apt-get update \
        libssl-dev
 
 ############################################################ protobuf
-ENV PROTOVER=3.19.6
+ENV PROTOVER=3.20.3
 RUN mkdir /tmp/deps \
     && cd /tmp/deps \
     && curl ${CURL_OPTS} -L https://github.com/google/protobuf/archive/v${PROTOVER}.tar.gz -o protobuf-v${PROTOVER}.tar.gz \
