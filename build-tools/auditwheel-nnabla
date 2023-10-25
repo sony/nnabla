@@ -24,7 +24,7 @@ TMPDIR=$(mktemp -d)
 if [ -e $1 ]
 then
     INPUT=$(basename $1)
-    TAG="-manylinux_2_17_"
+    TAG="-manylinux_2_28_"
     if [[ $INPUT == *"aarch64"* ]]; then
         TAG="-manylinux_2_31_"
     fi

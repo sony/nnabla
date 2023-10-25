@@ -15,61 +15,62 @@
 
 # for nnabla>=1.5.0
 
-FROM ppc64le/centos:7
+FROM ppc64le/rockylinux:9
 
 ARG PIP_INS_OPTS
 ARG PYTHONWARNINGS
 ARG CURL_OPTS
 ARG WGET_OPTS
-ARG YUM_OPTS
+ARG DNF_OPTS
 
 ENV LC_ALL C
 ENV LANG C
 ENV LANGUAGE C
 
-RUN eval ${YUM_OPTS} \
-    && yum install -y \
+RUN eval ${DNF_OPTS} \
+    && dnf install -y \
        epel-release \
-       yum-utils \
-    && yum install -y \
-        ca-certificates \
-        curl \
-        freetype-devel \
-        git \
-        hdf5 \
-        hdf5-devel \
-        lapack-devel \
-        libjpeg-devel \
-        xz-devel \
-        libpng-devel \
-        redhat-lsb-core \
-        rpm-build \
-        unzip \
-        wget \
-        zip \
-        zlib-static \
-        libmpc-devel \
-        mpfr-devel \
-        gmp-devel \
-        openssl11 \
-        openssl11-devel \
-        make \
-        build-essential \
-        libssl-dev \
-        zlib1g-dev \
-        libbz2-dev \
-        libreadline-dev \
-        libsqlite3-dev \
-        llvm \
-        libncursesw5-dev \
-        xz-utils \
-        tk-dev \
-        libxml2-dev \
-        libxmlsec1-dev \
-        libffi-dev \
-        liblzma-dev \
-    && yum group install -y "Development Tools" \
-    && yum clean all
+       dnf-plugins-core \
+    && dnf config-manager --set-enabled powertools \
+    && dnf install -y \
+       ca-certificates \
+       curl \
+       freetype-devel \
+       git \
+       hdf5 \
+       hdf5-devel \
+       lapack-devel \
+       libjpeg-devel \
+       xz-devel \
+       libpng-devel \
+       redhat-lsb-core \
+       rpm-build \
+       unzip \
+       wget \
+       zip \
+       zlib-static \
+       libmpc-devel \
+       mpfr-devel \
+       gmp-devel \
+       openssl11 \
+       openssl11-devel \
+       make \
+       build-essential \
+       libssl-dev \
+       zlib1g-dev \
+       libbz2-dev \
+       libreadline-dev \
+       libsqlite3-dev \
+       llvm \
+       libncursesw5-dev \
+       xz-utils \
+       tk-dev \
+       libxml2-dev \
+       libxmlsec1-dev \
+       libffi-dev \
+       liblzma-dev \
+    && dnf group install -y "Development Tools" \
+    && dnf clean all
 
 ################################################### gcc
 RUN mkdir /tmp/deps \
@@ -87,7 +88,7 @@ RUN mkdir /tmp/deps \
 ENV CMAKEVER=3.14.3
 RUN mkdir /tmp/deps \
     && cd /tmp/deps \
-    && yum install -y cmake3 \
+    && dnf install -y cmake3 \
     && curl ${CURL_OPTS} -L https://github.com/Kitware/CMake/releases/download/v${CMAKEVER}/cmake-${CMAKEVER}.tar.gz -o cmake-${CMAKEVER}.tar.gz \
     && tar xf cmake-${CMAKEVER}.tar.gz \
     && cd cmake-${CMAKEVER} \
@@ -96,9 +97,9 @@ RUN mkdir /tmp/deps \
     && cmake3 -DBUILD_TESTING=FALSE .. \
     && make \
     && make install \
-    && yum remove -y cmake3 \
-    && yum clean all \
-    && rm -rf /var/cache/yum/* \
+    && dnf remove -y cmake3 \
+    && dnf clean all \
+    && rm -rf /var/cache/dnf/* \
     && cd / \
     && rm -rf /tmp/*
 
@@ -130,13 +131,13 @@ RUN mkdir /tmp/deps \
     && mkdir libarchive-build \
     && cd libarchive-build \
     && cmake \
-        -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DENABLE_NETTLE=FALSE -DENABLE_OPENSSL=FALSE \
-        -DENABLE_LZO=FALSE -DENABLE_LZMA=FALSE -DENABLE_BZip2=FALSE \
-        -DENABLE_LIBXML2=FALSE -DENABLE_EXPAT=FALSE -DENABLE_PCREPOSIX=FALSE -DENABLE_LibGCC=FALSE \
-        -DENABLE_CNG=FALSE -DENABLE_TAR=FALSE -DENABLE_TAR_SHARED=FALSE -DENABLE_CPIO=FALSE \
-        -DENABLE_CPIO_SHARED=FALSE -DENABLE_CAT=FALSE -DENABLE_CAT_SHARED=FALSE -DENABLE_XATTR=FALSE \
-        -DENABLE_ACL=FALSE -DENABLE_ICONV=FALSE -DENABLE_TEST=FALSE \
-        ../libarchive-3.3.2 \
+       -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DENABLE_NETTLE=FALSE -DENABLE_OPENSSL=FALSE \
+       -DENABLE_LZO=FALSE -DENABLE_LZMA=FALSE -DENABLE_BZip2=FALSE \
+       -DENABLE_LIBXML2=FALSE -DENABLE_EXPAT=FALSE -DENABLE_PCREPOSIX=FALSE -DENABLE_LibGCC=FALSE \
+       -DENABLE_CNG=FALSE -DENABLE_TAR=FALSE -DENABLE_TAR_SHARED=FALSE -DENABLE_CPIO=FALSE \
+       -DENABLE_CPIO_SHARED=FALSE -DENABLE_CAT=FALSE -DENABLE_CAT_SHARED=FALSE -DENABLE_XATTR=FALSE \
+       -DENABLE_ACL=FALSE -DENABLE_ICONV=FALSE -DENABLE_TEST=FALSE \
+       ../libarchive-3.3.2 \
     && make \
     && make install \
     && cd / \
