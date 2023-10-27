@@ -247,16 +247,16 @@ class MonitorImage(object):
         elif channels == 2:
             data = np.concatenate(
                 [data, np.ones((data.shape[0], 1) + data.shape[-2:])], axis=1)
-        path_tmpl = os.path.join(self.save_dir, '{:06d}-{}.png')
+        path_tmpl = os.path.join(self.save_dir, '{:06d}'.format(index) + '-{}')
         for j in range(min(self.num_images, data.shape[0])):
             img = data[j].transpose(1, 2, 0)
             if img.shape[-1] == 1:
                 img = img[..., 0]
-            path = path_tmpl.format(index, '{:03d}'.format(j))
+            path = path_tmpl.format('{:03d}.png'.format(j))
             imsave(path, img)
         if self.verbose:
             logger.info("iter={} {{{}}} are written to {}.".format(
-                index, self.name, path_tmpl.format(index, '*')))
+                index, self.name, path_tmpl.format('*.png')))
 
 
 class MonitorImageTile(MonitorImage):
