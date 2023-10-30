@@ -15,7 +15,6 @@
 
 import pytest
 import numpy as np
-import nnabla as nn
 import nnabla.functions as F
 from nbla_test_utils import list_context
 
@@ -31,8 +30,7 @@ def ref_trilu(x, k=0, upper=True):
 
 shapes = [
     (1, 3, 3),
-    (2, 3, 3),
-    (2, 3, 4, 3),
+    (2, 4, 3),
     (2, 2, 3, 4),
 ]
 

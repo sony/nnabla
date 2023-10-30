@@ -15,6 +15,7 @@ template <typename T> class Trilu : public BaseFunction<int, bool> {
 protected:
   int k_;
   bool upper_;
+  VariablePtr mask_;
 
 public:
   Trilu(const Context &ctx, int k, bool upper)
@@ -37,6 +38,7 @@ public:
 protected:
   NBLA_API virtual void setup_impl(const Variables &inputs,
                                    const Variables &outputs);
+  NBLA_API virtual void set_trilu_mask(const Variables &inputs);
   NBLA_API virtual void forward_impl(const Variables &inputs,
                                      const Variables &outputs);
   NBLA_API virtual void backward_impl(const Variables &inputs,
