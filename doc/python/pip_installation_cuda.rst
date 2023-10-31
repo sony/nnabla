@@ -23,6 +23,7 @@ Package name       CUDA version cuDNN version
 ================== ============ =====================
 nnabla-ext-cuda110 11.0.3       8.0(Linux & Win)
 nnabla-ext-cuda116 11.6.2       8.4(Linux & Win)
+nnabla-ext-cuda120 12.0.1       8.8(Linux & Win)
 ================== ============ =====================
 
 The latest CUDA version is always preferred if your GPU accepts.
@@ -92,6 +93,7 @@ Package name                        CUDA version cuDNN version
 =================================== ============ =============
 nnabla-ext-cuda110                  11.0.3       8.0
 nnabla-ext-cuda116                  11.6.2       8.4
+nnabla-ext-cuda120                  12.0.1       8.8
 =================================== ============ =============
 
 You can install as the following.
@@ -113,7 +115,7 @@ If you are using Ubuntu 20.04 and choose mpi4.0.3, you can install mpi with foll
 
   sudo apt install -y --no-install-recommends openmpi-bin libopenmpi-dev
 
-Otherwise, you must install a version openmpi by supported on ubuntu 20.04. (e.g. 3.1.6 or 4.1.3). In theory, all versions of openmpi are supported.
+Otherwise, you must install a version openmpi by supported on ubuntu 20.04. (e.g. 3.1.6 or 4.1.5). In theory, all versions of openmpi are supported.
 
 .. code-block:: bash
 
