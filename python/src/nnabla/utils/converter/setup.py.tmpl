@@ -42,10 +42,10 @@ if __name__ == '__main__':
     nnabla_version = f'nnabla{whl_suffix}==${version}'
 
     install_requires = [
-        'tensorflow~=2.12.0',
-        'tensorflow-probability~=0.20.0',
+        'tensorflow>=2.13.0',
+        'tensorflow-probability>=0.21.0',
         'onnx_tf',
-        'tf2onnx~=1.14.0',
+        'tf2onnx~=1.15.1',
         'tensorflow-addons',
         'onnx~=1.13.0',
         'tflite2onnx',
