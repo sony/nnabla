@@ -68,10 +68,10 @@ nnabla-doc:
 	&& cmake -DBUILD_CPP_LIB=ON \
 		-DBUILD_CPP_UTILS=OFF \
 		-DBUILD_PYTHON_PACKAGE=ON \
-		-DNNABLA_EXT_CUDA_DIRECTORY=$(NNABLA_EXT_CUDA_DIRECTORY)\
+		-DNNABLA_EXT_CUDA_DIRECTORY=$(NNABLA_EXT_CUDA_DIRECTORY) \
 		$(CMAKE_OPTS) \
 		$(NNABLA_DIRECTORY)
-	make -C $(DOC_DIRECTORY) -j$(PARALLEL_BUILD_NUM) all wheel doc
+	make -C $(DOC_DIRECTORY) -j$(PARALLEL_BUILD_NUM) wheel doc
 
 
 ########################################################################################################################
