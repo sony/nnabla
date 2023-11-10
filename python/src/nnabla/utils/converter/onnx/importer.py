@@ -16,6 +16,7 @@
 from collections import OrderedDict
 from functools import partial
 from struct import pack, unpack
+import re
 
 import nnabla.logger as logger
 import numpy as np
@@ -753,6 +754,7 @@ class OnnxImporter:
             "Shape": self.Shape,
             "Resize": self.Resize_13,
             "ScatterElements": self.ScatterElements_13,
+            "Einsum": self.Einsum,
         }
         if USE_ONNX_RESIZE:
             del self.table_op_set_13["Resize"]
@@ -4740,6 +4742,85 @@ class OnnxImporter:
             assert func_param.direction in ["RIGHT", "LEFT"]
         self.BroadcastOperator_9(
             "BitShift", func_list, n, bitshift_attr_callback)
+
+    def Einsum(self, func_list, n):
+        assert len(n.input) >= 1
+        assert len(n.output) == 1
+
+        equation = ""
+        for attr in n.attribute:
+            if attr.name == "equation":
+                check_attr_string_type(attr, n)
+                equation = attr.s.decode("utf-8").replace(" ", "")
+
+        assert re.fullmatch("([a-zA-Z]|\\.{3}|,|->)*", equation) is not None
+
+        splitted_equation = equation.replace("...", ".").split("->")
+        assert len(splitted_equation) in [1, 2]
+
+        output_term = None
+        if len(splitted_equation) == 2:
+            output_term = splitted_equation[1]
+        input_terms_str = splitted_equation[0]
+        input_terms = input_terms_str.split(",")
+
+        # Compute label_count
+        label_count = {}  # label -> the number of occurence in input terms
+        for label in input_terms_str:
+            if label != "," and label not in label_count:
+                label_count[label] = input_terms_str.count(label)
+
+        # Compute label_dim_sizes
+        label_dim_sizes = {}  # label -> the size of dimension
+        input_shapes = [self.get_func_input_shape(i) for i in n.input]
+        for input_term, input_shape in zip(input_terms, input_shapes):
+            dim = 0
+            for label in input_term:
+                if label != ".":
+                    # Handle alphabet case
+                    label_dim_sizes[label] = [input_shape[dim]]
+                    dim += 1
+                    continue
+
+                # Handle elliplisis case
+                num_ellipsis_dims = len(input_shape) - (len(input_term) - 1)
+
+                init_ellipsis_dims = [1] * num_ellipsis_dims
+                ellipsis_dims = label_dim_sizes.get(".", init_ellipsis_dims)
+
+                for i in range(num_ellipsis_dims):
+                    assert ellipsis_dims[i] == input_shape[dim + i] \
+                        or ellipsis_dims[i] == 1 \
+                        or input_shape[dim + i] == 1
+                    ellipsis_dims[i] = max(
+                        ellipsis_dims[i], input_shape[dim + i])
+
+                label_dim_sizes["."] = ellipsis_dims
+                dim += num_ellipsis_dims
+
+        # If "-> output_term" does not exist in the equation, create output_term
+        if output_term is None:
+            output_term = ""
+            # Insert ellipsis to the head of the output_term
+            if "." in label_count:
+                output_term = "."
+            # Add alphabetically-sorted labels appearing exactly once
+            # in the equation
+            for label, count in sorted(label_count.items()):
+                if label != "." and count == 1:
+                    output_term += label
+
+        # Create output shape from inputs shape and equation
+        output_shape = []
+        for label in output_term:
+            output_shape.extend(label_dim_sizes[label])
+
+        # Einsum
+        func = self.generate_default_function("Einsum", n)
+        func_param = func.einsum_param
+        func_param.equation = equation
+        self._shape_output[n.output[0]] = output_shape
+        func_list.append(func)
 
     def convert_to_functions(self, n):
         ft = self._onnx_optype_to_nnabla_function_type.get(n.op_type)

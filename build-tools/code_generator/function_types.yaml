@@ -674,3 +674,6 @@ Mod2:
 BitShift:
   float: [float]
   half: [Half]
+Einsum:
+  float: [float]
+  half: [Half]
