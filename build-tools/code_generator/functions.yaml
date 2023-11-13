@@ -4640,6 +4640,30 @@ Array Manipulation:
     function_ids:
       Empty: 85
     c_runtime: support
+  Trilu:
+    snake_name: trilu
+    doc: |2
+
+      Returns an array in which the values of the last dimension consist of the triangular
+      matrix of the last two dimensions of an input array.
+    inputs:
+      x:
+        doc: N-D array with shape (:math:`M_0 \times \ldots \times M_N`).
+    arguments:
+      k:
+        doc: The number diagonals above or below the main diagonal to exclude or include.
+        type: int64
+        default: '0'
+      upper:
+        doc: Determine whether upper or lower part of matrix is retained.
+        type: bool
+        default: 'True'
+    outputs:
+      y:
+        doc: N-D array with shape (:math:`M_0 \times \ldots \times M_N`).
+    c_runtime: support
+    function_ids:
+      iB: 359
   Meshgrid:
     snake_name: meshgrid
     doc: |2

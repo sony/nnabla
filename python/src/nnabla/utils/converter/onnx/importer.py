@@ -761,6 +761,15 @@ class OnnxImporter:
         self.table_op_set_13 = dict(
             self.table_op_set_11, **self.table_op_set_13)
 
+        # opset_14 table
+        self.table_op_set_14 = {
+            "HardSwish": self.HardSwish,
+            "Trilu": self.Trilu,
+        }
+
+        self.table_op_set_14 = dict(
+            self.table_op_set_14, **self.table_op_set_13)
+
         self.opver_impl_map = {
             "6": self.table_op_set_6,
             "7": self.table_op_set_7,
@@ -769,6 +778,7 @@ class OnnxImporter:
             "11": self.table_op_set_11,
             "12": self.table_op_set_13,
             "13": self.table_op_set_13,
+            "14": self.table_op_set_14,
         }
 
     def get_onnx_graph_info(self):
@@ -1134,6 +1144,10 @@ class OnnxImporter:
         for attr in n.attribute:
             if attr.name == "is_test":
                 pass
+            elif attr.name == "training_mode":
+                # Since training_mode is implied when n.output is more than 1
+                # no explicit handling is needed here
+                pass
             elif attr.name == "epsilon":
                 if attr.type != AttributeProto.FLOAT:
                     raise ValueError(
@@ -1186,6 +1200,7 @@ class OnnxImporter:
         rp = func.reshape_param
         new_shape = []
         shape_found = False
+        allow_zero = False
         for attr in n.attribute:
             if attr.name == "shape":
                 # Shape comes as attribute for Reshape-1
@@ -1194,6 +1209,12 @@ class OnnxImporter:
                         "Only INTS is supported for shape in {} op_type".format(n.op_type))
                 new_shape.extend(attr.ints)
                 shape_found = True
+            elif attr.name == "allowzero":
+                if attr.type != AttributeProto.INT:
+                    raise ValueError(
+                        "Only INTS is supported for shape in {} op_type".format(n.op_type))
+                new_shape.extend(attr.ints)
+                allow_zero = attr.i
             else:
                 raise ValueError("Unsupported attribute {} was specified at {}"
                                  .format(attr.name, n.op_type))
@@ -1211,6 +1232,22 @@ class OnnxImporter:
         if not shape_found:
             raise ValueError(
                 "Shape information was not found in {} op_type".format(n.op_type))
+
+        if allow_zero:
+            # In opset>=14 version, If ‘allowzero’ is set Ture,
+            # dimensions in new_shape with a value of 0 will be set to 0.
+            # nnabla do not support variable_instance with dimensions containing zeros
+            raise ValueError(
+                "allowzero is currently not supported for Reshape")
+        else:
+            # dimensions in new_shape with a value of 0 will be unchanged
+            # (i.e. correspondingly taken from the input tensor).
+            for i in range(len(new_shape)):
+                if new_shape[i] == 0:
+                    assert i < len(
+                        input_shape), "Dimensions with a value of 0 in new_shape " \
+                                      "should correspond to valid dimensions in input_shape."
+                    new_shape[i] = input_shape[i]
 
         if -1 in new_shape:
             shape_infer_index = -1
@@ -4820,6 +4857,75 @@ class OnnxImporter:
         func_param = func.einsum_param
         func_param.equation = equation
         self._shape_output[n.output[0]] = output_shape
+        func_list.append(func)
+
+    def HardSwish(self, func_list, n):
+        # Get inputs
+        assert len(n.input) == 1 and len(n.output) == 1
+        input_shape = self.get_func_input_shape(n.input[0])
+        # HardSwish = x * ReLU6(x + 3) * (1/6); ReLU6(x)=min(max(0,x),6)
+        # ReLU6(x + 3):
+        # Add
+        adds_out = fork_name(n.input[0]) + "_adds"
+        adds = generate_add_scalar(n.name, n.input[0], adds_out,
+                                   3.0, self._graph.name, self._func_counter)
+        self._shape_output[adds_out] = input_shape
+        func_list.append(adds)
+
+        # Max
+        maxs_out = fork_name(adds_out) + "_maxs"
+        maxs = generate_maximum_scalar(n.name, adds_out, maxs_out,
+                                       0.0, self._graph.name, self._func_counter)
+        self._shape_output[maxs_out] = input_shape
+        func_list.append(maxs)
+
+        # Min
+        mins_out = fork_name(maxs_out) + "_mins"
+        mins = generate_minimum_scalar(n.name, maxs_out, mins_out,
+                                       6.0, self._graph.name, self._func_counter)
+        self._shape_output[mins_out] = input_shape
+        func_list.append(mins)
+
+        # x * ReLU6(x + 3) * (1/6):
+        # Mul2
+        mul2_out = fork_name(mins_out) + "_mul"
+        mul2 = generate_arithmetic("Mul2", n.name, [n.input[0], mins_out], mul2_out,
+                                   self._graph.name, self._func_counter)
+        self._shape_output[mul2_out] = input_shape
+        func_list.append(mul2)
+
+        # Mul_scaler
+        mul_scaler = generate_mul_scalar(n.name, mul2_out, n.output[0],
+                                         1/6.0,
+                                         self._graph.name, self._func_counter)
+        self._shape_output[n.output[0]] = input_shape
+        func_list.append(mul_scaler)
+
+    def Trilu(self, func_list, n):
+        # Get inputs
+        assert len(n.input) >= 1 and len(n.output) == 1
+        k = 0  # Default value for k
+        if len(n.input) == 2:
+            k_data = self.get_input_raw_data(n.input[1], TensorProto.INT64)
+            assert len(k_data) == 1
+            k = k_data[0]
+            del n.input[1]
+
+        input_shape = self.get_func_input_shape(n.input[0])
+        upper = 1
+        for attr in n.attribute:
+            if attr.name == "upper":
+                check_attr_int_type(attr, n)
+                upper = attr.i
+            else:
+                unsupported_attribute(attr.name, n)
+
+        # Trilu
+        func = self.generate_default_function("Trilu", n)
+        func_param = func.trilu_param
+        func_param.upper = upper
+        func_param.k = k
+        self._shape_output[n.output[0]] = input_shape
         func_list.append(func)
 
     def convert_to_functions(self, n):

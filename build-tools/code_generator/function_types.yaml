@@ -391,6 +391,9 @@ MatrixDiag:
 MatrixDiagPart:
   float: [float]
   half: [Half]
+Trilu:
+  float: [float]
+  half: [Half]
 BatchInv:
   float: [float]
   half: [Half]
