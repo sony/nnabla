@@ -941,7 +941,7 @@ class OnnxExporter:
             new_input_shape = np.array(np.concatenate(
                 ([np.prod(input_shape[:cp.base_axis])], input_shape[cp.base_axis:])))
 
-        if new_input_shape != input_shape:
+        if not np.array_equal(new_input_shape, input_shape):
             # Reshape input[0]
             output_x_reshape_name = fork_name("output_x_reshape")
             n = generate_reshape(self._model_proto.graph, func.input[0], output_x_reshape_name,
@@ -1010,7 +1010,7 @@ class OnnxExporter:
             nl.append(n)
             output = output_add
 
-        if new_input_shape != input_shape:
+        if not np.array_equal(new_input_shape, input_shape):
             n = generate_reshape(self._model_proto.graph, output, func.output[0],
                                  output_y_shape)
             nl.append(n)
