@@ -15,6 +15,7 @@
 // test_expander.cpp
 
 #include "gtest/gtest.h"
+#include <fstream>
 #include <vector>
 
 #include "internal.hpp"
@@ -42,12 +43,17 @@ protected:
 };
 
 std::vector<string> test_nntxt_files = {
-    "test_loop_controls/nested_loop_test",
+    "test_loop_controls/mixed_loop_test", "test_loop_controls/nested_loop_test",
     "test_loop_controls/recurrent_delay_test",
     "test_loop_controls/no_repeat_test"};
 
 INSTANTIATE_TEST_CASE_P(TestExpandLoopControls, ExpanderTest,
                         ::testing::ValuesIn(test_nntxt_files));
+
+bool fileExists(const string &filename) {
+  ifstream file(filename);
+  return file.good();
+}
 
 TEST_P(ExpanderTest, TestWithNNTXTFiles) {
   const string model_path = GetParam();
@@ -63,11 +69,14 @@ TEST_P(ExpanderTest, TestWithNNTXTFiles) {
 
   nbla::Context ctx{{"cpu:float"}, "CpuCachedArray", "0"};
   nbla::utils::nnp::Nnp nnp(ctx);
+  ASSERT_TRUE(fileExists(model_files[0]));
   add_files_to_nnp(nnp, model_files);
 
   auto names = nnp.get_network_names();
   for (auto n : names) {
     auto network = nnp.get_network(n);
+    auto executor = nnp.get_executor("Executor");
+    executor->get_data_variables();
     cout << "<<<<<" << network->name() << ">>>>>>" << endl;
   }
 }

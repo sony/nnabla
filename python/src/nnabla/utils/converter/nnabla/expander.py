@@ -17,6 +17,7 @@ import collections
 import re
 
 from nnabla.utils import nnabla_pb2
+from nnabla.logger import logger
 
 from .exporter import rename_square_bracket
 
@@ -108,7 +109,7 @@ class NnpExpander:
                             name = _add_suffix(var.name, ri.id, i)
                         else:
                             name = var.name.replace(
-                                '{{{}}}'.format(ri.id), '_{}'.format(i))
+                                '{{{}}}'.format(ri.id), '[{}]'.format(i))
                         self._parameter_original_names[var.name].append(name)
                     else:
                         name = _add_suffix(var.name, ri.id, i)
@@ -331,6 +332,6 @@ class NnpExpander:
         for executor in nnp.executor:
             self._expand_parameter_variable(executor)
 
-        rename_square_bracket(nnp)
+        # rename_square_bracket(nnp)
 
         return nnp

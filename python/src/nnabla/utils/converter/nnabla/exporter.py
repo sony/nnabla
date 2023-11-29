@@ -87,7 +87,7 @@ class NnpExporter:
 
         # This has to be done to workaround sDeepConsolePrototype
         # weird naming rule.
-        rename_square_bracket(self._nnp)
+        # rename_square_bracket(self._nnp)
 
     def _write_nntxt(self, filename, nnp):
         with open(filename, 'w') as f:

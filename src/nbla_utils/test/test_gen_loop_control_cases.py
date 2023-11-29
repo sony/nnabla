@@ -2294,6 +2294,1690 @@ executor {
 }
 """
 
+
+N00000004 = r"""
+global_config {
+  default_context {
+    array_class: "CudaCachedArray"
+    device_id: "0"
+    backends: "cudnn:float"
+    backends: "cuda:float"
+    backends: "cpu:float"
+  }
+}
+training_config {
+  max_epoch: 30
+  iter_per_epoch: 1250
+  save_best: true
+  monitor_interval: 10
+}
+network {
+  name: "Main"
+  batch_size: 32
+  repeat_info {
+    id: "RepeatStart"
+    times: 16
+  }
+  variable {
+    name: "Input"
+    type: "Buffer"
+    shape: { dim:-1 dim: 1 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "Convolution_5/conv/W"
+    type: "Parameter"
+    shape: { dim: 64 dim: 1 dim: 3 dim: 3 }
+    initializer {
+      type: "NormalConvolutionHe"
+      multiplier: 1
+    }
+  }
+  variable {
+    name: "Convolution_5/conv/b"
+    type: "Parameter"
+    shape: { dim: 64 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "BatchNormalization/bn/beta"
+    type: "Parameter"
+    shape: { dim: 1 dim: 64 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "BatchNormalization/bn/gamma"
+    type: "Parameter"
+    shape: { dim: 1 dim: 64 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 1
+    }
+  }
+  variable {
+    name: "BatchNormalization/bn/mean"
+    type: "Parameter"
+    shape: { dim: 1 dim: 64 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "BatchNormalization/bn/var"
+    type: "Parameter"
+    shape: { dim: 1 dim: 64 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "Convolution{RepeatStart}/conv/W"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 16 dim: 64 dim: 3 dim: 3 }
+    initializer {
+      type: "NormalConvolutionHe"
+      multiplier: 1
+    }
+  }
+  variable {
+    name: "Convolution{RepeatStart}/conv/b"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 16 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "BatchNormalization_2{RepeatStart}/bn/beta"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 1 dim: 16 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "BatchNormalization_2{RepeatStart}/bn/gamma"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 1 dim: 16 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 1
+    }
+  }
+  variable {
+    name: "BatchNormalization_2{RepeatStart}/bn/mean"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 1 dim: 16 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "BatchNormalization_2{RepeatStart}/bn/var"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 1 dim: 16 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "Convolution_2{RepeatStart}/conv/W"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 64 dim: 16 dim: 1 dim: 1 }
+    initializer {
+      type: "NormalConvolutionHe"
+      multiplier: 1
+    }
+  }
+  variable {
+    name: "Convolution_2{RepeatStart}/conv/b"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 64 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "BatchNormalization_3{RepeatStart}/bn/beta"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 1 dim: 64 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "BatchNormalization_3{RepeatStart}/bn/gamma"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 1 dim: 64 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 1
+    }
+  }
+  variable {
+    name: "BatchNormalization_3{RepeatStart}/bn/mean"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 1 dim: 64 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "BatchNormalization_3{RepeatStart}/bn/var"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 1 dim: 64 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "Convolution_3/conv/W"
+    type: "Parameter"
+    shape: { dim: 1 dim: 64 dim: 3 dim: 3 }
+    initializer {
+      type: "NormalConvolutionHe"
+      multiplier: 1
+    }
+  }
+  variable {
+    name: "Convolution_3/conv/b"
+    type: "Parameter"
+    shape: { dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "BinaryCrossEntropy_T"
+    type: "Buffer"
+    shape: { dim:-1 dim: 1 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "Convolution_5"
+    type: "Buffer"
+    shape: { dim:-1 dim: 64 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "BatchNormalization"
+    type: "Buffer"
+    shape: { dim:-1 dim: 64 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "ELU_2"
+    type: "Buffer"
+    shape: { dim:-1 dim: 64 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "RepeatStart"
+    type: "Buffer"
+    repeat_id: "RepeatStart"
+    shape: { dim:-1 dim: 64 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "Convolution"
+    type: "Buffer"
+    repeat_id: "RepeatStart"
+    shape: { dim:-1 dim: 16 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "BatchNormalization_2"
+    type: "Buffer"
+    repeat_id: "RepeatStart"
+    shape: { dim:-1 dim: 16 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "ELU"
+    type: "Buffer"
+    repeat_id: "RepeatStart"
+    shape: { dim:-1 dim: 16 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "Convolution_2"
+    type: "Buffer"
+    repeat_id: "RepeatStart"
+    shape: { dim:-1 dim: 64 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "BatchNormalization_3"
+    type: "Buffer"
+    repeat_id: "RepeatStart"
+    shape: { dim:-1 dim: 64 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "ELU_4"
+    type: "Buffer"
+    repeat_id: "RepeatStart"
+    shape: { dim:-1 dim: 64 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "Add2"
+    type: "Buffer"
+    repeat_id: "RepeatStart"
+    shape: { dim:-1 dim: 64 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "RepeatEnd"
+    type: "Buffer"
+    shape: { dim:-1 dim: 64 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "Convolution_3"
+    type: "Buffer"
+    shape: { dim:-1 dim: 1 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "Sigmoid"
+    type: "Buffer"
+    shape: { dim:-1 dim: 1 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "BinaryCrossEntropy"
+    type: "Buffer"
+    shape: { dim:-1 dim: 1 dim: 64 dim: 64 }
+  }
+  function {
+    name: "Convolution_5"
+    type: "Convolution"
+    input: "Input"
+    input: "Convolution_5/conv/W"
+    input: "Convolution_5/conv/b"
+    output: "Convolution_5"
+    convolution_param {
+      pad: { dim: 1 dim: 1 }
+      stride: { dim: 1 dim: 1 }
+      dilation: { dim: 1 dim: 1 }
+      group: 1
+      base_axis: 1
+    }
+  }
+  function {
+    name: "BatchNormalization"
+    type: "BatchNormalization"
+    input: "Convolution_5"
+    input: "BatchNormalization/bn/beta"
+    input: "BatchNormalization/bn/gamma"
+    input: "BatchNormalization/bn/mean"
+    input: "BatchNormalization/bn/var"
+    output: "BatchNormalization"
+    batch_normalization_param {
+      axes: 1
+      decay_rate: 0.9
+      eps: 0.0001
+      batch_stat: True
+    }
+  }
+  function {
+    name: "ELU_2"
+    type: "ELU"
+    input: "BatchNormalization"
+    output: "ELU_2"
+    elu_param {
+      alpha: 1
+    }
+  }
+  function {
+    name: "RepeatStart"
+    type: "RepeatStart"
+    repeat_id: "RepeatStart"
+    input: "ELU_2"
+    input: "Add2"
+    output: "RepeatStart"
+    repeat_param {
+      repeat_id: "RepeatStart"
+    }
+  }
+  function {
+    name: "Convolution"
+    type: "Convolution"
+    repeat_id: "RepeatStart"
+    input: "RepeatStart"
+    input: "Convolution{RepeatStart}/conv/W"
+    input: "Convolution{RepeatStart}/conv/b"
+    output: "Convolution"
+    convolution_param {
+      pad: { dim: 1 dim: 1 }
+      stride: { dim: 1 dim: 1 }
+      dilation: { dim: 1 dim: 1 }
+      group: 1
+      base_axis: 1
+    }
+  }
+  function {
+    name: "BatchNormalization_2"
+    type: "BatchNormalization"
+    repeat_id: "RepeatStart"
+    input: "Convolution"
+    input: "BatchNormalization_2{RepeatStart}/bn/beta"
+    input: "BatchNormalization_2{RepeatStart}/bn/gamma"
+    input: "BatchNormalization_2{RepeatStart}/bn/mean"
+    input: "BatchNormalization_2{RepeatStart}/bn/var"
+    output: "BatchNormalization_2"
+    batch_normalization_param {
+      axes: 1
+      decay_rate: 0.9
+      eps: 0.0001
+      batch_stat: True
+    }
+  }
+  function {
+    name: "ELU"
+    type: "ELU"
+    repeat_id: "RepeatStart"
+    input: "BatchNormalization_2"
+    output: "ELU"
+    elu_param {
+      alpha: 1
+    }
+  }
+  function {
+    name: "Convolution_2"
+    type: "Convolution"
+    repeat_id: "RepeatStart"
+    input: "ELU"
+    input: "Convolution_2{RepeatStart}/conv/W"
+    input: "Convolution_2{RepeatStart}/conv/b"
+    output: "Convolution_2"
+    convolution_param {
+      pad: { dim: 0 dim: 0 }
+      stride: { dim: 1 dim: 1 }
+      dilation: { dim: 1 dim: 1 }
+      group: 1
+      base_axis: 1
+    }
+  }
+  function {
+    name: "BatchNormalization_3"
+    type: "BatchNormalization"
+    repeat_id: "RepeatStart"
+    input: "Convolution_2"
+    input: "BatchNormalization_3{RepeatStart}/bn/beta"
+    input: "BatchNormalization_3{RepeatStart}/bn/gamma"
+    input: "BatchNormalization_3{RepeatStart}/bn/mean"
+    input: "BatchNormalization_3{RepeatStart}/bn/var"
+    output: "BatchNormalization_3"
+    batch_normalization_param {
+      axes: 1
+      decay_rate: 0.9
+      eps: 0.0001
+      batch_stat: True
+    }
+  }
+  function {
+    name: "ELU_4"
+    type: "ELU"
+    repeat_id: "RepeatStart"
+    input: "BatchNormalization_3"
+    output: "ELU_4"
+    elu_param {
+      alpha: 1
+    }
+  }
+  function {
+    name: "Add2"
+    type: "Add2"
+    repeat_id: "RepeatStart"
+    input: "RepeatStart"
+    input: "ELU_4"
+    output: "Add2"
+    add2_param {
+      inplace: False
+    }
+  }
+  function {
+    name: "RepeatEnd"
+    type: "RepeatEnd"
+    input: "Add2"
+    output: "RepeatEnd"
+    repeat_param {
+      repeat_id: "RepeatStart"
+      times: 16
+    }
+  }
+  function {
+    name: "Convolution_3"
+    type: "Convolution"
+    input: "RepeatEnd"
+    input: "Convolution_3/conv/W"
+    input: "Convolution_3/conv/b"
+    output: "Convolution_3"
+    convolution_param {
+      pad: { dim: 1 dim: 1 }
+      stride: { dim: 1 dim: 1 }
+      dilation: { dim: 1 dim: 1 }
+      group: 1
+      base_axis: 1
+    }
+  }
+  function {
+    name: "Sigmoid"
+    type: "Sigmoid"
+    input: "Convolution_3"
+    output: "Sigmoid"
+  }
+  function {
+    name: "BinaryCrossEntropy"
+    type: "BinaryCrossEntropy"
+    input: "Sigmoid"
+    input: "BinaryCrossEntropy_T"
+    output: "BinaryCrossEntropy"
+  }
+}
+network {
+  name: "MainValidation"
+  batch_size: 32
+  repeat_info {
+    id: "RepeatStart"
+    times: 16
+  }
+  variable {
+    name: "Input"
+    type: "Buffer"
+    shape: { dim:-1 dim: 1 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "Convolution_5/conv/W"
+    type: "Parameter"
+    shape: { dim: 64 dim: 1 dim: 3 dim: 3 }
+    initializer {
+      type: "NormalConvolutionHe"
+      multiplier: 1
+    }
+  }
+  variable {
+    name: "Convolution_5/conv/b"
+    type: "Parameter"
+    shape: { dim: 64 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "BatchNormalization/bn/beta"
+    type: "Parameter"
+    shape: { dim: 1 dim: 64 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "BatchNormalization/bn/gamma"
+    type: "Parameter"
+    shape: { dim: 1 dim: 64 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 1
+    }
+  }
+  variable {
+    name: "BatchNormalization/bn/mean"
+    type: "Parameter"
+    shape: { dim: 1 dim: 64 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "BatchNormalization/bn/var"
+    type: "Parameter"
+    shape: { dim: 1 dim: 64 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "Convolution{RepeatStart}/conv/W"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 16 dim: 64 dim: 3 dim: 3 }
+    initializer {
+      type: "NormalConvolutionHe"
+      multiplier: 1
+    }
+  }
+  variable {
+    name: "Convolution{RepeatStart}/conv/b"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 16 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "BatchNormalization_2{RepeatStart}/bn/beta"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 1 dim: 16 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "BatchNormalization_2{RepeatStart}/bn/gamma"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 1 dim: 16 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 1
+    }
+  }
+  variable {
+    name: "BatchNormalization_2{RepeatStart}/bn/mean"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 1 dim: 16 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "BatchNormalization_2{RepeatStart}/bn/var"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 1 dim: 16 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "Convolution_2{RepeatStart}/conv/W"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 64 dim: 16 dim: 1 dim: 1 }
+    initializer {
+      type: "NormalConvolutionHe"
+      multiplier: 1
+    }
+  }
+  variable {
+    name: "Convolution_2{RepeatStart}/conv/b"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 64 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "BatchNormalization_3{RepeatStart}/bn/beta"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 1 dim: 64 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "BatchNormalization_3{RepeatStart}/bn/gamma"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 1 dim: 64 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 1
+    }
+  }
+  variable {
+    name: "BatchNormalization_3{RepeatStart}/bn/mean"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 1 dim: 64 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "BatchNormalization_3{RepeatStart}/bn/var"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 1 dim: 64 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "Convolution_3/conv/W"
+    type: "Parameter"
+    shape: { dim: 1 dim: 64 dim: 3 dim: 3 }
+    initializer {
+      type: "NormalConvolutionHe"
+      multiplier: 1
+    }
+  }
+  variable {
+    name: "Convolution_3/conv/b"
+    type: "Parameter"
+    shape: { dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "BinaryCrossEntropy_T"
+    type: "Buffer"
+    shape: { dim:-1 dim: 1 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "Convolution_5"
+    type: "Buffer"
+    shape: { dim:-1 dim: 64 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "BatchNormalization"
+    type: "Buffer"
+    shape: { dim:-1 dim: 64 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "ELU_2"
+    type: "Buffer"
+    shape: { dim:-1 dim: 64 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "RepeatStart"
+    type: "Buffer"
+    repeat_id: "RepeatStart"
+    shape: { dim:-1 dim: 64 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "Convolution"
+    type: "Buffer"
+    repeat_id: "RepeatStart"
+    shape: { dim:-1 dim: 16 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "BatchNormalization_2"
+    type: "Buffer"
+    repeat_id: "RepeatStart"
+    shape: { dim:-1 dim: 16 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "ELU"
+    type: "Buffer"
+    repeat_id: "RepeatStart"
+    shape: { dim:-1 dim: 16 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "Convolution_2"
+    type: "Buffer"
+    repeat_id: "RepeatStart"
+    shape: { dim:-1 dim: 64 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "BatchNormalization_3"
+    type: "Buffer"
+    repeat_id: "RepeatStart"
+    shape: { dim:-1 dim: 64 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "ELU_4"
+    type: "Buffer"
+    repeat_id: "RepeatStart"
+    shape: { dim:-1 dim: 64 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "Add2"
+    type: "Buffer"
+    repeat_id: "RepeatStart"
+    shape: { dim:-1 dim: 64 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "RepeatEnd"
+    type: "Buffer"
+    shape: { dim:-1 dim: 64 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "Convolution_3"
+    type: "Buffer"
+    shape: { dim:-1 dim: 1 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "Sigmoid"
+    type: "Buffer"
+    shape: { dim:-1 dim: 1 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "BinaryCrossEntropy"
+    type: "Buffer"
+    shape: { dim:-1 dim: 1 dim: 64 dim: 64 }
+  }
+  function {
+    name: "Convolution_5"
+    type: "Convolution"
+    input: "Input"
+    input: "Convolution_5/conv/W"
+    input: "Convolution_5/conv/b"
+    output: "Convolution_5"
+    convolution_param {
+      pad: { dim: 1 dim: 1 }
+      stride: { dim: 1 dim: 1 }
+      dilation: { dim: 1 dim: 1 }
+      group: 1
+      base_axis: 1
+    }
+  }
+  function {
+    name: "BatchNormalization"
+    type: "BatchNormalization"
+    input: "Convolution_5"
+    input: "BatchNormalization/bn/beta"
+    input: "BatchNormalization/bn/gamma"
+    input: "BatchNormalization/bn/mean"
+    input: "BatchNormalization/bn/var"
+    output: "BatchNormalization"
+    batch_normalization_param {
+      axes: 1
+      decay_rate: 0.9
+      eps: 0.0001
+      batch_stat: False
+    }
+  }
+  function {
+    name: "ELU_2"
+    type: "ELU"
+    input: "BatchNormalization"
+    output: "ELU_2"
+    elu_param {
+      alpha: 1
+    }
+  }
+  function {
+    name: "RepeatStart"
+    type: "RepeatStart"
+    repeat_id: "RepeatStart"
+    input: "ELU_2"
+    input: "Add2"
+    output: "RepeatStart"
+    repeat_param {
+      repeat_id: "RepeatStart"
+    }
+  }
+  function {
+    name: "Convolution"
+    type: "Convolution"
+    repeat_id: "RepeatStart"
+    input: "RepeatStart"
+    input: "Convolution{RepeatStart}/conv/W"
+    input: "Convolution{RepeatStart}/conv/b"
+    output: "Convolution"
+    convolution_param {
+      pad: { dim: 1 dim: 1 }
+      stride: { dim: 1 dim: 1 }
+      dilation: { dim: 1 dim: 1 }
+      group: 1
+      base_axis: 1
+    }
+  }
+  function {
+    name: "BatchNormalization_2"
+    type: "BatchNormalization"
+    repeat_id: "RepeatStart"
+    input: "Convolution"
+    input: "BatchNormalization_2{RepeatStart}/bn/beta"
+    input: "BatchNormalization_2{RepeatStart}/bn/gamma"
+    input: "BatchNormalization_2{RepeatStart}/bn/mean"
+    input: "BatchNormalization_2{RepeatStart}/bn/var"
+    output: "BatchNormalization_2"
+    batch_normalization_param {
+      axes: 1
+      decay_rate: 0.9
+      eps: 0.0001
+      batch_stat: False
+    }
+  }
+  function {
+    name: "ELU"
+    type: "ELU"
+    repeat_id: "RepeatStart"
+    input: "BatchNormalization_2"
+    output: "ELU"
+    elu_param {
+      alpha: 1
+    }
+  }
+  function {
+    name: "Convolution_2"
+    type: "Convolution"
+    repeat_id: "RepeatStart"
+    input: "ELU"
+    input: "Convolution_2{RepeatStart}/conv/W"
+    input: "Convolution_2{RepeatStart}/conv/b"
+    output: "Convolution_2"
+    convolution_param {
+      pad: { dim: 0 dim: 0 }
+      stride: { dim: 1 dim: 1 }
+      dilation: { dim: 1 dim: 1 }
+      group: 1
+      base_axis: 1
+    }
+  }
+  function {
+    name: "BatchNormalization_3"
+    type: "BatchNormalization"
+    repeat_id: "RepeatStart"
+    input: "Convolution_2"
+    input: "BatchNormalization_3{RepeatStart}/bn/beta"
+    input: "BatchNormalization_3{RepeatStart}/bn/gamma"
+    input: "BatchNormalization_3{RepeatStart}/bn/mean"
+    input: "BatchNormalization_3{RepeatStart}/bn/var"
+    output: "BatchNormalization_3"
+    batch_normalization_param {
+      axes: 1
+      decay_rate: 0.9
+      eps: 0.0001
+      batch_stat: False
+    }
+  }
+  function {
+    name: "ELU_4"
+    type: "ELU"
+    repeat_id: "RepeatStart"
+    input: "BatchNormalization_3"
+    output: "ELU_4"
+    elu_param {
+      alpha: 1
+    }
+  }
+  function {
+    name: "Add2"
+    type: "Add2"
+    repeat_id: "RepeatStart"
+    input: "RepeatStart"
+    input: "ELU_4"
+    output: "Add2"
+    add2_param {
+      inplace: False
+    }
+  }
+  function {
+    name: "RepeatEnd"
+    type: "RepeatEnd"
+    input: "Add2"
+    output: "RepeatEnd"
+    repeat_param {
+      repeat_id: "RepeatStart"
+      times: 16
+    }
+  }
+  function {
+    name: "Convolution_3"
+    type: "Convolution"
+    input: "RepeatEnd"
+    input: "Convolution_3/conv/W"
+    input: "Convolution_3/conv/b"
+    output: "Convolution_3"
+    convolution_param {
+      pad: { dim: 1 dim: 1 }
+      stride: { dim: 1 dim: 1 }
+      dilation: { dim: 1 dim: 1 }
+      group: 1
+      base_axis: 1
+    }
+  }
+  function {
+    name: "Sigmoid"
+    type: "Sigmoid"
+    input: "Convolution_3"
+    output: "Sigmoid"
+  }
+  function {
+    name: "BinaryCrossEntropy"
+    type: "BinaryCrossEntropy"
+    input: "Sigmoid"
+    input: "BinaryCrossEntropy_T"
+    output: "BinaryCrossEntropy"
+  }
+}
+network {
+  name: "MainRuntime"
+  batch_size: 32
+  repeat_info {
+    id: "RepeatStart"
+    times: 16
+  }
+  variable {
+    name: "Input"
+    type: "Buffer"
+    shape: { dim:-1 dim: 1 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "Convolution_5/conv/W"
+    type: "Parameter"
+    shape: { dim: 64 dim: 1 dim: 3 dim: 3 }
+    initializer {
+      type: "NormalConvolutionHe"
+      multiplier: 1
+    }
+  }
+  variable {
+    name: "Convolution_5/conv/b"
+    type: "Parameter"
+    shape: { dim: 64 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "BatchNormalization/bn/beta"
+    type: "Parameter"
+    shape: { dim: 1 dim: 64 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "BatchNormalization/bn/gamma"
+    type: "Parameter"
+    shape: { dim: 1 dim: 64 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 1
+    }
+  }
+  variable {
+    name: "BatchNormalization/bn/mean"
+    type: "Parameter"
+    shape: { dim: 1 dim: 64 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "BatchNormalization/bn/var"
+    type: "Parameter"
+    shape: { dim: 1 dim: 64 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "Convolution{RepeatStart}/conv/W"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 16 dim: 64 dim: 3 dim: 3 }
+    initializer {
+      type: "NormalConvolutionHe"
+      multiplier: 1
+    }
+  }
+  variable {
+    name: "Convolution{RepeatStart}/conv/b"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 16 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "BatchNormalization_2{RepeatStart}/bn/beta"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 1 dim: 16 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "BatchNormalization_2{RepeatStart}/bn/gamma"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 1 dim: 16 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 1
+    }
+  }
+  variable {
+    name: "BatchNormalization_2{RepeatStart}/bn/mean"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 1 dim: 16 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "BatchNormalization_2{RepeatStart}/bn/var"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 1 dim: 16 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "Convolution_2{RepeatStart}/conv/W"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 64 dim: 16 dim: 1 dim: 1 }
+    initializer {
+      type: "NormalConvolutionHe"
+      multiplier: 1
+    }
+  }
+  variable {
+    name: "Convolution_2{RepeatStart}/conv/b"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 64 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "BatchNormalization_3{RepeatStart}/bn/beta"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 1 dim: 64 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "BatchNormalization_3{RepeatStart}/bn/gamma"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 1 dim: 64 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 1
+    }
+  }
+  variable {
+    name: "BatchNormalization_3{RepeatStart}/bn/mean"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 1 dim: 64 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "BatchNormalization_3{RepeatStart}/bn/var"
+    type: "Parameter"
+    repeat_id: "RepeatStart"
+    shape: { dim: 1 dim: 64 dim: 1 dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "Convolution_3/conv/W"
+    type: "Parameter"
+    shape: { dim: 1 dim: 64 dim: 3 dim: 3 }
+    initializer {
+      type: "NormalConvolutionHe"
+      multiplier: 1
+    }
+  }
+  variable {
+    name: "Convolution_3/conv/b"
+    type: "Parameter"
+    shape: { dim: 1 }
+    initializer {
+      type: "Constant"
+      multiplier: 0
+    }
+  }
+  variable {
+    name: "Convolution_5"
+    type: "Buffer"
+    shape: { dim:-1 dim: 64 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "BatchNormalization"
+    type: "Buffer"
+    shape: { dim:-1 dim: 64 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "ELU_2"
+    type: "Buffer"
+    shape: { dim:-1 dim: 64 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "RepeatStart"
+    type: "Buffer"
+    repeat_id: "RepeatStart"
+    shape: { dim:-1 dim: 64 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "Convolution"
+    type: "Buffer"
+    repeat_id: "RepeatStart"
+    shape: { dim:-1 dim: 16 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "BatchNormalization_2"
+    type: "Buffer"
+    repeat_id: "RepeatStart"
+    shape: { dim:-1 dim: 16 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "ELU"
+    type: "Buffer"
+    repeat_id: "RepeatStart"
+    shape: { dim:-1 dim: 16 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "Convolution_2"
+    type: "Buffer"
+    repeat_id: "RepeatStart"
+    shape: { dim:-1 dim: 64 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "BatchNormalization_3"
+    type: "Buffer"
+    repeat_id: "RepeatStart"
+    shape: { dim:-1 dim: 64 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "ELU_4"
+    type: "Buffer"
+    repeat_id: "RepeatStart"
+    shape: { dim:-1 dim: 64 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "Add2"
+    type: "Buffer"
+    repeat_id: "RepeatStart"
+    shape: { dim:-1 dim: 64 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "RepeatEnd"
+    type: "Buffer"
+    shape: { dim:-1 dim: 64 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "Convolution_3"
+    type: "Buffer"
+    shape: { dim:-1 dim: 1 dim: 64 dim: 64 }
+  }
+  variable {
+    name: "Sigmoid"
+    type: "Buffer"
+    shape: { dim:-1 dim: 1 dim: 64 dim: 64 }
+  }
+  function {
+    name: "Convolution_5"
+    type: "Convolution"
+    input: "Input"
+    input: "Convolution_5/conv/W"
+    input: "Convolution_5/conv/b"
+    output: "Convolution_5"
+    convolution_param {
+      pad: { dim: 1 dim: 1 }
+      stride: { dim: 1 dim: 1 }
+      dilation: { dim: 1 dim: 1 }
+      group: 1
+      base_axis: 1
+    }
+  }
+  function {
+    name: "BatchNormalization"
+    type: "BatchNormalization"
+    input: "Convolution_5"
+    input: "BatchNormalization/bn/beta"
+    input: "BatchNormalization/bn/gamma"
+    input: "BatchNormalization/bn/mean"
+    input: "BatchNormalization/bn/var"
+    output: "BatchNormalization"
+    batch_normalization_param {
+      axes: 1
+      decay_rate: 0.9
+      eps: 0.0001
+      batch_stat: False
+    }
+  }
+  function {
+    name: "ELU_2"
+    type: "ELU"
+    input: "BatchNormalization"
+    output: "ELU_2"
+    elu_param {
+      alpha: 1
+    }
+  }
+  function {
+    name: "RepeatStart"
+    type: "RepeatStart"
+    repeat_id: "RepeatStart"
+    input: "ELU_2"
+    input: "Add2"
+    output: "RepeatStart"
+    repeat_param {
+      repeat_id: "RepeatStart"
+    }
+  }
+  function {
+    name: "Convolution"
+    type: "Convolution"
+    repeat_id: "RepeatStart"
+    input: "RepeatStart"
+    input: "Convolution{RepeatStart}/conv/W"
+    input: "Convolution{RepeatStart}/conv/b"
+    output: "Convolution"
+    convolution_param {
+      pad: { dim: 1 dim: 1 }
+      stride: { dim: 1 dim: 1 }
+      dilation: { dim: 1 dim: 1 }
+      group: 1
+      base_axis: 1
+    }
+  }
+  function {
+    name: "BatchNormalization_2"
+    type: "BatchNormalization"
+    repeat_id: "RepeatStart"
+    input: "Convolution"
+    input: "BatchNormalization_2{RepeatStart}/bn/beta"
+    input: "BatchNormalization_2{RepeatStart}/bn/gamma"
+    input: "BatchNormalization_2{RepeatStart}/bn/mean"
+    input: "BatchNormalization_2{RepeatStart}/bn/var"
+    output: "BatchNormalization_2"
+    batch_normalization_param {
+      axes: 1
+      decay_rate: 0.9
+      eps: 0.0001
+      batch_stat: False
+    }
+  }
+  function {
+    name: "ELU"
+    type: "ELU"
+    repeat_id: "RepeatStart"
+    input: "BatchNormalization_2"
+    output: "ELU"
+    elu_param {
+      alpha: 1
+    }
+  }
+  function {
+    name: "Convolution_2"
+    type: "Convolution"
+    repeat_id: "RepeatStart"
+    input: "ELU"
+    input: "Convolution_2{RepeatStart}/conv/W"
+    input: "Convolution_2{RepeatStart}/conv/b"
+    output: "Convolution_2"
+    convolution_param {
+      pad: { dim: 0 dim: 0 }
+      stride: { dim: 1 dim: 1 }
+      dilation: { dim: 1 dim: 1 }
+      group: 1
+      base_axis: 1
+    }
+  }
+  function {
+    name: "BatchNormalization_3"
+    type: "BatchNormalization"
+    repeat_id: "RepeatStart"
+    input: "Convolution_2"
+    input: "BatchNormalization_3{RepeatStart}/bn/beta"
+    input: "BatchNormalization_3{RepeatStart}/bn/gamma"
+    input: "BatchNormalization_3{RepeatStart}/bn/mean"
+    input: "BatchNormalization_3{RepeatStart}/bn/var"
+    output: "BatchNormalization_3"
+    batch_normalization_param {
+      axes: 1
+      decay_rate: 0.9
+      eps: 0.0001
+      batch_stat: False
+    }
+  }
+  function {
+    name: "ELU_4"
+    type: "ELU"
+    repeat_id: "RepeatStart"
+    input: "BatchNormalization_3"
+    output: "ELU_4"
+    elu_param {
+      alpha: 1
+    }
+  }
+  function {
+    name: "Add2"
+    type: "Add2"
+    repeat_id: "RepeatStart"
+    input: "RepeatStart"
+    input: "ELU_4"
+    output: "Add2"
+    add2_param {
+      inplace: False
+    }
+  }
+  function {
+    name: "RepeatEnd"
+    type: "RepeatEnd"
+    input: "Add2"
+    output: "RepeatEnd"
+    repeat_param {
+      repeat_id: "RepeatStart"
+      times: 16
+    }
+  }
+  function {
+    name: "Convolution_3"
+    type: "Convolution"
+    input: "RepeatEnd"
+    input: "Convolution_3/conv/W"
+    input: "Convolution_3/conv/b"
+    output: "Convolution_3"
+    convolution_param {
+      pad: { dim: 1 dim: 1 }
+      stride: { dim: 1 dim: 1 }
+      dilation: { dim: 1 dim: 1 }
+      group: 1
+      base_axis: 1
+    }
+  }
+  function {
+    name: "Sigmoid"
+    type: "Sigmoid"
+    input: "Convolution_3"
+    output: "Sigmoid"
+  }
+}
+dataset {
+  name: "Training"
+  uri: "s3://sdeep-datasets-dev/ccbf15a0-bcb6-4ba6-b10e-27fc877c4348/22/index.csv"
+  cache_dir: "/dataset-cache/ccbf15a0-bcb6-4ba6-b10e-27fc877c4348/22.cache"
+  overwrite_cache: false
+  create_cache_explicitly: true
+  shuffle: true
+  no_image_normalization: false
+  batch_size: 32
+}
+dataset {
+  name: "Validation"
+  uri: "s3://sdeep-datasets-dev/ccbf15a0-bcb6-4ba6-b10e-27fc877c4348/23/index.csv"
+  cache_dir: "/dataset-cache/ccbf15a0-bcb6-4ba6-b10e-27fc877c4348/23.cache"
+  overwrite_cache: false
+  create_cache_explicitly: true
+  shuffle: false
+  no_image_normalization: false
+  batch_size: 32
+}
+optimizer {
+  start_iter: 0
+  end_iter: 0
+  name: "Optimizer"
+  update_interval: 1
+  network_name: "Main"
+  dataset_name: "Training"
+  solver {
+    type: "Adam"
+    weight_decay: 0
+    adam_param {
+      alpha: 0.001
+      beta1: 0.9
+      beta2: 0.999
+      eps: 1e-08
+    }
+    lr_scheduler_type: "Cosine"
+    cosine_scheduler_param {
+      max_iter: 37500
+    }
+    lr_warmup_scheduler_type: "None"
+  }
+  data_variable {
+    variable_name: "Input"
+    data_name: "x"
+  }
+  data_variable {
+    variable_name: "BinaryCrossEntropy_T"
+    data_name: "y"
+  }
+  loss_variable {
+    variable_name: "BinaryCrossEntropy"
+  }
+  parameter_variable {
+    variable_name: "Convolution_5/conv/W"
+    learning_rate_multiplier: 1
+  }
+  parameter_variable {
+    variable_name: "Convolution_5/conv/b"
+    learning_rate_multiplier: 1
+  }
+  parameter_variable {
+    variable_name: "BatchNormalization/bn/beta"
+    learning_rate_multiplier: 1
+  }
+  parameter_variable {
+    variable_name: "BatchNormalization/bn/gamma"
+    learning_rate_multiplier: 1
+  }
+  parameter_variable {
+    variable_name: "BatchNormalization/bn/mean"
+    learning_rate_multiplier: 0
+  }
+  parameter_variable {
+    variable_name: "BatchNormalization/bn/var"
+    learning_rate_multiplier: 0
+  }
+  parameter_variable {
+    variable_name: "Convolution{RepeatStart}/conv/W"
+    learning_rate_multiplier: 1
+  }
+  parameter_variable {
+    variable_name: "Convolution{RepeatStart}/conv/b"
+    learning_rate_multiplier: 1
+  }
+  parameter_variable {
+    variable_name: "BatchNormalization_2{RepeatStart}/bn/beta"
+    learning_rate_multiplier: 1
+  }
+  parameter_variable {
+    variable_name: "BatchNormalization_2{RepeatStart}/bn/gamma"
+    learning_rate_multiplier: 1
+  }
+  parameter_variable {
+    variable_name: "BatchNormalization_2{RepeatStart}/bn/mean"
+    learning_rate_multiplier: 0
+  }
+  parameter_variable {
+    variable_name: "BatchNormalization_2{RepeatStart}/bn/var"
+    learning_rate_multiplier: 0
+  }
+  parameter_variable {
+    variable_name: "Convolution_2{RepeatStart}/conv/W"
+    learning_rate_multiplier: 1
+  }
+  parameter_variable {
+    variable_name: "Convolution_2{RepeatStart}/conv/b"
+    learning_rate_multiplier: 1
+  }
+  parameter_variable {
+    variable_name: "BatchNormalization_3{RepeatStart}/bn/beta"
+    learning_rate_multiplier: 1
+  }
+  parameter_variable {
+    variable_name: "BatchNormalization_3{RepeatStart}/bn/gamma"
+    learning_rate_multiplier: 1
+  }
+  parameter_variable {
+    variable_name: "BatchNormalization_3{RepeatStart}/bn/mean"
+    learning_rate_multiplier: 0
+  }
+  parameter_variable {
+    variable_name: "BatchNormalization_3{RepeatStart}/bn/var"
+    learning_rate_multiplier: 0
+  }
+  parameter_variable {
+    variable_name: "Convolution_3/conv/W"
+    learning_rate_multiplier: 1
+  }
+  parameter_variable {
+    variable_name: "Convolution_3/conv/b"
+    learning_rate_multiplier: 1
+  }
+}
+monitor {
+  name: "train_error"
+  network_name: "MainValidation"
+  dataset_name: "Training"
+  data_variable {
+    variable_name: "Input"
+    data_name: "x"
+  }
+  data_variable {
+    variable_name: "BinaryCrossEntropy_T"
+    data_name: "y"
+  }
+  monitor_variable {
+    type: "Error"
+    variable_name: "BinaryCrossEntropy"
+  }
+}
+monitor {
+  name: "valid_error"
+  network_name: "MainValidation"
+  dataset_name: "Validation"
+  data_variable {
+    variable_name: "Input"
+    data_name: "x"
+  }
+  data_variable {
+    variable_name: "BinaryCrossEntropy_T"
+    data_name: "y"
+  }
+  monitor_variable {
+    type: "Error"
+    variable_name: "BinaryCrossEntropy"
+  }
+}
+executor {
+  name: "Executor"
+  network_name: "MainRuntime"
+  num_evaluations: 1
+  repeat_evaluation_type: "mean"
+  need_back_propagation: false
+  no_image_normalization: false
+  data_variable {
+    variable_name: "Input"
+    data_name: "x"
+  }
+  output_variable {
+    variable_name: "Sigmoid"
+    data_name: "y'"
+  }
+  parameter_variable {
+    variable_name: "Convolution_5/conv/W"
+  }
+  parameter_variable {
+    variable_name: "Convolution_5/conv/b"
+  }
+  parameter_variable {
+    variable_name: "BatchNormalization/bn/beta"
+  }
+  parameter_variable {
+    variable_name: "BatchNormalization/bn/gamma"
+  }
+  parameter_variable {
+    variable_name: "BatchNormalization/bn/mean"
+  }
+  parameter_variable {
+    variable_name: "BatchNormalization/bn/var"
+  }
+  parameter_variable {
+    variable_name: "Convolution{RepeatStart}/conv/W"
+  }
+  parameter_variable {
+    variable_name: "Convolution{RepeatStart}/conv/b"
+  }
+  parameter_variable {
+    variable_name: "BatchNormalization_2{RepeatStart}/bn/beta"
+  }
+  parameter_variable {
+    variable_name: "BatchNormalization_2{RepeatStart}/bn/gamma"
+  }
+  parameter_variable {
+    variable_name: "BatchNormalization_2{RepeatStart}/bn/mean"
+  }
+  parameter_variable {
+    variable_name: "BatchNormalization_2{RepeatStart}/bn/var"
+  }
+  parameter_variable {
+    variable_name: "Convolution_2{RepeatStart}/conv/W"
+  }
+  parameter_variable {
+    variable_name: "Convolution_2{RepeatStart}/conv/b"
+  }
+  parameter_variable {
+    variable_name: "BatchNormalization_3{RepeatStart}/bn/beta"
+  }
+  parameter_variable {
+    variable_name: "BatchNormalization_3{RepeatStart}/bn/gamma"
+  }
+  parameter_variable {
+    variable_name: "BatchNormalization_3{RepeatStart}/bn/mean"
+  }
+  parameter_variable {
+    variable_name: "BatchNormalization_3{RepeatStart}/bn/var"
+  }
+  parameter_variable {
+    variable_name: "Convolution_3/conv/W"
+  }
+  parameter_variable {
+    variable_name: "Convolution_3/conv/b"
+  }
+}
+"""
+
+
 P00000001 = [
     ('Convolution/conv/W', (4, 1, 5, 5)),
     ('Convolution/conv/b', (4,)),
@@ -2334,6 +4018,7 @@ cases = [
     ("test_loop_controls/nested_loop_test", N00000001, P00000001),
     ("test_loop_controls/recurrent_delay_test", N00000002, P00000002),
     ("test_loop_controls/no_repeat_test", N00000003, P00000003),
+    ("test_loop_controls/mixed_loop_test", N00000004, None),
 ]
 
 
@@ -2346,7 +4031,8 @@ def test_gen_loop_control_cases(cases):
         f.write(s)
 
     with h5py.File(os.path.join(d, "parameters.h5"), 'w') as f:
-        for i, (param_name, shape) in enumerate(params):
-            f[param_name] = np.random.random(shape)
-            f[param_name].attrs['need_grad'] = 1
-            f[param_name].attrs['index'] = i
+        if params:
+            for i, (param_name, shape) in enumerate(params):
+                f[param_name] = np.random.random(shape)
+                f[param_name].attrs['need_grad'] = 1
+                f[param_name].attrs['index'] = i
