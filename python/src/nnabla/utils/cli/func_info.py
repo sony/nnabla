@@ -32,6 +32,8 @@ class NnablaHandler:
                     f, expand_network=not FuncInfo.params.nnp_no_expand_network).execute()
                 self._nnp_set |= cvt.func_set_import_nnp(nnp)
             self._func_set &= self._nnp_set
+        if FuncInfo.params.exclude:
+            self._func_set -= set([f for f in FuncInfo.params.exclude])
         if FuncInfo.params.config:
             self._config_set = cvt.func_set_import_config(
                 FuncInfo.params.config)
@@ -202,6 +204,8 @@ def add_function_info_command(subparsers):
                            help='*.nnp files that the function sets want to be shown')
     subparser.add_argument('-c', '--config', default=None,
                            help='user config file for target constraint')
+    subparser.add_argument('-x', '--exclude', action='append', default=[],
+                           help='exclude specified functions')
     subparser.add_argument('-t', '--target', action='store_true',
                            help='specify function set is output for target format/device')
     subparser.add_argument('-q', '--query', default=None,
