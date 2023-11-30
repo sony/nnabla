@@ -7,39 +7,39 @@ Overview
 --------
 
 
-.. blockdiag::
+.. graphviz::
 
-    blockdiag {
-      default_fontsize=8
-      span_width = 32;
-      span_height = 20;
+    digraph {
+      rankdir="LR"
 
-      NNabla1 [label = "NNabla", color="lime", shape="roundedbox", width=80, height=60, fontsize=12];
-      NNabla2 [label = "Use NNabla as\nRuntime", color="lime", shape="roundedbox", width=80, height=60];
-      Other [label = "Other\n(Caffe2 etc.)", shape="roundedbox", width=80, height=60];
-      ONNX1 [label = "ONNX", color="mediumslateblue", width=40, height=20];
-      ONNX2 [label = "ONNX", color="mediumslateblue", width=40, height=20];
-      Conv1 [label = "File Format\nConverter", color="lime", shape="roundedbox", width=80, height=60, fontsize=10];
-      Conv2 [label = "File Format\nConverter", color="lime", shape="roundedbox", width=80, height=60, fontsize=10];
-      NNP1 [label = "NNP", color="cyan", width=40, height=20];
-      NNP2 [label = "NNP", color="cyan", width=40, height=20];
-      NNB [label = "NNB", color="cyan", width=40, height=20];
-      CSRC [label = "C Source\ncode", color="seagreen", width=40];
-      TF1 [label = "Tensorflow\n(.pb,ckpt,.tflite,\nsaved_model)", shape="roundedbox", color="yellow", width=80, height=60];
-      TF2 [label = "SavedModel,\nPB, TFlite",      color="yellow", width=80];
-      OtherRuntime [label = "Other runtime", shape="roundedbox", width=80];
-      NNablaCRuntime [label = "NNabla C\nRuntime", color="lime", shape="roundedbox", width=80];
-      Product [label = "Implement to\nproduct", shape="roundedbox", width=80];
-      Tensorflow [label = "Tensorflow", shape="roundedbox", width=80];
+      NNabla1 [label = "NNabla", style="filled, rounded", fillcolor="lime", shape="box", width=1.3, height=0.8, fontsize=16];
+      NNabla2 [label = "Use NNabla as\nRuntime", style="filled, rounded", fillcolor="lime", shape="box", width=1.2, height=0.6, fontsize=12];
+      Other [label = "Other\n(Caffe2 etc.)",style=rounded, shape="box", width=1.3, height=0.8, fontsize=12];
+      ONNX1 [label = "ONNX", style=filled, fillcolor="mediumslateblue", shape="box", width=0.7, height=0.2, fontsize=12];
+      ONNX2 [label = "ONNX", style=filled, fillcolor="mediumslateblue", shape="box", width=0.7, height=0.2, fontsize=12];
+      Conv1 [label = "File Format\nConverter", style="filled, rounded", fillcolor="lime", shape="box", width=1.3, height=0.8, fontsize=16];
+      Conv2 [label = "File Format\nConverter", style="filled, rounded", fillcolor="lime", shape="box", width=1.3, height=0.8, fontsize=16];
+      NNP1 [label = "NNP", style=filled, fillcolor="cyan", shape="box", width=0.7, height=0.2, fontsize=12];
+      NNP2 [label = "NNP", style=filled, fillcolor="cyan", shape="box", width=0.7, height=0.2, fontsize=12];
+      NNB [label = "NNB", style=filled, fillcolor="cyan", shape="box", width=0.7, height=0.2, fontsize=12];
+      CSRC [label = "C Source\ncode", style=filled, fillcolor="mediumseagreen", shape="box", fontsize=12];
+      TF1 [label = "Tensorflow\n(.pb,ckpt,.tflite,\nsaved_model)", shape="box", style="filled, rounded", fillcolor="yellow", width=1.3, height=0.8, fontsize=12];
+      TF2 [label = "SavedModel,\nPB, TFlite", style=filled, fillcolor="yellow", shape="box", width=0.8, fontsize=12];
+      OtherRuntime [label = "Other runtime", shape="box", style=rounded, width=1.2, fontsize=12];
+      NNablaCRuntime [label = "NNabla C\nRuntime", style="filled, rounded", fillcolor="lime", shape="box", width=1.2, fontsize=12];
+      Product [label = "Implement to\nproduct", shape="box", style=rounded, width=1.2, fontsize=12];
+      Tensorflow [label = "Tensorflow", shape="box", style=rounded, width=1.2, fontsize=12];
 
-      NNabla1 -> NNP1;
-      Other -> ONNX1 -> Conv1 -> NNP1;
+      NNabla1 -> NNP1 [minlen="2"];
       NNP1 -> Conv2;
+      Other -> ONNX1 -> Conv1;
+      Conv1 -> NNP1 [constraint="false"];
       Conv2 -> ONNX2 -> OtherRuntime;
       Conv2 -> NNB -> NNablaCRuntime;
       Conv2 -> CSRC -> Product;
       Conv2 -> NNP2 -> NNabla2;
       TF1 -> Conv1;
+      TF1 -> Conv1 [constraint="false"];
       Conv2 -> TF2 -> Tensorflow;
     }
 
@@ -71,24 +71,23 @@ Architecture
 +++++++++++++
 
 
-.. blockdiag::
+.. graphviz::
 
-    blockdiag {
-      default_group_color = white;
+   digraph {
+      rankdir="LR"
+      INPUT [label="<<file>>\nINPUT", style="filled", fillcolor="lime", shape="box", fontsize=12, width=1.6];
+      OUTPUT [label="<<file>>\nOUTPUT", style=filled, fillcolor="lime", shape="box", fontsize=12, width=1.6];
+      PROCESS [label="Process\n(Split, Expand, etc.)", style=rounded, shape="box", fontsize=12];
+      proto [label="proto", style=filled, fillcolor="cyan", shape="box", width=0.8, height=0.3,  fontsize=12];
 
-      INPUT [label="<<file>>\nINPUT", color="lime"];
-      OUTPUT [label="<<file>>\nOUTPUT", color="lime"];
-      PROCESS [label="Process\n(Split, Expand, etc.)", shape="roundedbox"];
-      proto [label="proto", color="cyan", width=60, height=20];
 
-      
-      INPUT -> proto [label="import"];
-      group {
-        orientation = portrait;
-        proto <-> PROCESS;
+      INPUT -> proto [taillabel="import"];
+      proto -> OUTPUT [headlabel="export"];
+      subgraph {
+         rank="same"
+         proto -> PROCESS [dir = "both", minlen="2"];
       }
-      proto -> OUTPUT [label="export"];
-    }
+   }
 
 
 This file format converter uses protobuf defined in Neural Network Libraries as intermediate format.

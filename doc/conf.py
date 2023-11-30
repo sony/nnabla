@@ -21,8 +21,8 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.todo',
               'sphinx.ext.viewcode',
               'sphinx.ext.intersphinx',
+              'sphinx.ext.graphviz',
               'sphinxcontrib.actdiag',
-              'sphinxcontrib.blockdiag',
               'sphinxcontrib.nwdiag',
               'sphinxcontrib.plantuml',
               'sphinxcontrib.seqdiag',
@@ -61,7 +61,7 @@ intersphinx_mapping = {
     'numpy': ('http://docs.scipy.org/doc/numpy/', None),
 }
 
-blockdiag_html_image_format = "SVG"
+graphviz_output_format = 'svg'
 
 breathe_projects = {
     'Cpp' : '../build-doc/doc/xml-Cpp',
