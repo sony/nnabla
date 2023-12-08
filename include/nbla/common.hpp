@@ -22,6 +22,7 @@ maybe because they are uncategorized.
 #define __NBLA_COMMON_HPP__
 
 #include <algorithm>
+#include <cctype>
 #include <cstdint>
 #include <functional>
 #include <memory>
