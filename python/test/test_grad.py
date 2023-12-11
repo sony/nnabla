@@ -118,9 +118,9 @@ def test_grad_grad_resnet(seed, ctx, auto_forward, inplace, shared):
     if backend == 'cuda':
         pytest.skip('CUDA Convolution N-D is only supported in CUDNN extension')
 
-    #if sys.version_info[1] >= 9 and auto_forward == True and shared == False:
-    #    pytest.skip(
-    #        "Skip to avoid random KeyError with _ModuleLock. Referred to nnabla-ext-cuda issue #481.")
+    if sys.version_info[1] >= 9 and auto_forward == True and shared == False:
+        pytest.skip(
+            "Skip to avoid random KeyError with _ModuleLock. Referred to nnabla-ext-cuda issue #481.")
 
     nn.clear_parameters()
 
