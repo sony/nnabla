@@ -68,4 +68,6 @@ CALL pip install %PIP_INS_OPTS% ^
            six ^
            tqdm ^
            virtualenv ^
-           wheel
+           wheel ^
+           mlflow ^
+           setuptools>60.0.0
