@@ -422,7 +422,7 @@ def _protobuf_file_saver(ctx, filename, ext):
         f.write(ctx.proto.SerializeToString())
 
 
-def _nnp_file_saver(ctx, filename, ext, ssf=None):
+def _nnp_file_saver(ctx, filename, ext, pf=".h5", ssf=None):
     logger.info("Saving {} as nnp".format(filename))
     if ssf and ssf not in ['.h5', '.protobuf']:
         logger.error(
@@ -436,11 +436,12 @@ def _nnp_file_saver(ctx, filename, ext, ssf=None):
     version.seek(0)
 
     param = io.BytesIO()
+    pf = pf if pf == ".h5" else ".protobuf"
     if ctx.parameters is None:
-        nn.parameter.save_parameters(param, extension='.h5')
+        nn.parameter.save_parameters(param, extension=pf)
     else:
         nn.parameter.save_parameters(
-            param, ctx.parameters, extension='.h5')
+            param, ctx.parameters, extension=pf)
     if ssf:
         from nnabla.utils.cli.utility import save_optimizer_states
         filenamebase = os.path.splitext(filename)[0]
@@ -450,7 +451,7 @@ def _nnp_file_saver(ctx, filename, ext, ssf=None):
     with get_file_handle_save(filename, ext) as nnp:
         nnp.writestr('nnp_version.txt', version.read())
         nnp.writestr('network.nntxt', nntxt.read())
-        nnp.writestr('parameter.h5', param.read())
+        nnp.writestr(f'parameter{pf}', param.read())
         if ssf:
             for f in opti_filenames:
                 nnp.write(f, f[len(filenamebase) + 1:])
@@ -482,13 +483,14 @@ def _protobuf_parameter_file_saver(ctx, filename, ext):
         f.write(proto.SerializeToString())
 
 
-def get_default_file_savers(solver_state_format=None):
+def get_default_file_savers(parameter_format=".h5", solver_state_format=None):
     '''get_default_file_savers
     '''
     file_savers = OrderedDict([
         ('.nntxt, .prototxt', _nntxt_file_saver),
         ('.protobuf', _protobuf_file_saver),
-        ('.nnp', partial(_nnp_file_saver, ssf=solver_state_format))
+        ('.nnp', partial(_nnp_file_saver, pf=parameter_format,
+                         ssf=solver_state_format))
     ])
     return file_savers
 
