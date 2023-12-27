@@ -615,7 +615,7 @@ def compare_info(ref_info, info):
 
 
 @pytest.mark.parametrize("nntxt_idx", CASE_INDEX)
-@pytest.mark.parametrize("parameter_format", ['.protobuf'])
+@pytest.mark.parametrize("parameter_format", ['.h5', '.protobuf'])
 @pytest.mark.parametrize("dataset_sample_num", [64])
 @pytest.mark.parametrize("batch_size", [16])
 @pytest.mark.parametrize("include_params", [False])
@@ -708,7 +708,7 @@ def test_load_and_save_equivalence(nntxt_idx, parameter_format, dataset_sample_n
                     }
 
                     save.save(saved_nnp_file, contents,
-                              include_params, variable_batch_size, include_solver_state=True)
+                              include_params, variable_batch_size, include_solver_state=True, parameter_format=parameter_format)
 
             new_config = TrainConfig()
             new_config.start_iteration = 0
