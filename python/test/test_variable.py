@@ -404,3 +404,38 @@ def test_leaf_indexing_access():
     assert_allclose(d1, d2)
     assert_allclose(d2, d3)
     assert_allclose(d3, d4)
+
+
+def test_rename_variables():
+    from nnabla.core.graph_optimizer import rename_variable
+    import nnabla.functions as F
+    import nnabla.parametric_functions as PF
+    model_name = "my_model"
+
+    def my_model(x0):
+        h2 = F.tanh(PF.affine(x0, 20, name='affine2'))
+        y_0 = PF.affine(h2, 10, name='affiney_0')
+        y_1 = PF.affine(h2, 10, name='affiney_1')
+        return y_0, y_1
+
+    x = nn.Variable([1, 10], need_grad=True)
+    x.d = np.random.randn(*x.shape)
+    y_0, y_1 = my_model(x)
+
+    g = nn.graph_def.create_graph_from_variable(
+        "my_model", [y_0, y_1], names={"y_0": y_0, "y_1": y_1})
+
+    assert g.networks[model_name].variables['y_0'].name == 'y_0'
+    assert g.networks[model_name].variables['y_1'].name == 'y_1'
+
+    rename_dict = {
+        'y_0': 'y_0_rename',
+        'y_1': 'y_1_rename',
+    }
+
+    rename_variable(g.networks[model_name], rename_dict)
+
+    assert g.networks[model_name].variables['y_0_rename'].name == 'y_0_rename'
+    assert g.networks[model_name].variables['y_1_rename'].name == 'y_1_rename'
+
+    g.networks[model_name]()
