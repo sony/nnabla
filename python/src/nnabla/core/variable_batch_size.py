@@ -64,8 +64,8 @@ def variable_batch_size(network):
 
         if pf.type == 'Reshape':
             arg_shape = pf.args['shape']
-            # assert (arg_shape[0] == expect_batch_size)
-            # pf.args['shape'] = [-1] + arg_shape[1:]
+            assert (arg_shape[0] == expect_batch_size)
+            pf.args['shape'] = [-1] + arg_shape[1:]
         elif pf.type == 'Broadcast':
             arg_shape = pf.args['shape']
             pv_name = network.variables[pf.inputs[0]]
