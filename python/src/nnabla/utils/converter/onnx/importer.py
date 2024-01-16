@@ -2774,7 +2774,8 @@ class OnnxImporter:
             shape = [input_shape[x] if x != axis else output_len[i]
                      for x in range(len(input_shape))]
             self._shape_output[n.output[i]] = shape
-            sp = generate_slice(n.name, n.input[0], n.output[i], start_local, stop_local, step, self._graph.name, self._func_counter)
+            sp = generate_slice(n.name, n.input[0], n.output[i], start_local,
+                                stop_local, step, self._graph.name, self._func_counter)
             func_list.append(sp)
 
     def Upsample_6(self, func_list, n):
