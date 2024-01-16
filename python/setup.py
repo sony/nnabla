@@ -26,7 +26,7 @@ import pathlib
 
 setup_requires = [
     'setuptools',
-    'Cython~=0.29',  # Requires python-dev.
+    'Cython',  # Requires python-dev.
 ]
 
 numpy_version = ""
