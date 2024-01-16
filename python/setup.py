@@ -207,7 +207,8 @@ if __name__ == '__main__':
                             "embedsignature": True,
                             "language_level": "2",
                             "c_string_type": 'str',
-                            "c_string_encoding": "ascii"})
+                            "c_string_encoding": "ascii",
+                            "legacy_implicit_noexcept": True})
 
     ############################################################################
     # Package data
