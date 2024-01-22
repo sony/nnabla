@@ -165,12 +165,12 @@ Import
 - ✓: Support to convert
 - X: Not support
 
-Total: 14/16
+Total: 15/16
 
 Tensorflow Import Sample Test(tf --> nnp)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Count 14/16
+Count 15/16
 
 
     ======================================  =======  ============================================================
@@ -185,7 +185,7 @@ Count 14/16
     ae0_frozen_                                ✓                                                                 
     conv-layers_frozen_                        ✓                                                                 
     fc-layers_frozen_                          ✓                                                                 
-    inception_resnet_v2_2016_08_30_frozen_     X                                                                 
+    inception_resnet_v2_2016_08_30_frozen_     ✓                                                                 
     inception_v1_2016_08_28_frozen_            ✓                                                                 
     inception_v3_2016_08_28_frozen_            ✓                                                                 
     inception_v4_2016_09_09_frozen_            ✓                                                                 
@@ -319,7 +319,7 @@ Export
 - ✓: Support to convert
 - X: Not support
 
-Total: 42/65
+Total: 43/65
 
 Tensorflow Lite Export Sample Test(nnp --> tflite)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -403,7 +403,7 @@ Count 7/18
 Tensorflow Lite Export Example Models(nnp --> tflite)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Count 6/10
+Count 7/10
 
 
     ==================  =======  ====
@@ -418,7 +418,7 @@ Count 6/10
     siamese_embedding_     ✓         
     wavenet_               X         
     word_embedding_        ✓         
-    yolov2_                X         
+    yolov2_                ✓         
     ==================  =======  ====
 
 
@@ -487,17 +487,17 @@ Count 34/37
 
 
 
-.. _squeezenet_model: https://media.githubusercontent.com/media/onnx/models/master/vision/classification/squeezenet/model/squeezenet1.0-9.tar.gz
-.. _densenet121_model: https://media.githubusercontent.com/media/onnx/models/master/vision/classification/densenet-121/model/densenet-9.tar.gz
-.. _inception_v2_model: https://media.githubusercontent.com/media/onnx/models/master/vision/classification/inception_and_googlenet/inception_v2/model/inception-v2-9.tar.gz
+.. _zfnet512_model: https://media.githubusercontent.com/media/onnx/models/master/vision/classification/zfnet-512/model/zfnet512-9.tar.gz
+.. _shufflenet_model: https://media.githubusercontent.com/media/onnx/models/master/vision/classification/shufflenet/model/shufflenet-9.tar.gz
+.. _inception_v1_model: https://media.githubusercontent.com/media/onnx/models/master/vision/classification/inception_and_googlenet/inception_v1/model/inception-v1-9.tar.gz
+.. _bvlc_googlenet_model: https://media.githubusercontent.com/media/onnx/models/master/vision/classification/inception_and_googlenet/googlenet/model/googlenet-9.tar.gz
+.. _bvlc_reference_rcnn_ilsvrc13_model: https://media.githubusercontent.com/media/onnx/models/master/vision/classification/rcnn_ilsvrc13/model/rcnn-ilsvrc13-9.tar.gz
 .. _vgg19_model: https://media.githubusercontent.com/media/onnx/models/master/vision/classification/vgg/model/vgg19-caffe2-9.tar.gz
 .. _bvlc_alexnet_model: https://media.githubusercontent.com/media/onnx/models/master/vision/classification/alexnet/model/bvlcalexnet-9.tar.gz
-.. _bvlc_reference_rcnn_ilsvrc13_model: https://media.githubusercontent.com/media/onnx/models/master/vision/classification/rcnn_ilsvrc13/model/rcnn-ilsvrc13-9.tar.gz
-.. _bvlc_googlenet_model: https://media.githubusercontent.com/media/onnx/models/master/vision/classification/inception_and_googlenet/googlenet/model/googlenet-9.tar.gz
-.. _shufflenet_model: https://media.githubusercontent.com/media/onnx/models/master/vision/classification/shufflenet/model/shufflenet-9.tar.gz
+.. _inception_v2_model: https://media.githubusercontent.com/media/onnx/models/master/vision/classification/inception_and_googlenet/inception_v2/model/inception-v2-9.tar.gz
+.. _densenet121_model: https://media.githubusercontent.com/media/onnx/models/master/vision/classification/densenet-121/model/densenet-9.tar.gz
 .. _bvlc_reference_caffenet_model: https://media.githubusercontent.com/media/onnx/models/master/vision/classification/caffenet/model/caffenet-9.tar.gz
-.. _inception_v1_model: https://media.githubusercontent.com/media/onnx/models/master/vision/classification/inception_and_googlenet/inception_v1/model/inception-v1-9.tar.gz
-.. _zfnet512_model: https://media.githubusercontent.com/media/onnx/models/master/vision/classification/zfnet-512/model/zfnet512-9.tar.gz
+.. _squeezenet_model: https://media.githubusercontent.com/media/onnx/models/master/vision/classification/squeezenet/model/squeezenet1.0-9.tar.gz
 .. _resnet50_model: https://media.githubusercontent.com/media/onnx/models/master/vision/classification/resnet/model/resnet50-caffe2-v1-9.tar.gz
 .. _11_deconvolution_11: https://dl.sony.com/assets/sdcproj/tutorial/basics/11_deconvolution.sdcproj
 .. _LSTM_auto_encoder_24: https://dl.sony.com/assets/sdcproj/tutorial/recurrent_neural_networks/LSTM_auto_encoder.sdcproj
