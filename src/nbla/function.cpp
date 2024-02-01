@@ -186,7 +186,7 @@ void Function::recompute(const Variables &inputs, const Variables &outputs) {
 
 //
 // Set a new function input mask where true values indicate that the graph
-// preceeding the corresponding function input shall be evaluated by the
+// preceding the corresponding function input shall be evaluated by the
 // graph engine, and false values disable that graph leading to the input.
 //
 // Functions that handle inactive inputs must have cg_input_mask set to the
