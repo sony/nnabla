@@ -63,3 +63,28 @@ def test_prelu_double_backward(seed, inshape, wshape, base_axis, ctx, func_name)
     backward_function_tester(rng, F.prelu, inputs,
                              func_args=[base_axis],
                              ctx=ctx, atol_accum=1e-1, dstep=1e-3)
+
+
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape, wshape,reset_inshape, reset_wshape, base_axis",
+                         [((2, 3, 2, 3, 2), tuple(), (3, 2, 2, 2, 3), tuple(), 4),
+                          ((2, 3, 1, 3), (3,), (2, 4, 1, 3), (4,), 1),
+                          ((2, 3, 1, 3), (3,), (2, 3, 1, 4), (4,), -1),
+                          ((2, 5, 3, 6), (3,), (2, 5, 4, 6), (4,), -2)
+                          ]
+                         )
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+def test_prelu_forward_backward_with_reset(seed, inshape, wshape, reset_inshape, reset_wshape, base_axis, ctx,
+                                           func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    x = rng.randn(*inshape).astype(np.float32)
+    w = np.array(rng.randn(*wshape)).astype(np.float32)
+    inputs = [x, w]
+    # reset input
+    reset_x = rng.randn(*reset_inshape).astype(np.float32)
+    reset_w = np.array(rng.randn(*reset_wshape)).astype(np.float32)
+    reset_inputs = [reset_x, reset_w]
+    function_tester(rng, F.prelu, ref_prelu, inputs,
+                    func_args=[base_axis],
+                    ctx=ctx, func_name=func_name, atol_b=1e-2, reset_inputs=reset_inputs)

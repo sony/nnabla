@@ -56,3 +56,17 @@ def test_sign_double_backward(seed, alpha, ctx, func_name):
     backward_function_tester(rng, F.sign, inputs, func_args=[alpha],
                              ctx=ctx,
                              dstep=1e-3)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("alpha", [0.0, -1.0, 1.0])
+def test_sign_forward_backward_with_reset(seed, alpha, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2]
+    reset_inputs = [rng.randn(3, 2, 4).astype(np.float32) * 2]
+
+    function_tester(rng, F.sign, ref_func_sign, inputs, func_args=[alpha],
+                    ctx=ctx, func_name=func_name,
+                    atol_b=1e-2, dstep=1e-3, ref_grad=ref_grad_sign, reset_inputs=reset_inputs)

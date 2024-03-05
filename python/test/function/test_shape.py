@@ -40,4 +40,15 @@ def test_constant_forward(seed, shape, start, end, ctx, func_name):
                     ctx=ctx, func_name=func_name, backward=None)
 
 
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("shape,reset_shape", [((3, 4, 5), (7, 8, 9, 10))])
+@pytest.mark.parametrize("start, end", [(0, 100), (None, None), (None, -1), (0, None)])
+def test_constant_forward_with_reset(seed, shape, reset_shape, start, end, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [np.random.random(shape)]
+    reset_inputs = [np.random.random(reset_shape)]
+    function_tester(rng, F.shape, ref_shape, inputs, func_args=[start, end],
+                    ctx=ctx, func_name=func_name, backward=None, reset_inputs=reset_inputs)
 # No need to test backward_function

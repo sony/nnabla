@@ -49,3 +49,17 @@ def test_huber_loss_double_backward(seed, ctx, func_name, delta):
     backward_function_tester(rng, F.huber_loss, inputs,
                              func_args=[delta],
                              atol_accum=1e-2, ctx=ctx)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("delta", [0.5, 1.0, 2.0])
+def test_huber_loss_forward_backward_with_reset(seed, ctx, func_name, delta):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2 for _ in range(2)]
+    reset_inputs = [rng.randn(1, 2, 3).astype(
+        np.float32) * 2 for _ in range(2)]
+    function_tester(rng, F.huber_loss, ref_huber_loss, inputs,
+                    func_args=[delta],
+                    atol_b=1e-2, ctx=ctx, func_name=func_name, reset_inputs=reset_inputs)

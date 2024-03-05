@@ -61,3 +61,20 @@ def test_split_double_backward(seed, axis, ctx, func_name):
                              atol_accum=5e-3,
                              dstep=1e-2,
                              ctx=ctx)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("axis", [0, 1, -2, -3])
+# @pytest.mark.parametrize("axis", [-1]) #failed, no not support reset with different output size
+@pytest.mark.parametrize("seed", [313])
+def test_split_forward_backward_with_reset(seed, axis, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    shape = [2, 3, 4]
+    reset_shape = [2, 3, 5]
+    x = rng.randn(*shape).astype(np.float32)
+    inputs = [x]
+    reset_inputs = [rng.randn(*reset_shape).astype(np.float32)]
+    function_tester(rng, F.split, ref_split, inputs,
+                    func_args=[axis], ctx=ctx, func_name=func_name,
+                    atol_b=1e-2, reset_inputs=reset_inputs)

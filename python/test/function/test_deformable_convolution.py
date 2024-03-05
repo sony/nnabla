@@ -41,8 +41,8 @@ def ref_deformable_convolution_2d(x, w, offset, mask, b, base_axis, pad, stride,
     ext_offset = offset.reshape((-1,) + offset.shape[base_axis:])
     if mask is None:
         mask_shape = x.shape[0:base_axis] + \
-            (deformable_group * w.shape[2] *
-             w.shape[3],) + x.shape[base_axis + 1:]
+                     (deformable_group * w.shape[2] *
+                      w.shape[3],) + x.shape[base_axis + 1:]
         mask = np.ones(mask_shape).astype(np.float32)
     ext_mask = mask.reshape((-1,) + mask.shape[base_axis:])
     for xx, oo, mm in zip(ext_x, ext_offset, ext_mask):
@@ -60,7 +60,7 @@ def ref_deformable_convolution_2d(x, w, offset, mask, b, base_axis, pad, stride,
     ((2, 2, 5, 7), (3, 3), 2, (1, 1), (1, 2), (2, 1), 1, 1, True),
     ((2, 2, 5, 7), (3, 3), 2, (1, 1), (1, 2), (2, 1), 1, 2, False),
     ((2, 2, 5, 7), (3, 3), 2, (1, 1), (1, 2), (2, 1), 2, 1, False),
- ])
+])
 @pytest.mark.parametrize("with_mask", [True, False])
 @pytest.mark.parametrize("channel_last", [True, False])
 @pytest.mark.parametrize("base_axis", [1, -3])
@@ -121,3 +121,112 @@ def test_forward_backward_2d(inshape, kernel, out_channels, pad, stride, dilatio
                     ref_deformable_convolution_2d, inputs, func_args,
                     atol_f=1e-4, atol_b=1e-2, atol_accum=1e-5, dstep=1e-2,
                     ctx=ctx, func_name=func_name, atol_half=atol_half)
+
+
+# reset input is not support yet
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize(
+    "inshape,reset_inshape, kernel, reset_kernel, out_channels,reset_out_channels, pad, stride, dilation, group, "
+    "deformable_group, with_bias",
+    [
+        ((2, 4, 6, 6), (2, 2, 5, 7), (3, 2), (3, 3),
+         4, 2, (0, 0), (1, 1), (1, 1), 2, 2, True),
+    ])
+@pytest.mark.parametrize("with_mask", [True, False])
+@pytest.mark.parametrize("channel_last", [True, False])
+@pytest.mark.parametrize("base_axis", [1, -3])
+def test_forward_backward_2d_with_reset(inshape, reset_inshape, kernel, reset_kernel, out_channels, reset_out_channels,
+                                        pad, stride, dilation, group, deformable_group, with_mask, channel_last,
+                                        with_bias,
+                                        base_axis, seed, ctx, func_name):
+    pytest.skip(
+            'Reset input for DeformableConvolution is not support yet')
+    if channel_last:
+        pytest.skip(
+            'channel_last=True is not supported in any backends so far.')
+
+    import platform
+    if platform.machine().startswith("arm"):
+        pytest.skip('Skip the arm platform temporarily.')
+
+    rng = np.random.RandomState(seed)
+
+    # Create arguments
+    func_args = [base_axis, pad, stride, dilation, group,
+                 deformable_group, channel_last]
+
+    # Compute shapes
+    in_channels = inshape[base_axis]
+    kshape = (out_channels, in_channels // group) + kernel
+    offset_channels = 2 * deformable_group * kernel[0] * kernel[1]
+    offset_shape = inshape[0:base_axis] + \
+        (offset_channels,) + inshape[base_axis + 1:]
+    mask_shape = inshape[0:base_axis] + \
+        (deformable_group * kernel[0] * kernel[1],) + inshape[base_axis + 1:]
+    # Compute reset shapes
+    reset_in_channels = reset_inshape[base_axis]
+    reset_kshape = (reset_out_channels, reset_in_channels //
+                    group) + reset_kernel
+    reset_offset_channels = 2 * deformable_group * \
+        reset_kernel[0] * reset_kernel[1]
+    reset_offset_shape = reset_inshape[0:base_axis] + \
+        (reset_offset_channels,) + reset_inshape[base_axis + 1:]
+    reset_mask_shape = reset_inshape[0:base_axis] + \
+        (deformable_group *
+         reset_kernel[0] * reset_kernel[1],) + reset_inshape[base_axis + 1:]
+    if channel_last:
+        t = refs.ChannelLastToFirstTranspose(len(inshape), len(kernel))
+        inshape = tuple(inshape[i] for i in t.inv_axes)
+        t = refs.ChannelLastToFirstTranspose(len(offset_shape), len(kernel))
+        offset_shape = tuple(offset_shape[i] for i in t.inv_axes)
+        t = refs.ChannelLastToFirstTranspose(len(kshape), len(kernel))
+        kshape = tuple(kshape[i] for i in t.inv_axes)
+        # reset
+        reset_t = refs.ChannelLastToFirstTranspose(
+            len(reset_inshape), len(reset_kernel))
+        reset_inshape = tuple(reset_inshape[i] for i in reset_t.inv_axes)
+        reset_t = refs.ChannelLastToFirstTranspose(
+            len(reset_offset_shape), len(reset_kernel))
+        reset_offset_shape = tuple(
+            reset_offset_shape[i] for i in reset_t.inv_axes)
+        reset_t = refs.ChannelLastToFirstTranspose(
+            len(reset_kshape), len(reset_kernel))
+        reset_kshape = tuple(reset_kshape[i] for i in reset_t.inv_axes)
+
+    # Create inputs
+    x = rng.randn(*inshape).astype(np.float32)
+    w = rng.randn(*kshape).astype(np.float32)
+    b = rng.randn(out_channels).astype(np.float32) if with_bias else None
+
+    # reset inputs
+    reset_x = rng.randn(*reset_inshape).astype(np.float32)
+    reset_w = rng.randn(*reset_kshape).astype(np.float32)
+    reset_b = rng.randn(reset_out_channels).astype(
+        np.float32) if with_bias else None
+
+    offsets = (3.8 * rng.rand(*offset_shape).astype(np.float32)) - 1.9
+    offsets += np.logical_or(np.abs(offsets - np.floor(offsets)) < 0.1,
+                             np.abs(offsets - np.ceil(offsets)) < 0.1).astype(int)*0.5
+
+    # Reset offset
+    reset_offsets = (
+        3.8 * rng.rand(*reset_offset_shape).astype(np.float32)) - 1.9
+    reset_offsets += np.logical_or(np.abs(reset_offsets - np.floor(reset_offsets)) < 0.1,
+                                   np.abs(reset_offsets - np.ceil(reset_offsets)) < 0.1).astype(int) * 0.5
+
+    # Rest Mask
+    mask = rng.rand(*mask_shape).astype(np.float32) if with_mask else None
+    reset_mask = rng.rand(
+        *reset_mask_shape).astype(np.float32) if with_mask else None
+
+    inputs = [x, w, offsets, mask, b]
+    reset_inputs = [reset_x, reset_w, reset_offsets, reset_mask, reset_b]
+
+    # Test
+    atol_half = 1.0 if in_channels > 64 else 1.5e-1
+    function_tester(rng, F.deformable_convolution,
+                    ref_deformable_convolution_2d, inputs, func_args,
+                    atol_f=1e-4, atol_b=1e-2, atol_accum=1e-5, dstep=1e-2,
+                    ctx=ctx, func_name=func_name, atol_half=atol_half,
+                    reset_inputs=reset_inputs)

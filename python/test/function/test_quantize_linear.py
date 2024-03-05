@@ -56,7 +56,7 @@ def ref_grad_quantize_linear(x, scale, zero_point, dy, round_mode, narrow_range,
 def test_quantize_linear_forward_backward(dtype, narrow_range, round_mode,
                                           x_shape, s_shape,
                                           seed, ctx, func_name):
-    from nbla_test_utils import cap_ignore_region, function_tester
+    from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
 
     x = rng.randn(*x_shape)
@@ -84,7 +84,7 @@ def test_quantize_linear_forward_backward(dtype, narrow_range, round_mode,
 def test_quantize_linear_double_backward(dtype, narrow_range, round_mode,
                                          x_shape, s_shape,
                                          seed, ctx, func_name):
-    from nbla_test_utils import cap_ignore_region, backward_function_tester
+    from nbla_test_utils import backward_function_tester
     rng = np.random.RandomState(seed)
 
     x = rng.randn(*x_shape)
@@ -97,3 +97,38 @@ def test_quantize_linear_double_backward(dtype, narrow_range, round_mode,
                              func_args=func_args,
                              ctx=ctx,
                              backward=[True, False, False], atol_accum=3e-2)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("x_shape, s_shape,reset_x_shape, reset_s_shape",
+                         [((2, 4, 8, 8), (1, 1, 1, 1), (2, 4, 8, 8), (1, 4, 1, 1)),
+                          ((2, 4, 8, 8), (1, 4, 1, 1), (2, 8, 8, 4), (1, 1, 1, 4)),
+                          ])
+@pytest.mark.parametrize("round_mode", ["HALF_AWAY_FROM_ZERO", "HALF_TO_EVEN"])
+@pytest.mark.parametrize("narrow_range", [False, True])
+@pytest.mark.parametrize("dtype", [np.int8, np.uint8])
+def test_quantize_linear_forward_backward_with_reset(dtype, narrow_range, round_mode,
+                                                     x_shape, s_shape, reset_x_shape,
+                                                     reset_s_shape, seed, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+
+    x = rng.randn(*x_shape)
+    scale = rng.rand(*s_shape) + 0.001
+    zero_point = rng.randint(np.iinfo(dtype).min // 3,
+                             np.iinfo(dtype).max // 3, s_shape)
+    inputs = [x, scale, zero_point]
+    # reset input
+    reset_x = rng.randn(*reset_x_shape)
+    reset_scale = rng.rand(*reset_s_shape) + 0.001
+    reset_zero_point = rng.randint(np.iinfo(dtype).min // 3,
+                                   np.iinfo(dtype).max // 3, reset_s_shape)
+    reset_inputs = [reset_x, reset_scale, reset_zero_point]
+
+    func_args = [round_mode, narrow_range, dtype]
+    function_tester(rng, F.quantize_linear, ref_quantize_linear, inputs,
+                    func_args=func_args,
+                    ctx=ctx, func_name=func_name, ref_grad=ref_grad_quantize_linear,
+                    disable_half_test=True,
+                    backward=[True, False, False], reset_inputs=reset_inputs)

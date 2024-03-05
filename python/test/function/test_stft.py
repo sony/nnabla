@@ -113,8 +113,8 @@ def ref_stft(x, window_size, stride, fft_size, window_type, center, pad_mode, as
         return y_r.g, y_i.g
 
 
-def create_stft_input_shape(window_size):
-    return (2, window_size * 10)
+def create_stft_input_shape(window_size, length=10):
+    return (2, window_size * length)
 
 
 @pytest.mark.parametrize("ctx", ctx_list)
@@ -190,3 +190,45 @@ def test_stft_double_backward(ctx, seed, window_size, stride, fft_size, window_t
                              inputs=inputs,
                              func_args=func_args,
                              ctx=ctx)
+
+
+@pytest.mark.parametrize("ctx", ctx_list)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("window_size, stride, fft_size", [
+    (16, 2, 16), (16, 4, 16), (16, 8, 32),
+])
+@pytest.mark.parametrize("window_type", ["hanning", "hamming", "rectangular"])
+@pytest.mark.parametrize("center", [True, False])
+@pytest.mark.parametrize("pad_mode", ["reflect", "constant"])
+@pytest.mark.parametrize("as_istft_backward", [False, True])
+def test_stft_forward_backward_with_reset(ctx, seed, window_size, stride, fft_size, window_type, center, pad_mode,
+                                          as_istft_backward):
+    backend = ctx.backend[0].split(":")[0]
+    if backend == 'cuda':
+        pytest.skip('CUDA Convolution N-D is only supported in CUDNN extension')
+    func_name = "STFTCuda" if backend == 'cudnn' else "STFT"
+
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+
+    x_shape = create_stft_input_shape(window_size)
+    inputs = [rng.randn(*x_shape).astype(np.float32)]
+
+    # Some conditions are skipped for the reason of use of ISTFT function.
+    if as_istft_backward:
+        # Ignore violation of NOLA condition
+        length = x_shape[1]
+        if is_nola_violation(window_type, window_size, stride, fft_size, length, center):
+            pytest.skip('NOLA condition violation.')
+
+        if pad_mode != "constant":
+            pytest.skip(
+                '`pad_mode` must be "constant" when `as_istft_backward == True`. Normal ISTFT never use `pad_mode` and just slice the output. Thus, STFT as a backward of normal ISTFT, STFT must be `pad_mode == constant`')
+
+    # reset inputs
+    reset_x_shape = create_stft_input_shape(window_size, 8)
+    reset_inputs = [rng.randn(*reset_x_shape).astype(np.float32)]
+
+    function_tester(rng, F.stft, ref_stft, inputs, func_args=[
+        window_size, stride, fft_size, window_type, center, pad_mode, as_istft_backward], ctx=ctx, func_name=func_name,
+                    atol_f=2e-6, atol_b=2e-2, dstep=1e-2, reset_inputs=reset_inputs)

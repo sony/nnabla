@@ -98,3 +98,28 @@ def test_weight_normalization_double_backward(eps, dim, shape, seed, ctx, func_n
                              inputs=inputs,
                              func_args=func_args,
                              ctx=ctx)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("shape, reset_shape, dim", [
+    ((16, 8, 3, 3), (8, 3, 3, 16), 0), ((8, 3, 3, 16), (8, 16, 3, 3), 3),
+    ((8, 16, 3, 3), (8, 3, 3), 2), ((8, 16, 3, 3), (8, 3, 3, 16), -3),
+    ((8, 16, 3), (8, 3, 3), -2), ((8, 3), (3, 6), -1)
+])
+@pytest.mark.parametrize("eps", [1e-12])
+def test_weight_normalization_forward_backward_with_reset(eps, dim, shape, reset_shape, seed, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    w = rng.randn(*shape)
+    g = rng.randn(shape[dim])
+    inputs = [w, g]
+    # reset inputs
+    reset_w = rng.randn(*reset_shape)
+    reset_g = rng.randn(reset_shape[dim])
+    reset_inputs = [reset_w, reset_g]
+    func_args = [dim, eps]
+    function_tester(rng, F.weight_normalization, ref_weight_normalization, inputs,
+                    ctx=ctx, func_name=func_name, func_args=func_args, backward=[
+                        True, True], disable_half_test=False,
+                    atol_b=3e-3, atol_accum=3e-3, reset_inputs=reset_inputs)

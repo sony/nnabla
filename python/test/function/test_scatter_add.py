@@ -75,3 +75,45 @@ def test_forward_backward(seed, x0_shape, indices_shape, x1_shape, axis, ctx, fu
                     func_name=func_name, func_args=[
                         axis], ctx=ctx, backward=[True, False, True],
                     atol_b=3e-3)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("x0_shape, indices_shape, x1_shape, reset_x0_shape, reset_indices_shape, reset_x1_shape, axis",
+                         [((1, 1), (1, 1), (1, 1), (1, 10), (1, 10), (1, 10), 0),
+                          ((2, 2), (1, 1), (3, 3), (2, 12), (1, 10), (3, 11), -2),
+                          ((3, 3), (1, 1), (2, 2), (3, 11), (1, 10), (2, 12), 1),
+                          ((3, 3), (1, 1), (3, 3), (2, 11), (1, 10), (2, 12), -1),
+                          ((10, 10), (10, 10), (10, 10),
+                           (5, 4, 3), (5, 4, 3), (5, 4, 3), 0),
+                          ((4, 5, 6), (3, 4, 5), (3, 4, 5),
+                           (5, 6, 5), (2, 4, 5), (2, 4, 5), -2),
+                          ((12, 11), (10, 10), (11, 12),
+                           (5, 5, 5), (3, 4, 5), (7, 8, 9), 1),
+                          ((5, 7, 6), (3, 5, 4), (7, 9, 8),
+                           (6, 6, 7), (4, 3, 5), (5, 8, 9), 2),
+                          ((12, 12), (10, 10), (12, 11),
+                           (3, 5, 4), (3, 5, 4), (7, 7, 7), -1),
+                          ((6, 5, 4), (5, 4, 3), (7, 8, 9),
+                           (5, 6, 3), (4, 5, 3), (7, 7, 7), -3),
+                          ])
+def test_forward_backward_with_reset(seed, x0_shape, indices_shape, x1_shape, reset_x0_shape, reset_indices_shape,
+                                     reset_x1_shape, axis, ctx, func_name):
+    rng = np.random.RandomState(seed)
+    x0 = rng.randn(*x0_shape).astype(np.float32)
+    indices = rng.randint(low=0, high=min(indices_shape),
+                          size=np.prod(indices_shape))
+    indices = np.reshape(indices, newshape=indices_shape)
+    x1 = rng.randn(*x1_shape).astype(np.float32)
+    inputs = [x0, indices, x1]
+    # reset input
+    reset_x0 = rng.randn(*reset_x0_shape).astype(np.float32)
+    reset_indices = rng.randint(low=0, high=min(reset_indices_shape),
+                                size=np.prod(reset_indices_shape))
+    reset_indices = np.reshape(reset_indices, newshape=reset_indices_shape)
+    reset_x1 = rng.randn(*reset_x1_shape).astype(np.float32)
+    reset_inputs = [reset_x0, reset_indices, reset_x1]
+    function_tester(rng, F.scatter_add, scatter_add, inputs,
+                    func_name=func_name, func_args=[
+                        axis], ctx=ctx, backward=[True, False, True],
+                    atol_b=3e-3, reset_inputs=reset_inputs)

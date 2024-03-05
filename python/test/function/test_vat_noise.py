@@ -56,3 +56,48 @@ def test_vat_noise(seed, base_axis, shape, eps, ctx, func_name):
     ref = np.ones(shape) * eps
     res = w.d
     assert_allclose(ref, res, atol=atol_b)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("base_axis, shape,reset_shape", [(1, (3, 6), (5, 8))])
+@pytest.mark.parametrize("eps", [10, 1.4])
+def test_vat_noise_with_reset(seed, base_axis, shape, reset_shape, eps, ctx, func_name):
+    rng = np.random.RandomState(313)
+    r = 1.0e-6 + rng.randn(*(shape)).astype(np.float32)
+    ref = ref_vat_noise(r, base_axis, eps)
+
+    reset_r = rng.randn(*(reset_shape)).astype(np.float32)
+    reset_ref = ref_vat_noise(reset_r, base_axis, eps)
+
+    x = nn.Variable(shape, need_grad=True)
+    w = nn.Variable(shape, need_grad=True)
+    y = F.vat_noise(x, w, base_axis, eps)
+    x.d = r
+    y.forward()
+    y.backward()
+    res = y.d
+
+    atol_f = 1e-6
+    assert_allclose(ref, res, atol=atol_f)
+
+    atol_b = 1e-6
+    ref = np.ones(shape) * eps
+    res = w.d
+    assert_allclose(ref, res, atol=atol_b)
+
+    # reset inputs
+    x.reset_shape(reset_shape, True)
+    w.reset_shape(reset_shape, True)
+    x.d = reset_r
+    y.forward()
+    y.backward()
+    res = y.d
+
+    atol_f = 1e-6
+    assert_allclose(reset_ref, res, atol=atol_f)
+
+    atol_b = 1e-6
+    reset_ref = np.ones(reset_shape) * eps
+    res = w.d
+    assert_allclose(reset_ref, res, atol=atol_b)

@@ -83,3 +83,33 @@ def test_norm_normalization_double_backward(eps, axis, p, shape, seed, ctx, func
                              inputs=inputs,
                              func_args=func_args,
                              ctx=ctx)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("p", [None, 1.0, 1.3, 3.0])  # None -> 2.0
+@pytest.mark.parametrize("shape,reset_shape, axis", [
+    ((2, 3, 5, 7), (2, 3, 4, 7), (0, 2)), ((13,), (12,), 0),
+    ((7, 3, 1), (6, 2, 1), None), ((2, 1, 4, 5), (2, 2, 3, 4), (0, 2))
+])
+@pytest.mark.parametrize("eps", [1e-12])
+def test_norm_normalization_forward_backward_with_reset(eps, axis, p, shape, reset_shape, seed, ctx, func_name):
+    from nbla_test_utils import cap_ignore_region, function_tester
+    from sys import platform
+    if platform == "darwin":
+        pytest.skip("NormNormalization is not supported in macOS.")
+
+    rng = np.random.RandomState(seed)
+    inputs = [cap_ignore_region(
+        rng.randn(*shape).astype(np.float32) * 2, (-1e-3, 1e-3))]
+    reset_inputs = [cap_ignore_region(
+        rng.randn(*reset_shape).astype(np.float32) * 2, (-1e-3, 1e-3))]
+    func_args = [p, axis, eps]
+    function_tester(rng, F.norm_normalization, ref_norm_normalization, inputs,
+                    ctx=ctx, func_name=func_name, func_args=func_args, backward=[
+                        True], disable_half_test=False,
+                    # The backward test on macOS doesn't pass with this tolerance.
+                    # Does Eigen library used in CPU computation backend produce
+                    # the different results on different platforms?
+                    # atol_b=3e-3,
+                    atol_b=1e-2, atol_accum=1e-2, reset_inputs=reset_inputs)

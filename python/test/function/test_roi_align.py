@@ -122,3 +122,41 @@ def test_roi_align_forward_backward(seed, inshape, boxes, output_size,
     function_tester(rng, F.roi_align, ref_roi_align, inputs, func_args,
                     atol_f=1e-4, atol_b=1e-2, backward=[True, False],
                     ctx=ctx, func_name=func_name)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("inshape, reset_inshape ,boxes", [
+    ((2, 3, 10, 10), (3, 1, 12, 12), ([[0, 0, 0, 10, 10], [1, 0, 0, 10, 10]])),
+    ((2, 3, 11, 12), (3, 1, 10, 10), ([[1, 1, 2, 8, 7], [0, -2, 0, 11, 8]])),
+])
+@pytest.mark.parametrize('output_size', [(10, 10), (5, 15), (13, 8)])
+@pytest.mark.parametrize('spatial_scale', [(1.0, 1.5), (0.7, 1.0)])
+@pytest.mark.parametrize('sampling_ratio', [-1, 0, 1, 2])
+@pytest.mark.parametrize('channel_last', [False, True])
+@pytest.mark.parametrize("seed", [313])
+def test_roi_align_forward_backward_with_reset(seed, inshape, reset_inshape, boxes, output_size,
+                                               spatial_scale, sampling_ratio,
+                                               channel_last, ctx, func_name):
+    from nbla_test_utils import function_tester
+    if channel_last and not func_name.endswith('Cuda'):
+        pytest.skip('channel_last=True is only supported in CUDA backend')
+    rng = np.random.RandomState(seed)
+    inputs = [
+        rng.randn(*inshape).astype(np.float32),
+        np.array(boxes, dtype=np.float32)
+    ]
+    # reset input
+    reset_inputs = [
+        rng.randn(*reset_inshape).astype(np.float32),
+        np.array(boxes, dtype=np.float32)
+    ]
+
+    if channel_last:
+        inputs[0] = np.transpose(inputs[0], (0, 2, 3, 1))
+        reset_inputs[0] = np.transpose(reset_inputs[0], (0, 2, 3, 1))
+    func_args = [
+        output_size, spatial_scale, sampling_ratio, channel_last,
+    ]
+    function_tester(rng, F.roi_align, ref_roi_align, inputs, func_args,
+                    atol_f=1e-4, atol_b=1e-2, backward=[True, False],
+                    ctx=ctx, func_name=func_name, reset_inputs=reset_inputs)

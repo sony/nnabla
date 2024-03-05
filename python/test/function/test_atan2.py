@@ -44,3 +44,16 @@ def test_atan2_double_backward(seed, ctx, func_name):
                              atol_accum=3e-2,
                              dstep=1e-3,
                              ctx=ctx)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+def test_atan_forward_backward_with_reset(seed, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(2, 3, 4).astype(np.float32) * 1]
+    inputs += [rng.randn(2, 3, 4).astype(np.float32) * 1]
+    reset_inputs = [rng.randn(3, 4, 5).astype(np.float32) * 1]
+    reset_inputs += [rng.randn(3, 4, 5).astype(np.float32) * 1]
+    function_tester(rng, F.atan2, np.arctan2, inputs, ctx=ctx, func_name=func_name,
+                    atol_f=1e-3, atol_b=1e-2, reset_inputs=reset_inputs)

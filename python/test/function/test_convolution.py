@@ -261,3 +261,119 @@ def test_convolution_3d_double_backward(inshape, kernel, outmaps, pad, stride,
     core_test_convolution_double_backward(inshape, kernel, outmaps, pad, stride,
                                           dilation, group, channel_last, with_bias, base_axis, seed, ctx,
                                           func_name, atol_accum=2e-1, non_accum_check=True)
+
+
+def core_test_convolution_forward_backward_with_reset(inshape, reset_inshape, kernel, reset_kernel, outmaps,
+                                                      reset_outmaps, pad, stride,
+                                                      dilation, group, channel_last, with_bias, base_axis, seed, ctx,
+                                                      func_name):
+    from nbla_test_utils import function_tester
+    if func_name == 'ConvolutionCuda':
+        pytest.skip('CUDA Convolution N-D is only supported in CUDNN extension')
+    if channel_last and not func_name.endswith('Cudnn'):
+        pytest.skip(
+            'channel_last=True is only supported in CUDNN backend so far.')
+    if channel_last and func_name.endswith('Cudnn') and (np.any(np.asarray(dilation) > 1) or group > 1):
+        import nnabla_ext.cuda as nc
+        major, minor, revision = map(int, nc.__cudnn_version__.split('.'))
+        version = major * 1000 + minor * 100
+        if version < 7200:
+            pytest.skip(
+                'channel_last dilated convolution not work in CUDNN {}.'.format(version))
+
+    inmaps = inshape[base_axis]
+    reset_inmaps = reset_inshape[base_axis]
+    if channel_last:
+        t = refs.ChannelLastToFirstTranspose(len(inshape), len(kernel))
+        inshape = tuple(inshape[i] for i in t.inv_axes)
+        reset_inshape = tuple(reset_inshape[i] for i in t.inv_axes)
+
+    rng = np.random.RandomState(seed)
+    i = rng.randn(*inshape).astype(np.float32)
+    reset_i = rng.randn(*reset_inshape).astype(np.float32)
+    kshape = (outmaps,) + (inmaps // group,) + kernel
+    reset_kshape = (reset_outmaps,) + (reset_inmaps // group,) + reset_kernel
+    if channel_last:
+        t = refs.ChannelLastToFirstTranspose(len(kshape), len(kernel))
+        reset_t = refs.ChannelLastToFirstTranspose(
+            len(reset_kshape), len(reset_kernel))
+        kshape = tuple(kshape[i] for i in t.inv_axes)
+        reset_kshape = tuple(reset_kshape[i] for i in reset_t.inv_axes)
+    k = rng.randn(*kshape).astype(np.float32)
+    b = None
+    reset_k = rng.randn(*reset_kshape).astype(np.float32)
+    reset_b = None
+    if with_bias:
+        b = rng.randn(outmaps).astype(np.float32)
+        reset_b = rng.randn(reset_outmaps).astype(np.float32)
+    inputs = [i, k, b]
+    reset_inputs = [reset_i, reset_k, reset_b]
+    atol_half = 1.0 if inmaps > 64 else 1e-1
+    function_tester(rng, F.convolution, ref_convolution, inputs,
+                    func_args=[base_axis, pad, stride,
+                               dilation, group, channel_last],
+                    atol_f=1e-4, atol_b=1e-2, atol_accum=1e-5, dstep=1e-2,
+                    ctx=ctx, func_name=func_name, atol_half=atol_half, reset_inputs=reset_inputs)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape, reset_inshape,kernel,reset_kernel, outmaps,reset_outmaps, pad, stride, dilation", [
+    ((2, 2, 10), (3, 2, 12), (1,), (2,), 4, 2, (3,), (2,), (1,))
+])
+@pytest.mark.parametrize("group", [1, 2])
+@pytest.mark.parametrize("channel_last", [False, True])
+@pytest.mark.parametrize("with_bias", [True, False])
+@pytest.mark.parametrize("base_axis", [1, -2])
+def test_convolution_1d_forward_backward_with_reset(inshape, reset_inshape, kernel, reset_kernel, outmaps,
+                                                    reset_outmaps, pad,
+                                                    stride,
+                                                    dilation, group, channel_last, with_bias, base_axis, seed, ctx,
+                                                    func_name):
+    core_test_convolution_forward_backward_with_reset(inshape, reset_inshape, kernel, reset_kernel, outmaps,
+                                                      reset_outmaps, pad, stride,
+                                                      dilation, group, channel_last, with_bias, base_axis, seed, ctx,
+                                                      func_name)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape, reset_inshape,kernel,reset_kernel, outmaps,reset_outmaps, pad, stride, dilation",
+                         [((2, 2, 10, 10), (3, 2, 5, 5), (3, 2), (2, 2), 4, 6, (3, 0), (1, 2), (2, 1)), ])
+@pytest.mark.parametrize("group", [1, 2])
+@pytest.mark.parametrize("channel_last", [False, True])
+@pytest.mark.parametrize("with_bias", [True, False])
+@pytest.mark.parametrize("base_axis", [1, -3])
+def test_convolution_2d_forward_backward_with_reset(inshape, reset_inshape, kernel, reset_kernel, outmaps, reset_outmaps, pad,
+                                                    stride,
+                                                    dilation, group, channel_last, with_bias, base_axis, seed, ctx,
+                                                    func_name):
+    if func_name.endswith('Cudnn'):
+        pytest.skip(
+            'convolution 2d reset is not supported in CUDNN backend so far.')
+    core_test_convolution_forward_backward_with_reset(inshape, reset_inshape, kernel, reset_kernel, outmaps,
+                                                      reset_outmaps, pad, stride,
+                                                      dilation, group, channel_last, with_bias, base_axis, seed, ctx,
+                                                      func_name)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape,reset_inshape, kernel,reset_kernel, outmaps,reset_outmaps, pad, stride, dilation", [
+    ((2, 2, 7, 8, 5), (3, 2, 8, 10, 12), (2, 3, 2),
+     (2, 2, 3), 4, 2, (3, 0, 0), (1, 2, 1), (2, 1, 1)),
+])
+@pytest.mark.parametrize("group", [1, 2])
+@pytest.mark.parametrize("channel_last", [False, True])
+@pytest.mark.parametrize("with_bias", [True, False])
+@pytest.mark.parametrize("base_axis", [1, -4])
+def test_convolution_3d_forward_backward_with_reset(inshape, reset_inshape, kernel, reset_kernel, outmaps, reset_outmaps, pad,
+                                                    stride,
+                                                    dilation, group, channel_last, with_bias, base_axis, seed, ctx,
+                                                    func_name):
+    if channel_last:
+        pytest.skip('3d')
+    core_test_convolution_forward_backward_with_reset(inshape, reset_inshape, kernel, reset_kernel, outmaps,
+                                                      reset_outmaps, pad, stride,
+                                                      dilation, group, channel_last, with_bias, base_axis, seed, ctx,
+                                                      func_name)

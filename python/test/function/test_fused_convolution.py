@@ -88,7 +88,8 @@ class RefFusedConvolutionGraph(object):
             ivar.grad.zero()
         self.output.forward(clear_no_need_grad=True)
         self.output.backward(grad, clear_buffer=True)
-        return np.concatenate([ivar.grad.get_data('r').flatten() for (ivar, ng) in zip(self.input_dict.values(), ng_flags) if ng])
+        return np.concatenate(
+            [ivar.grad.get_data('r').flatten() for (ivar, ng) in zip(self.input_dict.values(), ng_flags) if ng])
 
 
 def ref_activation(x, nonlinearity, nonlinearity_args):
@@ -133,10 +134,9 @@ def ref_grad_fused_convolution(ctx, x, weight, bias, beta, gamma, rmean, rvar, z
     return graph.get_grads(dy, need_grad_flags=need_grad_flags)
 
 
-def create_inputs(rng, kernel, pad, stride, dilation, group, with_bias, bn, add2, channel_last):
+def create_inputs(rng, kernel, pad, stride, dilation, group, with_bias, bn, add2, channel_last, hw=(5, 5)):
     from refs import get_conv_out_size
     bs = 2
-    hw = (5, 5)
     total_pad = 2 * pad[0] if len(pad) == 1 else pad[0] + pad[1]
     pad_hw = tuple(s + total_pad for s in hw)
     ohw = tuple(get_conv_out_size(s, kernel, 0, stride, dilation)
@@ -150,6 +150,7 @@ def create_inputs(rng, kernel, pad, stride, dilation, group, with_bias, bn, add2
 
     def to_channel_last(shape):
         return tuple(shape[i] for i in (0, 2, 3, 1))
+
     if channel_last:
         inshape = to_channel_last(inshape)
         outshape = to_channel_last(outshape)
@@ -182,8 +183,7 @@ def create_inputs(rng, kernel, pad, stride, dilation, group, with_bias, bn, add2
     return x, weight, bias, beta, gamma, rmean, rvar, z
 
 
-def run_test(func_name, ctx, ref_ctx, rng, inputs, func_args, backward, atol_b, atol_accum):
-
+def run_test(func_name, ctx, ref_ctx, rng, inputs, func_args, backward, atol_b, atol_accum, reset_inputs=None):
     from nbla_test_utils import function_tester
 
     def ref_fused_convolution_float(*args):
@@ -196,13 +196,14 @@ def run_test(func_name, ctx, ref_ctx, rng, inputs, func_args, backward, atol_b, 
                     inputs, ref_grad=ref_grad_fused_convolution_float,
                     func_args=func_args, backward=backward, ctx=ctx,
                     func_name=func_name, atol_f=0, atol_b=atol_b,
-                    atol_accum=atol_accum, disable_half_test=True)
+                    atol_accum=atol_accum, disable_half_test=True,
+                    reset_inputs=reset_inputs)
 
 
 @pytest.mark.parametrize("seed", [313, 314])
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("kernel", [3])
-@pytest.mark.parametrize("pad", [(1, ), (2, 1)])
+@pytest.mark.parametrize("pad", [(1,), (2, 1)])
 @pytest.mark.parametrize("stride", [2])
 @pytest.mark.parametrize("dilation", [1])
 @pytest.mark.parametrize("group", [2])
@@ -233,11 +234,11 @@ def run_test(func_name, ctx, ref_ctx, rng, inputs, func_args, backward, atol_b, 
     ('reflect', 0.0),
     ('repeat', 0.0)
 ])
-def test_fused_convolution(seed, kernel, pad, stride, dilation, group, channel_last, decay_rate, eps, nonlinearity, nonlinearity_args, pad_mode, constant_value, with_bias, bn, add2, ctx, func_name):
-
+def test_fused_convolution(seed, kernel, pad, stride, dilation, group, channel_last, decay_rate, eps, nonlinearity,
+                           nonlinearity_args, pad_mode, constant_value, with_bias, bn, add2, ctx, func_name):
     rng = np.random.RandomState(seed)
     inputs = list(create_inputs(rng, kernel, pad, stride,
-                  dilation, group, with_bias, bn, add2, channel_last))
+                                dilation, group, with_bias, bn, add2, channel_last))
     base_axis = 1
     batch_stat = True if bn is None else bn
     bn_backward = [None, None, None, None]
@@ -267,3 +268,11 @@ def test_fused_convolution(seed, kernel, pad, stride, dilation, group, channel_l
 
     run_test(func_name, ctx_half, cpu_ctx_half, rng, inputs,
              func_args, backward, atol_b=5e-2, atol_accum=5e-2)
+
+    # run test with reset
+    reset_inputs = list(create_inputs(rng, kernel, pad, stride,
+                                      dilation, group, with_bias,
+                                      bn, add2, channel_last, hw=(6, 6)))
+
+    run_test(func_name, ctx_half, cpu_ctx_half, rng, inputs,
+             func_args, backward, atol_b=5e-2, atol_accum=5e-2, reset_inputs=reset_inputs)

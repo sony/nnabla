@@ -58,3 +58,28 @@ def test_kl_multinomial_double_backward(seed, ctx, base_axis, shape, func_name):
     backward_function_tester(rng, F.kl_multinomial, inputs, func_args=[base_axis],
                              atol_f=1e-6, dstep=1e-3,
                              ctx=ctx, skip_backward_check=True)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("base_axis, shape,reset_shape",
+                         [(1, (3, 6), (2, 4)), (1, (5, 8, 7), (2, 3, 4)), (-1, (4, 7, 9), (3, 4, 5)),
+                          (2, (3, 6, 9), (2, 4, 6))])
+def test_kl_multinomial_forward_backward_with_reset(seed, ctx, base_axis, shape, reset_shape, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    # inputs
+    input0 = 1 + rng.rand(*(shape)).astype(np.float32)
+    input1 = 1 + rng.rand(*(shape)).astype(np.float32)
+    input0 = input0 / np.sum(input0, axis=1, keepdims=True)
+    input1 = input1 / np.sum(input1, axis=1, keepdims=True)
+    inputs = [input0, input1]
+    # reset inputs
+    reset_input0 = 1 + rng.rand(*(reset_shape)).astype(np.float32)
+    reset_input1 = 1 + rng.rand(*(reset_shape)).astype(np.float32)
+    reset_input0 = reset_input0 / np.sum(reset_input0, axis=1, keepdims=True)
+    reset_input1 = reset_input1 / np.sum(reset_input1, axis=1, keepdims=True)
+    reset_inputs = [reset_input0, reset_input1]
+    function_tester(rng, F.kl_multinomial, ref_kl_multinomial, inputs, func_args=[base_axis],
+                    atol_f=1e-6, atol_b=1e-2, dstep=1e-4,
+                    ctx=ctx, func_name=func_name, reset_inputs=reset_inputs)

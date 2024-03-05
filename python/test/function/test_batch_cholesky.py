@@ -56,3 +56,24 @@ def test_forward_backward(seed, ctx, func_name, upper):
                     func_name=func_name, ctx=ctx, backward=[True],
                     ref_grad=batch_cholesky_numerical_grad,
                     disable_half_test=True)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("upper", [False, True])
+def test_forward_backward_with_reset(seed, ctx, func_name, upper):
+    rng = np.random.RandomState(seed)
+    x = rng.randn(2, 4, 4).astype(np.float32)
+    for i in range(x.shape[0]):
+        x[i] = np.dot(x[i], np.transpose(x[i]))
+    inputs = [x]
+    reset_x = rng.randn(3, 5, 5).astype(np.float32)
+    for i in range(reset_x.shape[0]):
+        reset_x[i] = np.dot(reset_x[i], np.transpose(reset_x[i]))
+    reset_inputs = [reset_x]
+    function_tester(rng, F.batch_cholesky, batch_cholesky, inputs,
+                    func_args=[upper],
+                    atol_b=2e-2,
+                    func_name=func_name, ctx=ctx, backward=[True],
+                    ref_grad=batch_cholesky_numerical_grad,
+                    disable_half_test=True, reset_inputs=reset_inputs)

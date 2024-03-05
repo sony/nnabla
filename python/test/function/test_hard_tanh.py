@@ -31,7 +31,7 @@ def ref_hard_tanh_backward(x, dy, **kw):
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
 def test_hard_tanh_forward_backward(seed, ctx, func_name):
-    from nbla_test_utils import cap_ignore_region, function_tester
+    from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
     inputs = [
         np.clip(np.abs(rng.randn(2, 3, 4).astype(np.float32)) * 1e4, 1e-2, 1e4)]
@@ -52,3 +52,16 @@ def test_hard_tanh_double_backward(seed, ctx, func_name):
                              atol_accum=1e-3,
                              dstep=1e-3,
                              ctx=ctx)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+def test_hard_tanh_forward_backward_with_reset(seed, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [
+        np.clip(np.abs(rng.randn(2, 3, 4).astype(np.float32)) * 1e4, 1e-2, 1e4)]
+    reset_inputs = [
+        np.clip(np.abs(rng.randn(1, 2, 3).astype(np.float32)) * 1e4, 1e-2, 1e4)]
+    function_tester(rng, F.hard_tanh, ref_hard_tanh, inputs,
+                    ctx=ctx, func_name=func_name, ref_grad=ref_hard_tanh_backward, reset_inputs=reset_inputs)

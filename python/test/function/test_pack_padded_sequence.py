@@ -136,3 +136,35 @@ def test_pack_padded_long_sequence_forward_backward(total_length, padding_value,
                                    )[:np.prod(padded_sequence0.shape)],
                                    atol=1e-4,
                                    err_msg="{} test (w/ accum) with long sequence failed.".format(func_name))
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("shapes,reset_shapes", [
+    ([(4, 4), (3, 4), (3, 4), (2, 4), (2, 4)],
+     [(4, 4, 3), (3, 4, 3), (3, 4, 3), (2, 4, 3), (2, 4, 3)])
+
+])
+@pytest.mark.parametrize("batch_first", [False, True])
+def test_pack_padded_sequence_forward_backward_with_reset(batch_first, shapes, reset_shapes, seed, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+
+    sequences = [rng.randn(*shape).astype(np.float32) for shape in shapes]
+    padded_sequence = pad_sequence(sequences, batch_first)
+    lengths = np.array([seq.shape[0] for seq in sequences])
+    inputs = [padded_sequence, lengths]
+    # reset inputs
+    reset_sequences = [rng.randn(*shape).astype(np.float32)
+                       for shape in reset_shapes]
+    reset_padded_sequence = pad_sequence(reset_sequences, batch_first)
+    reset_lengths = np.array([seq.shape[0] for seq in reset_sequences])
+    reset_inputs = [reset_padded_sequence, reset_lengths]
+
+    func_args = [batch_first]
+    insert_identity = [True, False]
+
+    function_tester(rng, F.pack_padded_sequence, ref_pack_padded_sequence, inputs,
+                    ctx=ctx, func_name=func_name, func_args=func_args,
+                    backward=[True, False], disable_half_test=False,
+                    atol_f=1e-3, atol_b=1e-2, insert_identity=insert_identity, reset_inputs=reset_inputs)

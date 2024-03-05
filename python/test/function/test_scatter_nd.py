@@ -64,3 +64,20 @@ def test_double_backward(seed, ishape, index, oshape, ctx, func_name):
                              func_args=[oshape], ctx=ctx, backward=[
                                  True, False],
                              atol_accum=1e-2)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("ishape, index,reset_ishape, reset_index, oshape", [
+    ((2,), [[1, 3]], (4,), [[4, 3, 1, 7]], (8,)),
+    ((2, 4), [[0, 1], [2, 3]], (2, 4, 4), [[0, 3]], (4, 4, 4)),
+])
+def test_forward_backward_with_reset(seed, ishape, index, reset_ishape, reset_index, oshape, ctx, func_name):
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*ishape).astype(np.float32), np.array(index)]
+    reset_inputs = [
+        rng.randn(*reset_ishape).astype(np.float32), np.array(reset_index)]
+
+    function_tester(rng, F.scatter_nd, scatter_nd, inputs, func_name=func_name,
+                    func_args=[oshape], ctx=ctx, backward=[True, False],
+                    reset_inputs=reset_inputs)

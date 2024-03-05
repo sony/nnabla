@@ -39,34 +39,34 @@ def gather(x, indices, axis, batch_dims):
 @pytest.mark.parametrize("ctx, func_name", ctxs)
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("xshape, ishape, axis, batch_dims", [
-   # batch_dims = 0
-   ((2, 3, 4), (2, ), 0, 0),
-   ((2, 3, 4), (2, ), 1, 0),
-   ((2, 3, 4), (2, ), 2, 0),
-   ((2, 3, 4), (2, ), -1, 0),
-   ((2, 3, 4), (2, ), -2, 0),
-   ((2, 3, 4), (2, ), -3, 0),
-   ((2, 3, 4), (2, 2), 0, 0),
-   ((2, 3, 4), (2, 2), 1, 0),
-   ((2, 3, 4), (2, 2), 2, 0),
-   ((2, 3, 4), (2, 2), -1, 0),
-   ((2, 3, 4), (2, 2), -2, 0),
-   ((2, 3, 4), (2, 2), -3, 0),
-   ((2, 3, 4), (1, 2, 2), 0, 0),
-   ((2, 3, 4), (1, 2, 2), 1, 0),
-   ((2, 3, 4), (1, 2, 2), 2, 0),
-   ((2, 3, 4), (1, 2, 2, 1), 0, 0),
-   ((2, 3, 4), (1, 2, 2, 1), 1, 0),
-   ((2, 3, 4), (1, 2, 2, 1), 2, 0),
-   ((2, 3, 4), (1, 2, 2, 1), -1, 0),
-   ((2, 3, 4), (1, 2, 2, 1), -2, 0),
-   ((2, 3, 4), (1, 2, 2, 1), -3, 0),
-   # batch_dims = 1
-   ((2, 3, 4), (2, 2, 2, 1), 1, 1),
-   ((2, 3, 4), (2, 2, 2, 1), 2, 1),
-   # batch_dims = 2
-   ((2, 3, 4, 5), (2, 3, 2, 1), 2, 2),
-   ((2, 3, 4, 5), (2, 3, 2, 1), 3, 2),
+    # batch_dims = 0
+    ((2, 3, 4), (2,), 0, 0),
+    ((2, 3, 4), (2,), 1, 0),
+    ((2, 3, 4), (2,), 2, 0),
+    ((2, 3, 4), (2,), -1, 0),
+    ((2, 3, 4), (2,), -2, 0),
+    ((2, 3, 4), (2,), -3, 0),
+    ((2, 3, 4), (2, 2), 0, 0),
+    ((2, 3, 4), (2, 2), 1, 0),
+    ((2, 3, 4), (2, 2), 2, 0),
+    ((2, 3, 4), (2, 2), -1, 0),
+    ((2, 3, 4), (2, 2), -2, 0),
+    ((2, 3, 4), (2, 2), -3, 0),
+    ((2, 3, 4), (1, 2, 2), 0, 0),
+    ((2, 3, 4), (1, 2, 2), 1, 0),
+    ((2, 3, 4), (1, 2, 2), 2, 0),
+    ((2, 3, 4), (1, 2, 2, 1), 0, 0),
+    ((2, 3, 4), (1, 2, 2, 1), 1, 0),
+    ((2, 3, 4), (1, 2, 2, 1), 2, 0),
+    ((2, 3, 4), (1, 2, 2, 1), -1, 0),
+    ((2, 3, 4), (1, 2, 2, 1), -2, 0),
+    ((2, 3, 4), (1, 2, 2, 1), -3, 0),
+    # batch_dims = 1
+    ((2, 3, 4), (2, 2, 2, 1), 1, 1),
+    ((2, 3, 4), (2, 2, 2, 1), 2, 1),
+    # batch_dims = 2
+    ((2, 3, 4, 5), (2, 3, 2, 1), 2, 2),
+    ((2, 3, 4, 5), (2, 3, 2, 1), 3, 2),
 ])
 def test_forward_backward(seed, xshape, ishape, axis, batch_dims, ctx, func_name):
     rng = np.random.RandomState(seed)
@@ -76,3 +76,27 @@ def test_forward_backward(seed, xshape, ishape, axis, batch_dims, ctx, func_name
     func_args = [axis, batch_dims]
     function_tester(rng, F.gather, gather, inputs, func_name=func_name, func_args=func_args,
                     ctx=ctx, backward=[True, False], disable_half_test=False)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("xshape, ishape,reset_xshape, reset_ishape, axis, batch_dims", [
+    # batch_dims = 0
+    ((2, 3, 4), (1, 2, 2, 1), (2, 3, 4), (2,), 0, 0),
+    # batch_dims = 1
+    ((2, 2, 4), (2, 2, 2, 1), (2, 3, 4), (2, 4, 2, 1), 1, 1),
+    # batch_dims = 2
+    ((2, 3, 4, 5), (2, 3, 2, 1), (2, 2, 4, 5), (2, 2, 2, 1), 2, 2)
+])
+def test_forward_backward_with_reset(seed, xshape, ishape, reset_xshape, reset_ishape, axis, batch_dims, ctx,
+                                     func_name):
+    rng = np.random.RandomState(seed)
+    x = rng.randn(*xshape).astype(np.float32)
+    reset_x = rng.randn(*reset_xshape).astype(np.float32)
+    indices = rng.randint(0, xshape[axis], ishape)
+    reset_indices = rng.randint(0, reset_xshape[axis], reset_ishape)
+    inputs = [x, indices]
+    reset_inputs = [reset_x, reset_indices]
+    func_args = [axis, batch_dims]
+    function_tester(rng, F.gather, gather, inputs, func_name=func_name, func_args=func_args,
+                    ctx=ctx, backward=[True, False], disable_half_test=False, reset_inputs=reset_inputs)

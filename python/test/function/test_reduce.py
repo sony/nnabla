@@ -33,3 +33,15 @@ def test_reduce_forward_backward(seed, ctx, func_name, op):
     inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2]
     function_tester(rng, F.reduce, ref_reduce, inputs,
                     func_args=[op], ctx=ctx)
+
+
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("op", ['mean', 'sum'])
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+def test_reduce_forward_backward_with_reset(seed, ctx, func_name, op):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2]
+    reset_inputs = [rng.randn(3, 2, 4).astype(np.float32) * 2]
+    function_tester(rng, F.reduce, ref_reduce, inputs,
+                    func_args=[op], ctx=ctx, reset_inputs=reset_inputs)

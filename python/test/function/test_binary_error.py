@@ -51,3 +51,16 @@ def test_binary_error_forward(seed, ctx, func_name):
 
     atol_f = 1e-6
     assert_allclose(ref, res, atol=atol_f)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+def test_binary_error_forward_with_reset(seed, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.rand(5, 6, 7).astype(np.float32) for _ in range(2)]
+    reset_inputs = [rng.rand(6, 7, 8).astype(np.float32) for _ in range(2)]
+    backward = [False, False]
+    function_tester(rng, F.binary_error,
+                    ref_binary_error,
+                    inputs, atol_b=1e-6, backward=backward, ctx=ctx, func_name=func_name, reset_inputs=reset_inputs)

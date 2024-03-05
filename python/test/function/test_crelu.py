@@ -49,3 +49,21 @@ def test_crelu_double_backward(seed, axis, ctx, func_name):
             rng.randn(2, 3, 4).astype(np.float32) * 2,
             (-1e-3, 1e-3))]
     backward_function_tester(rng, F.crelu, inputs, func_args=[axis], ctx=ctx)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("axis", [0, 1, 2, -1, -2, -3])
+@pytest.mark.parametrize("seed", [313])
+def test_crelu_forward_backward_with_reset(seed, axis, ctx, func_name):
+    from nbla_test_utils import cap_ignore_region, function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [
+        cap_ignore_region(
+            rng.randn(2, 3, 4).astype(np.float32) * 2,
+            (-1e-3, 1e-3))]
+    reset_inputs = [
+        cap_ignore_region(
+            rng.randn(1, 2, 3).astype(np.float32) * 2,
+            (-1e-3, 1e-3))]
+    function_tester(rng, F.crelu, ref_crelu, inputs, func_args=[axis],
+                    ctx=ctx, func_name=func_name, atol_b=1e-2, reset_inputs=reset_inputs)

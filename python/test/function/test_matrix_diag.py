@@ -53,3 +53,15 @@ def test_matrix_diag_double_backward(seed, ctx, func_name, shape):
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(*shape).astype(np.float32) * 0.1]
     backward_function_tester(rng, F.matrix_diag, inputs, func_args=[], ctx=ctx)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("shape,reset_shape", [((2, 3), (2, 3, 4))])
+def test_matrix_diag_forward_backward_with_reset(seed, ctx, func_name, shape, reset_shape):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*shape).astype(np.float32) * 0.1]
+    reset_inputs = [rng.randn(*reset_shape).astype(np.float32) * 0.1]
+    function_tester(rng, F.matrix_diag, ref_matrix_diag, inputs, func_args=[],
+                    atol_b=1e-3, ctx=ctx, func_name=func_name, reset_inputs=reset_inputs)

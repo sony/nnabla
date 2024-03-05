@@ -151,3 +151,61 @@ def test_deconvolution_2d_double_backward(inshape, kernel, outmaps, pad,
     ginputs = [rng.randn(*y.shape), i]
     backward_function_tester(rng, df, ginputs, func_args=[], ctx=ctx, atol_accum=1e-1,
                              non_accum_check=True)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape, reset_inshape,base_axis", [((2, 2, 4, 5), (2, 3, 5, 6), 1)])
+@pytest.mark.parametrize("kernel, outmaps, pad,reset_kernel, reset_outmaps", [
+    ((3, 3), 2, (0, 1), (1, 3), 4)
+])
+@pytest.mark.parametrize("stride, output_padding", [
+    ((1, 1), (0, 0))
+])
+@pytest.mark.parametrize("dilation", [(1, 1), (2, 2)])
+@pytest.mark.parametrize("group", [1])
+@pytest.mark.parametrize("with_bias", [True, False])
+@pytest.mark.parametrize("channel_last", [False, True])
+def test_deconvolution_2d_forward_backward_with_reset(inshape, reset_inshape, kernel, outmaps, pad,
+                                                      reset_kernel, reset_outmaps,
+                                                      stride, dilation, group, with_bias,
+                                                      channel_last, output_padding, base_axis,
+                                                      seed, ctx, func_name):
+    from nbla_test_utils import function_tester
+
+    if channel_last and not func_name.endswith('Cudnn'):
+        pytest.skip('channel_last=True is only supported in CUDNN backend.')
+    inmaps = inshape[base_axis]
+    reset_inmaps = reset_inshape[base_axis]
+    if channel_last:
+        t = refs.ChannelLastToFirstTranspose(len(inshape), len(kernel))
+        inshape = tuple(inshape[i] for i in t.inv_axes)
+        reset_t = refs.ChannelLastToFirstTranspose(
+            len(reset_inshape), len(reset_kernel))
+        reset_inshape = tuple(reset_inshape[i] for i in reset_t.inv_axes)
+    rng = np.random.RandomState(seed)
+    i = np.clip(rng.randn(*inshape).astype(np.float32), -0.5, 0.5)
+    reset_i = np.clip(rng.randn(*reset_inshape).astype(np.float32), -0.5, 0.5)
+    kshape = (inmaps,) + (outmaps // group,) + kernel
+    reset_kshape = (reset_inmaps,) + (reset_outmaps // group,) + reset_kernel
+    if channel_last:
+        t = refs.ChannelLastToFirstTranspose(len(kshape), len(kernel))
+        kshape = tuple(kshape[i] for i in t.inv_axes)
+        reset_t = refs.ChannelLastToFirstTranspose(
+            len(reset_kshape), len(reset_kernel))
+        reset_kshape = tuple(reset_kshape[i] for i in reset_t.inv_axes)
+    k = np.clip(rng.randn(*kshape).astype(np.float32), -0.5, 0.5)
+    b = None
+    reset_k = np.clip(rng.randn(*reset_kshape).astype(np.float32), -0.5, 0.5)
+    reset_b = None
+    if with_bias:
+        b = np.clip(rng.randn(outmaps).astype(np.float32), -0.5, 0.5)
+        reset_b = np.clip(
+            rng.randn(reset_outmaps).astype(np.float32), -0.5, 0.5)
+    inputs = [i, k, b]
+    reset_inputs = [reset_i, reset_k, reset_b]
+    func_args = [base_axis, pad, stride, dilation, group, channel_last,
+                 output_padding]
+    function_tester(rng, F.deconvolution, ref_deconvolution_2d, inputs,
+                    func_args=func_args, func_name=func_name, ctx=ctx,
+                    atol_f=1e-4, atol_b=1e-2, atol_accum=1e-5, dstep=1e-2, reset_inputs=reset_inputs)

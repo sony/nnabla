@@ -128,3 +128,75 @@ def test_einsum_forward_backward(seed, x_shapes, equation, ctx, func_name):
     atol_f = 0 if func_name.endswith('Cpu') else 1e-6
     function_tester(rng, F.einsum, ref_einsum, inputs, ctx=ctx, func_name=func_name,
                     atol_f=atol_f, atol_b=2e-2, func_kwargs=dict(equation=equation), backward=backward)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("x_shapes,reset_x_shapes, equation", [
+    # Diagonal
+    ([(4, 4)], [(5, 5)], "ii->i"),
+    ([(2, 3, 4, 4)], [(2, 3, 5, 5)], "abii->abi"),
+    ([(2, 3, 4, 4)], [(2, 3, 5, 5)], "...ii->...i"),
+    ([(4, 2, 3, 4)], [(4, 2, 2, 4)], "i...i->...i"),
+    ([(4, 4, 2, 3)], [(4, 4, 3, 2)], "ii...->i..."),
+    # Trace
+    ([(4, 4)], [(5, 5)], "ii->"),
+    ([(4, 4)], [(5, 5)], "ii"),
+    ([(2, 3, 4, 4)], [(2, 3, 5, 5)], "abii->ab"),
+    ([(2, 3, 4, 4)], [(3, 2, 5, 5)], "abii"),
+    ([(2, 3, 4, 4)], [(3, 2, 5, 5)], "...ii->..."),
+    ([(4, 2, 3, 4)], [(3, 2, 4, 3)], "i...i->..."),
+    ([(4, 4, 2, 3)], [(3, 3, 3, 2)], "ii...->..."),
+    # Inner product
+    ([(5,), (5,)], [(4,), (4,)], "i,i"),
+    # Transpose
+    ([(2, 3, 4)], [(2, 4, 3)], "bij->bji"),
+    ([(2, 3, 4)], [(2, 4, 3)], "bji"),
+    ([(2, 3, 4, 5)], [(2, 3, 5, 4)], "...ij->...ji"),
+    ([(2, 3, 4, 5)], [(2, 3, 5, 4)], "i...j->ji..."),
+    ([(2, 3, 4, 5)], [(2, 3, 5, 4)], "ij...->j...i"),
+    ([(2, 3, 4, 5)], [(2, 3, 5, 4)], "ij..."),
+    # Identity
+    ([(5, 5)], [(4, 4)], "ij"),
+    ([(5, 5)], [(4, 4)], "ij->"),
+    ([(5, 5)], [(4, 4)], "ij->ij"),
+    # Sum
+    ([(2, 3, 4, 5)], [(2, 3, 5, 4)], "ijkl->i"),
+    ([(2, 3, 4, 5)], [(2, 3, 5, 4)], "ij...->..."),
+    ([(2, 3, 4, 5)], [(2, 3, 5, 4)], "i...j->..."),
+    ([(2, 3, 4, 5)], [(2, 3, 5, 4)], "...ij->..."),
+    # Matmul
+    ([(2, 3, 4, 5), (2, 3, 5, 6)], [(2, 3, 4, 5), (2, 3, 5, 4)], "abij,abjk->abik"),
+    ([(2, 3, 4, 5), (2, 3, 5, 6)], [(2, 3, 4, 3), (2, 3, 3, 4)], "abij,abjk"),
+    ([(2, 3, 4, 5), (2, 3, 5, 6)], [(2, 3, 4, 5), (2, 3, 5, 4)], "...ij,...jk->...ik"),
+    ([(1, 3, 4, 5), (2, 1, 5, 6)], [(1, 3, 4, 5), (2, 1, 5, 4)], "...ij,...jk->...ik"),
+    ([(4, 2, 3, 5), (2, 3, 5, 6)], [(4, 2, 3, 3), (2, 3, 3, 4)], "i...j,...jk->ik..."),
+    ([(4, 2, 3, 5), (2, 3, 5, 6)], [(4, 2, 3, 5), (2, 3, 5, 3)], "i...j,...jk"),
+
+    ([(2, 3, 4, 2, 5), (2, 4, 3, 2)], [
+     (2, 4, 3, 2, 5), (2, 3, 4, 2)], "bjibw,zkjb->ikb"),
+
+    ([(1, 1, 1, 1, 1), (1, 1, 1, 1)], [(2, 2, 2, 2, 2), (2, 2, 2, 2)], "bjibw,zkjb"),
+
+    ([(2, 2, 3, 2, 2, 2), (2, 2, 2, 2, 3), (2, 2, 2, 2, 3)],
+     [(1, 1, 2, 1, 1, 1), (1, 1, 1, 1, 2), (1, 1, 1, 1, 2)],
+     "wijw...,k...xj,...zkl->li..."),
+
+    ([(2, 2, 3, 2, 2, 2), (2, 2, 2, 2, 3), (2, 2, 2, 2, 3)], [
+     (2, 2, 4, 2, 2, 2), (2, 2, 2, 2, 4), (2, 2, 2, 2, 4)], "wijw...,k...xj,...zkl"),
+    [[(1, 2, 3, 4), (2, 1, 4, 2), (2, 2, 1, 3),
+      (3, 2, 3, 1)],
+     [(1, 2, 3, 3), (2, 1, 3, 2), (2, 2, 1, 4),
+      (3, 2, 4, 1)],
+     "zabc,aycd,daxe,bdfw->bef"]
+])
+@pytest.mark.parametrize("seed", [313])
+def test_einsum_forward_backward_with_reset(seed, x_shapes, reset_x_shapes, equation, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*shape).astype(np.float32) for shape in x_shapes]
+    reset_inputs = [rng.randn(*shape).astype(np.float32)
+                    for shape in reset_x_shapes]
+    backward = [True] * len(inputs)
+    atol_f = 0 if func_name.endswith('Cpu') else 1e-6
+    function_tester(rng, F.einsum, ref_einsum, inputs, ctx=ctx, func_name=func_name,
+                    atol_f=atol_f, atol_b=2e-2, func_kwargs=dict(equation=equation), backward=backward, reset_inputs=reset_inputs)

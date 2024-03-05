@@ -54,3 +54,23 @@ def test_affine_grid_forward_backward(seed, ctx, func_name, align_corners, size,
     func_args = [size, align_corners]
     function_tester(rng, F.affine_grid, ref_affine_grid, inputs, func_args=func_args,
                     ctx=ctx, func_name=func_name, backward=[True], atol_b=1e-2, atol_accum=1e-2)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("align_corners", [False, True])
+@pytest.mark.parametrize("size", [(3, 3), (4, 4), (3, 4), (4, 3),
+                                  (2, 3, 4), (4, 2, 3), (3, 4, 2), (3, 3, 3), (4, 4, 4)])
+@pytest.mark.parametrize("batch_size,reset_batch_size", [(2, 3), (3, 4)])
+def test_affine_grid_forward_backward_with_reset(seed, ctx, func_name, align_corners, size, reset_batch_size,
+                                                 batch_size):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    theta = create_inputs(rng, batch_size, size)
+    inputs = [theta]
+    func_args = [size, align_corners]
+    reset_theta = create_inputs(rng, reset_batch_size, size)
+    reset_inputs = [reset_theta]
+    function_tester(rng, F.affine_grid, ref_affine_grid, inputs, func_args=func_args,
+                    ctx=ctx, func_name=func_name, backward=[True], atol_b=1e-2, atol_accum=1e-2,
+                    reset_inputs=reset_inputs)

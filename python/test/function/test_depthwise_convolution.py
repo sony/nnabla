@@ -143,3 +143,71 @@ def test_parametric_function_2d(inshape, kernel, multiplier, outshape):
     assert p['depthwise_conv/W'].shape == (outmap_channels,) + kernel
     assert p['depthwise_conv/b'].shape == (outmap_channels,)
     nn.clear_parameters()
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape, kernel,reset_inshape, reset_kernel, pad, stride, dilation, ", [
+    ((2, 4, 10, 10), (3, 2), (2, 2, 10, 10), (3, 3), (0, 0), (1, 1), (1, 1)),
+    ((2, 2, 10, 10), (3, 3), (2, 2, 12, 12), (3, 2), (0, 0), (1, 1), (1, 1))
+])
+@pytest.mark.parametrize("with_bias", [True, False])
+@pytest.mark.parametrize("multiplier", [1, 3])
+@pytest.mark.parametrize("base_axis", [1, -3])
+def test_forward_backward_2d_with_reset(inshape, kernel, reset_inshape, reset_kernel, pad, stride, dilation, with_bias,
+                                        multiplier, base_axis, seed, ctx, func_name):
+    sample_channels = inshape[base_axis]
+    outmap_channels = sample_channels * multiplier
+    rng = np.random.RandomState(seed)
+    x = rng.randn(*inshape).astype(np.float32)
+    w = rng.randn(*((outmap_channels,) + kernel)).astype(np.float32)
+    b = rng.randn(outmap_channels).astype(np.float32) if with_bias else None
+    inputs = [x, w, b]
+    # reset inputs
+    reset_sample_channels = reset_inshape[base_axis]
+    reset_outmap_channels = reset_sample_channels * multiplier
+    reset_x = rng.randn(*reset_inshape).astype(np.float32)
+    reset_w = rng.randn(*((reset_outmap_channels,) +
+                        reset_kernel)).astype(np.float32)
+    reset_b = rng.randn(reset_outmap_channels).astype(
+        np.float32) if with_bias else None
+    reset_inputs = [reset_x, reset_w, reset_b]
+    func_args = [base_axis, pad, stride, dilation, multiplier]
+    reference = ref_depthwise_convolution_2d
+    function_tester(rng, F.depthwise_convolution, reference, inputs,
+                    func_args, atol_f=1e-4, atol_b=3e-3, dstep=1e-2,
+                    ctx=ctx, func_name=func_name, reset_inputs=reset_inputs)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape, kernel, reset_inshape, reset_kernel, pad, stride, dilation", [
+    ((2, 2, 10), (3,), (2, 2, 10), (4,), (3,), (1,), (2,)),
+    ((2, 4, 10), (3,), (2, 2, 12), (4,), (0,), (2,), (1,)),
+])
+@pytest.mark.parametrize("with_bias", [True, False])
+@pytest.mark.parametrize("multiplier", [1, 3])
+def test_forward_backward_1d_with_reset(inshape, kernel, reset_inshape, reset_kernel, pad, stride, dilation, with_bias,
+                                        multiplier, seed, ctx, func_name):
+    base_axis = len(inshape) - 2
+    sample_channels = inshape[base_axis]
+    outmap_channels = sample_channels * multiplier
+    rng = np.random.RandomState(seed)
+    x = rng.randn(*inshape).astype(np.float32)
+    w = rng.randn(*((outmap_channels,) + kernel)).astype(np.float32)
+    b = rng.randn(outmap_channels).astype(np.float32) if with_bias else None
+    inputs = [x, w, b]
+    # reset inputs
+    reset_sample_channels = reset_inshape[base_axis]
+    reset_outmap_channels = reset_sample_channels * multiplier
+    reset_x = rng.randn(*reset_inshape).astype(np.float32)
+    reset_w = rng.randn(*((reset_outmap_channels,) +
+                        reset_kernel)).astype(np.float32)
+    reset_b = rng.randn(reset_outmap_channels).astype(
+        np.float32) if with_bias else None
+    reset_inputs = [reset_x, reset_w, reset_b]
+    func_args = [base_axis, pad, stride, dilation, multiplier]
+    reference = ref_depthwise_convolution_1d
+    function_tester(rng, F.depthwise_convolution, reference, inputs,
+                    func_args, atol_f=1e-4, atol_b=3e-3, dstep=1e-2,
+                    ctx=ctx, func_name=func_name, reset_inputs=reset_inputs)

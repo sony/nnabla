@@ -48,3 +48,25 @@ def test_bit_shift_forward(seed, x_shape, shift_shape, direction, dtype, ctx, fu
     func_args = [direction]
     function_tester(rng, F.bit_shift, ref_bit_shift, inputs,
                     func_name=func_name, func_args=func_args, ctx=ctx, backward=backward)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("x_shape, shift_shape,reset_shift_shape,reset_x_shape", [
+    ((2, 3, 4), (2, 3, 4), (1, 1, 1), (2, 3, 4)),
+    ((2, 3, 4), (1, 1, 1), (2, 3, 4), (2, 3, 4)),
+    ((1, 1, 1), (2, 3, 4), (2, 3, 4), (1, 1, 1)),
+])
+@pytest.mark.parametrize('direction', ("LEFT", "RIGHT"))
+@pytest.mark.parametrize('dtype', (np.uint8, np.uint32))
+@pytest.mark.parametrize("seed", [313])
+def test_bit_shift_forward_with_reset(seed, x_shape, shift_shape, reset_x_shape, reset_shift_shape, direction, dtype, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randint(0, np.iinfo(dtype).max//2, x_shape).astype(dtype),
+              rng.randint(0, 128, shift_shape).astype(dtype)]
+    reset_inputs = [rng.randint(0, np.iinfo(dtype).max//2, reset_x_shape).astype(dtype),
+                    rng.randint(0, 128, reset_shift_shape).astype(dtype)]
+    backward = [False, False]
+    func_args = [direction]
+    function_tester(rng, F.bit_shift, ref_bit_shift, inputs,
+                    func_name=func_name, func_args=func_args, ctx=ctx, backward=backward, reset_inputs=reset_inputs)

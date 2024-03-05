@@ -155,3 +155,48 @@ def test_large_transform_binary(fname, ctx, func_name):
                 np.random.randn(1024, 64, 3)).apply(need_grad=True)
         c = F.mul2(a, b)
         c.backward()
+
+
+@pytest.mark.parametrize("fname, ctx, func_name",
+                         list_ctx_and_func_name(['add2',
+                                                 'sub2',
+                                                 'mul2',
+                                                 'div2',
+                                                 'pow2',
+                                                 'maximum2',
+                                                 'minimum2']))
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("broadcast_dims", [
+    (None, None),
+    (None, (0,)),
+    ((1,), None),
+    (None, (2,)),
+    ((0, 2), None),
+    ((0,), (2,))])
+def test_transform_binary_forward_backward_with_reset(fname, ctx, func_name, broadcast_dims, seed):
+    from nbla_test_utils import function_tester
+    atol_f, atol_b = atol_list[fname]
+    func = getattr(F, fname)
+    ref_func = eval('ref_' + fname)
+    rng = np.random.RandomState(seed)
+    shape = [2, 3, 4]
+    shapes = []
+    reset_shape = [3, 2, 3]
+    reset_shapes = []
+    for i in range(2):
+        if broadcast_dims[i] is None:
+            shapes.append(shape)
+            reset_shapes.append(reset_shape)
+            continue
+        s = np.array(shape).copy()
+        s[np.array(broadcast_dims[i])] = 1
+        shapes.append(s.tolist())
+        reset_s = np.array(reset_shape).copy()
+        reset_s[np.array(broadcast_dims[i])] = 1
+        reset_shapes.append(reset_s.tolist())
+    inputs = get_inputs(fname, shapes, rng)
+    reset_inputs = get_inputs(fname, reset_shapes, rng)
+    function_tester(rng, func, ref_func, inputs,
+                    ctx=ctx, func_name=func_name,
+                    atol_f=atol_f, atol_b=atol_b,
+                    reset_inputs=reset_inputs)
