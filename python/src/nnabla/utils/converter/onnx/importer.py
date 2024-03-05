@@ -2730,7 +2730,7 @@ class OnnxImporter:
             func_list.append(rsf)
 
     def Split(self, opset, func_list, n):
-        # Convert to Split+Stack
+        # Convert to Slice
         input_shape = self.get_func_input_shape(n.input[0])
         axis = 0
         offset = 0
@@ -2760,27 +2760,23 @@ class OnnxImporter:
         if len(output_len) == 0:
             output_len = [input_shape[axis] // len(n.output)] * len(n.output)
 
-        # Split
-        sout = []
-        for i in range(input_shape[axis]):
-            sout.append(n.input[0]+"_split_"+str(i))
-        sp = generate_split(n.name, n.input[0], sout, axis,
-                            self._graph.name, self._func_counter)
-        func_list.append(sp)
-
-        for i in range(len(sout)):
-            self._shape_output[sout[i]] = [input_shape[x]
-                                           for x in range(len(input_shape)) if x != axis]
-
-        # Stack
-        for i in range(len(n.output)):
+        # Slice
+        start = [0,] * len(input_shape)
+        start_local = start.copy()
+        stop = input_shape.copy()
+        stop_local = stop.copy()
+        step = [1,] * len(input_shape)
+        offset = 0
+        for i, stop_local_val in enumerate(output_len):
+            start_local[axis] = offset
+            stop_local[axis] = offset + stop_local_val
+            offset += stop_local_val
             shape = [input_shape[x] if x != axis else output_len[i]
                      for x in range(len(input_shape))]
-            sp = generate_stack(n.name, sout[offset:output_len[i]+offset], n.output[i], axis,
-                                self._graph.name, self._func_counter)
             self._shape_output[n.output[i]] = shape
+            sp = generate_slice(n.name, n.input[0], n.output[i], start_local,
+                                stop_local, step, self._graph.name, self._func_counter)
             func_list.append(sp)
-            offset += output_len[i]
 
     def Upsample_6(self, func_list, n):
         func = self.generate_default_function("Unpooling", n)
