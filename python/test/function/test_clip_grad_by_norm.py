@@ -38,7 +38,7 @@ def ref_grad_clip_by_norm(x, dy, clip_norm, axes, **kw):
 @pytest.mark.parametrize("clip_norm", [-5, 0.5])
 @pytest.mark.parametrize("axes", [(), (0, 1), (1, ), (0, 2, 3), (2, 3)])
 def test_clip_by_norm_forward_backward(seed, ctx, func_name, clip_norm, axes):
-    from nbla_test_utils import cap_ignore_region, function_tester
+    from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
     inputs = [rng.randn(2, 3, 4, 4).astype(np.float32) * 2]
     func_args = [clip_norm, axes]
@@ -46,3 +46,19 @@ def test_clip_by_norm_forward_backward(seed, ctx, func_name, clip_norm, axes):
                     func_args=func_args, backward=[True],
                     ctx=ctx, func_name=func_name,
                     ref_grad=ref_grad_clip_by_norm)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("clip_norm", [-5, 0.5])
+@pytest.mark.parametrize("axes", [(), (0, 1), (1, ), (0, 2, 3), (2, 3)])
+def test_clip_by_norm_forward_backward_with_reset(seed, ctx, func_name, clip_norm, axes):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(2, 3, 4, 4).astype(np.float32) * 2]
+    reset_inputs = [rng.randn(2, 4, 4, 4).astype(np.float32) * 2]
+    func_args = [clip_norm, axes]
+    function_tester(rng, F.clip_grad_by_norm, ref_clip_grad_by_norm, inputs,
+                    func_args=func_args, backward=[True],
+                    ctx=ctx, func_name=func_name,
+                    ref_grad=ref_grad_clip_by_norm, reset_inputs=reset_inputs)

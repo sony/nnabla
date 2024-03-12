@@ -40,3 +40,19 @@ def test_shift_forward_backward(seed, inshape, shifts, border_mode, ctx, func_na
     inputs = [rng.randn(*inshape).astype(np.float32)]
     function_tester(rng, F.shift, ref_shift, inputs, func_args=[
                     shifts, border_mode], ctx=ctx, func_name=func_name, atol_f=1e-6, atol_b=1e-2)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape,reset_inshape", [((2, 3, 4), (3, 2, 4))])
+@pytest.mark.parametrize("shifts", [None, (0, 0, 2,), (0, -2, 1), (1, 0, -1)])
+@pytest.mark.parametrize("border_mode", ["nearest", "reflect"])
+def test_shift_forward_backward_with_reset(seed, inshape, reset_inshape, shifts, border_mode, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    # Input
+    inputs = [rng.randn(*inshape).astype(np.float32)]
+    # Reset inputs
+    reset_inputs = [rng.randn(*reset_inshape).astype(np.float32)]
+    function_tester(rng, F.shift, ref_shift, inputs, func_args=[
+        shifts, border_mode], ctx=ctx, func_name=func_name, atol_f=1e-6, atol_b=1e-2, reset_inputs=reset_inputs)

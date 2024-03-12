@@ -360,7 +360,8 @@ def create_proto(contents, include_params=False, variable_batch_size=True, save_
     return proto
 
 
-def save(filename, contents, include_params=False, variable_batch_size=True, extension=".nnp", parameters=None, include_solver_state=False, solver_state_format='.h5'):
+def save(filename, contents, include_params=False, variable_batch_size=True, extension=".nnp", parameters=None,
+         parameter_format=".h5", include_solver_state=False, solver_state_format='.h5'):
     '''Save network definition, inference/training execution
     configurations etc.
 
@@ -381,6 +382,7 @@ def save(filename, contents, include_params=False, variable_batch_size=True, ext
             (more specifically ``-1``). The placeholder dimension will be
             filled during/after loading.
         extension: if files is file-like object, extension is one of ".nntxt", ".prototxt", ".protobuf", ".h5", ".nnp".
+        parameter_format: ".h5" or ".protobuf". Allow to choose which parameter file type.
         include_solver_state (bool): Indicate whether to save solver state or not. 
         solver_state_format (str):
             '.h5' or '.protobuf', default '.h5', indicate in which format will solver state be saved,
@@ -494,8 +496,10 @@ def save(filename, contents, include_params=False, variable_batch_size=True, ext
                 contents when include_solver_state is True')
         _format_opti_config_for_states_checkpoint(ctx, contents)
         file_savers = get_default_file_savers(
+            parameter_format=parameter_format,
             solver_state_format=solver_state_format)
     else:
-        file_savers = get_default_file_savers()
+        file_savers = get_default_file_savers(
+            parameter_format=parameter_format)
     save_files(ctx, file_savers, filename, ext)
     logger.info("Model file is saved as ({}): {}".format(ext, filename))

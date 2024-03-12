@@ -107,3 +107,29 @@ def test_forward_backward(N, C, H, W, params, seed, ctx, func_name):
     function_tester(rng, nn.function_bases.patch_correlation, patch_correlation,
                     [x1, x2], func_kwargs=params, func_name=func_name, ctx=ctx,
                     atol_b=2e-2)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [314])
+@pytest.mark.parametrize("N,reset_N", [(1, 2)])
+@pytest.mark.parametrize("C,reset_C", [(1, 2)])
+@pytest.mark.parametrize("H,reset_H, W,reset_W, params", [
+    (5, 4, 5, 4, {'patch': (1, 1), 'shift': (2, 2), 'shift_step': (2, 2)}),
+    (4, 5, 4, 5, {'patch': (3, 3), 'padding': (1, 2, 2, 1)}),
+    (5, 9, 9, 5, {'patch': (2, 3), 'shift': (1, 1), 'patch_step': (2, 3)}),
+    (3, 4, 8, 3, {'patch': (1, 2), 'patch_step': (
+        2, 3), 'padding': (1, 1, 0, 0)}),
+    (5, 4, 5, 4, {'shift': (1, 0), 'shift_step': (
+        1, 2), 'padding': (0, 0, 0, 0)}),
+])
+def test_forward_backward_with_reset(N, reset_N, C, reset_C, H, reset_H, W, reset_W, params, seed, ctx, func_name):
+    rng = np.random.RandomState(seed)
+    x1 = rng.randn(N, H, W, C).astype(np.float32)
+    x2 = rng.randn(N, H, W, C).astype(np.float32)
+    # reset input
+    reset_x1 = rng.randn(reset_N, reset_H, reset_W, reset_C).astype(np.float32)
+    reset_x2 = rng.randn(reset_N, reset_H, reset_W, reset_C).astype(np.float32)
+    # must use function_bases.patch_correlation for func_name check in tester
+    function_tester(rng, nn.function_bases.patch_correlation, patch_correlation,
+                    [x1, x2], func_kwargs=params, func_name=func_name, ctx=ctx,
+                    atol_b=2e-2, reset_inputs=[reset_x1, reset_x2])

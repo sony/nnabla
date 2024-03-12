@@ -30,3 +30,16 @@ def test_tile_forward_backward(inshape, reps, seed, ctx, func_name):
     function_tester(rng, F.tile, np.tile, inputs, ctx=ctx,
                     func_name=func_name, func_args=[reps], atol_b=1e-2,
                     disable_half_test=False, backward=[False])
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [314])
+@pytest.mark.parametrize("inshape,reset_inshape", [((12,), (3, 5)), ((2, 3, 4), (4, 3, 8, 8))])
+@pytest.mark.parametrize("reps", [(2,), (3, 2), (3, 2, 3), (3, 2, 3, 5)])
+def test_tile_forward_backward_with_reset(inshape, reset_inshape, reps, seed, ctx, func_name):
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*inshape).astype(np.float32)]
+    reset_inputs = [rng.randn(*reset_inshape).astype(np.float32)]
+    function_tester(rng, F.tile, np.tile, inputs, ctx=ctx,
+                    func_name=func_name, func_args=[reps], atol_b=1e-2,
+                    disable_half_test=False, backward=[False], reset_inputs=reset_inputs)

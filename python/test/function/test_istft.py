@@ -231,3 +231,49 @@ def test_stft_istft_identity(ctx, window_size, stride, fft_size, window_type, ce
     z.forward()
 
     assert (np.allclose(x.d, z.d, atol=1e-5, rtol=1e-5))
+
+
+@pytest.mark.parametrize("ctx", ctx_list)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("window_size, stride, fft_size", [
+    (16, 8, 16), (16, 4, 16), (16, 8, 32),
+])
+@pytest.mark.parametrize("window_type", ["hanning", "hamming", "rectangular"])
+@pytest.mark.parametrize("center", [True, False])
+@pytest.mark.parametrize("pad_mode", ["reflect"])
+@pytest.mark.parametrize("as_stft_backward", [True])
+def test_istft_forward_backward_with_reset(ctx, seed, window_size, stride, fft_size, window_type, center, pad_mode, as_stft_backward):
+    backend = ctx.backend[0].split(":")[0]
+    if backend == 'cuda':
+        pytest.skip('CUDA Convolution N-D is only supported in CUDNN extension')
+
+    func_name = "ISTFTCuda" if backend == 'cudnn' else "ISTFT"
+
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+
+    # Generate istft inputs by calling stft
+    x_shape = create_stft_input_shape(window_size)
+    stft_input = rng.randn(*x_shape).astype(np.float32)
+    y_r, y_i = ref_stft(stft_input, window_size, stride,
+                        fft_size, window_type, center, pad_mode, False)
+    istft_inputs = [y_r, y_i]
+
+    # Generate reset istft inputs with different length
+    x_shape_reset = create_stft_input_shape(window_size, 8)
+    stft_input_reset = rng.randn(*x_shape_reset).astype(np.float32)
+    y_r_reset, y_i_reset = ref_stft(stft_input_reset, window_size, stride,
+                                    fft_size, window_type, center, pad_mode, False)
+    istft_inputs_reset = [y_r_reset, y_i_reset]
+
+    # Check violation of NOLA condition
+    if not as_stft_backward:
+        length = x_shape[1]
+        if is_nola_violation(window_type, window_size, stride, fft_size, length, center):
+            check_nola_violation(
+                y_r, y_i, window_size, stride, fft_size, window_type, center, pad_mode, as_stft_backward)
+            return
+
+    function_tester(rng, F.istft, ref_istft, istft_inputs, func_args=[
+                    window_size, stride, fft_size, window_type, center, pad_mode, as_stft_backward],
+                    ctx=ctx, reset_inputs=istft_inputs_reset, func_name=func_name, atol_f=1e-5, atol_b=3e-2, dstep=1e-2)

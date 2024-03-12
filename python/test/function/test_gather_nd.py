@@ -78,3 +78,21 @@ def test_double_backward(seed, ishape, index, ctx, func_name):
     inputs = [rng.randn(*ishape).astype(np.float32), np.array(index)]
     backward_function_tester(rng, F.gather_nd, inputs,
                              ctx=ctx, backward=[True, False])
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("ishape, reset_ishape,index", [
+    ([10], [12], [[0]]),
+    ([10], [12], [[1, 5, 8]]),
+    ([3, 4], [3, 3], [[0, -1], [0, -2]]),
+    ([2, 3, 4], [3, 4, 5], [[0]]),
+    ([2, 3, 4], [3, 4, 4], [[0], [1]]),
+])
+def test_forward_backward_with_reset(seed, ishape, reset_ishape, index, ctx, func_name):
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*ishape).astype(np.float32), np.array(index)]
+    reset_inputs = [
+        rng.randn(*reset_ishape).astype(np.float32), np.array(index)]
+    function_tester(rng, F.gather_nd, gather_nd, inputs, func_name=func_name,
+                    ctx=ctx, backward=[True, False], reset_inputs=reset_inputs)

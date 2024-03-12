@@ -50,8 +50,8 @@ def ref_batch_normalization(x, beta, gamma, rmean, rvar, axes, decay_rate,
     return y
 
 
-def create_inputs(rng, axis):
-    x = rng.randn(2, 3, 4).astype(np.float32) * 2
+def create_inputs(rng, axis, shape):
+    x = rng.randn(*shape).astype(np.float32) * 2
 
     shape_stat = [1 for _ in range(x.ndim)]
     shape_stat[axis] = x.shape[axis]
@@ -95,6 +95,7 @@ def mask_vinputs(vinputs, no_scale, no_bias, no_mean, no_variance):
 
 
 @pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("shape", [(2, 3, 4)])
 @pytest.mark.parametrize("axis", [0, 1, 2, -1])
 @pytest.mark.parametrize("decay_rate", [0.9])
 @pytest.mark.parametrize("eps", [1e-5])
@@ -103,12 +104,12 @@ def mask_vinputs(vinputs, no_scale, no_bias, no_mean, no_variance):
 @pytest.mark.parametrize("no_scale, no_bias", [[False, False], [True, True]])
 @pytest.mark.parametrize("no_mean", [True, False])
 @pytest.mark.parametrize("no_variance", [True, False])
-def test_batch_normalization_forward_backward(seed, axis, decay_rate, eps,
+def test_batch_normalization_forward_backward(seed, shape, axis, decay_rate, eps,
                                               output_stat, batch_stat, ctx, func_name,
                                               no_scale, no_bias, no_mean, no_variance):
     from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
-    inputs = list(create_inputs(rng, axis))
+    inputs = list(create_inputs(rng, axis, shape))
     axes = [axis]
 
     if not batch_stat and (no_mean or no_variance):
@@ -200,8 +201,8 @@ def ref_batch_normalization_for_multiple_axes(x, beta, gamma, rmean, rvar, axes,
     return y
 
 
-def create_inputs_for_multiple_axes(rng, axes):
-    x = rng.randn(2, 3, 4).astype(np.float32) * 2
+def create_inputs_for_multiple_axes(rng, axes, shape):
+    x = rng.randn(*shape).astype(np.float32) * 2
     shape_stat = [1 for _ in range(x.ndim)]
     for i in range(len(axes)):
         shape_stat[axes[i]] = x.shape[axes[i]]
@@ -213,15 +214,16 @@ def create_inputs_for_multiple_axes(rng, axes):
 
 
 @pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("shape", [(2, 3, 4)])
 @pytest.mark.parametrize("axes", [[0, 1], [1, 2], [0, 2], [-2, -1]])
 @pytest.mark.parametrize("decay_rate", [0.9])
 @pytest.mark.parametrize("eps", [1e-5])
 @pytest.mark.parametrize("output_stat", [True, False])
 @pytest.mark.parametrize("ctx, func_name", ctxs)
-def test_batch_normalization_for_multiple_axes_forward_backward(seed, axes, decay_rate, eps,
+def test_batch_normalization_for_multiple_axes_forward_backward(seed, shape, axes, decay_rate, eps,
                                                                 output_stat, ctx, func_name):
     rng = np.random.RandomState(seed)
-    inputs = list(create_inputs_for_multiple_axes(rng, axes))
+    inputs = list(create_inputs_for_multiple_axes(rng, axes, shape))
     vinputs = []
     for i in inputs:
         vinputs.append(nn.Variable(i.shape, True))
@@ -240,19 +242,20 @@ def test_batch_normalization_for_multiple_axes_forward_backward(seed, axes, deca
 
 
 @pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("shape", [(2, 3, 4)])
 @pytest.mark.parametrize("axis", [0, 1, 2, -1])
 @pytest.mark.parametrize("decay_rate", [0.9])
 @pytest.mark.parametrize("eps", [1e-5])
 @pytest.mark.parametrize("output_stat, batch_stat", [[False, False], [False, True]])
 @pytest.mark.parametrize("no_scale, no_bias", [[False, False], [True, True]])
 @pytest.mark.parametrize("ctx, func_name", ctxs)
-def test_batch_normalization_double_backward(seed, axis, decay_rate, eps,
+def test_batch_normalization_double_backward(seed, shape, axis, decay_rate, eps,
                                              output_stat, batch_stat, no_scale, no_bias, ctx, func_name):
     from nbla_test_utils import backward_function_tester
     from nnabla.backward_function.batch_normalization import BatchNormalizationBackward
 
     rng = np.random.RandomState(seed)
-    inputs = list(create_inputs(rng, axis))
+    inputs = list(create_inputs(rng, axis, shape))
     inputs = mask_vinputs(inputs, no_scale, no_bias, False, False)
 
     axes = [axis]
@@ -285,3 +288,35 @@ def test_batch_normalization_double_backward(seed, axis, decay_rate, eps,
                              func_args=[],
                              backward=backward,
                              ctx=ctx, atol_accum=1e-2, dstep=1e-3, non_accum_check=True)
+
+
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("shape, reset_shape", [((2, 3, 4), (3, 3, 3))])
+@pytest.mark.parametrize("axis", [0, 1, 2, -1])
+@pytest.mark.parametrize("decay_rate", [0.9])
+@pytest.mark.parametrize("eps", [1e-5])
+@pytest.mark.parametrize("output_stat, batch_stat", [[False, False], [False, True], [True, True]])
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("no_scale, no_bias", [[False, False], [True, True]])
+@pytest.mark.parametrize("no_mean", [True, False])
+@pytest.mark.parametrize("no_variance", [True, False])
+def test_batch_normalization_with_reset(seed, shape, reset_shape, axis, decay_rate, eps,
+                                        output_stat, batch_stat, ctx, func_name,
+                                        no_scale, no_bias, no_mean, no_variance):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    inputs = list(create_inputs(rng, axis, shape))
+    reset_inputs = list(create_inputs(rng, axis, reset_shape))
+    axes = [axis]
+    if batch_stat or (not no_mean and not no_variance):
+        inputs = mask_inputs(inputs, no_scale, no_bias, no_mean, no_variance)
+        insert_identity = []
+        if batch_stat:
+            insert_identity = [True, True, True, False, False]
+        function_tester(rng, F.batch_normalization, ref_batch_normalization,
+                        inputs,
+                        func_args=[axes, decay_rate, eps,
+                                   batch_stat, output_stat],
+                        backward=[True, True, True, False, False],
+                        ctx=ctx, func_name=func_name, dstep=1e-2, atol_b=1e-2, insert_identity=insert_identity,
+                        reset_inputs=reset_inputs)

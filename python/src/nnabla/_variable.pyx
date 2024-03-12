@@ -1193,6 +1193,24 @@ cdef class Variable:
     def __matmul__(x, y):
         return AOP.matmul(x, y)
 
+    def __radd__(y, x):
+        return AOP.add(x, y)
+
+    def __rsub__(y, x):
+        return AOP.sub(x, y)
+
+    def __rmul__(y, x):
+        return AOP.mul(x, y)
+
+    def __rtruediv__(y, x):
+        return AOP.truediv(x, y)
+
+    def __rdiv__(y, x):
+        return AOP.div(x, y)
+
+    def __rpow__(y, x, z):
+        return AOP.pow(x, y, z)
+
     def __getitem__(self, key):
         return IDX.getitem(self, key)
 

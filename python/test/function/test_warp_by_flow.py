@@ -55,3 +55,21 @@ def test_warp_by_flow_forward_backward(shape, seed, ctx, func_name):
     flow = rng.randn(N, 2, H, W).astype(np.float32)
     function_tester(rng, F.warp_by_flow, warp_by_flow, [data, flow], ctx=ctx,
                     func_name=func_name, func_args=[], atol_b=1e-2)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [314])
+@pytest.mark.parametrize("shape,reset_shape", [
+    ((1, 1, 4, 5), (4, 3, 4, 5)), ((2, 6, 1, 10), (8, 8, 1, 1))
+])
+def test_warp_by_flow_forward_backward_with_reset(shape, reset_shape, seed, ctx, func_name):
+    N, C, H, W = shape
+    reset_N, reset_C, reset_H, reset_W = reset_shape
+    rng = np.random.RandomState(seed)
+    data = rng.randn(N, C, H, W).astype(np.float32)
+    flow = rng.randn(N, 2, H, W).astype(np.float32)
+    reset_data = rng.randn(reset_N, reset_C, reset_H,
+                           reset_W).astype(np.float32)
+    reset_flow = rng.randn(reset_N, 2, reset_H, reset_W).astype(np.float32)
+    function_tester(rng, F.warp_by_flow, warp_by_flow, [data, flow], ctx=ctx,
+                    func_name=func_name, func_args=[], atol_b=1e-2, reset_inputs=[reset_data, reset_flow])

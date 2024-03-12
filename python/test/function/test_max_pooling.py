@@ -183,3 +183,59 @@ def test_max_pooling_3d_double_backward(seed, inshape, kernel, stride, pad, igno
                              func_args=func_args, ctx=ctx, backward=[
                                  True, False],
                              non_accum_check=True)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("ignore_border", [True, False])
+@pytest.mark.parametrize("channel_last", [False, True])
+@pytest.mark.parametrize("inshape,reset_inshape, kernel, stride, pad", [
+    ((4, 6), (6, 8), (2, 2), (2, 1), (1, 0)),
+    ((2, 4, 6), (4, 6, 8), (2, 2), (2, 1), (1, 0)),
+    ((2, 2, 4, 6), (3, 4, 6, 8), (2, 2), (2, 1), (1, 0)),
+    ((2, 2, 2, 4, 6), (3, 2, 4, 8, 6), (2, 2), (1, 2), (0, 1)),
+])
+def test_max_pooling_2d_with_reset(seed, inshape, reset_inshape, kernel, stride, pad, ignore_border, channel_last,
+                                   ctx, func_name):
+    from nbla_test_utils import function_tester
+    if channel_last and not func_name.endswith('Cudnn'):
+        pytest.skip('Channel last is only supported in Cudnn so far')
+    if channel_last:
+        t = refs.ChannelLastToFirstTranspose(len(inshape), len(kernel))
+        inshape = tuple(inshape[i] for i in t.inv_axes)
+        reset_inshape = tuple(reset_inshape[i] for i in t.inv_axes)
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*inshape).astype(np.float32)]
+    reset_inputs = [rng.randn(*reset_inshape).astype(np.float32)]
+    func_args = [kernel, stride, ignore_border, pad, channel_last]
+    function_tester(rng, F.max_pooling, ref_max_pooling, inputs=inputs,
+                    func_args=func_args, func_name=func_name, ctx=ctx,
+                    atol_f=1e-6, atol_b=1e-2, reset_inputs=reset_inputs)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("ignore_border", [True, False])
+@pytest.mark.parametrize("channel_last", [False, True])
+@pytest.mark.parametrize("inshape,reset_inshape, kernel, stride, pad", [
+    ((3, 4, 6), (2, 6, 4), (2, 2, 2), (2, 1, 1), (1, 0, 1)),
+    ((2, 3, 4, 6), (2, 3, 6, 4), (2, 2, 2), (1, 1, 2), (0, 1, 0)),
+    ((2, 2, 3, 4, 6), (3, 3, 4, 6, 4), (2, 2, 2), (2, 1, 1), (1, 0, 1)),
+    ((2, 2, 2, 3, 4, 6), (3, 2, 2, 3, 4, 4), (1, 2, 2), (1, 1, 2), (0, 1, 0)),
+])
+def test_max_pooling_3d_with_reset(seed, inshape, reset_inshape, kernel, stride, pad, ignore_border, channel_last,
+                                   ctx, func_name):
+    from nbla_test_utils import function_tester
+    if channel_last and not func_name.endswith('Cudnn'):
+        pytest.skip('Channel last is only supported in Cudnn so far')
+    if channel_last:
+        t = refs.ChannelLastToFirstTranspose(len(inshape), len(kernel))
+        inshape = tuple(inshape[i] for i in t.inv_axes)
+        reset_inshape = tuple(reset_inshape[i] for i in t.inv_axes)
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*inshape).astype(np.float32)]
+    reset_inputs = [rng.randn(*reset_inshape).astype(np.float32)]
+    func_args = [kernel, stride, ignore_border, pad, channel_last]
+    function_tester(rng, F.max_pooling, ref_max_pooling, inputs=inputs,
+                    func_args=func_args, func_name=func_name, ctx=ctx,
+                    atol_f=1e-6, atol_b=1e-2, reset_inputs=reset_inputs)

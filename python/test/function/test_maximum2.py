@@ -37,3 +37,16 @@ def test_maximum2_double_backward(seed, ctx, func_name):
                              atol_accum=1e-3,
                              dstep=1e-3,
                              ctx=ctx)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+def test_maximum2_forward_backward_with_reset(seed, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(2, 3).astype(np.float32),
+              rng.randn(2, 3).astype(np.float32) * 2]
+    reset_inputs = [rng.randn(3, 2).astype(np.float32),
+                    rng.randn(3, 2).astype(np.float32) * 2]
+    function_tester(rng, F.maximum2, np.maximum, inputs,
+                    ctx=ctx, func_name=func_name, atol_b=2e-3, reset_inputs=reset_inputs)

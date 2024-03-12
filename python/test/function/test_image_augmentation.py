@@ -66,3 +66,28 @@ def test_image_augmentation_forward(seed, shape, ctx, func_name):
     func_kargs['seed'] = -1
     recomputation_test(rng=rng, func=F.image_augmentation, vinputs=[i],
                        func_args=[], func_kwargs=func_kargs, ctx=ctx)
+
+# reset forward fail with reset input in a diff shape
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("shape", [(3, 5, 8), (3, 10, 10)])
+def test_image_augmentation_forward_with_reset(seed, shape, ctx, func_name):
+    pytest.skip(
+            'Reset input for ImageAugmentation is not support yet')
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(16, 3, 8, 8).astype(np.float32)]
+    # reset
+    reset_inputs = [rng.randn(16, 3, 4, 4).astype(np.float32)]
+    i = nn.Variable(inputs[0].shape)
+    # NNabla forward
+    with nn.context_scope(ctx):
+        o = F.image_augmentation(i)
+    o.forward()
+    assert o.d.shape == inputs[0].shape
+    # reset and forward
+    i.reset_shape(reset_inputs[0].shape, True)
+    i.d = reset_inputs[0]
+    o.forward()
+    assert o.d.shape == reset_inputs[0].shape

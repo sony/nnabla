@@ -74,3 +74,31 @@ def test_mean_subtraction_forward_backward(seed, inshape, base_axis, ctx, func_n
     with nn.auto_forward():
         y = F.mean_subtraction(*(vinputs + [base_axis, batch_stat]))
     assert_allclose(ref_y, y.d)
+
+
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape,reset_inshape", [((2, 3, 4), (3, 2, 4))])
+@pytest.mark.parametrize("base_axis", [0, 1, 2, -1, -2, -3])
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+def test_mean_subtraction_forward_backward_with_reset(seed, inshape, reset_inshape, base_axis, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    mean_shape = inshape[base_axis:
+                         ] if base_axis >= 0 else inshape[base_axis + len(inshape):]
+    inputs = [np.array(rng.randn(*inshape).astype(np.float32)),
+              np.zeros(mean_shape),
+              np.array([1000])]
+    # reset inputs
+    reset_mean_shape = reset_inshape[base_axis:
+                                     ] if base_axis >= 0 else reset_inshape[base_axis + len(reset_inshape):]
+    reset_inputs = [np.array(rng.randn(*reset_inshape).astype(np.float32)),
+                    np.zeros(reset_mean_shape),
+                    np.array([1000])]
+    batch_stat = True
+
+    function_tester(rng, F.mean_subtraction, ref_mean_subtraction,
+                    inputs,
+                    func_args=[base_axis, batch_stat],
+                    ctx=ctx, func_name=func_name, dstep=1e-2,
+                    backward=[True, False, False],
+                    atol_b=1e-2, reset_inputs=reset_inputs)

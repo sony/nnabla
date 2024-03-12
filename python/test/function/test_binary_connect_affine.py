@@ -88,3 +88,39 @@ def test_binary_connect_affine_forward_backward(seed, base_axis, weight_shape, b
     function_tester(rng, F.binary_connect_affine, ref_binary_connect_affine, inputs, func_args=[base_axis, quantize_zero_to],
                     atol_b=1e-2, backward=[True, True, False, True], ctx=ctx, func_name=func_name,
                     ref_grad=ref_grad_binary_connect_affine, insert_identity=insert_identity)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("base_axis, weight_shape, reset_weight_shape",
+                         [(1, (12, 2, 3), (20, 2, 3)), (2, (4, 4), (5, 4)), (-1, (4, 4), (5, 4)),
+                          (-2, (12, 2, 3), (20, 3, 4))])
+@pytest.mark.parametrize("bias", [True, False])
+@pytest.mark.parametrize("quantize_zero_to", [0.0, -1.0, 1.0])
+def test_binary_connect_affine_forward_backward_with_reset(seed, base_axis, weight_shape, reset_weight_shape, bias,
+                                                           quantize_zero_to,
+                                                           ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    # Input
+    inputs = [rng.randn(2, 3, 4).astype(np.float32)]
+    reset_inputs = [rng.randn(3, 4, 5).astype(np.float32)]
+    # Weight
+    inputs += [rng.randn(*weight_shape).astype(np.float32)]
+    reset_inputs += [rng.randn(*reset_weight_shape).astype(np.float32)]
+    # Binary Weights (initialized to zero)
+    inputs += [np.zeros(weight_shape).astype(np.float32)]
+    reset_inputs += [np.zeros(reset_weight_shape).astype(np.float32)]
+    # Bias
+    if bias:
+        inputs += [rng.randn(*weight_shape[1:]).astype(np.float32)]
+        reset_inputs += [rng.randn(*reset_weight_shape[1:]).astype(np.float32)]
+    else:
+        inputs += [None]
+        reset_inputs += [None]
+
+    insert_identity = [True, True, False, True]
+    function_tester(rng, F.binary_connect_affine, ref_binary_connect_affine, inputs,
+                    func_args=[base_axis, quantize_zero_to],
+                    atol_b=1e-2, backward=[True, True, False, True], ctx=ctx, func_name=func_name,
+                    ref_grad=ref_grad_binary_connect_affine, insert_identity=insert_identity, reset_inputs=reset_inputs)

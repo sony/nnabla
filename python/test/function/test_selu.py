@@ -51,3 +51,16 @@ def test_selu_double_backward(seed, scale, alpha, ctx, func_name):
                              atol_accum=1e-2,
                              dstep=1e-3,
                              ctx=ctx)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("scale", [1.050700987355480, 1.0, 0.5, 0.0])
+@pytest.mark.parametrize("alpha", [1.673263242354377, 1.0, 0.5, 0.0])
+@pytest.mark.parametrize("seed", [313])
+def test_selu_forward_backward_with_reset(seed, scale, alpha, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2]
+    reset_inputs = [rng.randn(1, 1, 2).astype(np.float32) * 2]
+    function_tester(rng, F.selu, ref_selu, inputs, func_args=[scale, alpha],
+                    ctx=ctx, func_name=func_name, reset_inputs=reset_inputs)

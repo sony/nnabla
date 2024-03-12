@@ -70,3 +70,26 @@ def test_trilu_double_backward(seed, ctx, func_name, shape, k, upper):
                              dstep=1e-3,
                              backward_b=[True, False],
                              ctx=ctx)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("shape,reset_shape", [
+    ((1, 3, 3), (1, 4, 4)),
+    ((2, 4, 3), (2, 3, 4)),
+    ((2, 2, 3, 4), (2, 2, 4, 3))])
+@pytest.mark.parametrize("k", list(range(-4, 4)))
+@pytest.mark.parametrize("upper", [True, False])
+def test_trilu_forward_backward_with_reset(seed, ctx, func_name, shape, reset_shape, k, upper):
+    from nbla_test_utils import cap_ignore_region, function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [
+        cap_ignore_region(
+            rng.randn(*shape).astype(np.float32) * 2,
+            (-1e-3, 1e-3))]
+    reset_inputs = [
+        cap_ignore_region(
+            rng.randn(*reset_shape).astype(np.float32) * 2,
+            (-1e-3, 1e-3))]
+    function_tester(rng, F.trilu, ref_trilu, inputs, atol_b=1e-2, dstep=1e-3,
+                    ctx=ctx, func_name=func_name, func_args=[k, upper], reset_inputs=reset_inputs)

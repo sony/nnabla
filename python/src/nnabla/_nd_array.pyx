@@ -54,7 +54,7 @@ cdef c_get_numpy_array(CNdArray * arrp, vector[np.npy_intp] & shape,
         shape.size(), shape.data(), type_num, < void*>(arr.get().const_pointer()))
     ndarray.flags.writeable = False
     pyarr = Array.create(arr)
-    ndarray.base = <PyObject * > pyarr
+    np.PyArray_SetBaseObject(ndarray, pyarr)
     Py_INCREF(pyarr)
     return ndarray
 
@@ -68,7 +68,7 @@ cdef c_cast_numpy_array(CNdArray * arrp, vector[np.npy_intp] & shape,
         shape.size(), shape.data(), type_num, arr.get().pointer())
     cdef shared_ptr[const CArray] carr = < shared_ptr[const CArray] > const_pointer_cast[ConstArray, CArray](arr)
     pyarr = Array.create(carr)
-    ndarray.base = <PyObject * > pyarr
+    np.PyArray_SetBaseObject(ndarray, pyarr)
     Py_INCREF(pyarr)
     return ndarray
 
@@ -496,6 +496,24 @@ cdef class NdArray:
 
     def __matmul__(x, y):
         return AOP.matmul(x, y)
+
+    def __radd__(y, x):
+        return AOP.add(x, y)
+
+    def __rsub__(y, x):
+        return AOP.sub(x, y)
+
+    def __rmul__(y, x):
+        return AOP.mul(x, y)
+
+    def __rtruediv__(y, x):
+        return AOP.truediv(x, y)
+
+    def __rdiv__(y, x):
+        return AOP.div(x, y)
+
+    def __rpow__(y, x, z):
+        return AOP.pow(x, y, z)
 
     def __iadd__(self, x):
         import nnabla.functions as F

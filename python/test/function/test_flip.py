@@ -47,3 +47,17 @@ def test_flip_forward_backward(seed, inshape, axes, ctx, func_name):
     inputs = [rng.randn(*inshape).astype(np.float32)]
     function_tester(rng, F.flip, ref_flip, inputs, func_args=[
                     axes], ctx=ctx, func_name=func_name, atol_f=1e-6, atol_b=1e-2)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape,reset_inshape", [((2, 3, 4), (1, 2, 3))])
+@pytest.mark.parametrize("axes", [None, (0,), (0, 1), (2, 0), (-1, -2), (0, -1), (-1,)])
+def test_flip_forward_backward_with_reset(seed, inshape, reset_inshape, axes, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    # Input
+    inputs = [rng.randn(*inshape).astype(np.float32)]
+    reset_inputs = [rng.randn(*reset_inshape).astype(np.float32)]
+    function_tester(rng, F.flip, ref_flip, inputs, func_args=[
+                    axes], ctx=ctx, func_name=func_name, atol_f=1e-6, atol_b=1e-2, reset_inputs=reset_inputs)

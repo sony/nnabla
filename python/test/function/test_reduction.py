@@ -46,10 +46,34 @@ def test_reduction_forward_backward(op, seed, inshape, axis, keepdims, ctx, func
 
 
 @pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("axis", [None, 0, 1, 2, 3, (0, 2), (1, 2, 3)])
+@pytest.mark.parametrize("keepdims", [False, True])
+@pytest.mark.parametrize("inshape,reset_inshape", [((2, 3, 4, 5), (2, 1, 3, 3))])
+@pytest.mark.parametrize("op, ctx, func_name", list_ctx_and_func_name(['sum', 'mean', 'max', 'min', 'prod']))
+def test_reduction_forward_backward_with_reset(op, seed, inshape, reset_inshape, axis, keepdims, ctx, func_name):
+    func = getattr(F, op)
+    ref_func = getattr(np, op)
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*inshape).astype(np.float32)]
+    reset_inputs = [rng.randn(*reset_inshape).astype(np.float32)]
+    function_tester(rng, func, ref_func, inputs,
+                    func_args=[axis],
+                    func_kwargs=dict(keepdims=keepdims),
+                    ctx=ctx, func_name=func_name,
+                    # The backward test on macOS doesn't pass with this tolerance.
+                    # Does Eigen library used in CPU computation backend produce
+                    # the different results on different platforms?
+                    # atol_b=3e-3,
+                    atol_b=6e-3,
+                    reset_inputs=reset_inputs
+                    )
+
+
+@pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("inshape, axis", [((2, 1, 64, 64), (2, 3))])
 @pytest.mark.parametrize("ctx, func_name", list_context('Sum'))
 def test_large_sum_reduction(seed, inshape, axis, ctx, func_name):
-    if not func_name.endswith('Cuda'):
+    if not func_name.endswith('CudaCudnn'):
         # This configuration is only to test the CUDA implementation branch
         # where reduction_size / outer_size >= 2048, so we skip this test for
         # CPU and CuDNN and also do not need to run for both keepdims.
@@ -62,10 +86,28 @@ def test_large_sum_reduction(seed, inshape, axis, ctx, func_name):
 
 
 @pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape,reset_inshape, axis", [((2, 1, 64, 64), (3, 2, 32, 32), (2, 3))])
+@pytest.mark.parametrize("ctx, func_name", list_context('Sum'))
+def test_large_sum_reduction_with_reset(seed, inshape, reset_inshape, axis, ctx, func_name):
+    if not func_name.endswith('CudaCudnn'):
+        # This configuration is only to test the CUDA implementation branch
+        # where reduction_size / outer_size >= 2048, so we skip this test for
+        # CPU and CuDNN and also do not need to run for both keepdims.
+        pytest.skip('skip CUDA specific implementation test for other target')
+
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*inshape).astype(np.float32)]
+    reset_inputs = [rng.randn(*reset_inshape).astype(np.float32)]
+    function_tester(rng, F.sum, np.sum, inputs, ctx=ctx, func_name=func_name,
+                    func_args=[axis], atol_b=1e-2, disable_half_test=False,
+                    reset_inputs=reset_inputs)
+
+
+@pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("inshape, axis", [((2, 1, 64, 64), (2, 3))])
 @pytest.mark.parametrize("ctx, func_name", list_context('Mean'))
 def test_large_mean_reduction(seed, inshape, axis, ctx, func_name):
-    if not func_name.endswith('Cuda'):
+    if not func_name.endswith('CudaCudnn'):
         # This configuration is only to test the CUDA implementation branch
         # where reduction_size / outer_size >= 2048, so we skip this test for
         # CPU and CuDNN and also do not need to run for both keepdims.
@@ -75,6 +117,23 @@ def test_large_mean_reduction(seed, inshape, axis, ctx, func_name):
     inputs = [rng.randn(*inshape).astype(np.float32)]
     function_tester(rng, F.mean, np.mean, inputs, ctx=ctx, func_name=func_name,
                     func_args=[axis])
+
+
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape,reset_inshape, axis", [((2, 1, 64, 64), (3, 2, 32, 32), (2, 3))])
+@pytest.mark.parametrize("ctx, func_name", list_context('Mean'))
+def test_large_mean_reduction_with_reset(seed, inshape, reset_inshape, axis, ctx, func_name):
+    if not func_name.endswith('CudaCudnn'):
+        # This configuration is only to test the CUDA implementation branch
+        # where reduction_size / outer_size >= 2048, so we skip this test for
+        # CPU and CuDNN and also do not need to run for both keepdims.
+        pytest.skip('skip CUDA specific implementation test for other target')
+
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*inshape).astype(np.float32)]
+    reset_inputs = [rng.randn(*reset_inshape).astype(np.float32)]
+    function_tester(rng, F.mean, np.mean, inputs, ctx=ctx, func_name=func_name,
+                    func_args=[axis], reset_inputs=reset_inputs)
 
 
 def preprocess_arg_reduction(x, axes):
@@ -118,49 +177,83 @@ def argmin(x, axis):
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("ctx, func_name", list_context('Max'))
 @pytest.mark.parametrize("keepdims", [False, True])
-@pytest.mark.parametrize("inshape, axis", [
-    ((8, 1, 128, 128), (2, 3)),
-    ((8, 128, 1, 128), (1, 3)),
-    ((8, 128, 8, 128), (1, 3)),
+@pytest.mark.parametrize("inshape, reset_inshape,axis", [
+    ((8, 1, 128, 128), None, (2, 3)),
+    ((8, 128, 1, 128), None, (1, 3)),
+    ((8, 128, 8, 128), None, (1, 3)),
+    ((8, 1, 128, 128), (4, 2, 64, 64), (2, 3)),
+    ((8, 128, 1, 128), (4, 64, 2, 64), (1, 3)),
 ])
-def test_max_with_index(seed, ctx, func_name, inshape, axis, keepdims):
-    x = np.random.RandomState(seed).randn(*inshape).astype(np.float32)
+def test_max_with_index(seed, ctx, func_name, inshape, reset_inshape, axis, keepdims):
+    rng = np.random.RandomState(seed)
+    x = rng.randn(*inshape).astype(np.float32)
     x = nn.Variable.from_numpy_array(x)
 
     # with_index
-    with nn.context_scope(ctx), nn.auto_forward(True):
+    with nn.context_scope(ctx):
         val, idx = F.max(x, axis, keepdims, with_index=True)
+    idx.forward()
     assert_allclose(val.d, np.amax(x.d, axis, keepdims=keepdims))
     assert np.all(idx.d == argmax(x.d, axis).reshape(idx.d.shape))
-
+    if reset_inshape:
+        # reset and forward
+        x.reset_shape(reset_inshape, True)
+        x.d = rng.randn(*reset_inshape).astype(np.float32)
+        idx.forward()
+        assert_allclose(val.d, np.amax(x.d, axis, keepdims=keepdims))
+        assert np.all(idx.d == argmax(x.d, axis).reshape(idx.d.shape))
     # only_index
-    with nn.context_scope(ctx), nn.auto_forward(True):
+    with nn.context_scope(ctx):
         idx = F.max(x, axis, keepdims, only_index=True)
+    idx.forward()
     assert np.all(idx.d == argmax(x.d, axis).reshape(idx.d.shape))
+    if reset_inshape:
+        # reset and forward
+        x.reset_shape(reset_inshape, True)
+        x.d = rng.randn(*reset_inshape).astype(np.float32)
+        idx.forward()
+        assert np.all(idx.d == argmax(x.d, axis).reshape(idx.d.shape))
 
 
 @pytest.mark.parametrize("seed", [313])
 @pytest.mark.parametrize("ctx, func_name", list_context('Min'))
 @pytest.mark.parametrize("keepdims", [False, True])
-@pytest.mark.parametrize("inshape, axis", [
-    ((8, 1, 128, 128), (2, 3)),
-    ((8, 128, 1, 128), (1, 3)),
-    ((8, 128, 8, 128), (1, 3)),
+@pytest.mark.parametrize("inshape, reset_inshape,axis", [
+    ((8, 1, 128, 128), None, (2, 3)),
+    ((8, 128, 1, 128), None, (1, 3)),
+    ((8, 128, 8, 128), None, (1, 3)),
+    ((8, 1, 128, 128), (4, 2, 64, 64), (2, 3)),
+    ((8, 128, 1, 128), (4, 64, 2, 64), (1, 3)),
 ])
-def test_min_with_index(seed, ctx, func_name, inshape, axis, keepdims):
-    x = np.random.RandomState(seed).randn(*inshape).astype(np.float32)
+def test_min_with_index(seed, ctx, func_name, inshape, reset_inshape, axis, keepdims):
+    rng = np.random.RandomState(seed)
+    x = rng.randn(*inshape).astype(np.float32)
     x = nn.Variable.from_numpy_array(x)
 
     # with_index
-    with nn.context_scope(ctx), nn.auto_forward(True):
+    with nn.context_scope(ctx):
         val, idx = F.min(x, axis, keepdims, with_index=True)
+    idx.forward()
     assert_allclose(val.d, np.amin(x.d, axis, keepdims=keepdims))
     assert np.all(idx.d == argmin(x.d, axis).reshape(idx.d.shape))
-
+    if reset_inshape:
+        # reset and forward
+        x.reset_shape(reset_inshape, True)
+        x.d = rng.randn(*reset_inshape).astype(np.float32)
+        idx.forward()
+        assert_allclose(val.d, np.amin(x.d, axis, keepdims=keepdims))
+        assert np.all(idx.d == argmin(x.d, axis).reshape(idx.d.shape))
     # only_index
-    with nn.context_scope(ctx), nn.auto_forward(True):
+    with nn.context_scope(ctx):
         idx = F.min(x, axis, keepdims, only_index=True)
+    idx.forward()
     assert np.all(idx.d == argmin(x.d, axis).reshape(idx.d.shape))
+    if reset_inshape:
+        # reset and forward
+        x.reset_shape(reset_inshape, True)
+        x.d = rng.randn(*reset_inshape).astype(np.float32)
+        idx.forward()
+        assert np.all(idx.d == argmin(x.d, axis).reshape(idx.d.shape))
 
 
 @pytest.mark.parametrize("seed", [313])

@@ -136,3 +136,30 @@ def test_layer_normalization_double_backward(ctx, func_name, seed, x_shape, batc
                              backward=backward,
                              atol_f=2e-4,
                              ctx=ctx)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("x_shape , reset_x_shape, batch_axis", [
+    ((2, 3, 4, 4), (2, 4, 5, 5), 0),
+    ((2, 3, 5, 7), (3, 4, 4, 4), 1),
+    ((2, 3, 5, 7), (3, 4, 4, 4), [0, 2]),
+])
+@pytest.mark.parametrize("eps", [1e-05])
+@pytest.mark.parametrize("output_stat", [False, True])
+@pytest.mark.parametrize("no_scale", [False, True])
+@pytest.mark.parametrize("no_bias", [False, True])
+def test_layer_normalization_forward_backward_with_reset(ctx, func_name, seed, x_shape, reset_x_shape, batch_axis, eps,
+                                                         output_stat, no_scale, no_bias):
+    from nbla_test_utils import function_tester
+
+    rng = np.random.RandomState(seed)
+    x, beta, gamma = create_inputs(rng, x_shape, batch_axis, no_scale, no_bias)
+
+    reset_inputs = list(create_inputs(
+        rng, reset_x_shape, batch_axis, no_scale, no_bias))
+
+    function_tester(rng, F.layer_normalization, ref_layer_normalization, [x, beta, gamma],
+                    [batch_axis, eps, output_stat], ctx=ctx,
+                    func_name=func_name, dstep=1e-2, atol_b=1e-2, backward=[True, not no_bias, not no_scale],
+                    disable_half_test=True, reset_inputs=reset_inputs)

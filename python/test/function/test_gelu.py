@@ -48,3 +48,15 @@ def test_gelu_double_backward(seed, ctx, func_name):
     backward_function_tester(rng, F.gelu, inputs,
                              ctx=ctx,
                              atol_accum=5e-3)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313, 999])
+def test_gelu_forward_backward_with_reset(seed, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(2, 3, 4).astype(np.float32)]
+    reset_inputs = [rng.randn(1, 2, 3).astype(np.float32)]
+    function_tester(rng, F.gelu, ref_gelu, inputs,
+                    ctx=ctx, func_name=func_name,
+                    atol_b=1e-3, atol_accum=1e-3, reset_inputs=reset_inputs)

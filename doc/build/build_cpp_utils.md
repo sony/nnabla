@@ -34,12 +34,12 @@ Note: You can choose one of the following two installing methods.
 Unlike [Python Package compilation](./build.md) which requires
 `protoc` compiler only, the NNabla C++ utility library requires
 protobuf C++ library too.  The following snippet running on your
-terminal will build and install protobuf-3.1.0 from source.
+terminal will build and install protobuf-3.20.3 from source.
 
 ```shell
-curl -L https://github.com/google/protobuf/archive/v3.19.6.tar.gz -o protobuf-v3.19.6.tar.gz
-tar xvf protobuf-v3.19.6.tar.gz
-cd protobuf-3.19.6
+curl -L https://github.com/google/protobuf/archive/v3.20.3.tar.gz -o protobuf-v3.20.3.tar.gz
+tar xvf protobuf-v3.20.3.tar.gz
+cd protobuf-3.20.3
 mkdir build && cd build
 cmake -DCMAKE_POSITION_INDEPENDENT_CODE=ON -Dprotobuf_BUILD_TESTS=OFF ../cmake
 make

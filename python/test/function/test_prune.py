@@ -63,3 +63,17 @@ def test_prune_double_backward(rate, seed, ctx, func_name):
     inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2]
 
     backward_function_tester(rng, F.prune, inputs, func_args=[rate], ctx=ctx)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("rate", [0.0, 0.85, 0.9, 0.95, 1.0])
+def test_prune_forward_backward_with_reset(rate, seed, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2]
+    reset_inputs = [rng.randn(3, 2, 4).astype(np.float32) * 2]
+    function_tester(rng, F.prune, ref_func_prune, inputs, func_args=[rate],
+                    ctx=ctx, func_name=func_name,
+                    ref_grad=ref_grad_prune, disable_half_test=True,
+                    reset_inputs=reset_inputs)

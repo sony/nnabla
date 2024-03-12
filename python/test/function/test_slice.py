@@ -116,3 +116,29 @@ def test_slice_double_backward(seed, inshape, start, stop, step, ctx, fname):
     backward_function_tester(rng, df,
                              ginputs, func_args=[],
                              ctx=ctx, non_accum_check=True)
+
+
+@pytest.mark.parametrize("ctx, fname", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape, reset_inshape, start, stop, step", [
+    ((3, 3), (2, 2), (0, 0), (5, 5), (1, 1)),
+    ((2, 2), (3, 3), (0, 0), (2, 2), (1, 1)),
+    ((6, 7, 8), (7, 8, 9), (1, 2, 3), (5, 4, 8), (1, 1, 2)),
+    ((7, 6, 5, 4, 3), (8, 5, 6, 3, 4), (5, 4, 3, 2, 1),
+     (6, 6, 5, 4, 2), (1, 2, 3, 2, 1)),
+    ((4, 4, 4, 4, 3, 5), (3, 3, 3, 3, 5, 3), (0, 1, 0, 1, 1, 2),
+     (2, 4, 2, 4, 2, 5), (2, 1, 2, 1, 1, 1)),
+])
+def test_slice_forward_backward_with_reset(seed, inshape, reset_inshape, start, stop, step, ctx, fname):
+    rng = np.random.RandomState(seed)
+    x = rng.randn(*inshape).astype(np.float32)
+    reset_x = rng.randn(*reset_inshape).astype(np.float32)
+
+    oshape = ref_slice(x, start, stop, step).shape
+    disable_clear_no_need_grad_test = False
+    # If oshape has a dimention of size 0, disable clear_no_need_grad_test.
+    if 0 in oshape:
+        disable_clear_no_need_grad_test = True
+    function_tester(rng, F.slice, ref_slice, [x], ctx=ctx, func_name=fname,
+                    func_args=[start, stop, step], atol_f=1e-4, atol_b=1e-2,
+                    disable_clear_no_need_grad_test=disable_clear_no_need_grad_test, reset_inputs=[reset_x])

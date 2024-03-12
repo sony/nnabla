@@ -95,4 +95,46 @@ def test_convolution_2d_forward_backward(inshape, kernel, outmaps, pad, stride,
                     func_args=[base_axis, pad, stride,
                                dilation, group, quantize_zero_to],
                     atol_f=1e-4, atol_b=3e-3, atol_accum=1e-5, dstep=1e-2, backward=[True, True, False, True],
-                    ctx=ctx, func_name=func_name, ref_grad=ref_grad_binary_connect_convolution, insert_identity=insert_identity)
+                    ctx=ctx, func_name=func_name, ref_grad=ref_grad_binary_connect_convolution,
+                    insert_identity=insert_identity)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape, reset_inshape,kernel,reset_kernel, outmaps,reset_outmaps, pad, stride, dilation",
+                         [((2, 2, 10, 10), (3, 2, 12, 12), (3, 2), (2, 2), 4, 6, (3, 0), (1, 2), (2, 1)), ])
+@pytest.mark.parametrize("group", [1, 2])
+@pytest.mark.parametrize("base_axis", [1, -3])
+@pytest.mark.parametrize("with_bias", [True, False])
+@pytest.mark.parametrize("quantize_zero_to", [0.0, -1.0, 1.0])
+def test_convolution_2d_forward_backward_with_reset(inshape, reset_inshape, kernel, reset_kernel, outmaps,
+                                                    reset_outmaps,
+                                                    pad, stride, dilation, group, with_bias, quantize_zero_to,
+                                                    base_axis,
+                                                    seed, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    # input and reset_input
+    i = rng.randn(*inshape).astype(np.float32)
+    reset_i = rng.randn(*reset_inshape).astype(np.float32)
+    inmaps = inshape[-3]
+    reset_inmaps = reset_inshape[-3]
+    kshape = (outmaps,) + (inmaps // group,) + kernel
+    reset_kshape = (reset_outmaps,) + (reset_inmaps // group,) + reset_kernel
+    k = rng.randn(*kshape).astype(np.float32)
+    reset_k = rng.randn(*reset_kshape).astype(np.float32)
+    b = None
+    reset_b = None
+    if with_bias:
+        b = rng.randn(outmaps).astype(np.float32)
+        reset_b = rng.randn(reset_outmaps).astype(np.float32)
+    inputs = [i, k, np.zeros_like(k), b]
+    reset_inputs = [reset_i, reset_k, np.zeros_like(reset_k), reset_b]
+
+    insert_identity = [True, True, False, True]
+    function_tester(rng, F.binary_connect_convolution, ref_binary_connect_convolution, inputs,
+                    func_args=[base_axis, pad, stride,
+                               dilation, group, quantize_zero_to],
+                    atol_f=1e-4, atol_b=3e-3, atol_accum=1e-5, dstep=1e-2, backward=[True, True, False, True],
+                    ctx=ctx, func_name=func_name, ref_grad=ref_grad_binary_connect_convolution,
+                    insert_identity=insert_identity, reset_inputs=reset_inputs)

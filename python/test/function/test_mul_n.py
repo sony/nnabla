@@ -86,3 +86,18 @@ def test_mul(n_inputs, n_active, input_shape, seed):
     active_inputs = [y.parent.inputs[i] for i, act in enumerate(active) if act]
     for inp, ref in zip(active_inputs, y_ref.parent.inputs):
         assert_allclose(inp.g, ref.g)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [314])
+@pytest.mark.parametrize('num_inputs', [2, 3, 5])
+def test_mul_n_forward_backward_with_reset(num_inputs, seed, ctx, func_name):
+    rng = np.random.RandomState(seed)
+    shape0, reset_shape0 = [2, 3, 4], [3, 2, 4]
+    inputs, reset_inputs = [], []
+    for _ in range(num_inputs):
+        inputs.append(rng.randn(*shape0).astype(np.float32))
+        reset_inputs.append(rng.randn(*reset_shape0).astype(np.float32))
+
+    function_tester(rng, F.mul_n, ref_function, inputs,
+                    ctx=ctx, func_name=func_name, atol_b=2e-3, reset_inputs=reset_inputs)

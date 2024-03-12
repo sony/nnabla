@@ -87,3 +87,18 @@ def test_add_n_active_inputs(n_inputs, n_active, input_shape, seed):
     active_inputs = [y.parent.inputs[i] for i, act in enumerate(active) if act]
     for inp, ref in zip(active_inputs, y_ref.parent.inputs):
         assert_allclose(inp.g, ref.g)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [42])
+@pytest.mark.parametrize('num_inputs', [2, 3, 5])
+def test_add_n_forward_backward_with_reset(num_inputs, seed, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    shape0, reset_shape0 = [2, 3, 4], [3, 4, 5]
+    inputs, reset_inputs = [], []
+    for _ in range(num_inputs):
+        inputs.append(rng.randn(*shape0).astype(np.float32))
+        reset_inputs.append(rng.randn(*reset_shape0).astype(np.float32))
+    function_tester(rng, F.add_n, ref_function, inputs,
+                    ctx=ctx, func_name=func_name, atol_b=2e-3, reset_inputs=reset_inputs)

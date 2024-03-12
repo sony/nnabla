@@ -38,3 +38,21 @@ def test_meshgrid(seed, seed_num_arrays, ij_indexing, num_arrays, ctx, func_name
               for _ in range(num_arrays)]
     function_tester(rng, F.meshgrid, ref_meshgrid, inputs, func_kwargs=dict(ij_indexing=ij_indexing),
                     backward=[True]*num_arrays, ctx=ctx, func_name=func_name, disable_half_test=True, atol_b=0.03, atol_accum=1e-5)
+
+
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("seed_num_arrays", [314])
+@pytest.mark.parametrize("ij_indexing", [True, False])
+@pytest.mark.parametrize("num_arrays", [2, 3, 4, 5])
+@pytest.mark.parametrize("ctx, func_name", list_context('Meshgrid'))
+def test_meshgrid_with_reset(seed, seed_num_arrays, ij_indexing, num_arrays, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    rng_num_arrays = np.random.RandomState(seed_num_arrays)
+    inputs = [rng.randn(rng_num_arrays.randint(1, 7), )
+              for _ in range(num_arrays)]
+    reset_inputs = [rng.randn(rng_num_arrays.randint(1, 6), )
+                    for _ in range(num_arrays)]
+    function_tester(rng, F.meshgrid, ref_meshgrid, inputs, func_kwargs=dict(ij_indexing=ij_indexing),
+                    backward=[True] * num_arrays, ctx=ctx, func_name=func_name, disable_half_test=True, atol_b=0.03,
+                    atol_accum=1e-5, reset_inputs=reset_inputs)

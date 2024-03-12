@@ -191,3 +191,122 @@ def test_random_erase_recomputation(ctx, func_name, seed, prob,
 
     recomputation_test(rng=rng, func=F.random_erase, vinputs=vinputs,
                        func_args=[], func_kwargs=func_kwargs, ctx=ctx)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("prob", [0.7, 1.0])
+@pytest.mark.parametrize("area_ratios", [(0.02, 0.04)])
+@pytest.mark.parametrize("aspect_ratios", [(0.3, 3.3333)])
+@pytest.mark.parametrize("replacements", [(2.0, 2.0), (3.0, 4.0)])
+@pytest.mark.parametrize("n", [1, 3])
+@pytest.mark.parametrize("share", [True, False])
+@pytest.mark.parametrize("inplace", [False])
+@pytest.mark.parametrize("base_axis", [1])
+@pytest.mark.parametrize("func_seed", [412, -1])
+@pytest.mark.parametrize("channel_last", [False, True])
+def test_random_erase_forward_with_reset(ctx, func_name, seed, prob,
+                                         area_ratios, aspect_ratios, replacements,
+                                         n, share, inplace, base_axis, func_seed, channel_last):
+    if channel_last and func_name == "RandomErase":
+        pytest.skip(
+            "RandomErase with channel_last is only supported in CUDA.")
+
+    lb = replacements[0]
+    rng = np.random.RandomState(seed)
+    b, c, h, w = 4, 3, 32, 32
+    ishape = [b, h, w, c] if channel_last else [b, c, h, w]
+    x = nn.Variable.from_numpy_array(
+        rng.rand(*ishape) + 1.0)
+    with nn.context_scope(ctx):
+        y0 = F.random_erase(x, prob=prob,
+                            area_ratios=area_ratios,
+                            aspect_ratios=aspect_ratios,
+                            replacements=replacements,
+                            n=n, share=share, inplace=inplace, base_axis=base_axis,
+                            seed=func_seed, channel_last=channel_last)
+    # Deterministic check
+    y0.forward()
+    # reset input
+    rng = np.random.RandomState(seed)
+    reset_b, reset_c, reset_h, reset_w = 5, 1, 16, 16
+    reset_ishape = [reset_b, reset_h, reset_w, reset_c] if channel_last else [
+        reset_b, reset_c, reset_h, reset_w]
+    x.reset_shape(reset_ishape, True)
+    x.d = rng.randn(*reset_ishape).astype(np.float32) + 1.0
+
+    y0.forward()
+    if prob == 1.0:
+        assert np.any(y0.d >= lb)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("prob", [0.7, 1.0])
+@pytest.mark.parametrize("area_ratios", [(0.02, 0.04)])
+@pytest.mark.parametrize("aspect_ratios", [(0.3, 3.3333)])
+@pytest.mark.parametrize("replacements", [(2.0, 2.0), (3.0, 4.0)])
+@pytest.mark.parametrize("n", [1, 3])
+@pytest.mark.parametrize("share", [True, False])
+@pytest.mark.parametrize("inplace", [False])
+@pytest.mark.parametrize("base_axis", [1, -3])
+@pytest.mark.parametrize("func_seed", [412, -1])
+@pytest.mark.parametrize("channel_last", [False, True])
+@pytest.mark.parametrize("ste_fine_grained", [False])
+def test_random_erase_backward_with_reset(ctx, func_name, seed, prob,
+                                          area_ratios, aspect_ratios, replacements,
+                                          n, share, inplace, base_axis, func_seed, channel_last, ste_fine_grained):
+    if channel_last and func_name == "RandomErase":
+        pytest.skip(
+            "RandomErase with channel_last is only supported in CUDA.")
+
+    lb = replacements[0]
+    rng = np.random.RandomState(seed)
+    b, c, h, w = 4, 3, 32, 32
+    ishape = [b, c, h, w]
+
+    # Backward check for accum
+    x = nn.Variable.from_numpy_array(
+        rng.rand(*ishape) + 1.0).apply(need_grad=True)
+    xg = rng.randn(*x.shape)
+    x.g = xg
+    with nn.context_scope(ctx):
+        y = F.random_erase(x, prob=prob,
+                           area_ratios=area_ratios,
+                           aspect_ratios=aspect_ratios,
+                           replacements=replacements,
+                           n=n, share=share, inplace=inplace, base_axis=base_axis,
+                           seed=func_seed, channel_last=channel_last,
+                           ste_fine_grained=ste_fine_grained)
+    y.forward()
+
+    # reset input
+    rng = np.random.RandomState(seed)
+    reset_b, reset_c, reset_h, reset_w = 5, 1, 16, 16
+    reset_ishape = [reset_b, reset_h, reset_w, reset_c] if channel_last else [
+        reset_b, reset_c, reset_h, reset_w]
+    x.reset_shape(reset_ishape, True)
+    x.d = rng.randn(*reset_ishape).astype(np.float32) + 1.0
+    xg = rng.randn(*x.shape)
+    x.g = xg
+
+    y.forward()
+    y.backward(clear_buffer=True)
+
+    assert_allclose(x.g, xg + 1.0)
+    #
+    # # Backward check for not accum
+    x = nn.Variable.from_numpy_array(
+        rng.rand(*ishape) + 1.0).apply(need_grad=True)
+    y = F.identity(x)
+    with nn.context_scope(ctx):
+        z = F.random_erase(y, prob=prob,
+                           area_ratios=area_ratios,
+                           aspect_ratios=aspect_ratios,
+                           replacements=replacements,
+                           n=n, share=share, inplace=inplace, base_axis=base_axis,
+                           seed=func_seed, channel_last=channel_last,
+                           ste_fine_grained=ste_fine_grained)
+    z.forward()
+    z.backward(clear_buffer=False)
+    assert_allclose(y.g, 1.0)

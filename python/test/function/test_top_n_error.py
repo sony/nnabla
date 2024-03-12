@@ -65,3 +65,52 @@ def test_top_n_error_forward(seed, axis, n, ctx, func_name):
 
     atol_f = 1e-6
     assert_allclose(ref, res, atol=atol_f)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("axis", [0, 1, 2, -1, -2, -3])
+@pytest.mark.parametrize("n", [3, 5])
+def test_top_n_error_forward_with_reset(seed, axis, n, ctx, func_name):
+    ishape = [5, 6, 7]
+    reset_inshape = [6, 5, 7]
+    rng = np.random.RandomState(seed)
+
+    l_shape = list(ishape)
+    l_shape[axis] = 1
+    n_class = ishape[axis]
+
+    inputs = [
+        rng.rand(5, 6, 7).astype(np.float32) * 0.9 + 0.05,
+        rng.randint(0, n_class, size=l_shape).astype(int)]
+
+    ref = ref_top_n_error(inputs[0], inputs[1], axis, n)
+
+    x = nn.Variable(ishape)
+    l = nn.Variable(l_shape)
+    y = F.top_n_error(x, l, axis, n)
+    x.d = inputs[0]
+    l.d = inputs[1]
+    y.forward()
+    res = y.d
+
+    atol_f = 1e-6
+    assert_allclose(ref, res, atol=atol_f)
+
+    # reset inputs
+    reset_l_shape = list(reset_inshape)
+    reset_l_shape[axis] = 1
+    reset_n_class = reset_inshape[axis]
+
+    reset_inputs = [
+        rng.rand(*reset_inshape).astype(np.float32) * 0.9 + 0.05,
+        rng.randint(0, reset_n_class, size=reset_l_shape).astype(int)]
+
+    x.reset_shape(reset_inputs[0].shape, True)
+    l.reset_shape(reset_inputs[1].shape, True)
+    x.d = reset_inputs[0]
+    l.d = reset_inputs[1]
+    y.forward()
+    res = y.d
+    ref = ref_top_n_error(reset_inputs[0], reset_inputs[1], axis, n)
+    assert_allclose(ref, res, atol=atol_f)

@@ -134,7 +134,7 @@ def compute_analytical_and_numerical_grad(f, inputs, outputs, inputs0,
     using given function
 
     f: function to test
-    inputs: function input variable 
+    inputs: function input variable
     outputs: function output variable
     inputs0: function inputs to calculate numerical grad
     vgrads: initial grads of output variable
@@ -721,7 +721,8 @@ def function_tester(rng, func, ref_func, inputs,
                     atol_f=1e-6, atol_b=1e-3, atol_accum=1e-6, dstep=1e-3, backward=None,
                     ctx=None, func_name=None, ref_grad=None, disable_half_test=False, atol_half=1e-1,
                     insert_identity=[], disable_clear_no_need_grad_test=False, auto_forward=False,
-                    disable_auto_forward_backward_tester=False):
+                    disable_auto_forward_backward_tester=False,
+                    reset_inputs=None):
     """ Automatic testing of forward/backward pass of `func` by comparing it
     to the reference implementation in `ref_func`.
 
@@ -747,6 +748,13 @@ def function_tester(rng, func, ref_func, inputs,
             vinputs[-1].data.cast(i.dtype)[...] = i
         return vinputs
 
+    def re_setup_inputs(vinputs):
+        for v, r in zip(vinputs, reset_inputs):
+            if v:
+                v.reset_shape(r.shape, True)
+                v.d = r
+        return vinputs
+
     # Half test
     if not disable_half_test:
         finputs = create_variables(inputs, backward)
@@ -757,8 +765,18 @@ def function_tester(rng, func, ref_func, inputs,
     vinputs = create_variables(inputs, backward)
     # Checking forward
     # print('checking forward')
-    with nn.context_scope(ctx), nn.auto_forward():
-        o = func(*(vinputs + func_args), **func_kwargs)
+    if reset_inputs is None:
+        with nn.context_scope(ctx), nn.auto_forward():
+            o = func(*(vinputs + func_args), **func_kwargs)
+    else:
+        # Check if resetup is supported
+        with nn.context_scope(ctx):
+            o = func(*(vinputs + func_args), **func_kwargs)
+        re_setup_inputs(vinputs)
+        sink_out = F.sink(*force_tuple(o))
+        sink_out.forward()
+        inputs = reset_inputs
+
     rinputs = copy.deepcopy(inputs)  # inputs for ref_func
     refs = ref_func(*(rinputs + func_args), **func_kwargs)
 

@@ -47,3 +47,20 @@ def test_r_div_scalar_double_backward(seed, val, ctx, func_name):
                              atol_accum=4e-2,
                              dstep=1e-3,
                              ctx=ctx)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [314])
+@pytest.mark.parametrize("val", [0.5, 1, 2])
+def test_r_div_scalar_forward_backward_with_reset(seed, val, ctx, func_name):
+    from nbla_test_utils import function_tester, cap_ignore_region
+    rng = np.random.RandomState(seed)
+    inputs = [
+        cap_ignore_region(
+            rng.randn(2, 3, 4).astype(np.float32) * 3, (-0.5, 0.5))]
+    reset_inputs = [
+        cap_ignore_region(
+            rng.randn(3, 2, 4).astype(np.float32) * 3, (-0.5, 0.5))]
+    function_tester(rng, F.r_div_scalar, lambda x, y: y / x, inputs,
+                    func_args=[val], dstep=1e-4, atol_b=1e-1,
+                    ctx=ctx, func_name=func_name, reset_inputs=reset_inputs)

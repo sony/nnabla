@@ -60,3 +60,15 @@ def test_global_average_pooling_double_backward(seed, fname, ctx, func_name):
     backward_function_tester(rng, df,
                              inputs=ginputs,
                              ctx=ctx, atol_f=1e-6, atol_accum=1e-2, non_accum_check=True)
+
+
+@pytest.mark.parametrize("seed", [314])
+@pytest.mark.parametrize("fname, ctx, func_name", list_ctx_and_func_name(['global_average_pooling']))
+def test_global_average_pooling_forward_backward_with_reset(seed, fname, ctx, func_name):
+    rng = np.random.RandomState(seed)
+    ref_func = eval('ref_' + fname)
+    func = getattr(F, fname)
+    inputs = [rng.random_sample((2, 3, 4, 5))]
+    reset_inputs = [rng.random_sample((2, 2, 3, 4))]
+    function_tester(rng, func, ref_func, inputs, [],
+                    ctx=ctx, func_name=func_name, reset_inputs=reset_inputs)

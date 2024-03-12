@@ -67,3 +67,18 @@ def test_reshape_double_backward(seed, ctx, func_name, inshape, outshape, inplac
                              atol_accum=5e-3,
                              dstep=1e-3,
                              ctx=ctx)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("inshape, reset_inshape, outshape",
+                         [((1, 1, 6), (1, 6, 1), (1, 2, 3)), ((2, 3), (3, 2), (1, 6)), ((2, 4), (4, 2), (-1, 2, 2))])
+def test_reshape_forward_backward_with_reset(seed, inshape, reset_inshape, outshape, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    # Input
+    inputs = [rng.randn(*inshape).astype(np.float32)]
+    reset_inputs = [rng.randn(*reset_inshape).astype(np.float32)]
+    inplace = False
+    function_tester(rng, F.reshape, ref_reshape, inputs, func_args=[
+        outshape, inplace], ctx=ctx, func_name=func_name, reset_inputs=reset_inputs)

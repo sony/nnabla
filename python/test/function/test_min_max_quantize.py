@@ -129,8 +129,7 @@ def test_min_max_quantize_forward_backward(seed, x_shape, q_shape,
                                            eps,
                                            quantize,
                                            ctx, func_name):
-    from nbla_test_utils import cap_ignore_region, \
-        function_tester
+    from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
     # Inputs
     x = rng.randn(*x_shape)
@@ -193,3 +192,54 @@ def test_min_max_quantize_forward_backward(seed, x_shape, q_shape,
                     ctx=ctx, func_name=func_name,
                     disable_half_test=True,
                     ref_grad=ref_grad_min_max_quantize)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("x_shape, q_shape,reset_x_shape, reset_q_shape", [
+    ((4, 8, 16, 16), (1, 8, 1, 1), (16, 8, 3, 3), (16, 1, 1, 1))
+])
+@pytest.mark.parametrize("decay", [0.999, 0.9])
+@pytest.mark.parametrize("x_min_max", [False])
+@pytest.mark.parametrize("ema", [False])
+@pytest.mark.parametrize("ste_fine_grained", [True, False])
+@pytest.mark.parametrize("eps", [0.01])
+@pytest.mark.parametrize("quantize", [True])
+def test_min_max_quantize_forward_backward_with_reset(seed, x_shape, q_shape, reset_x_shape, reset_q_shape,
+                                                      decay, x_min_max, ema, ste_fine_grained,
+                                                      eps,
+                                                      quantize,
+                                                      ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    # Inputs
+    x = rng.randn(*x_shape)
+    qr_min = -0.5 * rng.rand(*q_shape)
+    qr_max = +0.5 * rng.rand(*q_shape)
+    ql_min = np.zeros(q_shape)
+    ql_max = np.ones(q_shape) * 255
+    inputs = [x, qr_min, qr_max, ql_min, ql_max]
+    # reset Inputs
+    reset_x = rng.randn(*reset_x_shape)
+    reset_qr_min = -0.5 * rng.rand(*reset_q_shape)
+    reset_qr_max = +0.5 * rng.rand(*reset_q_shape)
+    reset_ql_min = np.zeros(reset_q_shape)
+    reset_ql_max = np.ones(reset_q_shape) * 255
+    reset_inputs = [reset_x, reset_qr_min,
+                    reset_qr_max, reset_ql_min, reset_ql_max]
+
+    func_args = [decay, x_min_max, ema, ste_fine_grained, eps, quantize]
+
+    # General tests
+    backward = [True, False, False, False, False, False] if x_min_max or ema \
+        else [True, True, True, False, False, False]
+    function_tester(rng,
+                    F.min_max_quantize,
+                    ref_min_max_quantize,
+                    inputs,
+                    func_args=func_args,
+                    atol_b=1e-3, backward=backward,
+                    ctx=ctx, func_name=func_name,
+                    disable_half_test=True,
+                    ref_grad=ref_grad_min_max_quantize,
+                    reset_inputs=reset_inputs)

@@ -43,3 +43,16 @@ def test_r_pow_scalar_double_backward(seed, val, ctx, func_name):
                              func_args=[val], atol_accum=3e-2,
                              dstep=1e-3,
                              ctx=ctx)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [314])
+@pytest.mark.parametrize("val", [0.5, 1, 2])
+def test_r_pow_scalar_forward_backward_with_reset(seed, val, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(2, 3, 4).astype(np.float32) * 2]
+    reset_inputs = [rng.randn(3, 2, 4).astype(np.float32) * 2]
+    function_tester(rng, F.r_pow_scalar, lambda x, y: y ** x, inputs,
+                    func_args=[val], atol_b=1e-2,
+                    ctx=ctx, func_name=func_name, reset_inputs=reset_inputs)

@@ -454,7 +454,7 @@ def test_interpolate_linear_double_backward(seed, inshape, outsize, scale, sdim_
     y = F.interpolate(*(vinputs + func_args))
     x = inputs[0]
     if scale:
-        input_size = x.shape[-len(scale)-1:-
+        input_size = x.shape[-len(scale) - 1:-
                              1] if channel_last else x.shape[-len(scale):]
         output_size = [int(math.floor(s * d))
                        for d, s in zip(input_size, scale)]
@@ -548,3 +548,79 @@ def test_interpolate_nearest_double_backward(seed, inshape, outsize, scale, sdim
     backward_function_tester(rng, df,
                              ginputs, func_args=[],
                              ctx=ctx, atol_f=1e-6, atol_accum=5e-2, non_accum_check=True)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("inshape,reset_inshape, outsize, scale, sdim_only", [
+    # 1-dimensional
+    ((3,), (4,), (6,), None, True),
+    ((2, 3, 4), (3, 4, 5), (10,), None, False),
+    # 2-dimensional
+    ((3, 3), (4, 4), (8, 6), None, True),
+    ((2, 3, 4, 4), (2, 3, 5, 5), (8, 6), None, False),
+    # 3-dimensional
+    ((3, 3, 3), (4, 4, 4), (6, 8, 6), None, True),
+    ((2, 3, 3, 4, 4), (2, 4, 4, 3, 3), (6, 8, 6), None, False),
+])
+@pytest.mark.parametrize('align_corners, half_pixel', [(True, False), (False, True), (False, False)])
+@pytest.mark.parametrize('channel_last', [False, True])
+@pytest.mark.parametrize("seed", [313])
+def test_interpolate_linear_forward_backward_with_reset(seed, inshape, reset_inshape, outsize, scale, sdim_only,
+                                                        align_corners, half_pixel, channel_last,
+                                                        ctx, func_name):
+    if channel_last and func_name == "Interpolate":
+        pytest.skip("Interpolate with channel_last is only supported in CUDA.")
+    if sdim_only and channel_last:
+        pytest.skip(
+            "Interpolate for spatial dimension only data is only supported for channel_first option.")
+
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*inshape).astype(np.float32)]
+    reset_inputs = [rng.randn(*reset_inshape).astype(np.float32)]
+    func_args = [scale, outsize, 'linear',
+                 align_corners, half_pixel, False, channel_last]
+    function_tester(rng, F.interpolate, ref_interpolate, inputs,
+                    func_name=func_name, func_args=func_args,
+                    atol_f=1e-6, atol_b=1e-2, dstep=2e-3, ctx=ctx,
+                    disable_half_test=True, reset_inputs=reset_inputs)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("inshape,reset_inshape, outsize, scale, sdim_only", [
+    # 1-dimensional
+    ((3,), (4,), (6,), None, True),
+    ((2, 3, 4), (3, 4, 5), (10,), None, False),
+    # 2-dimensional
+    ((3, 3), (4, 4), (8, 6), None, True),
+    ((2, 3, 4, 4), (2, 3, 5, 5), (8, 6), None, False),
+    # 3-dimensional
+    ((3, 3, 3), (4, 4, 4), (6, 8, 6), None, True),
+    ((2, 3, 3, 4, 4), (2, 4, 4, 3, 3), (6, 8, 6), None, False),
+])
+@pytest.mark.parametrize('align_corners, half_pixel, half_pixel_for_nn',
+                         [(True, False, True),
+                          (True, False, False),
+                          (False, True, False),
+                          (False, False, False)])
+@pytest.mark.parametrize('channel_last', [False, True])
+@pytest.mark.parametrize("seed", [313])
+def test_interpolate_nearest_forward_backward_with_reset(seed, inshape, reset_inshape, outsize, scale, sdim_only,
+                                                         align_corners, half_pixel, half_pixel_for_nn,
+                                                         channel_last,
+                                                         ctx, func_name):
+    if channel_last and func_name == "Interpolate":
+        pytest.skip("Interpolate with channel_last is only supported in CUDA.")
+    if sdim_only and channel_last:
+        pytest.skip(
+            "Interpolate for spatial dimension only data is only supported for channel_first option.")
+
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    inputs = [rng.randn(*inshape).astype(np.float32)]
+    reset_inputs = [rng.randn(*reset_inshape).astype(np.float32)]
+    func_args = [scale, outsize, 'nearest', align_corners,
+                 half_pixel, half_pixel_for_nn, channel_last]
+    function_tester(rng, F.interpolate, ref_interpolate, inputs,
+                    func_name=func_name, func_args=func_args,
+                    atol_f=1e-6, atol_b=1e-2, dstep=2e-3, ctx=ctx, reset_inputs=reset_inputs)

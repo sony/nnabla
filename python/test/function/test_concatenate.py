@@ -32,7 +32,7 @@ def ref_concatenate(*inputs, **params):
 @pytest.mark.parametrize('different_size', [False, True])
 @pytest.mark.parametrize('num_inputs', [2, 3])
 def test_concatenate_forward_backward(seed, axis, different_size, num_inputs, ctx, func_name):
-    from nbla_test_utils import cap_ignore_region, function_tester
+    from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
     shape0 = [2, 3, 4]
     inputs = []
@@ -57,7 +57,7 @@ def test_no_value():
 @pytest.mark.parametrize('different_size', [False, True])
 @pytest.mark.parametrize('num_inputs', [2, 3])
 def test_concatenate_double_backward(seed, axis, different_size, num_inputs, ctx, func_name):
-    from nbla_test_utils import cap_ignore_region, backward_function_tester, grad_function_forward_function_output
+    from nbla_test_utils import backward_function_tester, grad_function_forward_function_output
     from nnabla.backward_function.concatenate import ConcatenateDataGrad
     rng = np.random.RandomState(seed)
     shape0 = [2, 3, 4]
@@ -84,3 +84,25 @@ def test_concatenate_double_backward(seed, axis, different_size, num_inputs, ctx
     backward_function_tester(rng, df,
                              ginputs,
                              ctx=ctx, non_accum_check=True)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("axis", [0, 1, 2, -1, -2, -3])
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize('different_size', [False, True])
+@pytest.mark.parametrize('num_inputs', [2, 3])
+def test_concatenate_forward_backward_with_reset(seed, axis, different_size, num_inputs, ctx, func_name):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    shape0 = [2, 3, 4]
+    reset_shape0 = [3, 4, 4]
+    inputs = []
+    reset_inputs = []
+    for i in range(num_inputs):
+        inputs.append(rng.randn(*shape0).astype(np.float32))
+        shape0[axis] += int(different_size)
+        reset_inputs.append(rng.randn(*reset_shape0).astype(np.float32))
+        reset_shape0[axis] += int(different_size)
+    function_tester(rng, F.concatenate, ref_concatenate, inputs,
+                    func_kwargs=dict(axis=axis), ctx=ctx, func_name=func_name,
+                    atol_b=1e-2, reset_inputs=reset_inputs)

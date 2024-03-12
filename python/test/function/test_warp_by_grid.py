@@ -287,7 +287,6 @@ def ref_warp_by_grid(inp, grid, mode, padding_mode, align_corners, channel_last)
 @pytest.mark.parametrize("channel_last", [False, True])
 def test_warp_by_grid_forward_backward(seed, ctx, func_name, size_out, size_inp, channels, batch_size,
                                        mode, padding_mode, align_corners, channel_last):
-
     pytest.skip("Skip. Recover it after windows Tesla T4 1GPUTest fixed.")
 
     if channel_last and func_name == "WarpByGrid":
@@ -313,3 +312,54 @@ def test_warp_by_grid_forward_backward(seed, ctx, func_name, size_out, size_inp,
     function_tester(rng, F.warp_by_grid, ref_warp_by_grid, inputs, func_args=func_args,
                     ctx=ctx, func_name=func_name, disable_half_test=True,
                     backward=backward, atol_b=1e-2, atol_accum=1e-2)
+
+
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize(
+    "batch_size, reset_batch_size, channels, reset_channels, size_inp, reset_size_inp, size_out, reset_size_out",
+    [  # 2D
+        (1, 2, 1, 3, (5, 5), (6, 6), (6, 6), (7, 7)),
+        # # 3D
+        (2, 1, 3, 1, (5, 5, 5), (4, 4, 4), (4, 4, 4), (5, 5, 5)),
+    ])
+@pytest.mark.parametrize("mode", ["linear", "nearest"])
+@pytest.mark.parametrize("padding_mode", ["zero", "reflect", "repeat"])
+@pytest.mark.parametrize("align_corners", [False, True])
+@pytest.mark.parametrize("channel_last", [False, True])
+def test_warp_by_grid_forward_backward_with_reset(seed, ctx, func_name, size_out, reset_size_out, size_inp,
+                                                  reset_size_inp, channels,
+                                                  reset_channels, batch_size, reset_batch_size, mode, padding_mode,
+                                                  align_corners,
+                                                  channel_last):
+    pytest.skip("Skip. Recover it after windows Tesla T4 1GPUTest fixed.")
+
+    if channel_last and func_name == "WarpByGrid":
+        pytest.skip("channel_last=True is not supported in CPU.")
+
+    if mode == "nearest":
+        backward = [True, False]
+    else:
+        backward = [True, True]
+
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+    inp, grid_s = create_inputs(
+        rng, batch_size, channels, size_out, size_inp, align_corners)
+
+    reset_inp, reset_grid_s = create_inputs(
+        rng, reset_batch_size, reset_channels, reset_size_out, reset_size_inp, align_corners)
+
+    if channel_last:
+        inp = inp.transpose((0, 2, 3, 1)) if len(
+            size_inp) == 2 else inp.transpose((0, 2, 3, 4, 1))
+        reset_inp = reset_inp.transpose((0, 2, 3, 1)) if len(
+            reset_size_inp) == 2 else reset_inp.transpose((0, 2, 3, 4, 1))
+    inputs = [inp]
+    inputs += [grid_s]
+    reset_inputs = [reset_inp]
+    reset_inputs += [reset_grid_s]
+    func_args = [mode, padding_mode, align_corners, channel_last]
+    function_tester(rng, F.warp_by_grid, ref_warp_by_grid, inputs, func_args=func_args,
+                    ctx=ctx, func_name=func_name, disable_half_test=True,
+                    backward=backward, atol_b=1e-2, atol_accum=1e-2, reset_inputs=reset_inputs)

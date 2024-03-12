@@ -43,7 +43,7 @@ def ref_adaptive_separable_convolution(x, kv, kh):
    ((2, 3, 8, 16), 2, 4),
 ])
 def test_adaptive_separable_convolution_forward_backward(seed, ctx, func_name, x_shape, kv_filter, kh_filter):
-    from nbla_test_utils import cap_ignore_region, function_tester
+    from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
 
     b, c, h, w = x_shape
@@ -59,3 +59,42 @@ def test_adaptive_separable_convolution_forward_backward(seed, ctx, func_name, x
     function_tester(rng, F.adaptive_separable_convolution,
                     ref_adaptive_separable_convolution, inputs, backward=backward,
                     atol_f=1e-6, atol_b=3e-2, atol_accum=3e-2, dstep=1e-3, ctx=ctx, func_name=func_name)
+
+
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("ctx, func_name", ctxs)
+@pytest.mark.parametrize("x_shape, kv_filter, kh_filter,reset_x_shape, reset_kv_filter, reset_kh_filter", [
+   ((1, 3, 8, 8), 4, 4, (2, 3, 8, 16), 2, 4),
+   ((2, 3, 16, 8), 4, 2, (1, 3, 8, 8), 4, 4),
+   ((2, 3, 8, 16), 2, 4, (2, 3, 16, 8), 4, 2)
+])
+def test_adaptive_separable_convolution_forward_backward_with_reset(seed, ctx, func_name, x_shape, kv_filter, kh_filter,
+                                                                    reset_x_shape, reset_kv_filter, reset_kh_filter):
+    from nbla_test_utils import function_tester
+    rng = np.random.RandomState(seed)
+
+    b, c, h, w = x_shape
+    kv_shape = [b, kv_filter, h - kv_filter + 1, w - kh_filter + 1]
+    kh_shape = [b, kh_filter, h - kv_filter + 1, w - kh_filter + 1]
+
+    x = rng.randn(*x_shape)
+    kv = rng.randn(*kv_shape)
+    kh = rng.randn(*kh_shape)
+    inputs = [x, kv, kh]
+
+    reset_b, reset_c, reset_h, reset_w = reset_x_shape
+    reset_kv_shape = [reset_b, reset_kv_filter, reset_h -
+                      reset_kv_filter + 1, reset_w - reset_kh_filter + 1]
+    reset_kh_shape = [reset_b, reset_kh_filter, reset_h -
+                      reset_kv_filter + 1, reset_w - reset_kh_filter + 1]
+
+    reset_x = rng.randn(*reset_x_shape)
+    reset_kv = rng.randn(*reset_kv_shape)
+    reset_kh = rng.randn(*reset_kh_shape)
+    reset_inputs = [reset_x, reset_kv, reset_kh]
+
+    backward = [True, True, True]
+
+    function_tester(rng, F.adaptive_separable_convolution,
+                    ref_adaptive_separable_convolution, inputs, backward=backward,
+                    atol_f=1e-6, atol_b=3e-2, atol_accum=3e-2, dstep=1e-3, ctx=ctx, func_name=func_name, reset_inputs=reset_inputs)
