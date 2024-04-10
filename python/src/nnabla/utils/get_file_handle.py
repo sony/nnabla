@@ -262,7 +262,10 @@ def _opti_file_rough_loader(ctx, fileloaders, nnp, filename, ext):
     This loader loads solver state and allow user to decide when to restore it
     '''
     file_type = get_buf_type(filename)
-    optimizer_states = OrderedDict()
+    if hasattr(ctx, "optimizer_states_checkpoint"):
+        optimizer_states = ctx.optimizer_states_checkpoint
+    else:
+        optimizer_states = OrderedDict()
     if file_type == 'protobuf':
         opti_proto = nnabla_pb2.NNablaProtoBuf()
         with get_file_handle_load(nnp, filename, '.protobuf') as f:
@@ -275,7 +278,7 @@ def _opti_file_rough_loader(ctx, fileloaders, nnp, filename, ext):
         with nnp.open(filename, 'r') as f:
             h5fio.write(f.read())
             h5fio.seek(0)
-        optimizer_states[filename.split('_')[0]] = ('.h5', h5fio)
+        optimizer_states['_'.join(filename.split('_')[:-2])] = ('.h5', h5fio)
     ctx.optimizer_states_checkpoint = optimizer_states
 
 
