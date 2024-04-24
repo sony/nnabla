@@ -32,7 +32,7 @@ from mlflow.utils.environment import _mlflow_additional_pip_env, _mlflow_conda_e
 from mlflow.utils.model_utils import _get_flavor_configuration
 
 import pytest
-import shutil
+import tempfile
 import numpy as np
 import matplotlib.pyplot as plt
 # %matplotlib inline
@@ -56,12 +56,6 @@ np.random.seed(0)
 imshow_opt = dict(cmap='gray', interpolation='nearest')
 
 PYTEST_MODEL_PATH = "pytest_model"
-
-# clean mlrun dir
-if os.path.exists("mlruns"):
-    shutil.rmtree('mlruns')
-if os.path.exists(PYTEST_MODEL_PATH):
-    shutil.rmtree(PYTEST_MODEL_PATH)
 
 
 def save_nnp(input, output, batchsize):
@@ -169,6 +163,8 @@ def model(data):
     loss = F.mean(F.softmax_cross_entropy(y, t))
 
     model_save_path = PYTEST_MODEL_PATH
+    test_work_path = tempfile.mkdtemp(dir=os.getcwd())
+    os.chdir(test_work_path)
     if not os.path.isdir(model_save_path):
         os.makedirs(model_save_path)
     model = {}
