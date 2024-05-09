@@ -33,6 +33,7 @@ from mlflow.utils.model_utils import _get_flavor_configuration
 
 import pytest
 import tempfile
+import platform
 import numpy as np
 import matplotlib.pyplot as plt
 # %matplotlib inline
@@ -56,6 +57,11 @@ np.random.seed(0)
 imshow_opt = dict(cmap='gray', interpolation='nearest')
 
 PYTEST_MODEL_PATH = "pytest_model"
+
+if platform.system() == 'Windows':
+    prefix_scheme = "file:/"
+else:
+    prefix_scheme = "file://"
 
 
 def save_nnp(input, output, batchsize):
@@ -163,8 +169,14 @@ def model(data):
     loss = F.mean(F.softmax_cross_entropy(y, t))
 
     model_save_path = PYTEST_MODEL_PATH
-    test_work_path = tempfile.mkdtemp(dir=os.getcwd())
+
+    cwd = os.path.join(os.path.dirname(
+        os.path.realpath(__file__)), "..", "..", "..")
+    test_work_path = tempfile.mkdtemp(prefix='tmp_save_load', dir=cwd)
+    mlflow_workdir = os.path.join(test_work_path, "mlruns")
     os.chdir(test_work_path)
+    assert mlflow.set_experiment("save_load_model")
+
     if not os.path.isdir(model_save_path):
         os.makedirs(model_save_path)
     model = {}
@@ -205,6 +217,7 @@ def model(data):
     model['model'] = parameter_file
     model['nnp'] = os.path.join(model_save_path, 'pytest_result.nnp')
     model['checkpoint'] = checkpoint_list
+    model['work_dir'] = mlflow_workdir
     return model
 
 
@@ -239,8 +252,11 @@ def test_model(model, data):
 
 
 def test_log_model(model, data):
+    mlflow.set_tracking_uri(prefix_scheme + model['work_dir'])
+    experiment_id = mlflow.get_experiment_by_name(
+        "save_load_model").experiment_id
     try:
-        with mlflow.start_run(run_name='nnabla.mlflow_save_load_model_log_model_test'):
+        with mlflow.start_run(run_name='nnabla.mlflow_save_load_model_log_model_test', experiment_id=experiment_id):
             nnabla_model = os.path.basename(model['model'])
             model_path = os.path.dirname(model['model'])
             model_info = nnabla.mlflow_save_load_model.log_model(nnabla_model,
@@ -256,7 +272,10 @@ def test_log_model(model, data):
 
 def test_log_model_with_extra_files(model, create_extra_files):
     extra_files, contents_expected = create_extra_files
-    with mlflow.start_run():
+    mlflow.set_tracking_uri(prefix_scheme + model['work_dir'])
+    experiment_id = mlflow.get_experiment_by_name(
+        "save_load_model").experiment_id
+    with mlflow.start_run(experiment_id=experiment_id):
         model_path = os.path.dirname(model['model'])
         nnabla.mlflow_save_load_model.log_model(os.path.basename(model['model']),
                                                 os.path.dirname(
@@ -284,7 +303,10 @@ def test_log_model_with_extra_files(model, create_extra_files):
 
 def test_log_model_with_config_file(model, create_config_file):
     config_file, content_expected = create_config_file
-    with mlflow.start_run():
+    mlflow.set_tracking_uri(prefix_scheme + model['work_dir'])
+    experiment_id = mlflow.get_experiment_by_name(
+        "save_load_model").experiment_id
+    with mlflow.start_run(experiment_id=experiment_id):
         model_path = os.path.dirname(model['model'])
         nnabla.mlflow_save_load_model.log_model(os.path.basename(model['model']),
                                                 os.path.dirname(
@@ -300,7 +322,10 @@ def test_log_model_with_config_file(model, create_config_file):
 
 
 def test_log_model_with_conda_env(model, nnabla_custom_env):
-    with mlflow.start_run():
+    mlflow.set_tracking_uri(prefix_scheme + model['work_dir'])
+    experiment_id = mlflow.get_experiment_by_name(
+        "save_load_model").experiment_id
+    with mlflow.start_run(experiment_id=experiment_id):
         model_path = os.path.dirname(model['model'])
         nnabla.mlflow_save_load_model.log_model(os.path.basename(model['model']),
                                                 os.path.dirname(
@@ -327,6 +352,9 @@ def test_log_model_with_conda_env(model, nnabla_custom_env):
 
 @pytest.mark.parametrize('kwargs', [None, 'model', 'MLmodel', 'nnp', 'checkpoint'])
 def test_load_model_with_kwargs(kwargs, model, data):
+    mlflow.set_tracking_uri(prefix_scheme + model['work_dir'])
+    experiment_id = mlflow.get_experiment_by_name(
+        "save_load_model").experiment_id
     run_name = "nnabla.mlflow_save_load_model_log_model_test_{}".format(
         kwargs).rstrip("_None")
     nnp = None
@@ -338,7 +366,7 @@ def test_load_model_with_kwargs(kwargs, model, data):
     if kwargs == 'checkpoint':
         checkpoint = model['checkpoint']
 
-    with mlflow.start_run(run_name='nnabla.mlflow_save_load_model_log_model_test'):
+    with mlflow.start_run(run_name='nnabla.mlflow_save_load_model_log_model_test', experiment_id=experiment_id):
         nnabla_model = os.path.basename(model['model'])
         model_path = os.path.dirname(model['model'])
         model_info = nnabla.mlflow_save_load_model.log_model(nnabla_model,
@@ -378,7 +406,10 @@ def test_load_model_with_kwargs(kwargs, model, data):
 
 
 def test_load_model_with_run_name(model, data):
-    with mlflow.start_run(run_name='test_load_model_with_run_name'):
+    mlflow.set_tracking_uri(prefix_scheme + model['work_dir'])
+    experiment_id = mlflow.get_experiment_by_name(
+        "save_load_model").experiment_id
+    with mlflow.start_run(run_name='test_load_model_with_run_name', experiment_id=experiment_id):
         nnabla_model = os.path.basename(model['model'])
         model_path = os.path.dirname(model['model'])
         model_info = nnabla.mlflow_save_load_model.log_model(nnabla_model,
@@ -405,7 +436,10 @@ def test_load_model_with_run_name(model, data):
 
 
 def test_load_as_pyfunc_model(model, data):
-    with mlflow.start_run(run_name='test_load_model_with_run_name'):
+    mlflow.set_tracking_uri(prefix_scheme + model['work_dir'])
+    experiment_id = mlflow.get_experiment_by_name(
+        "save_load_model").experiment_id
+    with mlflow.start_run(run_name='test_load_model_with_run_name', experiment_id=experiment_id):
         nnabla_model = os.path.basename(model['model'])
         model_path = os.path.dirname(model['model'])
         model_info = nnabla.mlflow_save_load_model.log_model(nnabla_model,
