@@ -45,6 +45,7 @@ def prepare_dir():
 @pytest.mark.parametrize("interval_0, interval_1", [(1, 5), (2, 4), (4, 2), (3, 5)])
 def test_autolog(experiment, with_save_parameters, interval_0, interval_1, prepare_dir):
     path = tempfile.mkdtemp()
+    mlflow.set_tracking_uri(prefix_scheme + prepare_dir)
 
     # Create experiment
     assert mlflow.set_experiment(experiment)
@@ -66,7 +67,6 @@ def test_autolog(experiment, with_save_parameters, interval_0, interval_1, prepa
     assert mit
 
     # Main training loop
-    mlflow.set_tracking_uri(prefix_scheme + prepare_dir)
     with mlflow.start_run(experiment_id=experiment_id):
         for i in range(10):
             ms.add(i, i * 2)

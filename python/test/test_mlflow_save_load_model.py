@@ -175,6 +175,7 @@ def model(data):
     test_work_path = tempfile.mkdtemp(prefix='tmp_save_load', dir=cwd)
     mlflow_workdir = os.path.join(test_work_path, "mlruns")
     os.chdir(test_work_path)
+    mlflow.set_tracking_uri(prefix_scheme + mlflow_workdir)
     assert mlflow.set_experiment("save_load_model")
 
     if not os.path.isdir(model_save_path):
