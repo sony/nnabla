@@ -70,5 +70,5 @@ CALL pip install %PIP_INS_OPTS% ^
            virtualenv ^
            wheel ^
            mlflow ^
-           setuptools>60.0.0 ^
+           "setuptools>60.0.0" ^
            "matplotlib<3.9"
