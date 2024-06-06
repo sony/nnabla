@@ -132,8 +132,9 @@ def test_float_input_large_k_forward(seed, ishape, k, base_axis, ctx, fname):
         topk_data, topk_index = F.top_k_data(
             in_data, k, reduce=True, with_index=True, base_axis=base_axis)
 
-    assert topk_data.d[0][-1] != 0.0
-    assert topk_index.d[0][-1] != 0.0
+    (ref_topk_data, _), _ = ref_top_k_data(x, k, False, True, 1, True, True)
+    np.testing.assert_allclose(topk_data.d, ref_topk_data, rtol=1e-4,
+                               atol=1e-5, err_msg="Failed to compare top K result!")
 
     # forward again with a new Variable of the same value
     in_data2 = nn.Variable(shape=ishape)
@@ -143,8 +144,9 @@ def test_float_input_large_k_forward(seed, ishape, k, base_axis, ctx, fname):
         topk_data2, topk_index2 = F.top_k_data(
             in_data2, k, reduce=True, with_index=True, base_axis=base_axis)
 
-    assert topk_data2.d[0][-1] != 0.0
-    assert topk_index2.d[0][-1] != 0.0
+    (ref_topk_data2, _), _ = ref_top_k_data(x, k, False, True, 1, True, True)
+    np.testing.assert_allclose(topk_data2.d, ref_topk_data2, rtol=1e-4,
+                               atol=1e-5, err_msg="Failed to compare top K result!")
 
 
 @pytest.mark.parametrize("ctx, fname", ctxs)
@@ -187,3 +189,48 @@ def test_forward_backward_with_reset(seed, ishape, reset_inshape, k, abs, reduce
                     func_name=fname, ref_grad=ref_grad,
                     func_args=[k, abs, reduce, base_axis, largest, with_index],
                     disable_half_test=k > 10, reset_inputs=reset_inputs)
+
+
+@pytest.mark.parametrize("ctx, fname", ctxs)
+@pytest.mark.parametrize("seed", [313])
+@pytest.mark.parametrize("ishape, k, K", [((1, 630, 840), 713, 714),
+                                          ((1, 630, 840), 714, 715)])
+def test_with_lot_of_zero_k_forward(seed, ishape, k, K, ctx, fname):
+    import nnabla as nn
+
+    def generate_sparse_float_input(rng, ishape):
+        total_elements = np.prod(ishape)
+        # Generate a sparse input array where k elements have positive float values,
+        # and make the result of elements 0
+        unique_indices = rng.choice(range(1, total_elements), k, replace=False)
+        values = np.linspace(0.1, 1.0, k)
+        np.random.shuffle(values)  # Shuffle the values
+        sparse_input = np.zeros(total_elements, dtype=np.float32)
+        sparse_input[unique_indices] = values
+        sparse_input = sparse_input.reshape(ishape)
+        return sparse_input
+
+    rng = np.random.RandomState(seed)
+    x = generate_sparse_float_input(rng, ishape)
+    in_data = nn.Variable(shape=ishape)
+    in_data.d = x
+    with nn.context_scope(ctx), nn.auto_forward():
+        topk_data, topk_index = F.top_k_data(
+            in_data, K, reduce=True, with_index=True, base_axis=1)
+
+    # x, k, abs, reduce, base_axis, largest, with_index,
+    (ref_topk_data, _), _ = ref_top_k_data(x, K, False, True, 1, True, True)
+    np.testing.assert_allclose(topk_data.d, ref_topk_data, rtol=1e-4,
+                               atol=1e-5, err_msg="Failed to compare top K result!")
+
+    # forward again with a new Variable of the same value
+    in_data2 = nn.Variable(shape=ishape)
+    in_data2.d = x
+
+    with nn.context_scope(ctx), nn.auto_forward():
+        topk_data2, topk_index2 = F.top_k_data(
+            in_data2, K, reduce=True, with_index=True, base_axis=1)
+
+    (ref_topk_data2, _), _ = ref_top_k_data(x, K, False, True, 1, True, True)
+    np.testing.assert_allclose(topk_data2.d, ref_topk_data2, rtol=1e-4,
+                               atol=1e-5, err_msg="Failed to compare top K result!")
