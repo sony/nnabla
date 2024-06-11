@@ -21,7 +21,6 @@ CUDA vs cuDNN Compatibility
 ================== ============ =====================
 Package name       CUDA version cuDNN version
 ================== ============ =====================
-nnabla-ext-cuda110 11.0.3       8.0(Linux & Win)
 nnabla-ext-cuda116 11.6.2       8.4(Linux & Win)
 nnabla-ext-cuda120 12.0.1       8.8(Linux & Win)
 ================== ============ =====================
@@ -55,11 +54,11 @@ For example, if you think GeForce RTX 3070 and GeForce RTX 3090 are usable, you 
 Installation
 ------------
 
-The following is an example of installing the extension for CUDA 11.0.3
+The following is an example of installing the extension for CUDA 11.6.2
 
 .. code-block:: bash
 
-	pip install nnabla-ext-cuda110
+	pip install nnabla-ext-cuda116
 
 and check if all works.
 
@@ -81,7 +80,7 @@ and check if all works.
 Installation with Multi-GPU supported
 -------------------------------------
 
-Multi-GPU wheel package is only available on python3.8+.
+Multi-GPU wheel package is only available on python3.9+.
 
 .. _cuda-cudnn-compatibility-multi-gpu:
 
@@ -91,7 +90,6 @@ CUDA vs cuDNN Compatibility
 =================================== ============ =============
 Package name                        CUDA version cuDNN version
 =================================== ============ =============
-nnabla-ext-cuda110                  11.0.3       8.0
 nnabla-ext-cuda116                  11.6.2       8.4
 nnabla-ext-cuda120                  12.0.1       8.8
 =================================== ============ =============
@@ -101,7 +99,7 @@ You can install as the following.
 .. code-block:: bash
 
   pip install nnabla
-  pip install nnabla-ext-cuda110
+  pip install nnabla-ext-cuda116
 
 
 If you already installed NNabla, uninstall all of it, or start from a clean environment which you create using Anaconda, venv.
@@ -158,6 +156,6 @@ Following is a sample error message.
 .. code-block:: bash
 
   [nnabla][INFO]: Initializing CPU extension...
-  Please install CUDA version 11.0.3.
+  Please install CUDA version 11.6.2.
     and cuDNN version 8.0
     Or install correct nnabla-ext-cuda for installed version of CUDA/cuDNN.

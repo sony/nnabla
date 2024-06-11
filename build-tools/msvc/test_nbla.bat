@@ -18,7 +18,7 @@ REM limitations under the License.
 SETLOCAL
 
 REM Environment
-CALL %~dp0tools\env.bat 3.8 %1 || GOTO :error
+CALL %~dp0tools\env.bat 3.9 %1 || GOTO :error
 
 %nnabla_build_folder%\bin\Release\test_nbla_utils || GOTO :error
 

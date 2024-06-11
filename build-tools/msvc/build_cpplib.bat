@@ -17,7 +17,7 @@ REM
 REM 
 REM Usage:
 REM   build_cpplib.bat [PYTHON_VERSION] [VISUAL_STUDIO_EDITION]
-REM     (optional) PYTHON_VERSION: 3.8, 3.9 or 3.10
+REM     (optional) PYTHON_VERSION: 3.9 or 3.10
 REM     (optional) VISUAL_STUDIO_EDITION: 2015 or 2019(experimental)
 REM
 @ECHO ON
@@ -25,7 +25,7 @@ SETLOCAL
 
 REM Environment
 IF [%1] == [] (
-    CALL %~dp0tools\env.bat 3.8 %1 || GOTO :error
+    CALL %~dp0tools\env.bat 3.9 %1 || GOTO :error
 ) ELSE (
     CALL %~dp0tools\env.bat %1 %2 || GOTO :error
 )

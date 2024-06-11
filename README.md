@@ -23,9 +23,9 @@ pip install nnabla
 
 This installs the CPU version of Neural Network Libraries. GPU-acceleration can be added by installing the CUDA extension with following command.
 ```
-pip install nnabla-ext-cuda110
+pip install nnabla-ext-cuda116
 ```
-Above command is for version 11.0 CUDA Toolkit.
+Above command is for version 11.6 CUDA Toolkit.
 
 The other supported CUDA packages are listed [here](https://nnabla.readthedocs.io/en/latest/python/pip_installation_cuda.html#cuda-vs-cudnn-compatibility).
 

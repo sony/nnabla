@@ -15,7 +15,7 @@ The following software are required for installation:
 
 * Required software.
 
-  * Python>=3.8: PIP
+  * Python>=3.9: PIP
 
 * Recommended.
 
