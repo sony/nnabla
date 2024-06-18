@@ -32,7 +32,7 @@ After this you can find executable file and shared library in `nnabla/build/lib/
 Prepare to specify python version.
 ```
 $ export PYTHON_VERSION_MAJOR=3
-$ export PYTHON_VERSION_MINOR=9
+$ export PYTHON_VERSION_MINOR=10
 ```
 
 Then you can get with,
@@ -42,7 +42,7 @@ $ make all
 
 Or you can specify every time.
 ```
-$ make PYTHON_VERSION_MAJOR=3 PYTHON_VERSION_MINOR=9 all
+$ make PYTHON_VERSION_MAJOR=3 PYTHON_VERSION_MINOR=10 all
 ```
 
 ## Windows

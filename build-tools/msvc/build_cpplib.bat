@@ -25,7 +25,7 @@ SETLOCAL
 
 REM Environment
 IF [%1] == [] (
-    CALL %~dp0tools\env.bat 3.9 %1 || GOTO :error
+    CALL %~dp0tools\env.bat 3.10 %1 || GOTO :error
 ) ELSE (
     CALL %~dp0tools\env.bat %1 %2 || GOTO :error
 )

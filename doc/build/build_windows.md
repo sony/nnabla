@@ -15,7 +15,7 @@ Note: Please make sure `Microsoft Visual Studio` is installed in the path of `C:
 
 Install python3.9.13 or 3.10.8. You can refer to the following command.
 ```bat
-    choco install -y python3 --version=3.9.13
+    choco install -y python3 --version=3.10.8
 ```
 
 We use chocolatey to make the configuration as easy as possible（recommended).

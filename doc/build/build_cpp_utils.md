@@ -3,7 +3,7 @@
 This document describes how to build and install C++ libraries,
 headers and executables that can be used for C++ standalone inference
 and training. The following instruction demonstrates the build
-procedure on Ubuntu 20.04 LTS and Python 3.9, but we successfully build C++ libraries on
+procedure on Ubuntu 20.04 LTS and Python 3.10, but we successfully build C++ libraries on
 macOS and Windows ([manual](./build_cpp_utils_windows.md)) too in a
 similar way (the differences lie in the installation of some
 dependencies). We may add build instructions on another platform in

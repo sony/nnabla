@@ -152,7 +152,7 @@ RUN mkdir /tmp/deps \
     && rm -rf /tmp/*
 
 ARG PYTHON_VERSION_MAJOR=3
-ARG PYTHON_VERSION_MINOR=9
+ARG PYTHON_VERSION_MINOR=10
 ENV PYVERNAME=${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}
 
 ADD python/setup_requirements.txt /tmp/deps/
