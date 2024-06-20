@@ -9,7 +9,7 @@ For build instructions for Windows and macOS, go to:
 
 ## Linux
 
-This document demonstrates how to build NNabla Python package from source on Ubuntu 20.04 LTS and Python 3.8.10. It also works for many other linux distributions by replacing the installation commands that use `apt` in this example by commands for a package manager on your system (e.g. `yum`). 
+This document demonstrates how to build NNabla Python package from source on Ubuntu 20.04 LTS and Python 3.10. It also works for many other linux distributions by replacing the installation commands that use `apt` in this example by commands for a package manager on your system (e.g. `yum`).
 
 ### Setup
 
@@ -65,7 +65,7 @@ If you want to install nnabla for python 3.x, you may need to add `-DPYTHON_COMM
 So replace `cmake ../`. with
 
 ```shell
-cmake ../ -DPYTHON_COMMAND_NAME=python3.8  # if you use python 3.8
+cmake ../ -DPYTHON_COMMAND_NAME=python3.10  # if you use python 3.10
 ```
 
 Be careful if you have multiple python versions.
