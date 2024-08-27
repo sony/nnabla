@@ -26,6 +26,11 @@ cmake -E tar xvzf ..\%ZSTD_PACKAGE%.zip || GOTO :error
 MOVE dll\libzstd.dll %VENV%\Scripts\zstd.dll
 CD ..
 
+SET REQDLLS_DIR=%nnabla_root%\third_party\required_dlls
+IF NOT EXIST %REQDLLS_DIR% MD %REQDLLS_DIR%
+ECHO  COPY %VENV%\Scripts\zstd.dll %REQDLLS_DIR%\zstd.dll
+COPY %VENV%\Scripts\zstd.dll %REQDLLS_DIR%\zstd.dll
+
 DEL %ZSTD_PACKAGE%.zip
 RMDIR /s /q %ZSTD_PACKAGE%
 

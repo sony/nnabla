@@ -26,6 +26,11 @@ cmake -E tar xvzf ..\%LZ4_PACKAGE%.zip || GOTO :error
 MOVE dll\msys-lz4-1.dll %VENV%\Scripts\liblz4.dll
 CD ..
 
+SET REQDLLS_DIR=%nnabla_root%\third_party\required_dlls
+IF NOT EXIST %REQDLLS_DIR% MD %REQDLLS_DIR%
+ECHO  COPY %VENV%\Scripts\liblz4.dll %REQDLLS_DIR%\liblz4.dll
+COPY %VENV%\Scripts\liblz4.dll %REQDLLS_DIR%\liblz4.dll
+
 DEL %LZ4_PACKAGE%.zip
 RMDIR /s /q %LZ4_PACKAGE%
 
