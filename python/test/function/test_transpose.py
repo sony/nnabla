@@ -42,7 +42,7 @@ def ref_transpose(x, axes):
 def test_transpose_forward_backward(seed, inshape, axes, ctx, func_name):
     from nbla_test_utils import function_tester
     rng = np.random.RandomState(seed)
-    if np.product(inshape) > 1000000:
+    if np.prod(inshape) > 1000000:
         with nn.context_scope(ctx):
             x = nn.Variable(inshape)
             y = F.transpose(x, axes)
