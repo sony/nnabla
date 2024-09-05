@@ -32,6 +32,8 @@ def ref_unique(x, flatten, axis, sorted, with_index, with_inverse, with_counts):
     if flatten:
         axis = None
     y, indices, inverse_indices, counts = np.unique(x, True, True, True, axis)
+    inverse_indices = inverse_indices.flatten() \
+        if isinstance(inverse_indices, np.ndarray) else inverse_indices
 
     if not sorted:
         argsort_indices = np.argsort(indices)
