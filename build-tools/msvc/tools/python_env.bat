@@ -51,7 +51,7 @@ CALL %VENV%\Scripts\activate.bat
 CALL python -m pip install %PIP_INS_OPTS% --upgrade pip
 
 CALL pip install %PIP_INS_OPTS% ^
-           "Cython<3.0.11" ^
+           Cython ^
            boto3 ^
            h5py ^
            ipython ^
