@@ -25,18 +25,18 @@ cdef extern from "nbla/synced_array.hpp" namespace "nbla":
 
     cdef cppclass CSyncedArray "nbla::SyncedArray":
         CSyncedArray(Size_t size) except +
-        CArray * cast(dtypes dtype, const CContext & ctx) nogil except+
-        ArrayPtr cast_sp(dtypes dtype, const CContext & ctx) nogil except+
-        const CArray * get(dtypes dtype, const CContext & ctx) nogil except+
-        dtypes dtype() except+
-        Size_t size() except+
-        void zero() except+
-        void fill(float value) except+
-        void copy_from(const CSyncedArray *src) except+
-        size_t modification_count() except+
-        cpp_bool clear_called() except+
+        CArray * cast(dtypes dtype, const CContext & ctx) except + nogil
+        ArrayPtr cast_sp(dtypes dtype, const CContext & ctx) except + nogil
+        const CArray * get(dtypes dtype, const CContext & ctx) except + nogil
+        dtypes dtype() except +
+        Size_t size() except +
+        void zero() except +
+        void fill(float value) except +
+        void copy_from(const CSyncedArray *src) except +
+        size_t modification_count() except +
+        cpp_bool clear_called() except +
         cpp_bool zeroing() const
-        void clear() except+
+        void clear() except +
         int get_python_user_reference_counts() const
 
     ctypedef shared_ptr[CSyncedArray] SyncedArrayPtr
@@ -46,24 +46,24 @@ cdef extern from "nbla/nd_array.hpp" namespace "nbla":
 
     cdef cppclass CNdArray "nbla::NdArray":
 
-        CNdArray(const Shape_t & shape) except+
-        CNdArray(SyncedArrayPtr array, const Shape_t & shape) except+
-        void reshape(const Shape_t & shape, cpp_bool force=false)except+
-        shared_ptr[CNdArray] view(const Shape_t & shape) except+
+        CNdArray(const Shape_t & shape) except +
+        CNdArray(SyncedArrayPtr array, const Shape_t & shape) except +
+        void reshape(const Shape_t & shape, cpp_bool force=false)except +
+        shared_ptr[CNdArray] view(const Shape_t & shape) except +
         Shape_t shape() const
         Shape_t strides() const
         Size_t size(Size_t) const
         Size_t ndim() const
         SyncedArrayPtr array()
-        void set_array(SyncedArrayPtr array) except+
-        void zero() except+
-        void fill(double v) except+
-        const CArray * get(dtypes dtype, const CContext & ctx) nogil except+
-        shared_ptr[const CArray] get_sp(dtypes dtype, const CContext & ctx) nogil except+
-        unsigned long data_ptr(dtypes dtype, const CContext & ctx, cpp_bool write_only) nogil except+
-        CArray * cast(dtypes dtype, const CContext & ctx, cpp_bool write_only) nogil except +
-        ArrayPtr cast_sp(dtypes dtype, const CContext & ctx, cpp_bool write_only) nogil except +
-        shared_ptr[CNdArray] narrow(const Size_t dim, const Size_t start, const Size_t length) except+
+        void set_array(SyncedArrayPtr array) except +
+        void zero() except +
+        void fill(double v) except +
+        const CArray * get(dtypes dtype, const CContext & ctx) except + nogil
+        shared_ptr[const CArray] get_sp(dtypes dtype, const CContext & ctx) except + nogil
+        unsigned long data_ptr(dtypes dtype, const CContext & ctx, cpp_bool write_only) except + nogil
+        CArray * cast(dtypes dtype, const CContext & ctx, cpp_bool write_only) except + nogil
+        ArrayPtr cast_sp(dtypes dtype, const CContext & ctx, cpp_bool write_only) except + nogil
+        shared_ptr[CNdArray] narrow(const Size_t dim, const Size_t start, const Size_t length) except +
         int python_user_reference_counts
 
     ctypedef shared_ptr[CNdArray] NdArrayPtr

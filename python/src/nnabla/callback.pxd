@@ -17,15 +17,15 @@ from _variable cimport function_hook_type
 from solver cimport update_hook_type
 
 cdef extern from "nbla/global_function_callback.hpp" namespace "nbla":
-    void c_set_function_pre_hook "nbla::set_function_pre_hook" (const string & key, const function_hook_type& cb) nogil except+
-    void c_set_function_post_hook "nbla::set_function_post_hook" (const string & key, const function_hook_type& cb) nogil except+
-    void c_unset_function_pre_hook "nbla::unset_function_pre_hook" (const string & key) nogil except+
-    void c_unset_function_post_hook "nbla::unset_function_post_hook" (const string & key) nogil except+
+    void c_set_function_pre_hook "nbla::set_function_pre_hook" (const string & key, const function_hook_type& cb) except + nogil
+    void c_set_function_post_hook "nbla::set_function_post_hook" (const string & key, const function_hook_type& cb) except + nogil
+    void c_unset_function_pre_hook "nbla::unset_function_pre_hook" (const string & key) except + nogil
+    void c_unset_function_post_hook "nbla::unset_function_post_hook" (const string & key) except + nogil
 
 
 cdef extern from "nbla/global_solver_callback.hpp" namespace "nbla":
-    void c_set_solver_pre_hook "nbla::set_solver_pre_hook" (const string & key, const update_hook_type& cb) nogil except+
-    void c_set_solver_post_hook "nbla::set_solver_post_hook" (const string & key, const update_hook_type& cb) nogil except+
-    void c_unset_solver_pre_hook "nbla::unset_solver_pre_hook" (const string & key) nogil except+
-    void c_unset_solver_post_hook "nbla::unset_solver_post_hook" (const string & key) nogil except+
+    void c_set_solver_pre_hook "nbla::set_solver_pre_hook" (const string & key, const update_hook_type& cb) except + nogil
+    void c_set_solver_post_hook "nbla::set_solver_post_hook" (const string & key, const update_hook_type& cb) except + nogil
+    void c_unset_solver_pre_hook "nbla::unset_solver_pre_hook" (const string & key) except + nogil
+    void c_unset_solver_post_hook "nbla::unset_solver_post_hook" (const string & key) except + nogil
 
