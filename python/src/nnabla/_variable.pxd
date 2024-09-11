@@ -48,12 +48,12 @@ cdef extern from "nbla/computation_graph/variable.hpp" namespace "nbla":
     cdef cppclass CCommunicatorBackwardCallback "nbla::CommunicatorBackwardCallback":
         CCommunicatorBackwardCallback() except +
     ctypedef shared_ptr[CCommunicatorBackwardCallback] CommunicatorBackwardCallbackPtr
-    ctypedef std_function[void(const CgFunctionPtr &)] function_hook_type
+    ctypedef std_function[void(const CgFunctionPtr &) noexcept] function_hook_type
 
     cdef cppclass FunctionHookWithObject:
-        ctypedef std_function[void(void *)] setup_callback_type
-        ctypedef std_function[void(void *)] cleanup_callback_type
-        ctypedef std_function[void(void *, const CgFunctionPtr &)] callback_type
+        ctypedef std_function[void(void *) noexcept] setup_callback_type
+        ctypedef std_function[void(void *) noexcept] cleanup_callback_type
+        ctypedef std_function[void(void *, const CgFunctionPtr &) noexcept] callback_type
         FunctionHookWithObject()
         FunctionHookWithObject(void *obj, callback_type cb,
                                setup_callback_type setup_cb,
@@ -129,10 +129,10 @@ cdef class Variable:
     """
 
     # Setter and getter of _var and _varp
-    cdef void set_var(self, CgVariablePtr var)
-    cdef inline CgVariablePtr get_var(self)
-    cdef inline CgVariable * get_varp(self)
-    cdef inline CgVariable * get_varp_no_gil(self) nogil # for no-gil functions
+    cdef void set_var(self, CgVariablePtr var) noexcept
+    cdef inline CgVariablePtr get_var(self) noexcept
+    cdef inline CgVariable * get_varp(self) noexcept
+    cdef inline CgVariable * get_varp_no_gil(self) noexcept nogil # for no-gil functions
 
     @staticmethod
     cdef create_from_cvariable(shared_ptr[CVariable] varsp)
@@ -140,4 +140,4 @@ cdef class Variable:
     @staticmethod
     cdef create_from_cg_variable(CgVariablePtr cgv)
 
-cdef FunctionHookWithObject create_function_hook_with_object(object callback)
+cdef FunctionHookWithObject create_function_hook_with_object(object callback) noexcept

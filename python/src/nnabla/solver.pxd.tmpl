@@ -32,12 +32,12 @@ from _variable cimport CVariable, CContext, dtypes
 
 
 cdef extern from "nbla/solver.hpp" namespace "nbla":
-    ctypedef std_function[void()] update_hook_type
+    ctypedef std_function[void() noexcept] update_hook_type
 
     cdef cppclass UpdateHookWithObject:
-        ctypedef std_function[void(void *)] setup_callback_type
-        ctypedef std_function[void(void *)] cleanup_callback_type
-        ctypedef std_function[void(void *)] callback_type
+        ctypedef std_function[void(void *) noexcept] setup_callback_type
+        ctypedef std_function[void(void *) noexcept] cleanup_callback_type
+        ctypedef std_function[void(void *) noexcept] callback_type
         UpdateHookWithObject()
         UpdateHookWithObject(void *obj, callback_type cb,
                              setup_callback_type setup_cb,
@@ -87,4 +87,4 @@ cdef class Solver:
     @staticmethod
     cdef create(shared_ptr[CSolver] solver, info)
 
-cdef UpdateHookWithObject create_update_hook_with_object(object callback)
+cdef UpdateHookWithObject create_update_hook_with_object(object callback) noexcept

@@ -97,21 +97,21 @@ cdef class CommunicatorBackwardCallback:
 
         return var
 
-cdef void callback_incref(void *obj) with gil:
+cdef void callback_incref(void *obj) noexcept with gil:
     Py_INCREF(<object>obj)
 
-cdef void callback_decref(void *obj) with gil:
+cdef void callback_decref(void *obj) noexcept with gil:
     Py_DECREF(<object>obj)
 
-cdef void callback_call_callable(void *obj, const CgFunctionPtr &f) except+ with gil:
+cdef void callback_call_callable(void *obj, const CgFunctionPtr &f) except + with gil:
     cdef object cbl = <object>obj
     cbl(function.Function.create_from_c(const_pointer_cast[CgFunction, CgFunction](<const shared_ptr[CgFunction]&>f)))
 
-cdef FunctionHookWithObject create_function_hook_with_object(object callback):
+cdef FunctionHookWithObject create_function_hook_with_object(object callback) noexcept:
     return FunctionHookWithObject(<void*>callback,
-                                  <std_function[void(void*, const CgFunctionPtr&)]>callback_call_callable,
-                                  <std_function[void(void*)]>callback_incref,
-                                  <std_function[void(void*)]>callback_decref)
+                                  <std_function[void(void*, const CgFunctionPtr&) noexcept]>callback_call_callable,
+                                  <std_function[void(void*) noexcept]>callback_incref,
+                                  <std_function[void(void*) noexcept]>callback_decref)
 
 
 
@@ -165,7 +165,7 @@ cdef class Variable:
         err = exceptions.pop(0)
         raise err
 
-    cdef void set_var(self, CgVariablePtr var):
+    cdef void set_var(self, CgVariablePtr var) noexcept:
         # New CgVariable traces this Variable.
         var.get().update_python_user_reference_counts(1)
 
@@ -176,13 +176,13 @@ cdef class Variable:
         self._var = var
         self._varp = var.get()
 
-    cdef inline CgVariablePtr get_var(self):
+    cdef inline CgVariablePtr get_var(self) noexcept:
         return self._var
 
-    cdef inline CgVariable * get_varp(self):
+    cdef inline CgVariable * get_varp(self) noexcept:
         return self._varp
 
-    cdef inline CgVariable * get_varp_no_gil(self) nogil:
+    cdef inline CgVariable * get_varp_no_gil(self) noexcept nogil:
         return self._varp
 
     def __cinit__(self, Shape_t shape=[], need_grad=None, info=None):

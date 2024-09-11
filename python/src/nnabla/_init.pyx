@@ -45,7 +45,7 @@ def print_memory_cache_map():
     print_cpu_memory_cache_map()
 
 
-cdef public void call_gc() with gil:
+cdef public void call_gc() noexcept with gil:
     """
     Callback function to be registered GC singleton in C++.
     """

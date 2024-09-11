@@ -98,7 +98,7 @@ def from_dlpack(dlp, arr=None):
 
 # DLManagedTensor in PyCapsule which is not borrwed from any framework
 # is deleted by this destructor of Pycapsule.
-cdef void delete_unused_dltensor(object dlp):
+cdef void delete_unused_dltensor(object dlp) noexcept:
     if PyCapsule_IsValid(dlp, c_str_dltensor):
         call_deleter(<CDLManagedTensor *>PyCapsule_GetPointer(dlp, c_str_dltensor));
 

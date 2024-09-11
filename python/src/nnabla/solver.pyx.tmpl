@@ -49,21 +49,21 @@ np.import_array()
 import nnabla.utils.nnabla_pb2 as nnabla_pb2
 import google.protobuf.text_format as text_format
 
-cdef void callback_incref(void *obj) with gil:
+cdef void callback_incref(void *obj) noexcept with gil:
     Py_INCREF(<object>obj)
 
-cdef void callback_decref(void *obj) with gil:
+cdef void callback_decref(void *obj) noexcept with gil:
     Py_DECREF(<object>obj)
 
 cdef void callback_call_callable(void *obj) except+ with gil:
     cdef object cbl = <object>obj
     cbl()
 
-cdef UpdateHookWithObject create_update_hook_with_object(object callback):
+cdef UpdateHookWithObject create_update_hook_with_object(object callback) noexcept:
     return UpdateHookWithObject(<void*>callback,
-                                <std_function[void(void*)]>callback_call_callable,
-                                <std_function[void(void*)]>callback_incref,
-                                <std_function[void(void*)]>callback_decref)
+                                <std_function[void(void*) noexcept]>callback_call_callable,
+                                <std_function[void(void*) noexcept]>callback_incref,
+                                <std_function[void(void*) noexcept]>callback_decref)
 
 
 class SolverState(object):
