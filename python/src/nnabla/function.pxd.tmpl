@@ -36,14 +36,14 @@ ctypedef vector[CVariable*] Variables
 cdef extern from "nbla/function.hpp" namespace "nbla":
 
     cdef cppclass CFunction "nbla::Function":
-        void setup(const Variables&, const Variables&) nogil except +
-        void forward(const Variables&, const Variables&) nogil except +
+        void setup(const Variables&, const Variables&) except + nogil
+        void forward(const Variables&, const Variables&) except + nogil
         void backward(const Variables&, const Variables&,
                       const vector[cpp_bool] &propagate_down,
-                      const vector[cpp_bool] &accum) nogil except +
-        void setup_recompute(const Variables&, const Variables&) nogil except +
-        void recompute(const Variables&, const Variables&) nogil except +
-        void set_active_input_mask(const vector[cpp_bool] mask) nogil except +
+                      const vector[cpp_bool] &accum) except + nogil
+        void setup_recompute(const Variables&, const Variables&) except + nogil
+        void recompute(const Variables&, const Variables&) except + nogil
+        void set_active_input_mask(const vector[cpp_bool] mask) except + nogil
         CContext context() except +
         vector[dtypes] in_types()
         vector[dtypes] out_types()
@@ -51,13 +51,13 @@ cdef extern from "nbla/function.hpp" namespace "nbla":
         int min_outputs()
         string name()
         shared_ptr[CFunction] copy() except +
-        cpp_bool grad_depends_input_data(int i, int j) except+
-        cpp_bool grad_depends_output_data(int i, int o) except+
-        cpp_bool auto_grad_depends_input_data(int i, int j) except+
-        cpp_bool auto_grad_depends_output_data(int i, int o) except+
-        cpp_bool need_setup_recompute(int o) except+
-        int inplace_data(int i) except+
-        int inplace_data_with(int i) except+
+        cpp_bool grad_depends_input_data(int i, int j) except +
+        cpp_bool grad_depends_output_data(int i, int o) except +
+        cpp_bool auto_grad_depends_input_data(int i, int j) except +
+        cpp_bool auto_grad_depends_output_data(int i, int o) except +
+        cpp_bool need_setup_recompute(int o) except +
+        int inplace_data(int i) except +
+        int inplace_data_with(int i) except +
 
     ctypedef shared_ptr[CFunction] FunctionPtr
 
@@ -65,16 +65,16 @@ cdef extern from "nbla/computation_graph/function.hpp" namespace "nbla":
     cdef cppclass CgVariable
     ctypedef shared_ptr[CgVariable] CgVariablePtr
     cdef cppclass CgFunction:
-        CgFunction(FunctionPtr func) except+
+        CgFunction(FunctionPtr func) except +
         FunctionPtr function() const
         cpp_bool need_grad() const
         int rank() const
-        void set_inputs_(const vector[CgVariablePtr] &intpus) except+
-        void set_outputs(const vector[CgVariablePtr] &outputs) except+
+        void set_inputs_(const vector[CgVariablePtr] &intpus) except +
+        void set_outputs(const vector[CgVariablePtr] &outputs) except +
         vector[CgVariablePtr] inputs()
         vector[CgVariablePtr] outputs()
-        vector[CVariable *] function_inputs() except+
-        vector[VariablePtr] function_outputs_shared() except+
+        vector[CVariable *] function_inputs() except +
+        vector[VariablePtr] function_outputs_shared() except +
         string info() const
         void set_info(const string &info)
     ctypedef shared_ptr[CgFunction] CgFunctionPtr
@@ -82,13 +82,13 @@ cdef extern from "nbla/computation_graph/function.hpp" namespace "nbla":
 cdef extern from "nbla/function/callback.hpp" namespace "nbla":
     shared_ptr[CFunction] create_Callback(
         const CContext &, void *, int,
-        void(void *, const Variables&, const Variables &) nogil except+,
-        void(void *, const Variables&, const Variables &) nogil except+,
+        void(void *, const Variables&, const Variables &) except + nogil,
+        void(void *, const Variables&, const Variables &) except + nogil,
         void(void *, const Variables&, const Variables &,
-             const vector[cpp_bool] &, const vector[cpp_bool] &) nogil except+,
+             const vector[cpp_bool] &, const vector[cpp_bool] &) except + nogil,
         void(void *) nogil,
-        cpp_bool(void *, int, int) nogil except+,
-        cpp_bool(void *, int, int) nogil except+) except +
+        cpp_bool(void *, int, int) except + nogil,
+        cpp_bool(void *, int, int) except + nogil) except +
 <%
 from utils.type_conv import type_from_proto
 %>    

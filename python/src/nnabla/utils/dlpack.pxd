@@ -21,8 +21,8 @@ cdef extern from "nbla/utils/dlpack_utils.hpp":
         pass
 
 cdef extern from "nbla/utils/dlpack_utils.hpp" namespace "nbla":
-    NdArrayPtr from_dlpack(CDLManagedTensor *dltensor) nogil except+
-    void from_dlpack(CDLManagedTensor *dltensor, CNdArray *a) nogil except+
-    CDLManagedTensor* to_dlpack(CNdArray *a) nogil except+
-    CDLManagedTensor* to_dlpack(CNdArray *a, const dtypes dtype, const CContext &ctx) nogil except+
-    void call_deleter(CDLManagedTensor *dlp) nogil except+
+    NdArrayPtr from_dlpack(CDLManagedTensor *dltensor) except + nogil
+    void from_dlpack(CDLManagedTensor *dltensor, CNdArray *a) except + nogil
+    CDLManagedTensor* to_dlpack(CNdArray *a) except + nogil
+    CDLManagedTensor* to_dlpack(CNdArray *a, const dtypes dtype, const CContext &ctx) except + nogil
+    void call_deleter(CDLManagedTensor *dlp) except + nogil

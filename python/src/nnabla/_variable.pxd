@@ -46,24 +46,24 @@ cdef extern from "nbla/computation_graph/variable.hpp" namespace "nbla":
     cdef cppclass CgFunction
     ctypedef shared_ptr[CgFunction] CgFunctionPtr
     cdef cppclass CCommunicatorBackwardCallback "nbla::CommunicatorBackwardCallback":
-        CCommunicatorBackwardCallback() except+
+        CCommunicatorBackwardCallback() except +
     ctypedef shared_ptr[CCommunicatorBackwardCallback] CommunicatorBackwardCallbackPtr
-    ctypedef std_function[void(const CgFunctionPtr &)] function_hook_type
+    ctypedef std_function[void(const CgFunctionPtr &) noexcept] function_hook_type
 
     cdef cppclass FunctionHookWithObject:
-        ctypedef std_function[void(void *)] setup_callback_type
-        ctypedef std_function[void(void *)] cleanup_callback_type
-        ctypedef std_function[void(void *, const CgFunctionPtr &)] callback_type
+        ctypedef std_function[void(void *) noexcept] setup_callback_type
+        ctypedef std_function[void(void *) noexcept] cleanup_callback_type
+        ctypedef std_function[void(void *, const CgFunctionPtr &) noexcept] callback_type
         FunctionHookWithObject()
         FunctionHookWithObject(void *obj, callback_type cb,
                                setup_callback_type setup_cb,
                                cleanup_callback_type clean_cb)
 
     cdef cppclass CgVariable:
-        CgVariable() except+
-        CgVariable(cpp_bool need_grad) except+
-        CgVariable(Shape_t shape) except+
-        CgVariable(Shape_t shape, cpp_bool need_grad) except+
+        CgVariable() except +
+        CgVariable(cpp_bool need_grad) except +
+        CgVariable(Shape_t shape) except +
+        CgVariable(Shape_t shape, cpp_bool need_grad) except +
         CgVariable(VariablePtr)
         CgVariable(VariablePtr, cpp_bool need_grad)
         cpp_bool need_grad() const
@@ -76,35 +76,35 @@ cdef extern from "nbla/computation_graph/variable.hpp" namespace "nbla":
         void unset_need_grad_state()
         cpp_bool recompute() const
         void set_recompute(cpp_bool b)
-        void set_parent(CgFunctionPtr func) except+
+        void set_parent(CgFunctionPtr func) except +
         CgFunctionPtr parent()
         VariablePtr variable()
         int rank() const
-        void set_rank(int rank) except+
-        void forward(cpp_bool clear_buffer, cpp_bool clear_no_need_grad, unordered_set[CgFunctionPtr] *fclosed, function_hook_type function_pre_hook, function_hook_type function_post_hook) nogil except+
-        void backward(NdArrayPtr grad, cpp_bool clear_buffer, vector[CommunicatorBackwardCallbackPtr] communicator_callbacks, function_hook_type function_pre_hook, function_hook_type function_post_hook, cpp_bool clear_initial_grad) nogil except+
+        void set_rank(int rank) except +
+        void forward(cpp_bool clear_buffer, cpp_bool clear_no_need_grad, unordered_set[CgFunctionPtr] *fclosed, function_hook_type function_pre_hook, function_hook_type function_post_hook) except + nogil
+        void backward(NdArrayPtr grad, cpp_bool clear_buffer, vector[CommunicatorBackwardCallbackPtr] communicator_callbacks, function_hook_type function_pre_hook, function_hook_type function_post_hook, cpp_bool clear_initial_grad) except + nogil
         void set_persistent(cpp_bool b)
         cpp_bool persistent()
         void clear_during_auto_forward() except +
         string name() except +
         void set_name(string name) except +
-        vector[CgFunctionPtr] function_references() except+
-        void remove_function_reference(CgFunction * func) except+
-        void update_python_user_reference_counts(const int diff) except+
+        vector[CgFunctionPtr] function_references() except +
+        void remove_function_reference(CgFunction * func) except +
+        void update_python_user_reference_counts(const int diff) except +
     ctypedef shared_ptr[CgVariable] CgVariablePtr
 
 cdef extern from "nbla/computation_graph/function.hpp" namespace "nbla":
     cdef cppclass CFunction
     ctypedef shared_ptr[CFunction] FunctionPtr
     cdef cppclass CgFunction:
-        CgFunction(FunctionPtr func) except+
+        CgFunction(FunctionPtr func) except +
         FunctionPtr function() const
         cpp_bool need_grad() const
         int rank() const
-        void set_outputs(const vector[CgVariablePtr] & outputs) except+
+        void set_outputs(const vector[CgVariablePtr] & outputs) except +
         const vector[CgVariablePtr] inputs()
-        vector[CVariable *] function_inputs() except+
-        vector[VariablePtr] function_outputs_shared() except+
+        vector[CVariable *] function_inputs() except +
+        vector[VariablePtr] function_outputs_shared() except +
         string info() const
         void set_info(const string & info)
 
@@ -129,10 +129,10 @@ cdef class Variable:
     """
 
     # Setter and getter of _var and _varp
-    cdef void set_var(self, CgVariablePtr var)
-    cdef inline CgVariablePtr get_var(self)
-    cdef inline CgVariable * get_varp(self)
-    cdef inline CgVariable * get_varp_no_gil(self) nogil # for no-gil functions
+    cdef void set_var(self, CgVariablePtr var) noexcept
+    cdef inline CgVariablePtr get_var(self) noexcept
+    cdef inline CgVariable * get_varp(self) noexcept
+    cdef inline CgVariable * get_varp_no_gil(self) noexcept nogil # for no-gil functions
 
     @staticmethod
     cdef create_from_cvariable(shared_ptr[CVariable] varsp)
@@ -140,4 +140,4 @@ cdef class Variable:
     @staticmethod
     cdef create_from_cg_variable(CgVariablePtr cgv)
 
-cdef FunctionHookWithObject create_function_hook_with_object(object callback)
+cdef FunctionHookWithObject create_function_hook_with_object(object callback) noexcept

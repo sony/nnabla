@@ -1,4 +1,4 @@
-Cython<3.0.11
+Cython
 boto3
 h5py
 imageio

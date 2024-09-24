@@ -554,7 +554,7 @@ cdef void backward_callback(void *cself, const Variables &cinputs,
                            [propagate_down[i] for i in range(propagate_down.size())],
                            [accum[i] for i in range(accum.size())])
 
-cdef void cleanup_callback(void *cself) with gil:
+cdef void cleanup_callback(void *cself) noexcept with gil:
     """Decrement a reference count of PythonFunction.
     """
     Py_DECREF(<object> cself)

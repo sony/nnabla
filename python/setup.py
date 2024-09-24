@@ -26,7 +26,7 @@ import pathlib
 
 setup_requires = [
     'setuptools',
-    'Cython<3.0.11',  # Requires python-dev.
+    'Cython',  # Requires python-dev.
 ]
 
 numpy_version = ""
@@ -206,8 +206,7 @@ if __name__ == '__main__':
                             "embedsignature": True,
                             "language_level": "2",
                             "c_string_type": 'str',
-                            "c_string_encoding": "ascii",
-                            "legacy_implicit_noexcept": True})
+                            "c_string_encoding": "ascii"})
 
     ############################################################################
     # Package data
