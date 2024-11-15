@@ -41,6 +41,7 @@ RUN eval ${APT_OPTS} && apt-get update \
        zlib1g-dev \
        libhdf5-dev \
        libarchive-dev \
+       autoconf automake libtool \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -49,9 +50,11 @@ RUN eval ${APT_OPTS} && apt-get -yqq update \
        build-essential \
        dh-autoreconf \
        pkg-config \
-    && git clone https://github.com/google/protobuf.git /protobuf \
+    && mkdir -p /protobuf \
     && cd /protobuf \
-    && git checkout v3.10.1 \
+    && curl -o protobuf.zip -L https://github.com/protocolbuffers/protobuf/archive/refs/tags/v3.10.1.zip \
+    && unzip protobuf.zip \
+    && cd protobuf-3.10.1 \
     && ./autogen.sh \
     && ./configure \
     && make \

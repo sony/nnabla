@@ -1614,6 +1614,40 @@ def graph(**kwargs):
         Here, `inputs` is an array of input nn.Variables. `module` is a module object
         instantiated from a Module definition.
 
+
+   Notice:
+        If the computation graph is defined by class nn.module, we can save this graph by
+        the following sample code:
+
+        .. code-block:: python
+
+            import nnabla as nn
+            from nnabla.core.module import Module
+
+            class ConvBn(Module):
+                def __init__(self, outmaps, kernel=1, stride=1, act=None):
+                    self.outmaps = outmaps
+                    self.kernel = kernel
+                    self.stride = stride
+                    self.act = act
+
+                def call(self, x, training=True):
+                    kernel = complete_dims(self.kernel, 2)
+                    pad = get_conv_same_pad(kernel)
+                    stride = complete_dims(self.stride, 2)
+                    h = PF.convolution(x, self.outmaps, kernel,
+                                       pad, stride, with_bias=False)
+                    h = PF.batch_normalization(h, batch_stat=training)
+                    if self.act is None:
+                        return h
+                    return self.act(h)
+
+            input = nn.ProtoVariable((1, 1, 64, 64))
+            conv_bn = ConvBn(16)
+            with nn.graph_def.graph(name="convBn") as g:
+                _ = conv_bn(input)
+            g.save("conv_bn.nnp")
+
     """
     global previous_graph_builder, proto_graph_builder
     previous_graph_builder = proto_graph_builder

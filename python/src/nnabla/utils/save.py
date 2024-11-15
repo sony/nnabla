@@ -477,7 +477,12 @@ def save(filename, contents, include_params=False, variable_batch_size=True, ext
                  'network': 'validation',
                  'dataset': 'mnist_validation'}],
             }
+            save('net.nnp', contents)
 
+
+      Notice:  If the computation graph is defined by class nn.Module, we SHOULD NOT use this save function.
+      See also:
+          ``nnabla.graph_def.graph``.
 
     '''
     ctx = FileHandlerContext()
