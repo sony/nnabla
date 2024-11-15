@@ -53,6 +53,23 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/nbla DESTINATION include)
 install(FILES ${PROJECT_SOURCE_DIR}/LICENSE ${PROJECT_SOURCE_DIR}/NOTICE.md
   DESTINATION doc)
 install(FILES ${PROJECT_SOURCE_DIR}/third_party/LICENSES.md DESTINATION doc/third_party)
+
+file(GLOB_RECURSE DLLFILES
+  "${PROJECT_SOURCE_DIR}/third_party/zlib*/*/*.dll"
+  "${PROJECT_SOURCE_DIR}/third_party/libarchive-*/build-folder/*/*/*.dll"
+  "${PROJECT_SOURCE_DIR}/third_party/required_dlls/*.dll"
+  )
+file(GLOB_RECURSE LIBFILES
+  "${PROJECT_SOURCE_DIR}/third_party/zlib*/*/*.lib"
+  "${PROJECT_SOURCE_DIR}/third_party/libarchive-*/build-folder/*/*/*.lib")
+file(GLOB_RECURSE ARCHIVE_HEADERS
+  "${PROJECT_SOURCE_DIR}/third_party/libarchive-*/archive.h"
+  "${PROJECT_SOURCE_DIR}/third_party/libarchive-*/archive_entry.h")
+file(GLOB_RECURSE ZLIB_HEADERS
+  "${PROJECT_SOURCE_DIR}/third_party/zlib*/*.h")
+install(FILES ${DLLFILES} DESTINATION bin)
+install(FILES ${LIBFILES} DESTINATION lib)
+install(FILES ${ARCHIVE_HEADERS} ${ZLIB_HEADERS} DESTINATION include)
 include(CPack)
 
 set(NBLA_LIBRARY_NAME ${LIB_NAME} PARENT_SCOPE)
