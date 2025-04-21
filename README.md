@@ -1,3 +1,7 @@
+***Notice: nnabla is under maintenance phase and we will not be actively developing.***
+
+----
+
 # Neural Network Libraries
 
 [Neural Network Libraries](https://arxiv.org/abs/2102.06725) is a deep learning framework that is intended to be used for research,
