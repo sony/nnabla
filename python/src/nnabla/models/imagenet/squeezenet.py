@@ -63,7 +63,7 @@ class SqueezeNet(ImageNetBase):
 
         # Load nnp
         self._load_nnp('SqueezeNet-{}.nnp'.format(version[1:]),
-                       'SqueezeNet-{0}/SqueezeNet-{0}.nnp'.format(version[1:]))
+                       'SqueezeNet-{}.nnp'.format(version[1:]))
 
     def _input_shape(self):
         return (3, 227, 227)

@@ -46,7 +46,7 @@ class Xception(ImageNetBase):
 
     def __init__(self):
         # Load nnp
-        self._load_nnp('Xception.nnp', 'Xception/Xception.nnp')
+        self._load_nnp('Xception.nnp', 'Xception.nnp')
 
     def _input_shape(self):
         return (3, 299, 299)

@@ -45,7 +45,7 @@ class SENet(ImageNetBase):
         }
 
     def __init__(self):
-        self._load_nnp('SENet-154.nnp', 'SENet-154/SENet-154.nnp')
+        self._load_nnp('SENet-154.nnp', 'SENet-154.nnp')
 
     def _input_shape(self):
         return (3, 224, 224)

@@ -46,7 +46,7 @@ class DenseNet(ImageNetBase):
     def __init__(self):
 
         # Load nnp
-        self._load_nnp('DenseNet-161.nnp', 'DenseNet-161/DenseNet-161.nnp')
+        self._load_nnp('DenseNet-161.nnp', 'DenseNet-161.nnp')
 
     def _input_shape(self):
         return (3, 224, 224)

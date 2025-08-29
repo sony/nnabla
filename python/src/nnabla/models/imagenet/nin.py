@@ -45,7 +45,7 @@ class NIN(ImageNetBase):
         }
 
     def __init__(self):
-        self._load_nnp('NIN.nnp', 'NIN/NIN.nnp')
+        self._load_nnp('NIN.nnp', 'NIN.nnp')
 
     def _input_shape(self):
         return (3, 227, 227)

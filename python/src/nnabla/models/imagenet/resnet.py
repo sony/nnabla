@@ -57,7 +57,7 @@ class ResNet(ImageNetBase):
 
         # Load nnp
         self._load_nnp('Resnet-{}.nnp'.format(num_layers),
-                       'Resnet-{0}/Resnet-{0}.nnp'.format(num_layers))
+                       'Resnet-{}.nnp'.format(num_layers))
 
     def _input_shape(self):
         return (3, 224, 224)

@@ -44,7 +44,7 @@ class InceptionV3(ImageNetBase):
         }
 
     def __init__(self):
-        self._load_nnp('Inception-v3.nnp', 'Inception-v3/Inception-v3.nnp')
+        self._load_nnp('Inception-v3.nnp', 'Inception-v3.nnp')
 
     def _input_shape(self):
         return (3, 299, 299)

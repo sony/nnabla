@@ -58,13 +58,13 @@ class ShuffleNet(ImageNetBase):
         # Load nnp
         if scaling_factor == 10:
             self._load_nnp('ShuffleNet.nnp',
-                           'ShuffleNet/ShuffleNet.nnp')
+                           'ShuffleNet.nnp')
         elif scaling_factor == 5:
             self._load_nnp('ShuffleNet-.05x.nnp',
-                           'ShuffleNet-0.5x/ShuffleNet-0.5x.nnp')
+                           'ShuffleNet-0.5x.nnp')
         elif scaling_factor == 20:
             self._load_nnp('ShuffleNet-2.0x.nnp',
-                           'ShuffleNet-2.0x/ShuffleNet-2.0x.nnp')
+                           'ShuffleNet-2.0x.nnp')
 
     def _input_shape(self):
         return (3, 224, 224)

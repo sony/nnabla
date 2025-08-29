@@ -44,7 +44,7 @@ class MobileNet(ImageNetBase):
         }
 
     def __init__(self):
-        self._load_nnp('MobileNet.nnp', 'MobileNet/MobileNet.nnp')
+        self._load_nnp('MobileNet.nnp', 'MobileNet.nnp')
 
     def _input_shape(self):
         return (3, 224, 224)
@@ -95,7 +95,7 @@ class MobileNetV2(ImageNetBase):
         }
 
     def __init__(self):
-        self._load_nnp('MobileNet-v2.nnp', 'MobileNet-v2/MobileNet-v2.nnp')
+        self._load_nnp('MobileNet-v2.nnp', 'MobileNet-v2.nnp')
 
     def _input_shape(self):
         return (3, 224, 224)

@@ -47,7 +47,7 @@ class AlexNet(ImageNetBase):
 
     def __init__(self):
         # Load nnp
-        self._load_nnp('AlexNet.nnp', 'AlexNet/AlexNet.nnp')
+        self._load_nnp('AlexNet.nnp', 'AlexNet.nnp')
 
     def _input_shape(self):
         return (3, 227, 227)

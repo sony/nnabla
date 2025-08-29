@@ -47,7 +47,7 @@ class GoogLeNet(ImageNetBase):
 
     def __init__(self):
         # Load nnp
-        self._load_nnp('GoogLeNet.nnp', 'GoogLeNet/GoogLeNet.nnp')
+        self._load_nnp('GoogLeNet.nnp', 'GoogLeNet.nnp')
 
     def _input_shape(self):
         return (3, 224, 224)

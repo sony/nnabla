@@ -51,7 +51,7 @@ class VGG(ImageNetBase):
 
         # Load nnp
         self._load_nnp('VGG-{}.nnp'.format(num_layers),
-                       'VGG-{0}/VGG-{0}.nnp'.format(num_layers))
+                       'VGG-{}.nnp'.format(num_layers))
 
         self._KEY_VARIABLE = {
             'classifier': 'VGG{}/Affine_3'.format(num_layers),

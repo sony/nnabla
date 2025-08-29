@@ -58,8 +58,7 @@ class ImageNetBase(object):
         from nnabla.utils.download import download
         path_nnp = os.path.join(
                 get_model_home(), 'imagenet/{}'.format(rel_name))
-        url = os.path.join(get_model_url_base(),
-                           'imagenet/{}'.format(rel_url))
+        url = 'https://zenodo.org/records/16962677/files/{}'.format(rel_url)
         logger.info('Downloading {} from {}'.format(rel_name, url))
         dir_nnp = os.path.dirname(path_nnp)
         if not os.path.isdir(dir_nnp):
