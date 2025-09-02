@@ -39,13 +39,13 @@ class Sequential(nn.Module):
                 x = F.relu(x)
                 return x
 
-        # Example of using Sequentional
+        # Example of using Sequential
         layer = nn.Sequential(
             ConvLayer(48, kernel=1),
             ConvLayer(64, kernel=3, pad=1)
         )
 
-        # Example of using Sequentional with a specify name for each layer
+        # Example of using Sequential with a specified name for each layer
         layer = nn.Sequential(
             ('conv1', ConvLayer(48, kernel=1)),
             ('conv2', ConvLayer(64, kernel=3, pad=1))
@@ -59,14 +59,14 @@ class Sequential(nn.Module):
                     self.submodules[module.name + '_' + str(idx)] = module
                 else:
                     raise TypeError(
-                        "The input layer {}/{} should be a instance of nn.Module".format(self.name,
+                        "The input layer {}/{} should be an instance of nn.Module".format(self.name,
                                                                                          module.__class__.__name__))
             else:
                 if isinstance(module[1], nn.Module):
                     self.submodules[module[0]] = module[1]
                 else:
                     raise TypeError(
-                        "The input layer {}/{} should be a instance of nn.Module".format(self.name,
+                        "The input layer {}/{} should be an instance of nn.Module".format(self.name,
                                                                                          module[1].__class__.__name__))
 
     def call(self, *args, **kwargs):
