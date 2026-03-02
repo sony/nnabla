@@ -4802,7 +4802,7 @@ class OnnxImporter:
         input_terms = input_terms_str.split(",")
 
         # Compute label_count
-        label_count = {}  # label -> the number of occurence in input terms
+        label_count = {}  # label -> the number of occurrence in input terms
         for label in input_terms_str:
             if label != "," and label not in label_count:
                 label_count[label] = input_terms_str.count(label)
