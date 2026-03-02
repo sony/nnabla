@@ -61,7 +61,7 @@ def is_nola_violation(window_type, window_size, stride, fft_size, length, center
     inv_window = create_inv_window_func(
         window_type, window_size, stride, fft_size, length)
 
-    # Padding region is ignored for NOLA check since division is not occured.
+    # Padding region is ignored for NOLA check since division is not occurred.
     if center:
         pad = fft_size // 2
         inv_window = inv_window[pad:-pad]
