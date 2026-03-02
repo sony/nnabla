@@ -45,7 +45,7 @@ class Convolution(Module):
         fit the given workspace memory limit, expressed in bytes. In
         some cases it may also be desired to restrict the automatic
         search to algorithms that produce deterministic (reproducable)
-        results. This can be requested by setting the the environment
+        results. This can be requested by setting the environment
         variable `NNABLA_CUDNN_DETERMINISTIC` to a non-zero value.
 
     Args:
