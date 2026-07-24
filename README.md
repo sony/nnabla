@@ -1,6 +1,6 @@
-***Notice: nnabla is under maintenance phase and we will not be actively developing.***
+> This project has reached end of life on [April 3, 2025].
+> No further development or security support is provided.
 
-----
 
 # Neural Network Libraries
 
